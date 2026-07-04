@@ -90,6 +90,7 @@ public class MeRest {
   @PATCH
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchMe",
     summary = "Partial-update the caller's User record.",
     description = "RFC 7396 JSON Merge Patch. Accepts `orcid` (U1a), `displayName` (U1b), and " +
     "`anonymizeInProvenance` (PROV1l, GDPR opt-out — when true, identity is omitted from :Activity records). " +

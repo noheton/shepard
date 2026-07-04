@@ -25,10 +25,14 @@ import {
     WikiWriteResponseIOToJSON,
 } from '../models/index';
 
-export interface WikiWriteRequest {
-    collectionAppId: string;
+export interface WriteWikiJournalEntryRequest {
     dataObjectAppId: string;
     wikiWriteRequestIO?: WikiWriteRequestIO;
+}
+
+export interface WriteWikiJournalEntryLegacyRequest {
+    collectionAppId: string;
+    dataObjectAppId: string;
 }
 
 /**
@@ -40,18 +44,11 @@ export class WikiWriterApi extends runtime.BaseAPI {
      * Uses the configured LLM TEXT capability to summarise the target DataObject and its sibling DataObjects in the same Collection, then writes the result as a LabJournalEntry on the target DataObject.  The generated Markdown entry captures: DataObject name, status, attributes, description, and relationships (predecessors, successors, siblings).  Optional body fields:   - `extraInstruction` — appended to the user-instruction layer; e.g.     \"Focus on anomalies.\"   - `maxTokens` — clamped to [128, 4096]; defaults to 1024.  Auth: Write permission on the parent Collection (DataObjects inherit Collection permissions).  Returns 503 when the LLM provider or TEXT capability is not configured.  Side effects: creates a LabJournalEntry node linked to the DataObject. The LLM provider writes an :AiActivity provenance node; its appId is returned in `activityAppId`.
      * [v2] Generate and write an AI lab journal entry for a DataObject.
      */
-    async wikiWriteRaw(requestParameters: WikiWriteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<WikiWriteResponseIO>> {
-        if (requestParameters['collectionAppId'] == null) {
-            throw new runtime.RequiredError(
-                'collectionAppId',
-                'Required parameter "collectionAppId" was null or undefined when calling wikiWrite().'
-            );
-        }
-
+    async writeWikiJournalEntryRaw(requestParameters: WriteWikiJournalEntryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<WikiWriteResponseIO>> {
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling wikiWrite().'
+                'Required parameter "dataObjectAppId" was null or undefined when calling writeWikiJournalEntry().'
             );
         }
 
@@ -70,7 +67,7 @@ export class WikiWriterApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write`.replace(`{${"collectionAppId"}}`, encodeURIComponent(String(requestParameters['collectionAppId']))).replace(`{${"dataObjectAppId"}}`, encodeURIComponent(String(requestParameters['dataObjectAppId']))),
+            path: `/v2/data-objects/{dataObjectAppId}/wiki-write`.replace(`{${"dataObjectAppId"}}`, encodeURIComponent(String(requestParameters['dataObjectAppId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -84,9 +81,58 @@ export class WikiWriterApi extends runtime.BaseAPI {
      * Uses the configured LLM TEXT capability to summarise the target DataObject and its sibling DataObjects in the same Collection, then writes the result as a LabJournalEntry on the target DataObject.  The generated Markdown entry captures: DataObject name, status, attributes, description, and relationships (predecessors, successors, siblings).  Optional body fields:   - `extraInstruction` — appended to the user-instruction layer; e.g.     \"Focus on anomalies.\"   - `maxTokens` — clamped to [128, 4096]; defaults to 1024.  Auth: Write permission on the parent Collection (DataObjects inherit Collection permissions).  Returns 503 when the LLM provider or TEXT capability is not configured.  Side effects: creates a LabJournalEntry node linked to the DataObject. The LLM provider writes an :AiActivity provenance node; its appId is returned in `activityAppId`.
      * [v2] Generate and write an AI lab journal entry for a DataObject.
      */
-    async wikiWrite(requestParameters: WikiWriteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<WikiWriteResponseIO> {
-        const response = await this.wikiWriteRaw(requestParameters, initOverrides);
+    async writeWikiJournalEntry(requestParameters: WriteWikiJournalEntryRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<WikiWriteResponseIO> {
+        const response = await this.writeWikiJournalEntryRaw(requestParameters, initOverrides);
         return await response.value();
+    }
+
+    /**
+     * This path has been retired. The `{collectionAppId}` segment was redundant — the DataObject\'s parent collection is resolved automatically. Use `POST /v2/data-objects/{dataObjectAppId}/wiki-write` instead.
+     * [v2] GONE — use POST /v2/data-objects/{dataObjectAppId}/wiki-write
+     */
+    async writeWikiJournalEntryLegacyRaw(requestParameters: WriteWikiJournalEntryLegacyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['collectionAppId'] == null) {
+            throw new runtime.RequiredError(
+                'collectionAppId',
+                'Required parameter "collectionAppId" was null or undefined when calling writeWikiJournalEntryLegacy().'
+            );
+        }
+
+        if (requestParameters['dataObjectAppId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectAppId',
+                'Required parameter "dataObjectAppId" was null or undefined when calling writeWikiJournalEntryLegacy().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write`.replace(`{${"collectionAppId"}}`, encodeURIComponent(String(requestParameters['collectionAppId']))).replace(`{${"dataObjectAppId"}}`, encodeURIComponent(String(requestParameters['dataObjectAppId']))),
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * This path has been retired. The `{collectionAppId}` segment was redundant — the DataObject\'s parent collection is resolved automatically. Use `POST /v2/data-objects/{dataObjectAppId}/wiki-write` instead.
+     * [v2] GONE — use POST /v2/data-objects/{dataObjectAppId}/wiki-write
+     */
+    async writeWikiJournalEntryLegacy(requestParameters: WriteWikiJournalEntryLegacyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.writeWikiJournalEntryLegacyRaw(requestParameters, initOverrides);
     }
 
 }

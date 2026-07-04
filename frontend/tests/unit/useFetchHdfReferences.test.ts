@@ -137,6 +137,20 @@ describe("useFetchHdfReferences", () => {
     expect(isLoading.value).toBe(false);
   });
 
+  it("BUG-DO-DETAIL-A-TOAST-2026-06-29 — unwraps the paged envelope { items: [...] }", async () => {
+    mockFetch.mockReturnValue(okResponse({ items: [RAW_HDF_REF], totalElements: 1 }));
+
+    const { useFetchHdfReferences } = await import(
+      "~/composables/context/useFetchHdfReferences"
+    );
+    const { references, fetchError } = useFetchHdfReferences("do-app-001");
+    await flush();
+
+    expect(fetchError.value).toBeNull();
+    expect(references.value).toHaveLength(1);
+    expect(references.value[0]!.appId).toBe("hdf-ref-001");
+  });
+
   it("sets fetchError and clears isLoading on unexpected API error", async () => {
     mockFetch.mockReturnValue(statusResponse(500));
 

@@ -17,6 +17,7 @@ import {
   toValue,
   toRef,
   unref,
+  onUnmounted,
 } from "vue";
 import { vi } from "vitest";
 
@@ -34,6 +35,10 @@ Object.assign(globalThis, {
   toValue,
   toRef,
   unref,
+  // `onUnmounted` is a no-op outside a component instance under plain Vitest
+  // (Vue warns but does not throw). Composables that register a cleanup hook
+  // (e.g. clearing a debounce timer) can still be unit-tested directly.
+  onUnmounted,
 });
 
 // Nuxt `useState` — SSR-friendly shared state keyed by a string. Under plain

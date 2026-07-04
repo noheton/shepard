@@ -6,11 +6,15 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -32,7 +36,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -415,6 +418,7 @@ public class ReferencesV2Rest {
   public Response downloadContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
+    @QueryParam("prefer") String prefer,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -424,7 +428,7 @@ public class ReferencesV2Rest {
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Read, caller);
     if (gate != null) return gate;
     try {
-      return resolved.get().handler().downloadContent(appId, rangeHeader);
+      return resolved.get().handler().downloadContent(appId, rangeHeader, prefer);
     } catch (UnsupportedOperationException uoe) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Not supported", Response.Status.BAD_REQUEST, uoe.getMessage());
     } catch (NotFoundException nfe) {
@@ -439,20 +443,21 @@ public class ReferencesV2Rest {
     operationId = "listReferences",
     summary = "List references of a kind attached to a DataObject, optionally filtered.",
     description =
-      "Returns every reference of `kind` attached to `dataObjectAppId` as " +
-      "ReferenceV2IO[]. For `kind=file`, an optional `fileKind` query param narrows " +
-      "to singletons of that file-kind (e.g. `fileKind=urdf`).\n\nAuth: Read on the " +
-      "parent DataObject."
+      "Returns a page of references of `kind` attached to `dataObjectAppId` wrapped in a " +
+      "standard PagedResponseIO envelope ({items, total, page, pageSize}). Use `page` and " +
+      "`pageSize` to page through large sets; `total` always reflects the unfiltered count. " +
+      "For `kind=file`, an optional `fileKind` query param narrows to singletons of that " +
+      "file-kind (e.g. `fileKind=urdf`).\n\nAuth: Read on the parent DataObject."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of ReferenceV2IO (may be empty).",
+    description = "Paged list of ReferenceV2IO (may be empty).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = ReferenceV2IO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
-  @APIResponse(responseCode = "400", description = "Missing kind/dataObjectAppId or unknown kind.")
+  @APIResponse(responseCode = "400", description = "Missing kind/dataObjectAppId, invalid page/pageSize, or unknown kind.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
@@ -463,6 +468,10 @@ public class ReferencesV2Rest {
     @QueryParam("dataObjectAppId") String dataObjectAppId,
     @Parameter(name = "fileKind", description = "Optional sub-type filter; only meaningful when kind=file. Narrows results to FileReferences whose fileKind matches (e.g. \"urdf\", \"hdf5\"). Ignored for all other kinds.")
     @QueryParam("fileKind") String fileKind,
+    @Parameter(name = "page", description = "Zero-based page index. Defaults to 0. Returns 400 when negative.")
+    @QueryParam("page") @jakarta.ws.rs.DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(name = "pageSize", description = "Maximum items per page. Range [1, 200]. Defaults to 50.")
+    @QueryParam("pageSize") @jakarta.ws.rs.DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -473,12 +482,23 @@ public class ReferencesV2Rest {
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "dataObjectAppId query parameter is required");
     }
+    if (page < 0) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid parameter", Response.Status.BAD_REQUEST, "page must be >= 0");
+    }
+    if (pageSize < 1 || pageSize > 200) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid parameter", Response.Status.BAD_REQUEST, "pageSize must be between 1 and 200");
+    }
     if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks Read access on the parent DataObject");
     }
     try {
-      List<ReferenceV2IO> refs = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
-      return Response.ok(refs).build();
+      List<ReferenceV2IO> all = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
+      int total = all.size();
+      long fromLong = (long) page * pageSize;
+      int from = (int) Math.min(fromLong, (long) total);
+      int to = (int) Math.min(fromLong + pageSize, (long) total);
+      List<ReferenceV2IO> pageItems = all.subList(from, to);
+      return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {

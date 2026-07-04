@@ -18,11 +18,35 @@
  * Mutation ops (create / patch / delete) live in `useManageGitReferences.ts`,
  * also on the unified `ReferencesApi` surface.
  */
-import { ReferencesApi, type ReferenceV2 } from "@dlr-shepard/backend-client";
-import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { GitReferenceIO } from "./gitReferenceTypes";
 
-function toGitReferenceIO(r: ReferenceV2): GitReferenceIO {
+/**
+ * BUG-DO-DETAIL-A-TOAST-2026-06-29 — bypass the generated `ReferencesApi`
+ * client for the list call. The generated `listReferencesRaw` does
+ * `jsonValue.map(ReferenceV2FromJSON)` against the response body, which
+ * throws ".map is not a function" the moment the backend flips the list
+ * shape to a PagedResponseIO envelope `{ items: [...] }` (the same drift
+ * that just shipped on /v2/labjournal/* and triggers the toast on the
+ * DataObject detail page). Regenerating the generated client is the longer
+ * fix; here we do what the other v2 reference composables already do —
+ * raw `fetch` + unwrap envelope client-side.
+ */
+
+interface ReferenceV2IO {
+  appId?: string | null;
+  payload?: Record<string, unknown> | null;
+}
+
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+function toGitReferenceIO(r: ReferenceV2IO): GitReferenceIO {
   const p = r.payload ?? {};
   return {
     appId: r.appId ?? "",
@@ -39,10 +63,30 @@ export function useFetchGitReferences(dataObjectAppId: string) {
   async function refresh() {
     isLoading.value = true;
     try {
-      const raw = await useV2ShepardApi(ReferencesApi).value.listReferences({
-        kind: "git",
-        dataObjectAppId,
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const url =
+        `${v2BaseUrl()}/v2/references` +
+        `?kind=git&dataObjectAppId=${encodeURIComponent(dataObjectAppId)}`;
+      const response = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: "application/json",
+        },
       });
+      if (response.status === 404 || response.status === 400) {
+        gitReferences.value = [];
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const raw = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
       gitReferences.value = raw.map(toGitReferenceIO);
     } catch (error) {
       handleError(error, "listGitReferences");

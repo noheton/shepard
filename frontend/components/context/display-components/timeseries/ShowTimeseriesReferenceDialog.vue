@@ -13,13 +13,11 @@ import type {
   ResponseError,
   SemanticAnnotation,
   Timeseries,
-  TimeseriesEntity,
   TimeseriesReference,
   TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
-import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
-import { useFetchTimeseriesAnnotations } from "~/composables/context/useFetchTimeseriesAnnotations";
 import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
+import { useFetchV2Channels } from "~/composables/container/useFetchV2Channels";
 import type { Metrics } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import { useFetchTimeseriesReferenceMetrics } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
@@ -28,7 +26,7 @@ import { channelMatchesSearch } from "~/utils/timeseriesChannelFilter";
 type TimeseriesMetrics = {
   metrics?: Metrics;
   annotations: SemanticAnnotation[];
-  timeseriesObj?: TimeseriesEntity;
+  shepardId?: string | null;
 };
 
 interface ShowTimeseriesReferenceDialogProps {
@@ -36,12 +34,16 @@ interface ShowTimeseriesReferenceDialogProps {
   dataObjectId: number;
   timeseriesReferenceId: number;
   timeseriesContainerId: number;
+  /** TS-ANNOT-V2: v2 container UUID — enables AnnotatedChannel when resolved */
+  containerAppId?: string;
   timeseries: Timeseries[];
   timeseriesReference?: TimeseriesReference;
   isAllowedToEditCollection?: boolean;
 }
 
 const props = defineProps<ShowTimeseriesReferenceDialogProps>();
+// TS-ANNOT-V2: build 5-tuple→shepardId map; resolves to null when containerAppId absent
+const { resolveShepardId } = useFetchV2Channels(props.containerAppId ?? "");
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
@@ -77,6 +79,14 @@ function channelLabel(ts: Timeseries): string {
   return parts.join(" · ");
 }
 
+function annotatedFor(ts: Timeseries) {
+  const m = timeseriesMetrics.value[getTimeseriesKey(ts)];
+  if (props.containerAppId && m?.shepardId) {
+    return new AnnotatedChannel(props.containerAppId, m.shepardId);
+  }
+  return new AnnotatedReference(props.timeseriesReference?.appId ?? "", "TimeseriesReference");
+}
+
 watch(
   () => props.timeseries,
   async newTimeseries => {
@@ -104,24 +114,13 @@ watch(
             metrics.FREQUENCY = `${toFormattedDouble(freq.toString(), 9)} Hz`;
           }
 
-          const timeseriesObj = await useFetchTimeseries(
-            props.timeseriesContainerId,
-            ts.measurement,
-            ts.device,
-            ts.location,
-            ts.symbolicName,
-            ts.field,
-          );
+          const shepardId = resolveShepardId(ts.measurement, ts.device, ts.location, ts.symbolicName, ts.field);
+          let annotations: SemanticAnnotation[] = [];
+          if (shepardId && props.containerAppId) {
+            annotations = await new AnnotatedChannel(props.containerAppId, shepardId).fetchAnnotations().catch(() => []);
+          }
 
-          const annotations =
-            timeseriesObj?.id
-              ? await useFetchTimeseriesAnnotations(
-                  props.timeseriesContainerId,
-                  timeseriesObj.id,
-                )
-              : [];
-
-          return [getTimeseriesKey(ts), { metrics, annotations, timeseriesObj }] as const;
+          return [getTimeseriesKey(ts), { metrics, annotations, shepardId }] as const;
         }),
       );
       timeseriesMetrics.value = Object.fromEntries(data);
@@ -407,11 +406,7 @@ const useVirtualScroll = computed(
                   :key="annotation.id"
                   :can-delete="!!isAllowedToEditCollection"
                   :annotation="annotation"
-                  :annotated-type="
-                    timeseriesMetrics[getTimeseriesKey(ts)]?.timeseriesObj
-                      ? new AnnotatedTimeseries(timeseriesMetrics[getTimeseriesKey(ts)]!.timeseriesObj!)
-                      : new AnnotatedReference(props.timeseriesReference?.appId ?? '', 'TimeseriesReference')
-                  "
+                  :annotated-type="annotatedFor(ts)"
                 />
               </div>
             </div>

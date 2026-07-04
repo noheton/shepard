@@ -63,7 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{appId}/templates")
 @RequestScoped
-@Tag(name = "Collection templates")
+@Tag(name = "Collections")
 public class CollectionTemplatesRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-templates.unauthorized";
@@ -86,7 +86,7 @@ public class CollectionTemplatesRest {
 
   @GET
   @Path("/allowed")
-  @Operation(summary = "List templates the Collection owner has curated as allowed inside this Collection.")
+  @Operation(operationId = "listAllowed", summary = "List templates the Collection owner has curated as allowed inside this Collection.")
   @APIResponse(
     responseCode = "200",
     description = "Allowed templates (retired excluded) wrapped in a PagedResponseIO envelope.",
@@ -111,7 +111,7 @@ public class CollectionTemplatesRest {
 
   @GET
   @Path("/used")
-  @Operation(summary = "List templates the Collection has cited via :USES_TEMPLATE.")
+  @Operation(operationId = "listUsed", summary = "List templates the Collection has cited via :USES_TEMPLATE.")
   @APIResponse(
     responseCode = "200",
     description = "Used templates (includes retired rows) wrapped in a PagedResponseIO envelope.",
@@ -137,6 +137,7 @@ public class CollectionTemplatesRest {
   @PUT
   @Path("/allowed")
   @Operation(
+    operationId = "setAllowed",
     summary = "Replace the allowed-template set for this Collection.",
     description = "Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204; follow up with GET .../allowed to see the new set."
   )
@@ -160,6 +161,7 @@ public class CollectionTemplatesRest {
   @POST
   @Path("/from/{templateAppId}")
   @Operation(
+    operationId = "instantiate",
     summary = "Instantiate this Collection from a template — records :USES_TEMPLATE and returns the recipe body.",
     description = "Stamps the :USES_TEMPLATE edge (idempotent) so the Collection's provenance trail records " +
     "which template it was created from. Returns the template body so the client (frontend / CLI) can " +

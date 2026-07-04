@@ -61,7 +61,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Import jobs")
+@Tag(name = "Import")
 public class ImportJobsV2Rest {
 
   @Inject
@@ -97,6 +97,7 @@ public class ImportJobsV2Rest {
 
   @POST
   @Operation(
+    operationId = "executeImport",
     summary = "Execute a validated import plan (IMP2)",
     description =
       "Consumes the commitId issued by POST /v2/import/validate and runs the import. " +

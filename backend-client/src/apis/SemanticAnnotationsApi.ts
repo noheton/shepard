@@ -16,16 +16,19 @@
 import * as runtime from '../runtime';
 import type {
   AnnotationV2,
+  BulkAnnotationResult,
   CreateAnnotationV2,
-  PagedResponseAnnotationV2,
+  PagedResponse,
   UpdateAnnotationV2,
 } from '../models/index';
 import {
     AnnotationV2FromJSON,
     AnnotationV2ToJSON,
+    BulkAnnotationResultFromJSON,
     CreateAnnotationV2FromJSON,
     CreateAnnotationV2ToJSON,
-    PagedResponseAnnotationV2FromJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     UpdateAnnotationV2FromJSON,
     UpdateAnnotationV2ToJSON,
 } from '../models/index';
@@ -44,9 +47,9 @@ export interface ExportTurtleRequest {
 }
 
 export interface FindRequest {
+    q: string;
     page?: number;
     pageSize?: number;
-    q?: string;
     vocabId?: string;
 }
 
@@ -68,10 +71,65 @@ export interface UpdateAnnotationRequest {
     updateAnnotationV2: UpdateAnnotationV2;
 }
 
+export interface BulkCreateAnnotationsRequest {
+    createAnnotationV2: Array<CreateAnnotationV2>;
+    xAIAgent?: string;
+}
+
 /**
- * 
+ *
  */
 export class SemanticAnnotationsApi extends runtime.BaseAPI {
+
+    /**
+     * Bulk-create up to 100 semantic annotations in one round-trip. Best-effort per row.
+     * [v2] Bulk-create semantic annotations.
+     */
+    async bulkCreateAnnotationsRaw(requestParameters: BulkCreateAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BulkAnnotationResult>> {
+        if (requestParameters['createAnnotationV2'] == null) {
+            throw new runtime.RequiredError(
+                'createAnnotationV2',
+                'Required parameter "createAnnotationV2" was null or undefined when calling bulkCreateAnnotations().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (requestParameters['xAIAgent'] != null) {
+            headerParameters['X-AI-Agent'] = String(requestParameters['xAIAgent']);
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/annotations/bulk`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: requestParameters['createAnnotationV2'].map(CreateAnnotationV2ToJSON),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BulkAnnotationResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Bulk-create up to 100 semantic annotations in one round-trip. Best-effort per row.
+     * [v2] Bulk-create semantic annotations.
+     */
+    async bulkCreateAnnotations(requestParameters: BulkCreateAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BulkAnnotationResult> {
+        const response = await this.bulkCreateAnnotationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Creates a `:SemanticAnnotation` node for the given subject entity. The server mints `appId` (UUID v7) for the new annotation.  Required fields: `subjectAppId`, `subjectKind`, `predicateIri`. Exactly one of `objectLiteral` / `objectIri` must be non-null.  Auth: caller must be able to Write the subject entity (inherited from its Collection). `sourceMode` defaults to `\'human\'` if not provided. `confidence` defaults to `1.0` for human writes.  Returns `201 Created` with the full AnnotationV2 body.
@@ -211,7 +269,14 @@ export class SemanticAnnotationsApi extends runtime.BaseAPI {
      * Case-insensitive substring search over annotation value names and predicate names. Supply `q` with at least 1 character. Optional `vocabId` narrows to one vocabulary. Pagination via `page` / `pageSize`.  Auth: result is the union of annotations the caller can Read; supply `subjectAppId` or `subjectKind` in the parent `list` endpoint for entity-scoped discovery.
      * [v2] Text search over annotation values and predicate names.
      */
-    async findRaw(requestParameters: FindRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseAnnotationV2>> {
+    async findRaw(requestParameters: FindRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+        if (requestParameters['q'] == null) {
+            throw new runtime.RequiredError(
+                'q',
+                'Required parameter "q" was null or undefined when calling find().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -247,14 +312,14 @@ export class SemanticAnnotationsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseAnnotationV2FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Case-insensitive substring search over annotation value names and predicate names. Supply `q` with at least 1 character. Optional `vocabId` narrows to one vocabulary. Pagination via `page` / `pageSize`.  Auth: result is the union of annotations the caller can Read; supply `subjectAppId` or `subjectKind` in the parent `list` endpoint for entity-scoped discovery.
      * [v2] Text search over annotation values and predicate names.
      */
-    async find(requestParameters: FindRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseAnnotationV2> {
+    async find(requestParameters: FindRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.findRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -306,7 +371,7 @@ export class SemanticAnnotationsApi extends runtime.BaseAPI {
      * Returns a page of `:SemanticAnnotation` nodes matching the provided filter parameters. All filters are optional and AND-combined. Pagination is controlled by `page` (zero-based, default 0) and `pageSize` (default 50, max 200).  Filters: `subjectAppId` — only annotations on this entity; `subjectKind` — narrow to a specific entity kind; `predicateIri` — only annotations using this predicate; `vocabId` — only annotations from this vocabulary.  Auth: the caller\'s Read permission on the subject entity is enforced per annotation row — annotations whose subject the caller cannot Read are excluded from the result. Supply `subjectAppId` to filter to one entity (and trigger a single permission check at the list boundary).  Next step: `GET /v2/annotations/{appId}` for a single annotation, or `POST /v2/annotations` to create.
      * [v2] List annotations with optional filters.
      */
-    async listAnnotationsRaw(requestParameters: ListAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseAnnotationV2>> {
+    async listAnnotationsRaw(requestParameters: ListAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -350,14 +415,14 @@ export class SemanticAnnotationsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseAnnotationV2FromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns a page of `:SemanticAnnotation` nodes matching the provided filter parameters. All filters are optional and AND-combined. Pagination is controlled by `page` (zero-based, default 0) and `pageSize` (default 50, max 200).  Filters: `subjectAppId` — only annotations on this entity; `subjectKind` — narrow to a specific entity kind; `predicateIri` — only annotations using this predicate; `vocabId` — only annotations from this vocabulary.  Auth: the caller\'s Read permission on the subject entity is enforced per annotation row — annotations whose subject the caller cannot Read are excluded from the result. Supply `subjectAppId` to filter to one entity (and trigger a single permission check at the list boundary).  Next step: `GET /v2/annotations/{appId}` for a single annotation, or `POST /v2/annotations` to create.
      * [v2] List annotations with optional filters.
      */
-    async listAnnotations(requestParameters: ListAnnotationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseAnnotationV2> {
+    async listAnnotations(requestParameters: ListAnnotationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listAnnotationsRaw(requestParameters, initOverrides);
         return await response.value();
     }

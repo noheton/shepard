@@ -23,6 +23,7 @@ import type {
   ContainerSearchResult,
   ResponseBody,
   SearchBody,
+  SearchV2Result,
   UserGroupSearchResult,
   UserSearchBody,
   UserSearchResult,
@@ -44,6 +45,8 @@ import {
     ResponseBodyToJSON,
     SearchBodyFromJSON,
     SearchBodyToJSON,
+    SearchV2ResultFromJSON,
+    SearchV2ResultToJSON,
     UserGroupSearchResultFromJSON,
     UserGroupSearchResultToJSON,
     UserSearchBodyFromJSON,
@@ -78,6 +81,12 @@ export interface SearchUserGroupsRequest {
 
 export interface SearchUsersRequest {
     userSearchBody: UserSearchBody;
+}
+
+export interface SearchV2Request {
+    q: string;
+    page?: any;
+    pageSize?: any;
 }
 
 /**
@@ -364,6 +373,61 @@ export class SearchApi extends runtime.BaseAPI {
      */
     async searchUsers(requestParameters: SearchUsersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserSearchResult> {
         const response = await this.searchUsersRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Searches Collections and DataObjects by name / description and returns a unified list where every item carries its stable `appId` (UUID v7). Unlike the legacy `POST /shepard/api/search` endpoint, no internal Neo4j node id is exposed. Collection results are paginated via `page` / `pageSize`; DataObject results are returned inline alongside them. Requires authentication.
+     * [v2] Full-text search returning appId-keyed results
+     */
+    async searchV2Raw(requestParameters: SearchV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SearchV2Result>> {
+        if (requestParameters['q'] == null) {
+            throw new runtime.RequiredError(
+                'q',
+                'Required parameter "q" was null or undefined when calling searchV2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/search`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SearchV2ResultFromJSON(jsonValue));
+    }
+
+    /**
+     * Searches Collections and DataObjects by name / description and returns a unified list where every item carries its stable `appId` (UUID v7). Unlike the legacy `POST /shepard/api/search` endpoint, no internal Neo4j node id is exposed. Collection results are paginated via `page` / `pageSize`; DataObject results are returned inline alongside them. Requires authentication.
+     * [v2] Full-text search returning appId-keyed results
+     */
+    async searchV2(requestParameters: SearchV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SearchV2Result> {
+        const response = await this.searchV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
+import de.dlr.shepard.v2.annotations.io.BulkAnnotationResultIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -31,6 +33,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -346,6 +349,29 @@ class SemanticAnnotationV2RestTest {
     body.setObjectIri("http://example.org/iri");
 
     assertThat(resource.update(ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void update_methodAnnotationIsPatch_notPut() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    assertThat(m.getAnnotation(jakarta.ws.rs.PATCH.class))
+        .as("update() must carry @PATCH (RFC 5789 / RFC 7396 merge-patch)")
+        .isNotNull();
+    assertThat(m.getAnnotation(jakarta.ws.rs.PUT.class))
+        .as("update() must NOT carry @PUT — PUT implies full-replacement semantics")
+        .isNull();
+  }
+
+  @Test
+  void update_consumesIncludesMergePatchJson() throws NoSuchMethodException {
+    java.lang.reflect.Method m = SemanticAnnotationV2Rest.class.getMethod(
+        "update", String.class, UpdateAnnotationIO.class, jakarta.ws.rs.core.SecurityContext.class);
+    var consumes = m.getAnnotation(jakarta.ws.rs.Consumes.class);
+    assertThat(consumes).as("update() must carry method-level @Consumes").isNotNull();
+    assertThat(java.util.Arrays.asList(consumes.value()))
+        .as("@Consumes must include 'application/merge-patch+json'")
+        .contains("application/merge-patch+json");
   }
 
   // ─── delete ──────────────────────────────────────────────────────────────
@@ -879,6 +905,98 @@ class SemanticAnnotationV2RestTest {
         })
         .findFirst()
         .orElse(null);
+  }
+
+  // ─── bulkCreate (SEMANTIC-ANNOTATE-BULK-REST-1) ───────────────────────────
+
+  @Test
+  void bulkCreate_returns200WithSuccessResults() {
+    List<CreateAnnotationIO> items = List.of(
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "value-1", null),
+      createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "value-2", null)
+    );
+
+    Response r = resource.bulkCreate(items, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getRequested()).isEqualTo(2);
+    assertThat(result.getSucceeded()).isEqualTo(2);
+    assertThat(result.getFailed()).isEqualTo(0);
+    assertThat(result.getResults()).hasSize(2);
+    assertThat(result.getResults().get(0).isOk()).isTrue();
+    assertThat(result.getResults().get(0).getAppId()).isNotNull();
+    assertThat(result.getResults().get(0).getError()).isNull();
+  }
+
+  @Test
+  void bulkCreate_returns401WhenUnauthenticated() {
+    when(sc.getUserPrincipal()).thenReturn(null);
+    assertThat(resource.bulkCreate(List.of(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null)), sc, null).getStatus())
+      .isEqualTo(401);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenListEmpty() {
+    assertThat(resource.bulkCreate(List.of(), sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenListNull() {
+    assertThat(resource.bulkCreate(null, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_returns400WhenExceedsMax() {
+    List<CreateAnnotationIO> items = new ArrayList<>();
+    for (int i = 0; i < SemanticAnnotationV2Rest.BULK_CREATE_MAX + 1; i++) {
+      items.add(createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v" + i, null));
+    }
+    assertThat(resource.bulkCreate(items, sc, null).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void bulkCreate_partialFailure_recordsEachRowOutcome() {
+    // Row 1: valid
+    // Row 2: missing predicateIri → should fail gracefully, not abort row 1
+    CreateAnnotationIO good = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "valid", null);
+    CreateAnnotationIO bad = createBody("DataObject", SUBJ_APP_ID, "", "v", null);
+
+    Response r = resource.bulkCreate(List.of(good, bad), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getRequested()).isEqualTo(2);
+    assertThat(result.getSucceeded()).isEqualTo(1);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).isOk()).isTrue();
+    assertThat(result.getResults().get(1).isOk()).isFalse();
+    assertThat(result.getResults().get(1).getError()).isNotBlank();
+  }
+
+  @Test
+  void bulkCreate_permissionDenied_failsRowGracefully() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
+      .thenReturn(false);
+    CreateAnnotationIO item = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+
+    Response r = resource.bulkCreate(List.of(item), sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    BulkAnnotationResultIO result = (BulkAnnotationResultIO) r.getEntity();
+    assertThat(result.getSucceeded()).isEqualTo(0);
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getResults().get(0).isOk()).isFalse();
+    verify(annotationDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void bulkCreate_withAiAgentHeader_setsSourceModeAi() {
+    CreateAnnotationIO item = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
+
+    resource.bulkCreate(List.of(item), sc, "TestAgent/1.0");
+
+    verify(annotationDAO).createOrUpdate(argThat(a -> "ai".equals(a.getSourceMode())));
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────

@@ -15,10 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
+  PagedResponse,
   PersonalVocabularyRequest,
   Vocabulary,
 } from '../models/index';
 import {
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PersonalVocabularyRequestFromJSON,
     PersonalVocabularyRequestToJSON,
     VocabularyFromJSON,
@@ -27,6 +30,11 @@ import {
 
 export interface CreateVocabularyTermRequest {
     personalVocabularyRequest: PersonalVocabularyRequest;
+}
+
+export interface ListVocabularyTermsRequest {
+    page?: number;
+    pageSize?: number;
 }
 
 /**
@@ -81,11 +89,19 @@ export class VocabulariesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns all :Vocabulary nodes with type=PERSONAL owned by the calling user. Returns an empty list when the feature is disabled or the user has no personal vocabularies.
+     * Returns :Vocabulary nodes with type=PERSONAL owned by the calling user. Returns an empty list when the feature is disabled or the user has no personal vocabularies.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging (kept during deprecation window).
      * [v2] List the caller\'s personal vocabularies.
      */
-    async listVocabularyTermsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Vocabulary>> {
+    async listVocabularyTermsRaw(requestParameters: ListVocabularyTermsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -104,15 +120,15 @@ export class VocabulariesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => VocabularyFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns all :Vocabulary nodes with type=PERSONAL owned by the calling user. Returns an empty list when the feature is disabled or the user has no personal vocabularies.
+     * Returns :Vocabulary nodes with type=PERSONAL owned by the calling user. Returns an empty list when the feature is disabled or the user has no personal vocabularies.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging (kept during deprecation window).
      * [v2] List the caller\'s personal vocabularies.
      */
-    async listVocabularyTerms(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Vocabulary> {
-        const response = await this.listVocabularyTermsRaw(initOverrides);
+    async listVocabularyTerms(requestParameters: ListVocabularyTermsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listVocabularyTermsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

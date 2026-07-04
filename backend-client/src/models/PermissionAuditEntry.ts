@@ -20,11 +20,11 @@ import { mapValues } from '../runtime';
  */
 export interface PermissionAuditEntry {
     /**
-     * Neo4j-side numeric id of the orphan entity.
+     * Neo4j internal node id of the orphan entity — exposed here as a triage handle when appId is null (pre-migration rows).
      * @type {number}
      * @memberof PermissionAuditEntry
      */
-    id: number;
+    neo4jNodeId: number | null;
     /**
      * appId (UUID v7) if populated by L2a/L2b.
      * @type {string}
@@ -49,7 +49,7 @@ export interface PermissionAuditEntry {
  * Check if a given object implements the PermissionAuditEntry interface.
  */
 export function instanceOfPermissionAuditEntry(value: object): value is PermissionAuditEntry {
-    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('neo4jNodeId' in value) || value['neo4jNodeId'] === undefined) return false;
     if (!('labels' in value) || value['labels'] === undefined) return false;
     return true;
 }
@@ -64,7 +64,7 @@ export function PermissionAuditEntryFromJSONTyped(json: any, ignoreDiscriminator
     }
     return {
         
-        'id': json['id'],
+        'neo4jNodeId': json['neo4jNodeId'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'labels': json['labels'],
         'name': json['name'] == null ? undefined : json['name'],
@@ -77,7 +77,7 @@ export function PermissionAuditEntryToJSON(value?: PermissionAuditEntry | null):
     }
     return {
         
-        'id': value['id'],
+        'neo4jNodeId': value['neo4jNodeId'],
         'appId': value['appId'],
         'labels': value['labels'],
         'name': value['name'],

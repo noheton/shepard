@@ -10,22 +10,29 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-IMPORT-DIAGNOSTICS-FILTER-PARAMS regression tests.
+ * APISIMP-IMPORT-DIAGNOSTICS-FILTER-PARAMS + APISIMP-IMPORT-DIAG-EVENTS-BARE-LIST
+ * regression tests.
  *
- * <p>Verifies that the {@code ?level=} and {@code ?phase=} query parameters on
- * {@link ImportDiagnosticsV2Rest#getEvents} carry {@code @Parameter} annotations
- * with non-blank descriptions and schema enumerations listing every valid value.
+ * <p>Verifies that the {@code ?level=}, {@code ?phase=}, and {@code ?limit=} query
+ * parameters on {@link ImportDiagnosticsV2Rest#getEvents} carry the expected
+ * annotations.
  */
 class ImportDiagnosticsV2RestTest {
 
-  @Test
-  void levelParam_hasParameterAnnotationWithEnumeration() throws NoSuchMethodException {
-    Method method = ImportDiagnosticsV2Rest.class.getMethod(
+  /** Resolve the getEvents method with its updated signature (includes int limit). */
+  private static Method getEventsMethod() throws NoSuchMethodException {
+    return ImportDiagnosticsV2Rest.class.getMethod(
         "getEvents",
         String.class,
         String.class,
         String.class,
+        int.class,
         jakarta.ws.rs.core.SecurityContext.class);
+  }
+
+  @Test
+  void levelParam_hasParameterAnnotationWithEnumeration() throws NoSuchMethodException {
+    Method method = getEventsMethod();
 
     Parameter param = Arrays.stream(method.getParameters())
         .filter(p -> {
@@ -46,13 +53,16 @@ class ImportDiagnosticsV2RestTest {
   }
 
   @Test
-  void phaseParam_hasParameterAnnotationWithEnumeration() throws NoSuchMethodException {
+  void listRuns_methodExists() throws NoSuchMethodException {
     Method method = ImportDiagnosticsV2Rest.class.getMethod(
-        "getEvents",
-        String.class,
-        String.class,
-        String.class,
+        "listRuns",
         jakarta.ws.rs.core.SecurityContext.class);
+    assertNotNull(method, "listRuns method must exist with (SecurityContext) signature");
+  }
+
+  @Test
+  void phaseParam_hasParameterAnnotationWithEnumeration() throws NoSuchMethodException {
+    Method method = getEventsMethod();
 
     Parameter param = Arrays.stream(method.getParameters())
         .filter(p -> {
@@ -70,5 +80,25 @@ class ImportDiagnosticsV2RestTest {
         "@Parameter.description must be non-blank for phase");
     assertTrue(ann.description().contains("DO_CREATE"),
         "@Parameter.description for phase must mention DO_CREATE");
+  }
+
+  @Test
+  void limitParam_hasQueryParamAndParameterAnnotation() throws NoSuchMethodException {
+    Method method = getEventsMethod();
+
+    Parameter param = Arrays.stream(method.getParameters())
+        .filter(p -> {
+          QueryParam qp = p.getAnnotation(QueryParam.class);
+          return qp != null && "limit".equals(qp.value());
+        })
+        .findFirst()
+        .orElse(null);
+
+    assertNotNull(param, "limit must carry @QueryParam(\"limit\")");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "limit must carry @Parameter annotation");
+    assertTrue(ann.description() != null && ann.description().contains("X-Truncated"),
+        "@Parameter.description for limit must mention X-Truncated header");
   }
 }

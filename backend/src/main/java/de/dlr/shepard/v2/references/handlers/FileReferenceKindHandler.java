@@ -1,5 +1,7 @@
 package de.dlr.shepard.v2.references.handlers;
 
+import de.dlr.shepard.common.mongoDB.NamedInputStream;
+import de.dlr.shepard.common.util.HttpRangeUtil;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
@@ -9,6 +11,10 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +98,90 @@ public class FileReferenceKindHandler implements ReferenceKindHandler {
     FileReference ref = singletonService.getByAppId(appId);
     if (ref == null) throw new NotFoundException("No singleton FileReference with appId " + appId);
     singletonService.deleteSingleton(appId);
+  }
+
+  /**
+   * FILEREF-CONTENT-DOWNLOAD-MISSING-2026-06-30 — range-aware binary download for
+   * singleton file references. Mirrors the {@code VideoStreamReferenceKindHandler}
+   * shape: resolves {@code :SingletonFileReference → ShepardFile.oid →
+   * fileStorageService.getPayload(...)} via {@link SingletonFileReferenceService},
+   * honours a {@code Range: bytes=START-END} header for 206 Partial Content
+   * (browser-native scrubbing / large URDF streaming).
+   *
+   * <p>Unblocks {@code GET /v2/references/{appId}/content} for the SceneGraphPlay
+   * URDF download path ({@code useUrdfReferenceBlob.resolve(...)}).
+   */
+  @Override
+  public Response downloadContent(String appId, String rangeHeader) {
+    NamedInputStream payload;
+    try {
+      payload = singletonService.getPayload(appId);
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND)
+        .type("application/problem+json")
+        .entity(new de.dlr.shepard.common.exceptions.ProblemJson(
+          "urn:shepard:error:not-found",
+          Response.Status.NOT_FOUND.getReasonPhrase(),
+          Response.Status.NOT_FOUND.getStatusCode(),
+          nfe.getMessage(),
+          null))
+        .build();
+    }
+
+    // Resolve metadata for the response. The FileReference holds the canonical
+    // ShepardFile + name; NamedInputStream carries the GridFS name + size.
+    FileReference ref = singletonService.getByAppId(appId);
+    String filename = payload.getName() != null && !payload.getName().isBlank()
+      ? payload.getName()
+      : (ref != null ? ref.getName() : appId);
+    String contentType = MediaType.APPLICATION_OCTET_STREAM;
+    if (ref != null && ref.getFile() != null) {
+      // ShepardFile doesn't track mime-type today; the singleton file path stays
+      // octet-stream + filename-driven content-negotiation downstream. The
+      // VideoStreamReference handler diverges only because video refs carry an
+      // explicit mimeType field.
+      String fname = filename != null ? filename.toLowerCase() : "";
+      if (fname.endsWith(".urdf") || fname.endsWith(".xml")) contentType = MediaType.APPLICATION_XML;
+      else if (fname.endsWith(".json")) contentType = MediaType.APPLICATION_JSON;
+      else if (fname.endsWith(".txt") || fname.endsWith(".log")) contentType = MediaType.TEXT_PLAIN;
+    }
+    Long total = payload.getSize();
+
+    if (rangeHeader == null || rangeHeader.isBlank()) {
+      Response.ResponseBuilder rb = Response.ok(payload.getInputStream(), contentType)
+        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+        .header("Accept-Ranges", "bytes");
+      if (total != null) rb.header("Content-Length", total);
+      return rb.build();
+    }
+
+    if (total == null || total <= 0) {
+      return Response.ok(payload.getInputStream(), contentType)
+        .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+        .header("Accept-Ranges", "bytes")
+        .build();
+    }
+
+    long[] range = HttpRangeUtil.parseRange(rangeHeader, total);
+    if (range == null) {
+      try { if (payload.getInputStream() != null) payload.getInputStream().close(); } catch (IOException ignored) { /* close best-effort */ }
+      return Response.status(Response.Status.REQUESTED_RANGE_NOT_SATISFIABLE)
+        .header("Content-Range", "bytes */" + total)
+        .header("Accept-Ranges", "bytes")
+        .build();
+    }
+    long start = range[0];
+    long end = range[1];
+    long length = end - start + 1;
+    StreamingOutput ranged = HttpRangeUtil.sliceStream(payload.getInputStream(), start, length);
+    return Response.status(Response.Status.PARTIAL_CONTENT)
+      .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+      .header("Content-Length", length)
+      .header("Content-Range", "bytes " + start + "-" + end + "/" + total)
+      .header("Accept-Ranges", "bytes")
+      .entity(ranged)
+      .type(contentType)
+      .build();
   }
 
   @Override

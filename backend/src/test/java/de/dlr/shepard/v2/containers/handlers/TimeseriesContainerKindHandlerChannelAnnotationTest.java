@@ -11,6 +11,7 @@ import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,13 +67,14 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
             eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
         .thenReturn(Collections.emptyList());
 
-    var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID);
+    var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 200);
 
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<SemanticAnnotationIO>) result.get().getEntity();
-    assertThat(body).isEmpty();
+    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).isEmpty();
+    assertThat(body.total()).isEqualTo(0);
   }
 
   @Test
@@ -83,14 +85,34 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
             eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
         .thenReturn(List.of(ann));
 
-    var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID);
+    var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 200);
 
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (List<SemanticAnnotationIO>) result.get().getEntity();
-    assertThat(body).hasSize(1);
-    assertThat(body.get(0).getPropertyIRI()).isEqualTo("http://example.org/prop");
+    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).hasSize(1);
+    assertThat(body.items().get(0).getPropertyIRI()).isEqualTo("http://example.org/prop");
+    assertThat(body.total()).isEqualTo(1);
+    assertThat(result.get().getHeaderString("X-Total-Count")).isEqualTo("1");
+  }
+
+  @Test
+  void listAnnotations_paginationSlicesCorrectly() {
+    var ann1 = makeAnnotation(1L, "http://p.org/a", "a", "http://v.org/a", "a");
+    var ann2 = makeAnnotation(2L, "http://p.org/b", "b", "http://v.org/b", "b");
+    var ann3 = makeAnnotation(3L, "http://p.org/c", "c", "http://v.org/c", "c");
+    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
+        .thenReturn(List.of(ann1, ann2, ann3));
+
+    var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 2);
+
+    assertThat(result).isPresent();
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    assertThat(body.items()).hasSize(2);
+    assertThat(body.total()).isEqualTo(3);
   }
 
   // ── create annotation ────────────────────────────────────────────────────

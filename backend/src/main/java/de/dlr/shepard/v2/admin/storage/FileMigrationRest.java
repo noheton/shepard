@@ -63,6 +63,7 @@ public class FileMigrationRest {
 
   @POST
   @Operation(
+    operationId = "trigger",
     summary = "Trigger a file-storage migration.",
     description = "Copies every ShepardFile whose providerId equals sourceProviderId to the " +
     "targetProviderId adapter, then flips the providerId in Neo4j. Migration runs in the " +
@@ -80,6 +81,7 @@ public class FileMigrationRest {
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid adapter ids or migration already running.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response trigger(FileMigrationTriggerIO body) {
     if (body == null
@@ -101,6 +103,7 @@ public class FileMigrationRest {
   @GET
   @Path("/status")
   @Operation(
+    operationId = "status",
     summary = "Get the current file-storage migration status.",
     description = "Returns the in-memory state of the most recent migration job (IDLE when none " +
     "has been triggered since the last restart)."
@@ -110,6 +113,7 @@ public class FileMigrationRest {
     description = "Current migration state.",
     content = @Content(schema = @Schema(implementation = FileMigrationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response status() {
     return Response.ok(FileMigrationStateIO.from(migrationService.getState())).build();
@@ -118,6 +122,7 @@ public class FileMigrationRest {
   @POST
   @Path("/rollback/{appId}")
   @Operation(
+    operationId = "rollback",
     summary = "Roll back a single file's storage-adapter swap.",
     description =
       "FS1e3 — per-file rollback. Re-writes the file's bytes from the current adapter (providerId) " +
@@ -143,6 +148,7 @@ public class FileMigrationRest {
     responseCode = "409",
     description = "The :ShepardFile has nothing to roll back (previousProviderId is null)."
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "500", description = "Storage adapter failure during rollback.")
   public Response rollback(

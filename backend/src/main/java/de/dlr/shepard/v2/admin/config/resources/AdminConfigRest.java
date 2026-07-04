@@ -70,6 +70,7 @@ public class AdminConfigRest {
 
   @GET
   @Operation(
+    operationId = "listFeatures",
     summary = "List runtime-configurable features.",
     description = "Returns one row per registered config feature — the {feature} path segment " +
     "plus a description. Use the returned keys with GET|PATCH /v2/admin/config/{feature}."
@@ -79,6 +80,7 @@ public class AdminConfigRest {
     description = "Registered config features.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ConfigFeatureIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response listFeatures() {
     List<ConfigFeatureIO> rows = registry.all()
@@ -102,6 +104,7 @@ public class AdminConfigRest {
     description = "No config feature registered under {feature} (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response getConfig(@PathParam("feature") String feature) {
     ConfigDescriptor<?> descriptor = registry.resolve(feature).orElse(null);
@@ -134,6 +137,7 @@ public class AdminConfigRest {
     description = "No config feature registered under {feature} (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patchConfig(@PathParam("feature") String feature, JsonNode body) {
     ConfigDescriptor<?> descriptor = registry.resolve(feature).orElse(null);

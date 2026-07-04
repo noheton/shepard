@@ -21,6 +21,12 @@ interface QuickLink {
 
 const quickLinks: QuickLink[] = [
   {
+    to: "/semantic/search",
+    title: "Ontology search",
+    subtitle: "Search-as-you-type across every loaded term, tree + graph view",
+    icon: "mdi-magnify",
+  },
+  {
     to: "/semantic/vocabularies",
     title: "Vocabularies",
     subtitle: "Browse the loaded ontologies + predicate inventory",

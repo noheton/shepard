@@ -79,6 +79,12 @@ export interface CreateDataObjectV2 {
      * @type {string}
      * @memberof CreateDataObjectV2
      */
+    uniqueId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateDataObjectV2
+     */
     description?: string | null;
     /**
      * 
@@ -140,6 +146,12 @@ export interface CreateDataObjectV2 {
      * @memberof CreateDataObjectV2
      */
     predecessorIds?: Array<number>;
+    /**
+     * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows.
+     * @type {Array<string>}
+     * @memberof CreateDataObjectV2
+     */
+    predecessorAppIds?: Array<string> | null;
     /**
      * 
      * @type {Array<number>}
@@ -286,6 +298,7 @@ export function CreateDataObjectV2FromJSONTyped(json: any, ignoreDiscriminator: 
         'name': json['name'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'description': json['description'] == null ? undefined : json['description'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'status': json['status'] == null ? undefined : json['status'],
@@ -297,6 +310,7 @@ export function CreateDataObjectV2FromJSONTyped(json: any, ignoreDiscriminator: 
         'referenceIds': json['referenceIds'],
         'successorIds': json['successorIds'],
         'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
+        'predecessorAppIds': json['predecessorAppIds'] == null ? undefined : json['predecessorAppIds'],
         'childrenIds': json['childrenIds'],
         'parentId': json['parentId'],
         'incomingIds': json['incomingIds'],
@@ -317,6 +331,7 @@ export function CreateDataObjectV2ToJSON(value?: Omit<CreateDataObjectV2, 'id'|'
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
         'description': value['description'],
         'attributes': value['attributes'],
         'status': value['status'],
@@ -324,6 +339,7 @@ export function CreateDataObjectV2ToJSON(value?: Omit<CreateDataObjectV2, 'id'|'
         'accessRights': value['accessRights'],
         'embargoEndDate': value['embargoEndDate'],
         'predecessorIds': value['predecessorIds'],
+        'predecessorAppIds': value['predecessorAppIds'],
         'parentId': value['parentId'],
         'provenanceMode': value['provenanceMode'],
         'typedPredecessors': value['typedPredecessors'] == null ? undefined : ((value['typedPredecessors'] as Array<any>).map(TypedPredecessorToJSON)),

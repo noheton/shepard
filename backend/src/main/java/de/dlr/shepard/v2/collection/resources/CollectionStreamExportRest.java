@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collection stream export")
+@Tag(name = "Collections")
 public class CollectionStreamExportRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-stream-export.unauthorized";
@@ -58,6 +58,7 @@ public class CollectionStreamExportRest {
   @Path("/{appId}/export")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
   @Operation(
+    operationId = "streamExport",
     summary = "Stream an RO-Crate ZIP for the collection directly.",
     description = "Builds the collection's RO-Crate ZIP export and streams it directly to the caller. " +
     "This endpoint works on all storage backends including GridFS. " +

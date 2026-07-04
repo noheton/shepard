@@ -159,7 +159,7 @@ const collectionAppId = computed(
 const { containers: collectionContainers, isLoading: containersLoading } =
   useFetchCollectionContainers(collectionAppId);
 const fileContainersInCollection = computed(() =>
-  collectionContainers.value.filter(c => c.containerType === "FILE"),
+  collectionContainers.value.filter(c => (c.kind ?? "").toUpperCase() === "FILE"),
 );
 
 const uploading = ref<boolean>(false);

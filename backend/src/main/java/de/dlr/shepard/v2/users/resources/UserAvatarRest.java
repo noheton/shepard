@@ -60,7 +60,7 @@ public class UserAvatarRest {
   @PUT
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Upload or replace the caller's avatar (max 2 MB; JPEG/PNG/GIF/WebP).")
+  @Operation(operationId = "uploadMyAvatar", summary = "Upload or replace the caller's avatar (max 2 MB; JPEG/PNG/GIF/WebP).")
   @APIResponse(responseCode = "204", description = "Avatar stored.")
   @APIResponse(responseCode = "400", description = "Missing file part, unsupported type, or file exceeds 2 MB.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -110,7 +110,7 @@ public class UserAvatarRest {
 
   @DELETE
   @Produces(MediaType.APPLICATION_JSON)
-  @Operation(summary = "Remove the caller's avatar.")
+  @Operation(operationId = "deleteMyAvatar", summary = "Remove the caller's avatar.")
   @APIResponse(responseCode = "204", description = "Avatar removed (or was already absent).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response deleteAvatar(@Context SecurityContext securityContext) {

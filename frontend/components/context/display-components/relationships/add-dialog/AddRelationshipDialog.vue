@@ -26,6 +26,8 @@ import {
 // pull (V2-only path).
 const props = defineProps<{
   collectionId: number;
+  /** UUID v7 — when supplied, DataObject search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
   dataObjectId: number;
   dataObjectAppId?: string;
 }>();
@@ -200,6 +202,7 @@ const onSubmit = () => {
         <RelationshipInput
           v-model="relationshipModel"
           :collection-id="collectionId"
+          :collection-app-id="collectionAppId"
           :default-uri-relationship="defaultUriRelationship"
           :uri-placeholder="uriPlaceholder"
         />

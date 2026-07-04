@@ -5,8 +5,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginRegistry;
 import de.dlr.shepard.v2.admin.plugins.io.PluginEntryIO;
-import de.dlr.shepard.v2.admin.plugins.io.PluginListIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginPatchIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -71,8 +71,22 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * "admin-configurable" pattern with the persistent-override
  * variant.
  *
+ * <p>Why not {@link de.dlr.shepard.v2.admin.config.resources.AdminConfigRest ConfigRegistry}?
+ * {@code GET/PATCH /v2/admin/config/{feature}} uses a flat key namespace: one feature key maps
+ * to one JSON value-shape handled by its {@code ConfigDescriptor}. Plugins need a
+ * <em>per-plugin-id</em> path segment — the identity is not a feature key but a plugin id from
+ * the classpath scan. Folding plugins into ConfigRegistry would require either a synthetic
+ * nested key ({@code config/plugins/file-format-thermography}) or structural changes to
+ * {@code ConfigRegistry} to support a sub-keyed collection. Both add surface for no gain —
+ * this endpoint is the right shape: per-id PATCH with id validation and registry-lookup that
+ * the generic {@code ConfigDescriptor} interface cannot express cleanly. The toggle is
+ * persisted (not transient), which makes it suitable for a future {@code ConfigDescriptor}
+ * wrapper if the key-namespace decision changes; that migration is tracked as
+ * APISIMP-PLUGINS-ADMIN-BESPOKE option (a) in {@code aidocs/16}.
+ *
  * @see PluginRegistry
  * @see de.dlr.shepard.plugin.PluginEntry
+ * @see de.dlr.shepard.v2.admin.config.resources.AdminConfigRest
  */
 @Path("/v2/admin/plugins")
 @Produces(MediaType.APPLICATION_JSON)
@@ -104,7 +118,7 @@ public class PluginsAdminRest {
   @APIResponse(
     responseCode = "200",
     description = "Current plugin registry snapshot.",
-    content = @Content(schema = @Schema(implementation = PluginListIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -114,7 +128,7 @@ public class PluginsAdminRest {
     for (PluginEntry entry : entries) {
       rows.add(PluginEntryIO.from(entry, registry.isEnabled(entry.id())));
     }
-    return Response.ok(new PluginListIO(rows)).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
   }
 
   @PATCH

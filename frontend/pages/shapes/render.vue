@@ -15,7 +15,7 @@
  *
  * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
-import { TimeseriesContainerChannelListingApi } from "@dlr-shepard/backend-client";
+import { ContainersApi } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
 import {
@@ -39,6 +39,7 @@ import TemplateAutocomplete from "~/components/context/templates/TemplateAutocom
 import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
 import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
 import type { DataObject } from "@dlr-shepard/backend-client";
+import SvdxChannelChartView from "~/components/shapes/SvdxChannelChartView.vue";
 
 useHead({ title: "Shape render playground | shepard" });
 
@@ -46,17 +47,21 @@ useHead({ title: "Shape render playground | shepard" });
 const templateAppId   = ref("");
 const focusShepardId  = ref("");
 
-// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput +
-// DataObjectPrefillableInput round-trip to a numeric DO id; we resolve to
-// the appId via getDataObject() to populate `focusShepardId`. Power users
-// who already have an appId (from MCP / scripts) flip showRawAppIds = true
-// and type it in directly.
-const pickerCollectionId = ref<number | undefined>(undefined);
+// UI-SHAPES-RENDER-PICKERS-001 — picker state. CollectionPrefillableInput
+// now uses appId (SEARCH-V2-2). DataObjectPrefillableInput still resolves to
+// a numeric DO id; we look up the appId via v2 endpoint to populate
+// `focusShepardId`. Power users who already have an appId (from MCP /
+// scripts) flip showRawAppIds = true and type it in directly.
+//
+// SEARCH-V2-3: DataObjectPrefillableInput will also migrate to appId; until
+// then, its v-if guards on `pickerCollectionAppId` but passes collectionId=0
+// (graceful degradation — DO picker won't find results without numeric id).
+const pickerCollectionAppId = ref<string | undefined>(undefined);
 const pickerDataObjectId = ref<number | undefined>(undefined);
 const showRawAppIds      = ref(false);
 
 watch(pickerDataObjectId, async newId => {
-  if (!newId || !pickerCollectionId.value) {
+  if (!newId || !pickerCollectionAppId.value) {
     focusShepardId.value = "";
     return;
   }
@@ -70,7 +75,7 @@ watch(pickerDataObjectId, async newId => {
     // never sees the legacy long.
     const url =
       `${getV2Base()}/v2/collections/` +
-      `${encodeURIComponent(String(pickerCollectionId.value))}/data-objects/` +
+      `${encodeURIComponent(pickerCollectionAppId.value)}/data-objects/` +
       `${encodeURIComponent(String(newId))}`;
     const resp = await fetch(url, { headers: getAuthHeaders() });
     if (!resp.ok) {
@@ -233,7 +238,7 @@ function getAuthHeaders(): Record<string, string> {
 // The previous numeric-keyed fetch 404ed against the appId-keyed endpoint,
 // so no Trace3D render could succeed from any entry point.
 
-const channelListingApi = useV2ShepardApi(TimeseriesContainerChannelListingApi);
+const channelListingApi = useV2ShepardApi(ContainersApi);
 
 const channelList = ref<ChannelV2[]>([]);
 
@@ -482,12 +487,13 @@ const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
 // ── renderer dispatch helpers ─────────────────────────────────────────────────
 
-const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "unknown">(() => {
+const rendererKind = computed<"trace-3d" | "urdf" | "thermography" | "table" | "svdx-channel-chart" | "unknown">(() => {
   const r = renderer.value?.toLowerCase() ?? "";
   if (r === "trace-3d" || r === "tresjs") return "trace-3d";
   if (r === "urdf")                        return "urdf";
   if (r === "thermography")                return "thermography";
   if (r === "table")                       return "table";
+  if (r === "svdx-channel-chart")          return "svdx-channel-chart";
   return "unknown";
 });
 
@@ -549,6 +555,16 @@ const canRender = computed(() =>
 // ── bootstrap from query params (ViewRecipeBuilderDialog → this page) ─────────
 onMounted(() => {
   const q = useRoute().query;
+
+  // SCENEGRAPH-PLAY-VIEWKIND-BRANCH: a VIEW_RECIPE template redirected here from
+  // /scene-graphs/play prefills the template field (no focus DataObject yet) so
+  // the user only has to pick a focus DataObject + TS container to render.
+  if (
+    typeof q.templateAppId === "string" && q.templateAppId.length > 0 &&
+    !q.roles && q.renderer !== "urdf" && q.renderer !== "thermography"
+  ) {
+    templateAppId.value = q.templateAppId;
+  }
 
   // TOOLS-CONTEXT-DO-RENDER — when navigated from the in-context Tools
   // menu on a DataObject detail page the URL carries
@@ -702,11 +718,13 @@ onMounted(() => {
       </v-col>
       <v-col cols="12" md="5">
         <template v-if="!showRawAppIds">
-          <CollectionPrefillableInput v-model:collection-id="pickerCollectionId" />
+          <CollectionPrefillableInput v-model:collection-app-id="pickerCollectionAppId" />
+          <!-- SEARCH-V2-3: DataObjectPrefillableInput still needs numeric
+               collectionId; passes 0 as placeholder until it migrates to appId. -->
           <DataObjectPrefillableInput
-            v-if="pickerCollectionId"
+            v-if="pickerCollectionAppId"
             v-model:data-object-id="pickerDataObjectId"
-            :collection-id="pickerCollectionId"
+            :collection-id="0"
             class="mt-2"
           />
           <p
@@ -797,8 +815,17 @@ onMounted(() => {
       </ClientOnly>
     </template>
 
+    <!-- ── SVDX channel catalogue ───────────────────────────────────────────
+         Pure manifest catalogue from the SvdxChannelChartShape VIEW_RECIPE.
+         No TS container ID or time-window needed — the backend resolves the
+         channel list from the .svdx annotations on the focus entity.
+         Backlog: SVDX-CHANNEL-CHART-VUE-2026-06-29. -->
+    <template v-if="rendererKind === 'svdx-channel-chart'">
+      <SvdxChannelChartView :bindings="bindings" />
+    </template>
+
     <!-- ── binding declarations ───────────────────────────────────────────── -->
-    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography'">
+    <template v-if="bindings.length > 0 && rendererKind !== 'urdf' && rendererKind !== 'thermography' && rendererKind !== 'svdx-channel-chart'">
       <v-card variant="outlined" class="mb-4">
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
           <v-icon>mdi-link-variant</v-icon>
@@ -981,7 +1008,7 @@ onMounted(() => {
         <v-alert v-else type="warning" variant="tonal" class="mt-2" density="compact">
           <strong>Unsupported renderer: <code>{{ renderer ?? "(none)" }}</code></strong>
           — {{ tracePoints.length }} points were fetched but no frontend component handles this renderer hint yet.
-          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>.
+          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>, <code>svdx-channel-chart</code>.
         </v-alert>
 
       </template>

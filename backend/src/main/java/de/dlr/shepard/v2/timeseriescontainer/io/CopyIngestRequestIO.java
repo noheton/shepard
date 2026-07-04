@@ -9,7 +9,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * TS-OPT3-COPY — request body for the high-throughput COPY-protocol ingest endpoint.
  *
- * <p>Route: {@code POST /v2/timeseries-containers/{containerId}/channels/{shepardId}/data/ingest}
+ * <p>Route: {@code POST /v2/containers/{appId}/channels/{appId}/data/ingest}
  *
  * <p>COPY is 3–5× faster than the VALUES INSERT path for bulk loads. No ON CONFLICT
  * handling is applied; timestamps must be unique within the batch and must not

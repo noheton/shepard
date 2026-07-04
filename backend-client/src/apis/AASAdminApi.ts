@@ -31,7 +31,7 @@ export class AASAdminApi extends runtime.BaseAPI {
      * Idempotently upserts the three bundled IDTA Submodel Templates (Digital Nameplate v3.0, Technical Data v2.0, Time Series Data v1.1) as ShepardTemplate entities with templateKind = AAS_SUBMODEL_TEMPLATE. An entry is skipped when the live record already has identical body, description, and tags. Returns the list of created/updated templates and the count of skipped entries.
      * [v2] Import bundled IDTA Submodel Templates (AAS1d).
      */
-    async importIdtaTemplatesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasIdtaImportResult>> {
+    async importAasIdtaTemplatesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasIdtaImportResult>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -58,8 +58,8 @@ export class AASAdminApi extends runtime.BaseAPI {
      * Idempotently upserts the three bundled IDTA Submodel Templates (Digital Nameplate v3.0, Technical Data v2.0, Time Series Data v1.1) as ShepardTemplate entities with templateKind = AAS_SUBMODEL_TEMPLATE. An entry is skipped when the live record already has identical body, description, and tags. Returns the list of created/updated templates and the count of skipped entries.
      * [v2] Import bundled IDTA Submodel Templates (AAS1d).
      */
-    async importIdtaTemplates(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasIdtaImportResult> {
-        const response = await this.importIdtaTemplatesRaw(initOverrides);
+    async importAasIdtaTemplates(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasIdtaImportResult> {
+        const response = await this.importAasIdtaTemplatesRaw(initOverrides);
         return await response.value();
     }
 

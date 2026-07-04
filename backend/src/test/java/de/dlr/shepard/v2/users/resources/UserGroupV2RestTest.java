@@ -23,6 +23,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -48,6 +49,9 @@ class UserGroupV2RestTest {
   @Mock
   UserGroupService service;
 
+  @Mock
+  UserGroupSearchService searchService;
+
   UserGroupV2Rest resource;
 
   @BeforeEach
@@ -55,6 +59,7 @@ class UserGroupV2RestTest {
     MockitoAnnotations.openMocks(this);
     resource = new UserGroupV2Rest();
     resource.service = service;
+    resource.searchService = searchService;
   }
 
   // ── helpers ──────────────────────────────────────────────────────────
@@ -92,7 +97,7 @@ class UserGroupV2RestTest {
   void listUserGroups_returnsEmptyList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
     when(service.countAllUserGroups()).thenReturn(0L);
-    Response r = resource.listUserGroups(0, 50, null, null);
+    Response r = resource.listUserGroups(null, 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
@@ -106,7 +111,7 @@ class UserGroupV2RestTest {
     when(service.getAllUserGroups(any(QueryParamHelper.class)))
       .thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
     when(service.countAllUserGroups()).thenReturn(1L);
-    Response r = resource.listUserGroups(0, 50, null, null);
+    Response r = resource.listUserGroups(null, 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
@@ -120,13 +125,34 @@ class UserGroupV2RestTest {
   void listUserGroups_envelopeContainsPageAndPageSize() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
     when(service.countAllUserGroups()).thenReturn(42L);
-    Response r = resource.listUserGroups(2, 10, null, null);
+    Response r = resource.listUserGroups(null, 2, 10, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
     assertEquals(42L, body.total());
     assertEquals(2, body.page());
     assertEquals(10, body.pageSize());
+  }
+
+  @Test
+  void listUserGroups_withQ_delegatesToSearchService() {
+    when(searchService.searchByText("lumen")).thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
+    Response r = resource.listUserGroups("lumen", 0, 50, null, null);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(GROUP_NAME, body.items().get(0).getName());
+  }
+
+  @Test
+  void listUserGroups_withQ_returnsEmptyList_whenNoMatches() {
+    when(searchService.searchByText("nomatch")).thenReturn(List.of());
+    Response r = resource.listUserGroups("nomatch", 0, 50, null, null);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(0, body.items().size());
   }
 
   // ── GET /v2/user-groups/{appId} ──────────────────────────────────────
@@ -211,6 +237,26 @@ class UserGroupV2RestTest {
   void patchUserGroup_nullJsonNode_returns400() throws Exception {
     Response r = resource.patchUserGroup(APP_ID, MAPPER.nullNode());
     assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchUserGroup_usernamesAt501_returns400() {
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("usernames");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroup(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchUserGroup_usernamesAt500_returns200() {
+    when(service.patchUserGroupByAppId(eq(APP_ID), isNull(), any()))
+      .thenReturn(stubGroup(APP_ID, GROUP_NAME));
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("usernames");
+    for (int i = 0; i < 500; i++) arr.add("user-" + i); // exactly 500 — allowed
+    Response r = resource.patchUserGroup(APP_ID, patch);
+    assertEquals(200, r.getStatus());
   }
 
   // ── DELETE /v2/user-groups/{appId} ───────────────────────────────────
@@ -320,12 +366,50 @@ class UserGroupV2RestTest {
     }
   }
 
+  // ── APISIMP-USERGROUP-PATCH-UNCAPPED — size guard tests ─────────────────
+
+  @Test
+  void patchPermissions_oversizedReader_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("reader");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_oversizedWriter_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("writer");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_oversizedManager_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    var arr = patch.putArray("manager");
+    for (int i = 0; i <= 500; i++) arr.add("user-" + i); // 501 elements
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
   // ── APISIMP-USERGROUP-ORDERBY — reflection regression tests ─────────────
 
   @Test
   void listUserGroups_orderByParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", String.class, int.class, int.class, UserGroupAttributes.class, Boolean.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderBy".equals(p.name()))
         .findFirst();
@@ -336,7 +420,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_orderDescParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", String.class, int.class, int.class, UserGroupAttributes.class, Boolean.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderDesc".equals(p.name()))
         .findFirst();

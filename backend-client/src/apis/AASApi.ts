@@ -15,30 +15,32 @@
 
 import * as runtime from '../runtime';
 import type {
-  AasReference,
   AasServerSelfDescription,
   AasShell,
+  PagedResponse,
 } from '../models/index';
 import {
-    AasReferenceFromJSON,
-    AasReferenceToJSON,
     AasServerSelfDescriptionFromJSON,
     AasServerSelfDescriptionToJSON,
     AasShellFromJSON,
     AasShellToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
-export interface GetShellRequest {
+export interface GetAasShellRequest {
     aasId: string;
 }
 
-export interface ListShellsRequest {
+export interface ListAasShellSubmodelsRequest {
+    aasId: string;
     page?: number;
-    size?: number;
+    pageSize?: number;
 }
 
-export interface ListSubmodelsRequest {
-    aasId: string;
+export interface ListAasShellsRequest {
+    page?: number;
+    pageSize?: number;
 }
 
 /**
@@ -50,7 +52,7 @@ export class AASApi extends runtime.BaseAPI {
      * Discoverable JSON document describing this shepard\'s AAS integration: API profile, supported submodel templates, shell count, and outbound registry registrations. Unauthenticated. See `aidocs/52 §4a.5`.
      * [v2] AAS server self-description
      */
-    async describeRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasServerSelfDescription>> {
+    async describeAasServerRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasServerSelfDescription>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -81,8 +83,8 @@ export class AASApi extends runtime.BaseAPI {
      * Discoverable JSON document describing this shepard\'s AAS integration: API profile, supported submodel templates, shell count, and outbound registry registrations. Unauthenticated. See `aidocs/52 §4a.5`.
      * [v2] AAS server self-description
      */
-    async describe(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasServerSelfDescription> {
-        const response = await this.describeRaw(initOverrides);
+    async describeAasServer(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasServerSelfDescription> {
+        const response = await this.describeAasServerRaw(initOverrides);
         return await response.value();
     }
 
@@ -90,11 +92,11 @@ export class AASApi extends runtime.BaseAPI {
      * Accepts `{aasId}` as (a) the base64url-encoded Shell IRI (`urn:shepard:collection:{appId}`) per IDTA-01002-3-2 §4.3, or (b) the bare shepard Collection appId. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline — not 403). See `aidocs/integrations/52-aas-backend-integration.md §7`.
      * [v2] Get a single Collection as an IDTA AAS v3 Shell (AAS1b).
      */
-    async getShellRaw(requestParameters: GetShellRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasShell>> {
+    async getAasShellRaw(requestParameters: GetAasShellRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasShell>> {
         if (requestParameters['aasId'] == null) {
             throw new runtime.RequiredError(
                 'aasId',
-                'Required parameter "aasId" was null or undefined when calling getShell().'
+                'Required parameter "aasId" was null or undefined when calling getAasShell().'
             );
         }
 
@@ -128,24 +130,79 @@ export class AASApi extends runtime.BaseAPI {
      * Accepts `{aasId}` as (a) the base64url-encoded Shell IRI (`urn:shepard:collection:{appId}`) per IDTA-01002-3-2 §4.3, or (b) the bare shepard Collection appId. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline — not 403). See `aidocs/integrations/52-aas-backend-integration.md §7`.
      * [v2] Get a single Collection as an IDTA AAS v3 Shell (AAS1b).
      */
-    async getShell(requestParameters: GetShellRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasShell> {
-        const response = await this.getShellRaw(requestParameters, initOverrides);
+    async getAasShell(requestParameters: GetAasShellRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasShell> {
+        const response = await this.getAasShellRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Returns one AssetAdministrationShell per Collection the authenticated caller may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), `assetInformation`, optional `description`, and an empty `submodels` list. Submodels are populated by AAS1b. See `aidocs/52 §4a`.
-     * [v2] List Collections as IDTA AAS v3 Shells (AAS1a).
+     * Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). Each Reference has `type=ExternalReference` and a single Submodel key with value `urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline). See `aidocs/integrations/52-aas-backend-integration.md §4b`. Uses page-offset pagination (default page=0, pageSize=50, server cap 200).
+     * [v2] List Submodel references for a Shell (AAS1b).
      */
-    async listShellsRaw(requestParameters: ListShellsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AasShell>>> {
+    async listAasShellSubmodelsRaw(requestParameters: ListAasShellSubmodelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+        if (requestParameters['aasId'] == null) {
+            throw new runtime.RequiredError(
+                'aasId',
+                'Required parameter "aasId" was null or undefined when calling listAasShellSubmodels().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/aas/shells/{aasId}/submodels`.replace(`{${"aasId"}}`, encodeURIComponent(String(requestParameters['aasId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). Each Reference has `type=ExternalReference` and a single Submodel key with value `urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline). See `aidocs/integrations/52-aas-backend-integration.md §4b`. Uses page-offset pagination (default page=0, pageSize=50, server cap 200).
+     * [v2] List Submodel references for a Shell (AAS1b).
+     */
+    async listAasShellSubmodels(requestParameters: ListAasShellSubmodelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listAasShellSubmodelsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns one AssetAdministrationShell per Collection the authenticated caller may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), `assetInformation`, optional `description`, and an empty `submodels` list. Submodels are populated by AAS1b. See `aidocs/integrations/52-aas-backend-integration.md §4a`. Uses page-offset pagination (default page=0, pageSize=50, server cap 200).
+     * [v2] List Collections as IDTA AAS v3 Shells (AAS1a).
+     */
+    async listAasShellsRaw(requestParameters: ListAasShellsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -169,62 +226,15 @@ export class AASApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(AasShellFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns one AssetAdministrationShell per Collection the authenticated caller may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), `assetInformation`, optional `description`, and an empty `submodels` list. Submodels are populated by AAS1b. See `aidocs/52 §4a`.
+     * Returns one AssetAdministrationShell per Collection the authenticated caller may read. Shells carry `id` (URN from appId), `idShort` (sanitised name), `assetInformation`, optional `description`, and an empty `submodels` list. Submodels are populated by AAS1b. See `aidocs/integrations/52-aas-backend-integration.md §4a`. Uses page-offset pagination (default page=0, pageSize=50, server cap 200).
      * [v2] List Collections as IDTA AAS v3 Shells (AAS1a).
      */
-    async listShells(requestParameters: ListShellsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AasShell>> {
-        const response = await this.listShellsRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). Each Reference has `type=ExternalReference` and a single Submodel key with value `urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline). See `aidocs/integrations/52-aas-backend-integration.md §4b`.
-     * [v2] List Submodel references for a Shell (AAS1b).
-     */
-    async listSubmodelsRaw(requestParameters: ListSubmodelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<AasReference>>> {
-        if (requestParameters['aasId'] == null) {
-            throw new runtime.RequiredError(
-                'aasId',
-                'Required parameter "aasId" was null or undefined when calling listSubmodels().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/aas/shells/{aasId}/submodels`.replace(`{${"aasId"}}`, encodeURIComponent(String(requestParameters['aasId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(AasReferenceFromJSON));
-    }
-
-    /**
-     * Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). Each Reference has `type=ExternalReference` and a single Submodel key with value `urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or the caller lacks read access (404-on-no-read discipline). See `aidocs/integrations/52-aas-backend-integration.md §4b`.
-     * [v2] List Submodel references for a Shell (AAS1b).
-     */
-    async listSubmodels(requestParameters: ListSubmodelsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<AasReference>> {
-        const response = await this.listSubmodelsRaw(requestParameters, initOverrides);
+    async listAasShells(requestParameters: ListAasShellsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listAasShellsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

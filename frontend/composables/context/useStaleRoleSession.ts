@@ -21,7 +21,7 @@
  *
  * The flag is intentionally global (Nuxt `useState`) so the surface that
  * raised the 401 doesn't have to be the same one that ultimately renders
- * the `UnauthorizedView` (e.g. a 401 on a `/v2/admin/features` GET drives
+ * the `UnauthorizedView` (e.g. a 401 on a `/v2/admin/runtime-toggles` GET drives
  * a render of the `/admin` landing's `UnauthorizedView` after the
  * navigation guard kicks in).
  */

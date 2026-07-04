@@ -41,7 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * </ul>
  */
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/v2/me/role-in/{collectionAppId}")
+@Path("/v2/users/me/role-in/{collectionAppId}")
 @RequestScoped
 @Tag(name = "Me")
 public class MeRoleInRest {
@@ -58,6 +58,7 @@ public class MeRoleInRest {
 
   @GET
   @Operation(
+    operationId = "roleIn",
     summary = "Caller's effective role in a Collection.",
     description =
       "Returns the caller's effective capabilities on the Collection identified by " +

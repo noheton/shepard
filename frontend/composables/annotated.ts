@@ -1,12 +1,9 @@
 import {
+  ContainersApi,
   SemanticAnnotationsApi,
-  TimeseriesChannelAnnotationsApi,
-  TimeseriesContainerApi,
   type AnnotationV2,
   type SemanticAnnotation,
-  type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "./common/api/useShepardApi";
 import { useV2ShepardApi } from "./common/api/useV2ShepardApi";
 
 export type AnnotationToAdd = Omit<
@@ -84,7 +81,7 @@ abstract class SubjectAnnotated implements Annotated {
       pageSize: 200,
     });
     this._appIdMap.clear();
-    return page.items.map((item, idx) => {
+    return (page.items ?? []).map((item, idx) => {
       this._appIdMap.set(idx, item.appId);
       return mapAnnotationV2ToLegacy(item, idx);
     });
@@ -164,7 +161,7 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
 export class AnnotatedChannel implements Annotated {
   readonly containerAppId: string;
   readonly channelShepardId: string;
-  channelAnnotationsApi = useV2ShepardApi(TimeseriesChannelAnnotationsApi);
+  channelAnnotationsApi = useV2ShepardApi(ContainersApi);
   private readonly _appIdMap = new Map<number, string>();
 
   constructor(containerAppId: string, channelShepardId: string) {
@@ -175,7 +172,7 @@ export class AnnotatedChannel implements Annotated {
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     try {
       const items = await this.channelAnnotationsApi.value.listChannelAnnotations({
-        containerAppId: this.containerAppId,
+        appId: this.containerAppId,
         channelShepardId: this.channelShepardId,
       });
       this._appIdMap.clear();
@@ -200,7 +197,7 @@ export class AnnotatedChannel implements Annotated {
     if (!annotationAppId)
       throw new Error(`No appId cached for channel annotation id=${annotationId}; call fetchAnnotations() first`);
     await this.channelAnnotationsApi.value.deleteChannelAnnotation({
-      containerAppId: this.containerAppId,
+      appId: this.containerAppId,
       channelShepardId: this.channelShepardId,
       annotationAppId,
     });
@@ -209,54 +206,10 @@ export class AnnotatedChannel implements Annotated {
 
   async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
     return this.channelAnnotationsApi.value.createChannelAnnotation({
-      containerAppId: this.containerAppId,
+      appId: this.containerAppId,
       channelShepardId: this.channelShepardId,
       semanticAnnotation: annotation,
     });
   }
 }
 
-// ─── Per-Timeseries-channel annotations (covered by upstream API) ───────────
-//
-// V1 FALLBACK (named exception): the upstream numeric-id-keyed
-// `/shepard/api/.../timeseries/{id}/annotations` route. The `TimeseriesEntity`
-// here carries its own numeric `id` + `containerId` from the v1 timeseries
-// content surface (parts of timeseries channel content have no v2 twin yet —
-// see CLAUDE.md named-fallback set). Backlog: V2UI-TS-ANNO-V2 in aidocs/16.
-
-export class AnnotatedTimeseries implements Annotated {
-  api = useShepardApi(TimeseriesContainerApi);
-  entity: TimeseriesEntity;
-
-  constructor(entity: TimeseriesEntity) {
-    if (entity.id === undefined || entity.containerId === undefined) {
-      throw new Error(
-        "The annotated timeseries entity does not have an id or a container!",
-      );
-    }
-    this.entity = entity;
-  }
-
-  deleteAnnotation(annotationId: number): Promise<void> {
-    return this.api.value.deleteAnnotationOfTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-      semanticAnnotationId: annotationId,
-    });
-  }
-
-  fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.api.value.getAllAnnotationsOfTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-    });
-  }
-
-  addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.api.value.createAnnotationForTimeseries({
-      timeseriesContainerId: this.entity.containerId!,
-      timeseriesId: this.entity.id!,
-      semanticAnnotation: annotation,
-    });
-  }
-}

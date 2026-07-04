@@ -54,7 +54,7 @@ export interface DeleteFileContainerRequest {
 
 export interface EditFilePermissionsRequest {
     fileContainerId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface GetAllFileContainersRequest {

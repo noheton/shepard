@@ -40,6 +40,7 @@ const dataObjectSearchField =
         input-label="Data Object ID or Name...*"
         :is-disabled="collectionId === undefined"
         :collection-id="collectionId ?? -1"
+        :collection-app-id="collectionAppId"
         @search-ended="
           value => {
             dataObjectModel.referencedDataObjectId = value?.id;

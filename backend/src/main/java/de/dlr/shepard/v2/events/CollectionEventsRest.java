@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/v2/collections/{collectionAppId}/events")
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection events")
+@Tag(name = "Collections")
 public class CollectionEventsRest {
 
   @Inject
@@ -61,6 +61,7 @@ public class CollectionEventsRest {
   @GET
   @Produces(MediaType.SERVER_SENT_EVENTS)
   @Operation(
+    operationId = "subscribe",
     summary = "Subscribe to the Collection change-feed (P13).",
     description =
       "Opens a persistent SSE stream. The server emits one event per change " +

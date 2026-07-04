@@ -11,7 +11,10 @@ import de.dlr.shepard.v2.importer.services.ImportDiagnosticsLog;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -25,6 +28,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -97,6 +101,7 @@ public class ImportDiagnosticsV2Rest {
   @GET
   @Path("/diagnostics/{runId}")
   @Operation(
+    operationId = "getEvents",
     summary = "Get diagnostic events for an import run (IMP-DIAG)",
     description =
       "Returns all in-memory diagnostic events for the given runId (= ImportLock.lockId), " +
@@ -109,8 +114,12 @@ public class ImportDiagnosticsV2Rest {
       "Events are held in-memory — they are not persisted across server restarts " +
       "and are evicted after 24 hours."
   )
-  @APIResponse(responseCode = "200", description = "Event list (may be empty)")
-  @APIResponse(responseCode = "400", description = "Invalid level or phase filter value")
+  @APIResponse(
+    responseCode = "200",
+    description = "Event list (may be empty). If truncated by ?limit=, the X-Truncated: true response header is set.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = EventIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Invalid level or phase filter value, or limit out of range")
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response getEvents(
     @PathParam("runId") String runId,
@@ -120,6 +129,9 @@ public class ImportDiagnosticsV2Rest {
     @Parameter(description = "Filter to a single import phase. One of: WARMUP, DO_CREATE, REF_ATTACH, FILE_UPLOAD, COMPLETE.",
                schema = @Schema(enumeration = {"WARMUP", "DO_CREATE", "REF_ATTACH", "FILE_UPLOAD", "COMPLETE"}))
     @QueryParam("phase") String phase,
+    @Parameter(description = "Maximum number of events to return (1–10000, default 10000). " +
+               "When the full result exceeds this cap the response carries X-Truncated: true.")
+    @QueryParam("limit") @DefaultValue("10000") @Min(1) @Max(10000) int limit,
     @Context SecurityContext sc
   ) {
     if (caller(sc) == null) return unauthorized();
@@ -131,12 +143,19 @@ public class ImportDiagnosticsV2Rest {
       return badRequest("Invalid phase filter '" + phase + "'. Valid values: " + VALID_PHASES);
     }
 
-    List<EventIO> events = diagnosticsLog.query(runId, level, phase)
+    List<EventIO> all = diagnosticsLog.query(runId, level, phase)
         .stream()
         .map(EventIO::from)
         .toList();
 
-    return Response.ok(events).build();
+    boolean truncated = all.size() > limit;
+    List<EventIO> events = truncated ? all.subList(0, limit) : all;
+
+    var builder = Response.ok(events);
+    if (truncated) {
+      builder.header("X-Truncated", "true");
+    }
+    return builder.build();
   }
 
   // ─── GET /v2/import/runs ──────────────────────────────────────────────────
@@ -144,6 +163,7 @@ public class ImportDiagnosticsV2Rest {
   @GET
   @Path("/runs")
   @Operation(
+    operationId = "listRuns",
     summary = "List recent import runs with diagnostic summary (IMP-DIAG)",
     description =
       "Returns a list of run IDs known to the in-memory diagnostic log, sorted by " +
@@ -158,7 +178,7 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Run summary list",
-    content = @Content(schema = @Schema(implementation = RunSummaryIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = RunSummaryIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response listRuns(@Context SecurityContext sc) {
@@ -177,6 +197,7 @@ public class ImportDiagnosticsV2Rest {
   @POST
   @Path("/diagnostics/{runId}/events")
   @Operation(
+    operationId = "ingestEvent",
     summary = "Push a single diagnostic event from an external importer (IMP-DIAG)",
     description =
       "Ingests a single structured diagnostic event into the in-memory log for the " +
@@ -217,6 +238,7 @@ public class ImportDiagnosticsV2Rest {
   @POST
   @Path("/diagnostics/{runId}/events/batch")
   @Operation(
+    operationId = "ingestBatch",
     summary = "Push a batch of diagnostic events from an external importer (IMP-DIAG)",
     description =
       "Ingests multiple structured diagnostic events into the in-memory log for the " +

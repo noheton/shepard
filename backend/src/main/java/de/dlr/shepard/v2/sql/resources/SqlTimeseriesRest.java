@@ -130,8 +130,9 @@ public class SqlTimeseriesRest {
    * @return 200 on success; 400 on bad DSL; 404 if feature disabled; 504 on query timeout
    */
   @POST
-  @Tag(name = "Timeseries SQL")
+  @Tag(name = "Timeseries")
   @Operation(
+    operationId = "query",
     summary = "Execute a timeseries SQL DSL query and stream results.",
     description =
       "Accepts a `SqlQuerySpec` body and streams matching rows in the format negotiated by " +

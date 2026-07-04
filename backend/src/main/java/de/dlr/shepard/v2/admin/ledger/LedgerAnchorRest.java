@@ -63,6 +63,7 @@ public class LedgerAnchorRest {
   @POST
   @Path("/anchor")
   @Operation(
+    operationId = "anchor",
     summary = "Anchor Activity records on a distributed ledger.",
     description = "Computes a SHA-256 digest of each requested Activity's JSON-LD " +
     "serialisation and submits it to the configured ledger provider (Bloxberg or " +
@@ -75,6 +76,7 @@ public class LedgerAnchorRest {
     content = @Content(schema = @Schema(implementation = LedgerAnchorJobIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid request body.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "501", description = "Ledger client not yet implemented (Phase 1 skeleton).")
   public Response anchor(
@@ -96,6 +98,7 @@ public class LedgerAnchorRest {
   @GET
   @Path("/anchor/{jobId}")
   @Operation(
+    operationId = "getJob",
     summary = "Poll an anchor job by jobId.",
     description = "Returns current status (queued | running | complete | failed) and a " +
     "human-readable summary.  Poll until status is 'complete' or 'failed'."
@@ -105,6 +108,7 @@ public class LedgerAnchorRest {
     description = "Job status.",
     content = @Content(schema = @Schema(implementation = LedgerAnchorJobIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "404", description = "No job found for the given jobId.")
   @APIResponse(responseCode = "501", description = "Ledger client not yet implemented (Phase 1 skeleton).")
@@ -124,12 +128,14 @@ public class LedgerAnchorRest {
   @GET
   @Path("/data-objects/{appId}/ledger-anchors")
   @Operation(
+    operationId = "getAnchorsForDataObject",
     summary = "List ledger anchors for a DataObject.",
     description = "Returns all Activity nodes linked to the given DataObject that carry " +
     "a non-null ledgerAnchor field.  Useful for auditors who need to verify tamper " +
     "evidence for a specific DataObject without knowing Activity appIds in advance."
   )
   @APIResponse(responseCode = "200", description = "List of anchored Activity records for the DataObject.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "404", description = "No DataObject found with the given appId.")
   @APIResponse(responseCode = "501", description = "Ledger query not yet implemented (Phase 1 skeleton).")

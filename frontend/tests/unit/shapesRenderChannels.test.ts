@@ -68,7 +68,10 @@ function mockClient(): {
     },
   ]);
   return {
-    client: { listChannels, getBulkChannelData } as unknown as ChannelListingClient,
+    client: {
+      listContainerChannels: listChannels,
+      getContainerBulkChannelData: getBulkChannelData,
+    } as unknown as ChannelListingClient,
     listChannels,
     getBulkChannelData,
   };
@@ -82,8 +85,9 @@ describe("fetchChannelListByAppId (UX612-C2)", () => {
     const list = await fetchChannelListByAppId(client, CONTAINER_APP_ID);
 
     expect(listChannels).toHaveBeenCalledWith({
-      containerAppId: CONTAINER_APP_ID,
-      size: 1000,
+      appId: CONTAINER_APP_ID,
+      // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
+      pageSize: 500,
     });
     expect(list).toHaveLength(2);
   });
@@ -114,7 +118,7 @@ describe("fetchBulkTraceByAppId (UX612-C2)", () => {
     );
 
     expect(getBulkChannelData).toHaveBeenCalledWith({
-      containerAppId: CONTAINER_APP_ID,
+      appId: CONTAINER_APP_ID,
       bulkChannelDataRequest: {
         shepardIds: ["ch-x", "ch-y"],
         start: 1_000,

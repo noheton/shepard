@@ -463,14 +463,18 @@ public interface ContainerKindHandler {
   }
 
   /**
-   * APISIMP-CONT-NS-COLLAPSE-4 — list channel annotations behind the unified
+   * APISIMP-CONT-NS-COLLAPSE-4 / APISIMP-CONTAINER-CHANNEL-ANNOTATIONS-UNCAPPED —
+   * list channel annotations behind the unified
    * {@code GET /v2/containers/{appId}/channels/{channelShepardId}/annotations} route.
    *
    * @param appId            UUID v7 of the container.
    * @param channelShepardId UUID v7 of the timeseries channel.
-   * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
+   * @param page             zero-based page index (default 0).
+   * @param pageSize         items per page, capped at 500 (default 200).
+   * @return the paged response, or empty when this kind has no channel-annotation concept (→ 415).
    */
-  default Optional<Response> listChannelAnnotations(String appId, String channelShepardId) {
+  default Optional<Response> listChannelAnnotations(
+      String appId, String channelShepardId, int page, int pageSize) {
     return Optional.empty();
   }
 
@@ -503,13 +507,16 @@ public interface ContainerKindHandler {
   }
 
   /**
-   * APISIMP-CONT-NS-COLLAPSE-4 — list temporal annotations behind the unified
+   * APISIMP-CONT-NS-COLLAPSE-4 / APISIMP-CONTAINER-TEMPORAL-ANNOTATIONS-UNCAPPED —
+   * list temporal annotations behind the unified
    * {@code GET /v2/containers/{appId}/temporal-annotations} route.
    *
-   * @param appId UUID v7 of the container.
-   * @return the response, or empty when this kind has no temporal-annotation concept (→ 415).
+   * @param appId    UUID v7 of the container.
+   * @param page     zero-based page index (default 0).
+   * @param pageSize items per page, capped at 500 (default 200).
+   * @return the paged response, or empty when this kind has no temporal-annotation concept (→ 415).
    */
-  default Optional<Response> listTemporalAnnotations(String appId) {
+  default Optional<Response> listTemporalAnnotations(String appId, int page, int pageSize) {
     return Optional.empty();
   }
 

@@ -29,7 +29,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/admin/features")
+// Path is /v2/admin/runtime-toggles (not /features) because these toggles are
+// transient (JVM-lifetime only, not persisted). The /features namespace is
+// reserved for ConfigRegistry-backed, persisted feature config (see ConfigRest).
+@Path("/v2/admin/runtime-toggles")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")
@@ -58,6 +61,7 @@ public class AdminFeaturesRest {
     description = "Current state of all feature toggles.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FeatureToggleIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response list() {
     List<FeatureToggleIO> result = registry.list()
@@ -80,6 +84,7 @@ public class AdminFeaturesRest {
     description = "Updated state of the toggle.",
     content = @Content(schema = @Schema(implementation = FeatureToggleIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   @APIResponse(responseCode = "404", description = "No toggle registered under that name.")
   public Response patch(

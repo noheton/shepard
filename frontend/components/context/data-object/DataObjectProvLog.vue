@@ -187,12 +187,15 @@ function formatRelative(ms: number): string {
 async function load() {
   loading.value = true;
   try {
-    const rows = await useV2ShepardApi(ProvenanceApi).value.listActivities({
+    const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.targetAppId,
-      pageSize: limit.value,
+      limit: limit.value,
     });
-    activities.value = rows ?? [];
-    hasMore.value = rows.length >= limit.value;
+    const list: Activity[] = Array.isArray(paged)
+      ? paged
+      : ((paged as unknown as { items?: Activity[] })?.items ?? []);
+    activities.value = list;
+    hasMore.value = list.length >= limit.value;
   } catch {
     activities.value = [];
     hasMore.value = false;

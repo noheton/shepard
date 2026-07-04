@@ -16,14 +16,20 @@
 import * as runtime from '../runtime';
 import type {
   Collection,
+  CollectionV2,
+  PagedResponse,
 } from '../models/index';
 import {
     CollectionFromJSON,
     CollectionToJSON,
+    CollectionV2FromJSON,
+    CollectionV2ToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface CreateCollectionV2Request {
-    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'>;
+    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'>;
 }
 
 export interface DeleteCollectionV2Request {
@@ -42,7 +48,7 @@ export interface ListCollectionsRequest {
 
 export interface PatchCollectionV2Request {
     collectionAppId: string;
-    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'>;
+    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'>;
 }
 
 /**
@@ -54,7 +60,7 @@ export class CollectionsApi extends runtime.BaseAPI {
      * Creates a `:Collection` and returns the full entity in the 201 body. The server mints both `appId` (UUID v7, canonical) and `id` (legacy long); the caller becomes the owner with Manage permission.  Body fields:   - `name` (string, required, non-blank).   - `description` (string, optional, supports CommonMark + GFM).   - `attributes` (string-to-string map, optional; keys must not contain the delimiter characters `Space, Comma, Point, Slash`).   - `status` (optional, one of `DRAFT`, `IN_REVIEW`, `READY`, `PUBLISHED`, `ARCHIVED`).   - `defaultFileContainerId` (optional, legacy long id of a FileContainer to serve as the Collection\'s default).  Example minimal body: `{\"name\": \"My experiment\"}`. Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", \"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, \"status\": \"DRAFT\"}`.  Auth: any authenticated user can create a Collection (the request is authenticated via JWT or `X-API-KEY`). The created Collection\'s permission-type defaults to `PRIVATE`; flip it to `PUBLIC` via `PUT /shepard/api/collections/{id}/permissions` to make it visible to all other users.  Side effects: `ProvenanceCaptureFilter` records a `CREATE` Activity addressable at `GET /v2/provenance/entity/{appId}`. A `:Version` node is created with `Constants.HEAD` as its initial version.  Next step: `POST /v2/collections/{collectionAppId}/data-objects` to add DataObjects, or `PATCH /v2/collections/{collectionAppId}` to set additional metadata.
      * [v2] Create a new Collection.
      */
-    async createCollectionV2Raw(requestParameters: CreateCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Collection>> {
+    async createCollectionV2Raw(requestParameters: CreateCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionV2>> {
         if (requestParameters['collection'] == null) {
             throw new runtime.RequiredError(
                 'collection',
@@ -84,14 +90,14 @@ export class CollectionsApi extends runtime.BaseAPI {
             body: CollectionToJSON(requestParameters['collection']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionV2FromJSON(jsonValue));
     }
 
     /**
      * Creates a `:Collection` and returns the full entity in the 201 body. The server mints both `appId` (UUID v7, canonical) and `id` (legacy long); the caller becomes the owner with Manage permission.  Body fields:   - `name` (string, required, non-blank).   - `description` (string, optional, supports CommonMark + GFM).   - `attributes` (string-to-string map, optional; keys must not contain the delimiter characters `Space, Comma, Point, Slash`).   - `status` (optional, one of `DRAFT`, `IN_REVIEW`, `READY`, `PUBLISHED`, `ARCHIVED`).   - `defaultFileContainerId` (optional, legacy long id of a FileContainer to serve as the Collection\'s default).  Example minimal body: `{\"name\": \"My experiment\"}`. Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", \"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, \"status\": \"DRAFT\"}`.  Auth: any authenticated user can create a Collection (the request is authenticated via JWT or `X-API-KEY`). The created Collection\'s permission-type defaults to `PRIVATE`; flip it to `PUBLIC` via `PUT /shepard/api/collections/{id}/permissions` to make it visible to all other users.  Side effects: `ProvenanceCaptureFilter` records a `CREATE` Activity addressable at `GET /v2/provenance/entity/{appId}`. A `:Version` node is created with `Constants.HEAD` as its initial version.  Next step: `POST /v2/collections/{collectionAppId}/data-objects` to add DataObjects, or `PATCH /v2/collections/{collectionAppId}` to set additional metadata.
      * [v2] Create a new Collection.
      */
-    async createCollectionV2(requestParameters: CreateCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Collection> {
+    async createCollectionV2(requestParameters: CreateCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionV2> {
         const response = await this.createCollectionV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -142,7 +148,7 @@ export class CollectionsApi extends runtime.BaseAPI {
      * Returns the `:Collection` identified by `collectionAppId` (UUID v7) in the full `CollectionIO` shape: name, description, status, attributes, `dataObjectIds[]` (legacy long ids of contained DataObjects — use the matching `/v2/collections/{collectionAppId}/data-objects` endpoint when you want appIds), `incomingIds[]` (CollectionReferences pointing at this Collection), `defaultFileContainerId` (nullable).  Auth: Read on the Collection. `404` is returned for unknown appIds *before* the auth check — distinguishing \'doesn\'t exist\' from \'exists but you can\'t see it\' is intentionally not done (timing-safe).  Next step: `GET /v2/collections/{collectionAppId}/data-objects` for the DataObject list, or `PATCH /v2/collections/{collectionAppId}` for an RFC 7396 merge-patch update.
      * [v2] Get a Collection by appId, with DataObjects and incoming references.
      */
-    async getCollectionV2Raw(requestParameters: GetCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Collection>> {
+    async getCollectionV2Raw(requestParameters: GetCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionV2>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -169,23 +175,23 @@ export class CollectionsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionV2FromJSON(jsonValue));
     }
 
     /**
      * Returns the `:Collection` identified by `collectionAppId` (UUID v7) in the full `CollectionIO` shape: name, description, status, attributes, `dataObjectIds[]` (legacy long ids of contained DataObjects — use the matching `/v2/collections/{collectionAppId}/data-objects` endpoint when you want appIds), `incomingIds[]` (CollectionReferences pointing at this Collection), `defaultFileContainerId` (nullable).  Auth: Read on the Collection. `404` is returned for unknown appIds *before* the auth check — distinguishing \'doesn\'t exist\' from \'exists but you can\'t see it\' is intentionally not done (timing-safe).  Next step: `GET /v2/collections/{collectionAppId}/data-objects` for the DataObject list, or `PATCH /v2/collections/{collectionAppId}` for an RFC 7396 merge-patch update.
      * [v2] Get a Collection by appId, with DataObjects and incoming references.
      */
-    async getCollectionV2(requestParameters: GetCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Collection> {
+    async getCollectionV2(requestParameters: GetCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionV2> {
         const response = await this.getCollectionV2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the authenticated caller has Read permission on. The page is unordered by default; supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, `status`, …) with `orderDesc=true` for a sorted result.  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. The server caps `size` at 200 to avoid unbounded result sets.  Filtering: `name` does a case-insensitive substring match.  Each returned `CollectionIO` carries both `id` (legacy long) and `appId` (canonical UUID v7); v2 clients should branch on `appId` and use the matching `/v2/...` endpoints for follow-up calls.  Auth: no role gate — the result is filtered server-side to entities the caller may Read, so an unauthorised caller simply gets a smaller list (not 403).  Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific Collection with its DataObjects expanded.
+     * Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the authenticated caller has Read permission on. The page is unordered by default; supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, `status`, …) with `orderDesc=true` for a sorted result.  Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. The server caps `pageSize` at 200 to avoid unbounded result sets.  Filtering: `name` does a case-insensitive substring match.  Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the stable identifier; use the matching `/v2/...` endpoints for follow-up calls.  Auth: no role gate — the result is filtered server-side to entities the caller may Read, so an unauthorised caller simply gets a smaller list (not 403).  Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific Collection with its DataObjects expanded.
      * [v2] List Collections the caller may read.
      */
-    async listCollectionsRaw(requestParameters: ListCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Collection>>> {
+    async listCollectionsRaw(requestParameters: ListCollectionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['name'] != null) {
@@ -217,14 +223,14 @@ export class CollectionsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(CollectionFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the authenticated caller has Read permission on. The page is unordered by default; supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, `status`, …) with `orderDesc=true` for a sorted result.  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. The server caps `size` at 200 to avoid unbounded result sets.  Filtering: `name` does a case-insensitive substring match.  Each returned `CollectionIO` carries both `id` (legacy long) and `appId` (canonical UUID v7); v2 clients should branch on `appId` and use the matching `/v2/...` endpoints for follow-up calls.  Auth: no role gate — the result is filtered server-side to entities the caller may Read, so an unauthorised caller simply gets a smaller list (not 403).  Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific Collection with its DataObjects expanded.
+     * Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the authenticated caller has Read permission on. The page is unordered by default; supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, `status`, …) with `orderDesc=true` for a sorted result.  Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. The server caps `pageSize` at 200 to avoid unbounded result sets.  Filtering: `name` does a case-insensitive substring match.  Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the stable identifier; use the matching `/v2/...` endpoints for follow-up calls.  Auth: no role gate — the result is filtered server-side to entities the caller may Read, so an unauthorised caller simply gets a smaller list (not 403).  Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific Collection with its DataObjects expanded.
      * [v2] List Collections the caller may read.
      */
-    async listCollections(requestParameters: ListCollectionsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Collection>> {
+    async listCollections(requestParameters: ListCollectionsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listCollectionsRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -233,7 +239,7 @@ export class CollectionsApi extends runtime.BaseAPI {
      * Applies an RFC 7396 JSON Merge Patch to the `:Collection`:   - Fields PRESENT in the body REPLACE the corresponding fields.   - Fields ABSENT from the body are LEFT UNCHANGED.   - Fields set to explicit JSON `null` are CLEARED.  The merged result is Bean-Validated against `CollectionIO` constraints; violations on the final state return 400 (e.g. clearing `name` would produce a constraint violation because `name` is `@NotBlank`).  Example: rename a Collection without touching other fields —  `{\"name\": \"renamed\"}`. Clear the description — `{\"description\": null}`.  Auth: Write permission on the Collection.  Content-Type: prefer `application/merge-patch+json` (the RFC 7396 type); the endpoint also accepts `application/json` for clients that can\'t set the dedicated type.  Side effects: ProvenanceCaptureFilter records an `UPDATE` Activity. The `:Version` HEAD is advanced; the previous state is reachable via `GET /shepard/api/collections/{id}/versions`.
      * [v2] Partially update a Collection (RFC 7396 JSON Merge Patch).
      */
-    async patchCollectionV2Raw(requestParameters: PatchCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Collection>> {
+    async patchCollectionV2Raw(requestParameters: PatchCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CollectionV2>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -270,14 +276,14 @@ export class CollectionsApi extends runtime.BaseAPI {
             body: CollectionToJSON(requestParameters['collection']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => CollectionV2FromJSON(jsonValue));
     }
 
     /**
      * Applies an RFC 7396 JSON Merge Patch to the `:Collection`:   - Fields PRESENT in the body REPLACE the corresponding fields.   - Fields ABSENT from the body are LEFT UNCHANGED.   - Fields set to explicit JSON `null` are CLEARED.  The merged result is Bean-Validated against `CollectionIO` constraints; violations on the final state return 400 (e.g. clearing `name` would produce a constraint violation because `name` is `@NotBlank`).  Example: rename a Collection without touching other fields —  `{\"name\": \"renamed\"}`. Clear the description — `{\"description\": null}`.  Auth: Write permission on the Collection.  Content-Type: prefer `application/merge-patch+json` (the RFC 7396 type); the endpoint also accepts `application/json` for clients that can\'t set the dedicated type.  Side effects: ProvenanceCaptureFilter records an `UPDATE` Activity. The `:Version` HEAD is advanced; the previous state is reachable via `GET /shepard/api/collections/{id}/versions`.
      * [v2] Partially update a Collection (RFC 7396 JSON Merge Patch).
      */
-    async patchCollectionV2(requestParameters: PatchCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Collection> {
+    async patchCollectionV2(requestParameters: PatchCollectionV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CollectionV2> {
         const response = await this.patchCollectionV2Raw(requestParameters, initOverrides);
         return await response.value();
     }

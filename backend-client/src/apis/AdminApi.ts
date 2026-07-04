@@ -17,8 +17,8 @@ import * as runtime from '../runtime';
 import type {
   AasRegistrationIO,
   AasSyncResultIO,
-  AiCapabilityConfigIO,
   BootstrapRequest,
+  BootstrapResponse,
   ConfigFeature,
   DataciteCredentialIO,
   DataciteCredentialSetIO,
@@ -29,6 +29,7 @@ import type {
   EpicMinterConfigIO,
   EpicTestConnectionIO,
   FeatureToggle,
+  FileMigrationRollbackResultIO,
   FileMigrationStateIO,
   FileMigrationTriggerIO,
   GrantInstanceAdmin,
@@ -43,20 +44,17 @@ import type {
   MirroredUserCreateIO,
   MirroredUserIO,
   NotificationIO,
-  NotificationTransportListIO,
+  NotificationTestDeliveryIO,
   NotificationTransportReadIO,
   NotificationTransportWriteIO,
   NukeRequest,
   NukeResult,
   OntologyBundleIO,
-  OntologyBundleListIO,
   OntologyGitIngestResultIO,
   OntologyGitSourceIO,
+  PagedResponse,
   PatchFeatureToggle,
-  PermissionAuditEntry,
-  PermissionAuditLogEntry,
   PluginEntry,
-  PluginList,
   PluginPatch,
   ProblemJson,
   ProcessChainMappingResultIO,
@@ -72,10 +70,10 @@ import {
     AasRegistrationIOToJSON,
     AasSyncResultIOFromJSON,
     AasSyncResultIOToJSON,
-    AiCapabilityConfigIOFromJSON,
-    AiCapabilityConfigIOToJSON,
     BootstrapRequestFromJSON,
     BootstrapRequestToJSON,
+    BootstrapResponseFromJSON,
+    BootstrapResponseToJSON,
     ConfigFeatureFromJSON,
     ConfigFeatureToJSON,
     DataciteCredentialIOFromJSON,
@@ -96,6 +94,8 @@ import {
     EpicTestConnectionIOToJSON,
     FeatureToggleFromJSON,
     FeatureToggleToJSON,
+    FileMigrationRollbackResultIOFromJSON,
+    FileMigrationRollbackResultIOToJSON,
     FileMigrationStateIOFromJSON,
     FileMigrationStateIOToJSON,
     FileMigrationTriggerIOFromJSON,
@@ -124,8 +124,8 @@ import {
     MirroredUserIOToJSON,
     NotificationIOFromJSON,
     NotificationIOToJSON,
-    NotificationTransportListIOFromJSON,
-    NotificationTransportListIOToJSON,
+    NotificationTestDeliveryIOFromJSON,
+    NotificationTestDeliveryIOToJSON,
     NotificationTransportReadIOFromJSON,
     NotificationTransportReadIOToJSON,
     NotificationTransportWriteIOFromJSON,
@@ -136,22 +136,16 @@ import {
     NukeResultToJSON,
     OntologyBundleIOFromJSON,
     OntologyBundleIOToJSON,
-    OntologyBundleListIOFromJSON,
-    OntologyBundleListIOToJSON,
     OntologyGitIngestResultIOFromJSON,
     OntologyGitIngestResultIOToJSON,
     OntologyGitSourceIOFromJSON,
     OntologyGitSourceIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PatchFeatureToggleFromJSON,
     PatchFeatureToggleToJSON,
-    PermissionAuditEntryFromJSON,
-    PermissionAuditEntryToJSON,
-    PermissionAuditLogEntryFromJSON,
-    PermissionAuditLogEntryToJSON,
     PluginEntryFromJSON,
     PluginEntryToJSON,
-    PluginListFromJSON,
-    PluginListToJSON,
     PluginPatchFromJSON,
     PluginPatchToJSON,
     ProblemJsonFromJSON,
@@ -216,10 +210,6 @@ export interface GetAnchorsForDataObjectRequest {
     appId: string;
 }
 
-export interface GetCapabilityRequest {
-    capability: string;
-}
-
 export interface GetFeatureConfigRequest {
     feature: string;
 }
@@ -236,17 +226,22 @@ export interface GrantInstanceAdminRequest {
     grantInstanceAdmin: GrantInstanceAdmin;
 }
 
+export interface ListAasRegistrationsRequest {
+    page?: number;
+    pageSize?: number;
+}
+
+export interface ListSemanticGitSourcesRequest {
+    page?: number;
+    pageSize?: number;
+}
+
 export interface MirrorUsersRequest {
     mirroredUserCreateIO: MirroredUserCreateIO;
 }
 
 export interface NukeOperationRequest {
     nukeRequest: NukeRequest;
-}
-
-export interface PatchCapabilityRequest {
-    capability: string;
-    aiCapabilityConfigIO: AiCapabilityConfigIO;
 }
 
 export interface PatchFeatureConfigRequest {
@@ -420,7 +415,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Consume the one-shot bootstrap token + grant instance-admin to a user. Unauthenticated — the token is the auth proof. Token-replay returns 403.
      * [v2] Bootstrap
      */
-    async bootstrapRaw(requestParameters: BootstrapOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async bootstrapRaw(requestParameters: BootstrapOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BootstrapResponse>> {
         if (requestParameters['bootstrapRequest'] == null) {
             throw new runtime.RequiredError(
                 'bootstrapRequest',
@@ -454,15 +449,16 @@ export class AdminApi extends runtime.BaseAPI {
             body: BootstrapRequestToJSON(requestParameters['bootstrapRequest']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => BootstrapResponseFromJSON(jsonValue));
     }
 
     /**
      * Consume the one-shot bootstrap token + grant instance-admin to a user. Unauthenticated — the token is the auth proof. Token-replay returns 403.
      * [v2] Bootstrap
      */
-    async bootstrap(requestParameters: BootstrapOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.bootstrapRaw(requestParameters, initOverrides);
+    async bootstrap(requestParameters: BootstrapOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BootstrapResponse> {
+        const response = await this.bootstrapRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**
@@ -630,40 +626,6 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
-     * [v2] Revoke the current harvest API key (DELETE-verb variant of revoke).
-     */
-    async deleteHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnhideConfigIO>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/unhide/harvest-key`,
-            method: 'DELETE',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => UnhideConfigIOFromJSON(jsonValue));
-    }
-
-    /**
-     * [v2] Revoke the current harvest API key (DELETE-verb variant of revoke).
-     */
-    async deleteHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UnhideConfigIO> {
-        const response = await this.deleteHarvestKeyRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Removes the :NotificationTransport row identified by appId. No cascade — historical :Activity rows referencing the deleted transport\'s appId are preserved per the CLAUDE.md \"audit trail is a graph\" rule. Returns 204 on success, 404 when the appId is unknown.
      * [v2] Delete a notification transport.
      */
@@ -790,6 +752,40 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
+     * [v2] Revoke the current harvest API key (DELETE-verb variant of revoke).
+     */
+    async deleteUnhideHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnhideConfigIO>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/admin/unhide/harvest-key`,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UnhideConfigIOFromJSON(jsonValue));
+    }
+
+    /**
+     * [v2] Revoke the current harvest API key (DELETE-verb variant of revoke).
+     */
+    async deleteUnhideHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UnhideConfigIO> {
+        const response = await this.deleteUnhideHarvestKeyRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Adds the id to :SemanticConfig.disabledBundles. The bundle stops seeding on the next startup. Refused (409 RFC 7807 semantic.bundle.required) for bundles whose manifest entry carries required=true (prov-o, obo-relations today).
      * [v2] Runtime-disable an ontology bundle.
      */
@@ -912,42 +908,6 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the runtime config for every known AiCapability slot. The raw API key is never returned — the response carries apiKeySet=true/false and the masked sentinel \'***\' in the apiKey field when a key is configured.
-     * [v2] List all AI capability slot configurations.
-     */
-    async getAllCapabilitiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiCapabilityConfigIO>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/ai/capabilities`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AiCapabilityConfigIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Returns the runtime config for every known AiCapability slot. The raw API key is never returned — the response carries apiKeySet=true/false and the masked sentinel \'***\' in the apiKey field when a key is configured.
-     * [v2] List all AI capability slot configurations.
-     */
-    async getAllCapabilities(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiCapabilityConfigIO> {
-        const response = await this.getAllCapabilitiesRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Returns all Activity nodes linked to the given DataObject that carry a non-null ledgerAnchor field.  Useful for auditors who need to verify tamper evidence for a specific DataObject without knowing Activity appIds in advance.
      * [v2] List ledger anchors for a DataObject.
      */
@@ -987,49 +947,6 @@ export class AdminApi extends runtime.BaseAPI {
      */
     async getAnchorsForDataObject(requestParameters: GetAnchorsForDataObjectRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.getAnchorsForDataObjectRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Returns the runtime config for the named capability. If no config has been set for this slot yet, a disabled skeleton is seeded and returned. Unknown capability names return 404.
-     * [v2] Get the config for one AI capability slot.
-     */
-    async getCapabilityRaw(requestParameters: GetCapabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiCapabilityConfigIO>> {
-        if (requestParameters['capability'] == null) {
-            throw new runtime.RequiredError(
-                'capability',
-                'Required parameter "capability" was null or undefined when calling getCapability().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/ai/capabilities/{capability}`.replace(`{${"capability"}}`, encodeURIComponent(String(requestParameters['capability']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AiCapabilityConfigIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Returns the runtime config for the named capability. If no config has been set for this slot yet, a disabled skeleton is seeded and returned. Unknown capability names return 404.
-     * [v2] Get the config for one AI capability slot.
-     */
-    async getCapability(requestParameters: GetCapabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiCapabilityConfigIO> {
-        const response = await this.getCapabilityRaw(requestParameters, initOverrides);
-        return await response.value();
     }
 
     /**
@@ -1244,6 +1161,50 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
+     * Returns one row per (shell, registry-url) pair tracked in the :AasRegistration outbox. Status is PENDING, SYNCED, or FAILED. Results are cursor-stable: sorted by shellAppId, registryUrl. Gated on the instance-admin role.
+     * [v2] List AAS registry outbox rows (paginated).
+     */
+    async listAasRegistrationsRaw(requestParameters: ListAasRegistrationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasRegistrationIO>> {
+        const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/admin/aas/registrations`,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AasRegistrationIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns one row per (shell, registry-url) pair tracked in the :AasRegistration outbox. Status is PENDING, SYNCED, or FAILED. Results are cursor-stable: sorted by shellAppId, registryUrl. Gated on the instance-admin role.
+     * [v2] List AAS registry outbox rows (paginated).
+     */
+    async listAasRegistrations(requestParameters: ListAasRegistrationsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasRegistrationIO> {
+        const response = await this.listAasRegistrationsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Returns all registered feature toggles with their current enabled state. Changes made via PATCH take effect immediately in the running JVM but are not persisted across restarts — the config-property value is restored on next startup.
      * [v2] List runtime feature toggles.
      */
@@ -1261,7 +1222,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/admin/features`,
+            path: `/v2/admin/runtime-toggles`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1319,7 +1280,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields.
      * [v2] List Neo4j-side instance-admin grants.
      */
-    async listInstanceAdminsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<InstanceAdminGrant>>> {
+    async listInstanceAdminsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1339,14 +1300,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(InstanceAdminGrantFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields.
      * [v2] List Neo4j-side instance-admin grants.
      */
-    async listInstanceAdmins(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<InstanceAdminGrant>> {
+    async listInstanceAdmins(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listInstanceAdminsRaw(initOverrides);
         return await response.value();
     }
@@ -1355,7 +1316,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns every :NotificationTransport row in the instance, ordered by name ascending. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + matrixAccessToken never appear on this response (compile-time guarantee via NotificationTransportReadIO). Gated on the instance-admin role.
      * [v2] List all configured notification transports.
      */
-    async listNotificationTransportsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NotificationTransportListIO>> {
+    async listNotificationTransportsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1375,14 +1336,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => NotificationTransportListIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns every :NotificationTransport row in the instance, ordered by name ascending. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + matrixAccessToken never appear on this response (compile-time guarantee via NotificationTransportReadIO). Gated on the instance-admin role.
      * [v2] List all configured notification transports.
      */
-    async listNotificationTransports(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NotificationTransportListIO> {
+    async listNotificationTransports(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listNotificationTransportsRaw(initOverrides);
         return await response.value();
     }
@@ -1391,7 +1352,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Built-ins first (manifest declaration order), then user-uploaded bundles (id ASC). Each row\'s `enabled` is the effective state under the precedence rules (required wins; otherwise \'not in runtime disabledBundles ∪ deploy-time skip-bundles\').
      * [v2] List every pre-seeded + operator-uploaded ontology bundle.
      */
-    async listOntologiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<OntologyBundleListIO>> {
+    async listOntologiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1411,14 +1372,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => OntologyBundleListIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Built-ins first (manifest declaration order), then user-uploaded bundles (id ASC). Each row\'s `enabled` is the effective state under the precedence rules (required wins; otherwise \'not in runtime disabledBundles ∪ deploy-time skip-bundles\').
      * [v2] List every pre-seeded + operator-uploaded ontology bundle.
      */
-    async listOntologies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<OntologyBundleListIO> {
+    async listOntologies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listOntologiesRaw(initOverrides);
         return await response.value();
     }
@@ -1427,7 +1388,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns one row per plugin observed by the PM1a PluginRegistry — including DISABLED + FAILED rows so the operator sees the full state space. Order matches the registry\'s insertion order (classpath scan first, then drop-in JAR walk). The `enabled` column reflects the effective runtime toggle (PATCH override wins; falls through to shepard.plugins.<id>.enabled from application.properties).
      * [v2] List every discovered plugin.
      */
-    async listPluginsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PluginList>> {
+    async listPluginsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1447,60 +1408,32 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PluginListFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns one row per plugin observed by the PM1a PluginRegistry — including DISABLED + FAILED rows so the operator sees the full state space. Order matches the registry\'s insertion order (classpath scan first, then drop-in JAR walk). The `enabled` column reflects the effective runtime toggle (PATCH override wins; falls through to shepard.plugins.<id>.enabled from application.properties).
      * [v2] List every discovered plugin.
      */
-    async listPlugins(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PluginList> {
+    async listPlugins(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listPluginsRaw(initOverrides);
         return await response.value();
     }
 
     /**
-     * Returns one row per (shell, registry-url) pair tracked in the :AasRegistration outbox. Status is PENDING, SYNCED, or FAILED. Gated on the instance-admin role.
-     * [v2] List all AAS registry outbox rows.
-     */
-    async listRegistrationsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasRegistrationIO>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/aas/registrations`,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AasRegistrationIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Returns one row per (shell, registry-url) pair tracked in the :AasRegistration outbox. Status is PENDING, SYNCED, or FAILED. Gated on the instance-admin role.
-     * [v2] List all AAS registry outbox rows.
-     */
-    async listRegistrations(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasRegistrationIO> {
-        const response = await this.listRegistrationsRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Returns every registered OntologyGitSource (enabled and disabled), ordered by name. Includes last-ingest status and error for quick health assessment.
+     * Returns every registered OntologyGitSource (enabled and disabled), ordered by name. Includes last-ingest status and error for quick health assessment.  Pagination (APISIMP-PAGINATION-LIST-GIT-SOURCES): `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging.
      * [v2] List all ontology git sources.
      */
-    async listSemanticGitSourcesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<OntologyGitSourceIO>>> {
+    async listSemanticGitSourcesRaw(requestParameters: ListSemanticGitSourcesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -1519,15 +1452,15 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(OntologyGitSourceIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns every registered OntologyGitSource (enabled and disabled), ordered by name. Includes last-ingest status and error for quick health assessment.
+     * Returns every registered OntologyGitSource (enabled and disabled), ordered by name. Includes last-ingest status and error for quick health assessment.  Pagination (APISIMP-PAGINATION-LIST-GIT-SOURCES): `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging.
      * [v2] List all ontology git sources.
      */
-    async listSemanticGitSources(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<OntologyGitSourceIO>> {
-        const response = await this.listSemanticGitSourcesRaw(initOverrides);
+    async listSemanticGitSources(requestParameters: ListSemanticGitSourcesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listSemanticGitSourcesRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -1624,59 +1557,6 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
-     * Patchable fields: endpointUrl, model, apiKey, transport, guardrailsPrefix, guardrailsSuffix, maxTokens, temperature, enabled. RFC 7396 semantics — absent = leave alone. Sending apiKey=\'***\' (the masked sentinel from GET) leaves the stored key unchanged. Mutations are captured as :Activity rows by PROV1a\'s ProvenanceCaptureFilter.
-     * [v2] RFC 7396 merge-patch one AI capability slot.
-     */
-    async patchCapabilityRaw(requestParameters: PatchCapabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AiCapabilityConfigIO>> {
-        if (requestParameters['capability'] == null) {
-            throw new runtime.RequiredError(
-                'capability',
-                'Required parameter "capability" was null or undefined when calling patchCapability().'
-            );
-        }
-
-        if (requestParameters['aiCapabilityConfigIO'] == null) {
-            throw new runtime.RequiredError(
-                'aiCapabilityConfigIO',
-                'Required parameter "aiCapabilityConfigIO" was null or undefined when calling patchCapability().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/ai/capabilities/{capability}`.replace(`{${"capability"}}`, encodeURIComponent(String(requestParameters['capability']))),
-            method: 'PATCH',
-            headers: headerParameters,
-            query: queryParameters,
-            body: AiCapabilityConfigIOToJSON(requestParameters['aiCapabilityConfigIO']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AiCapabilityConfigIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Patchable fields: endpointUrl, model, apiKey, transport, guardrailsPrefix, guardrailsSuffix, maxTokens, temperature, enabled. RFC 7396 semantics — absent = leave alone. Sending apiKey=\'***\' (the masked sentinel from GET) leaves the stored key unchanged. Mutations are captured as :Activity rows by PROV1a\'s ProvenanceCaptureFilter.
-     * [v2] RFC 7396 merge-patch one AI capability slot.
-     */
-    async patchCapability(requestParameters: PatchCapabilityRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AiCapabilityConfigIO> {
-        const response = await this.patchCapabilityRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Resolves the ConfigDescriptor for {feature} and applies an RFC-7396 merge-patch: absent = leave alone, null = clear, value = replace. Returns the updated shape (same as GET). PROV1a\'s ProvenanceCaptureFilter captures this PATCH as an :Activity row. 404 (problem+json) for an unknown feature; 4xx (problem+json) for a validation failure declared by the descriptor.
      * [v2] RFC 7396 merge-patch the config for a feature.
      */
@@ -1762,7 +1642,7 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/admin/features/{name}`.replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
+            path: `/v2/admin/runtime-toggles/{name}`.replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
@@ -1937,7 +1817,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges.
      * [v2] List entities with orphaned permissions.
      */
-    async permissionAuditRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<PermissionAuditEntry>>> {
+    async permissionAuditRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1957,14 +1837,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(PermissionAuditEntryFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges.
      * [v2] List entities with orphaned permissions.
      */
-    async permissionAudit(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<PermissionAuditEntry>> {
+    async permissionAudit(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.permissionAuditRaw(initOverrides);
         return await response.value();
     }
@@ -1973,7 +1853,7 @@ export class AdminApi extends runtime.BaseAPI {
      * F3: Query the Postgres permission audit log. Returns GRANT/REVOKE/UPDATE events sorted by occurred_at DESC. Supports optional filters: entityAppId, actor, from/to (ISO-8601), and pagination via page/size.
      * [v2] Permission Audit Log
      */
-    async permissionAuditLogRaw(requestParameters: PermissionAuditLogRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<PermissionAuditLogEntry>>> {
+    async permissionAuditLogRaw(requestParameters: PermissionAuditLogRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['actor'] != null) {
@@ -2017,14 +1897,14 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(PermissionAuditLogEntryFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * F3: Query the Postgres permission audit log. Returns GRANT/REVOKE/UPDATE events sorted by occurred_at DESC. Supports optional filters: entityAppId, actor, from/to (ISO-8601), and pagination via page/size.
      * [v2] Permission Audit Log
      */
-    async permissionAuditLog(requestParameters: PermissionAuditLogRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<PermissionAuditLogEntry>> {
+    async permissionAuditLog(requestParameters: PermissionAuditLogRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.permissionAuditLogRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -2112,42 +1992,6 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
-     * Clears :UnhideConfig.harvestApiKeyHash. When feedPublic=false (the default), the feed becomes reachable only by instance-admin callers until a fresh key is minted. The revoke is captured as an :Activity row via PROV1a.
-     * [v2] Revoke the current harvest API key.
-     */
-    async revokeHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnhideConfigIO>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/unhide/harvest-key/revoke`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => UnhideConfigIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Clears :UnhideConfig.harvestApiKeyHash. When feedPublic=false (the default), the feed becomes reachable only by instance-admin callers until a fresh key is minted. The revoke is captured as an :Activity row via PROV1a.
-     * [v2] Revoke the current harvest API key.
-     */
-    async revokeHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UnhideConfigIO> {
-        const response = await this.revokeHarvestKeyRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Removes the `:InstanceAdminGrant` node for the named user. The OIDC role (if any) is not affected by this call.
      * [v2] Revoke the Neo4j-side instance-admin grant from a user.
      */
@@ -2190,10 +2034,46 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
+     * Clears :UnhideConfig.harvestApiKeyHash. When feedPublic=false (the default), the feed becomes reachable only by instance-admin callers until a fresh key is minted. The revoke is captured as an :Activity row via PROV1a.
+     * [v2] Revoke the current harvest API key.
+     */
+    async revokeUnhideHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnhideConfigIO>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/admin/unhide/harvest-key/revoke`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UnhideConfigIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Clears :UnhideConfig.harvestApiKeyHash. When feedPublic=false (the default), the feed becomes reachable only by instance-admin callers until a fresh key is minted. The revoke is captured as an :Activity row via PROV1a.
+     * [v2] Revoke the current harvest API key.
+     */
+    async revokeUnhideHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UnhideConfigIO> {
+        const response = await this.revokeUnhideHarvestKeyRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * FS1e3 — per-file rollback. Re-writes the file\'s bytes from the current adapter (providerId) back to the previous adapter (previousProviderId), using the preserved previousLocator, then restores providerId and clears the FS1e3 bookkeeping fields (previousProviderId, previousLocator, migratedAt, migrationHmac). Synchronous — the response carries the outcome.  Refuses with 409 when the :ShepardFile row\'s previousProviderId is null (never migrated, or already rolled back). Refuses with 404 when the appId is unknown. Caller must hold the instance-admin role.  Note: this endpoint re-writes bytes; it does NOT delete from the current adapter. The orphaned current-adapter bytes are catalogued by a future \'sweep-orphans\' verb (runbook §17.E).
      * [v2] Roll back a single file\'s storage-adapter swap.
      */
-    async rollbackRaw(requestParameters: RollbackRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async rollbackRaw(requestParameters: RollbackRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileMigrationRollbackResultIO>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -2220,22 +2100,23 @@ export class AdminApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => FileMigrationRollbackResultIOFromJSON(jsonValue));
     }
 
     /**
      * FS1e3 — per-file rollback. Re-writes the file\'s bytes from the current adapter (providerId) back to the previous adapter (previousProviderId), using the preserved previousLocator, then restores providerId and clears the FS1e3 bookkeeping fields (previousProviderId, previousLocator, migratedAt, migrationHmac). Synchronous — the response carries the outcome.  Refuses with 409 when the :ShepardFile row\'s previousProviderId is null (never migrated, or already rolled back). Refuses with 404 when the appId is unknown. Caller must hold the instance-admin role.  Note: this endpoint re-writes bytes; it does NOT delete from the current adapter. The orphaned current-adapter bytes are catalogued by a future \'sweep-orphans\' verb (runbook §17.E).
      * [v2] Roll back a single file\'s storage-adapter swap.
      */
-    async rollback(requestParameters: RollbackRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.rollbackRaw(requestParameters, initOverrides);
+    async rollback(requestParameters: RollbackRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileMigrationRollbackResultIO> {
+        const response = await this.rollbackRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**
      * Generates a UUID v4 (SecureRandom-backed), stores its SHA-256 hex on :UnhideConfig.harvestApiKeyHash, and returns the plaintext exactly once. Rotates if a key already exists (the prior hash is replaced, the prior plaintext becomes unusable). The response body is NOT recorded in :Activity — PROV1a\'s ProvenanceCaptureFilter captures only the request method + path + status, never response bodies, so the plaintext never enters the audit trail. The plaintext is also never logged server-side; only the masked fingerprint (first 8 hex chars of the SHA-256) appears in INFO logs.
      * [v2] Mint a fresh harvest API key.
      */
-    async rotateHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HarvestKeyMintedIO>> {
+    async rotateUnhideHarvestKeyRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<HarvestKeyMintedIO>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -2262,8 +2143,8 @@ export class AdminApi extends runtime.BaseAPI {
      * Generates a UUID v4 (SecureRandom-backed), stores its SHA-256 hex on :UnhideConfig.harvestApiKeyHash, and returns the plaintext exactly once. Rotates if a key already exists (the prior hash is replaced, the prior plaintext becomes unusable). The response body is NOT recorded in :Activity — PROV1a\'s ProvenanceCaptureFilter captures only the request method + path + status, never response bodies, so the plaintext never enters the audit trail. The plaintext is also never logged server-side; only the masked fingerprint (first 8 hex chars of the SHA-256) appears in INFO logs.
      * [v2] Mint a fresh harvest API key.
      */
-    async rotateHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HarvestKeyMintedIO> {
-        const response = await this.rotateHarvestKeyRaw(initOverrides);
+    async rotateUnhideHarvestKey(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<HarvestKeyMintedIO> {
+        const response = await this.rotateUnhideHarvestKeyRaw(initOverrides);
         return await response.value();
     }
 
@@ -2271,7 +2152,7 @@ export class AdminApi extends runtime.BaseAPI {
      * Publishes a test notification to validate that the notification system is working. The notification appears in the target audience\'s bell panel within one poll cycle (~30 seconds). Use audience=INSTANCE_ADMIN to send only to admins, or audience=USER with targetUsername to target a specific user. This endpoint is the acceptance test for NTF1a.
      * [v2] Send a test in-app notification.
      */
-    async sendTestRaw(requestParameters: SendTestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async sendTestRaw(requestParameters: SendTestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NotificationTestDeliveryIO>> {
         if (requestParameters['testNotificationIO'] == null) {
             throw new runtime.RequiredError(
                 'testNotificationIO',
@@ -2301,15 +2182,16 @@ export class AdminApi extends runtime.BaseAPI {
             body: TestNotificationIOToJSON(requestParameters['testNotificationIO']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => NotificationTestDeliveryIOFromJSON(jsonValue));
     }
 
     /**
      * Publishes a test notification to validate that the notification system is working. The notification appears in the target audience\'s bell panel within one poll cycle (~30 seconds). Use audience=INSTANCE_ADMIN to send only to admins, or audience=USER with targetUsername to target a specific user. This endpoint is the acceptance test for NTF1a.
      * [v2] Send a test in-app notification.
      */
-    async sendTest(requestParameters: SendTestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.sendTestRaw(requestParameters, initOverrides);
+    async sendTest(requestParameters: SendTestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NotificationTestDeliveryIO> {
+        const response = await this.sendTestRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**
@@ -2559,6 +2441,42 @@ export class AdminApi extends runtime.BaseAPI {
     }
 
     /**
+     * Calls AasRegistryOutboxService.syncAll(): seeds PENDING rows for any unregistered collections, then pushes all PENDING/FAILED rows to the configured IDTA AAS Registry. Best-effort — failures flip the row to FAILED and are logged at WARN. Returns the count of shells successfully registered in this invocation. Gated on the instance-admin role.
+     * [v2] Trigger an on-demand AAS registry sync.
+     */
+    async triggerAasRegistrySyncRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasSyncResultIO>> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/v2/admin/aas/registrations/sync`,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => AasSyncResultIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Calls AasRegistryOutboxService.syncAll(): seeds PENDING rows for any unregistered collections, then pushes all PENDING/FAILED rows to the configured IDTA AAS Registry. Best-effort — failures flip the row to FAILED and are logged at WARN. Returns the count of shells successfully registered in this invocation. Gated on the instance-admin role.
+     * [v2] Trigger an on-demand AAS registry sync.
+     */
+    async triggerAasRegistrySync(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasSyncResultIO> {
+        const response = await this.triggerAasRegistrySyncRaw(initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Clones the repository (shallow, --depth=1), finds files matching pathPattern, and ingests each as a UserOntologyBundle in the internal n10s store. Runs synchronously — returns when the ingest is complete or has failed. The source\'s lastStatus and lastIngestedAt are updated on completion. Works regardless of the source\'s enabled flag.
      * [v2] Trigger an immediate ingest from a git source.
      */
@@ -2598,42 +2516,6 @@ export class AdminApi extends runtime.BaseAPI {
      */
     async triggerIngest(requestParameters: TriggerIngestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<OntologyGitIngestResultIO> {
         const response = await this.triggerIngestRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Calls AasRegistryOutboxService.syncAll(): seeds PENDING rows for any unregistered collections, then pushes all PENDING/FAILED rows to the configured IDTA AAS Registry. Best-effort — failures flip the row to FAILED and are logged at WARN. Returns the count of shells successfully registered in this invocation. Gated on the instance-admin role.
-     * [v2] Trigger an on-demand AAS registry sync.
-     */
-    async triggerSyncRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AasSyncResultIO>> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/admin/aas/registrations/sync`,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => AasSyncResultIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Calls AasRegistryOutboxService.syncAll(): seeds PENDING rows for any unregistered collections, then pushes all PENDING/FAILED rows to the configured IDTA AAS Registry. Best-effort — failures flip the row to FAILED and are logged at WARN. Returns the count of shells successfully registered in this invocation. Gated on the instance-admin role.
-     * [v2] Trigger an on-demand AAS registry sync.
-     */
-    async triggerSync(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AasSyncResultIO> {
-        const response = await this.triggerSyncRaw(initOverrides);
         return await response.value();
     }
 

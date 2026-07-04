@@ -59,6 +59,7 @@ public class MePreferencesRest {
 
   @GET
   @Operation(
+    operationId = "getPreferences",
     summary = "Get the caller's UI preferences.",
     description = "Returns the per-user preference map. Returns an empty object `{}` when no " +
     "preferences have been set. Keys are open-world strings; values are always strings."
@@ -84,6 +85,7 @@ public class MePreferencesRest {
   // Fix lands with the matching CollectionRest / DataObjectRest pattern.
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchPreferences",
     summary = "Partial-update the caller's UI preferences.",
     description = "Applies an RFC 7396 JSON Merge Patch to the caller's preference map. " +
     "Keys with non-null string values are set or updated. Keys with explicit JSON `null` " +

@@ -38,20 +38,16 @@ interface EChartsGraphEdge {
 
 const props = defineProps<{
   dataObject: DataObject;
-  collectionId: number;
-  collectionAppId?: string;
+  collectionAppId: string;
+  collectionId?: number;
 }>();
 
 const activities = ref<Activity[]>([]);
 const loading = ref(false);
 
-// Pass the collection appId so the list hits /v2/collections/{appId}/data-objects.
-// Without it the composable falls back to the numeric id, which this endpoint
-// does not resolve (404) — the source of the "fetchAllDataObjects" toast.
-const collectionAppIdRef = computed(() => props.collectionAppId ?? null);
 const { dataObjects: collectionDataObjects } = useFetchAllDataObjects(
+  props.collectionAppId,
   props.collectionId,
-  collectionAppIdRef,
 );
 
 const doNameMap = computed(() => {
@@ -70,10 +66,11 @@ onMounted(async () => {
   if (!props.dataObject.appId) return;
   loading.value = true;
   try {
-    activities.value = await useV2ShepardApi(ProvenanceApi).value.listActivities({
+    const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.dataObject.appId,
-      pageSize: 50,
+      limit: 50,
     });
+    activities.value = Array.isArray(paged) ? paged : ((paged as { items?: unknown[] })?.items ?? []) as Activity[];
   } catch {
     activities.value = [];
   } finally {

@@ -57,6 +57,7 @@ public class NotificationAdminRest {
   @POST
   @Path("/test")
   @Operation(
+    operationId = "sendTest",
     summary = "Send a test in-app notification.",
     description = "Publishes a test notification to validate that the notification system is working. " +
     "The notification appears in the target audience's bell panel within one poll cycle (~30 seconds). " +
@@ -73,6 +74,7 @@ public class NotificationAdminRest {
     description = "Test notification delivered via transport.",
     content = @Content(schema = @Schema(implementation = NotificationTestDeliveryIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
   @APIResponse(
     responseCode = "404",

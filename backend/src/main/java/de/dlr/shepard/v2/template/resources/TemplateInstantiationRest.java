@@ -77,7 +77,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/data-objects/from-template")
 @RequestScoped
-@Tag(name = "Collection templates")
+@Tag(name = "Collections")
 public class TemplateInstantiationRest {
 
   /**
@@ -129,6 +129,7 @@ public class TemplateInstantiationRest {
   @POST
   @Path("/{templateAppId}")
   @Operation(
+    operationId = "instantiateDataObject",
     summary = "Create a DataObject from a ShepardTemplate (server-side instantiation).",
     description = "Parses the template body's `dataobjects[0].attributes` and applies them to the new " +
     "DataObject. Records a `:CREATED_FROM_TEMPLATE` relationship back to the template. " +

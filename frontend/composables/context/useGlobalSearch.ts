@@ -8,7 +8,7 @@
  *
  * Owner: UI-002 / MISSING-V2-APPID-IN-SEARCH
  */
-import { SearchV2Api } from "@dlr-shepard/backend-client";
+import { SearchApi } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import {
   useContainerSearch,
@@ -62,7 +62,7 @@ export function useGlobalSearch(
   const dataObjectLimit = opts.dataObjectLimit ?? 10;
   const containerLimit = opts.containerLimit ?? 5;
 
-  const v2SearchApi = useV2ShepardApi(SearchV2Api);
+  const v2SearchApi = useV2ShepardApi(SearchApi);
 
   const query = ref<string>("");
   const queryRefForWatch = computed(() => query.value);
@@ -124,7 +124,7 @@ export function useGlobalSearch(
   async function fetchV2(trimmed: string): Promise<void> {
     v2IsLoading.value = true;
     try {
-      const result = await v2SearchApi.value.globalSearch({ q: trimmed });
+      const result = await v2SearchApi.value.searchV2({ q: trimmed });
       rawCollections.value = result.items
         .filter(item => item.kind === "collection")
         .map(item => ({

@@ -8,22 +8,27 @@ import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotEntryIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -111,34 +116,42 @@ public class SnapshotRest {
   }
 
   /**
-   * Read the full snapshot manifest.
+   * Read the snapshot manifest with real pagination.
    *
    * @param snapshotAppId the application-level identifier of the snapshot.
+   * @param page          zero-based page index (default 0).
+   * @param pageSize      entries per page, 1–1000 (default 200).
    * @param sc            the JAX-RS security context.
-   * @return 200 with an array of {@code {entityAppId, revision}} pairs;
+   * @return 200 with a paged {@code {items, total, page, pageSize}} envelope;
    *         401 unauthenticated; 403 forbidden; 404 unknown or deleted snapshot.
    */
   @GET
   @Path("/manifest")
   @Operation(
-    summary = "Read the full snapshot manifest.",
+    operationId = "manifest",
+    summary = "Read the snapshot manifest (paginated).",
     description =
-      "Returns every (entityAppId, revision) pair captured at snapshot time. " +
-      "Ordered by entityAppId ascending for deterministic diff tooling. " +
-      "Requires Read permission on the root Collection."
+      "Returns (entityAppId, revision) pairs captured at snapshot time, " +
+      "ordered by entityAppId ascending for deterministic diff tooling. " +
+      "Use ?page= and ?pageSize= (default 200, max 1000) to paginate large " +
+      "snapshots. Requires Read permission on the root Collection."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot manifest.",
+    description = "Paginated snapshot manifest.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(type = SchemaType.ARRAY, implementation = SnapshotEntryIO.class)
+      schema = @Schema(implementation = PagedResponseIO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the root Collection.")
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
-  public Response manifest(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
+  public Response manifest(
+      @PathParam("snapshotAppId") String snapshotAppId,
+      @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+      @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
@@ -148,13 +161,18 @@ public class SnapshotRest {
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
 
-    List<SnapshotEntryIO> entries = snapshotService
+    List<SnapshotEntryIO> allEntries = snapshotService
       .findEntries(snapshot.getId())
       .stream()
       .map(SnapshotEntryIO::new)
       .toList();
 
-    return Response.ok(entries).build();
+    int total = allEntries.size();
+    int from = Math.min(page * pageSize, total);
+    int to = Math.min(from + pageSize, total);
+    List<SnapshotEntryIO> pageEntries = allEntries.subList(from, to);
+
+    return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize)).build();
   }
 
   /**

@@ -7,6 +7,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, computed } from "vue";
 
+import { useAasShell } from "~/composables/aas/useAasShell";
+
 const COLLECTION_APP_ID = "01929b00-0000-7000-0000-000000000001";
 const DO_APP_ID = "01929b00-0000-7000-0000-000000000002";
 
@@ -32,7 +34,7 @@ function makeMockComposable(overrides: Record<string, unknown>) {
     isSubmodelsLoading: ref(false),
     refresh: vi.fn(),
     fetchSubmodels: vi.fn(),
-  };
+  } as unknown as ReturnType<typeof useAasShell>;
 }
 
 vi.mock("~/composables/aas/useAasShell", () => ({
@@ -40,8 +42,6 @@ vi.mock("~/composables/aas/useAasShell", () => ({
   submodelRefToAppId: (v: string) =>
     v.startsWith("urn:shepard:dataobject:") ? v.slice(23) : v,
 }));
-
-import { useAasShell } from "~/composables/aas/useAasShell";
 const mockUseAasShell = vi.mocked(useAasShell);
 
 beforeEach(() => {

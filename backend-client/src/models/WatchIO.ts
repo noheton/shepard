@@ -46,12 +46,6 @@ export interface WatchIO {
     containerAppId?: string;
     /**
      * 
-     * @type {number}
-     * @memberof WatchIO
-     */
-    containerOgmId?: number;
-    /**
-     * 
      * @type {string}
      * @memberof WatchIO
      */
@@ -98,7 +92,6 @@ export function WatchIOFromJSONTyped(json: any, ignoreDiscriminator: boolean): W
         'watchAppId': json['watchAppId'] == null ? undefined : json['watchAppId'],
         'containerKind': json['containerKind'] == null ? undefined : KindFromJSON(json['containerKind']),
         'containerAppId': json['containerAppId'] == null ? undefined : json['containerAppId'],
-        'containerOgmId': json['containerOgmId'] == null ? undefined : json['containerOgmId'],
         'containerName': json['containerName'] == null ? undefined : json['containerName'],
         'containerAvailability': json['containerAvailability'] == null ? undefined : json['containerAvailability'],
         'since': json['since'] == null ? undefined : json['since'],
@@ -115,7 +108,6 @@ export function WatchIOToJSON(value?: WatchIO | null): any {
         'watchAppId': value['watchAppId'],
         'containerKind': KindToJSON(value['containerKind']),
         'containerAppId': value['containerAppId'],
-        'containerOgmId': value['containerOgmId'],
         'containerName': value['containerName'],
         'containerAvailability': value['containerAvailability'],
         'since': value['since'],

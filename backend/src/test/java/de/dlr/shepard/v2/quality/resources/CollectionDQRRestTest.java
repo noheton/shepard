@@ -10,6 +10,8 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.quality.io.DQRIO;
+import de.dlr.shepard.v2.quality.io.DQRResultIO;
+import de.dlr.shepard.v2.quality.io.DQRResultsIO;
 import de.dlr.shepard.v2.quality.services.DataQualityRequirementService;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -140,6 +142,72 @@ class CollectionDQRRestTest {
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(1, body.items().size());
     assertEquals("dqr-3", body.items().get(0).dqrAppId());
+  }
+
+  // ─── POST /dqr/evaluate (APISIMP-DQR-EVALUATE-BARE-LIST) ─────────────────
+
+  @Test
+  void evaluate_returns401_whenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
+    assertEquals(401, r.getStatus());
+    verify(service, never()).evaluate(anyString(), anyString());
+  }
+
+  @Test
+  void evaluate_returns200_notTruncated_whenResultsWithinLimit() {
+    List<DQRResultIO> results = List.of(
+      DQRResultIO.pass("dqr-1", "do-1"),
+      DQRResultIO.fail("dqr-1", "do-2", "missing label")
+    );
+    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(results);
+
+    Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
+
+    assertEquals(200, r.getStatus());
+    DQRResultsIO body = (DQRResultsIO) r.getEntity();
+    assertEquals(2, body.results().size());
+    assertEquals(false, body.truncated());
+    assertEquals(2L, body.total());
+  }
+
+  @Test
+  void evaluate_truncates_whenResultsExceedLimit() {
+    List<DQRResultIO> results = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      results.add(DQRResultIO.pass("dqr-1", "do-" + i));
+    }
+    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(results);
+
+    Response r = resource.evaluate(COLL_APP_ID, 3, securityContext);
+
+    assertEquals(200, r.getStatus());
+    DQRResultsIO body = (DQRResultsIO) r.getEntity();
+    assertEquals(3, body.results().size());
+    assertEquals(true, body.truncated());
+    assertEquals(10L, body.total());
+  }
+
+  @Test
+  void evaluate_returns200_emptyEnvelope_whenNoDQRsEnabled() {
+    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(List.of());
+
+    Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
+
+    assertEquals(200, r.getStatus());
+    DQRResultsIO body = (DQRResultsIO) r.getEntity();
+    assertEquals(0, body.results().size());
+    assertEquals(false, body.truncated());
+    assertEquals(0L, body.total());
+  }
+
+  @Test
+  void evaluate_limitParamCarriesValidationAnnotations() throws NoSuchMethodException {
+    java.lang.reflect.Method m = CollectionDQRRest.class.getDeclaredMethod(
+        "evaluate", String.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter limit = m.getParameters()[1];
+    assertNotNull(limit.getAnnotation(jakarta.validation.constraints.Min.class), "limit: @Min");
+    assertNotNull(limit.getAnnotation(jakarta.validation.constraints.Max.class), "limit: @Max");
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

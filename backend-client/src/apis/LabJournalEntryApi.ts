@@ -30,7 +30,7 @@ import {
 
 export interface CreateLabJournalRequest {
     dataObjectId: number;
-    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'>;
+    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'dataObjectAppId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'>;
 }
 
 export interface DeleteLabJournalRequest {
@@ -47,7 +47,7 @@ export interface GetLabJournalsByCollectionRequest {
 
 export interface PatchLabJournalRequest {
     labJournalEntryId: number;
-    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'>;
+    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'dataObjectAppId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'contentFormat'>;
 }
 
 export interface UpdateLabJournalOperationRequest {

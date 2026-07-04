@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
@@ -87,7 +90,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50);
+    Response resp = resource.search("LUMEN", 0, 50, 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -121,7 +124,7 @@ class SearchV2RestTest {
     owningCollection.setAppId(COLL_APP_ID);
     when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(owningCollection);
 
-    Response resp = resource.search("TR-004", 0, 50);
+    Response resp = resource.search("TR-004", 0, 50, 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -138,20 +141,20 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryReturnsBadRequest() {
-    Response resp = resource.search("  ", 0, 50);
+    Response resp = resource.search("  ", 0, 50, 0, 50, null);
     assertEquals(400, resp.getStatus());
   }
 
   @Test
   void nullQueryReturnsBadRequest() {
-    Response resp = resource.search(null, 0, 50);
+    Response resp = resource.search(null, 0, 50, 0, 50, null);
     assertEquals(400, resp.getStatus());
   }
 
   /** APISIMP-SEARCH-BAD-REQUEST-PLAIN-STRING — 400 must use problem+json, not plain text. */
   @Test
   void badRequestReturnsProblemJson() {
-    Response resp = resource.search(null, 0, 50);
+    Response resp = resource.search(null, 0, 50, 0, 50, null);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json",
         resp.getMediaType().toString(),
@@ -160,7 +163,7 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryAlsoReturnsProblemJson() {
-    Response resp = resource.search("   ", 0, 50);
+    Response resp = resource.search("   ", 0, 50, 0, 50, null);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json", resp.getMediaType().toString());
   }
@@ -179,7 +182,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("x"), any(), eq(Optional.of(200)), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("x");
 
-    Response resp = resource.search("x", 0, 9999);
+    Response resp = resource.search("x", 0, 9999, 0, 50, null);
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
     assertEquals(200, result.getPageSize());
@@ -202,7 +205,7 @@ class SearchV2RestTest {
       .filter(f -> f.getType() == long.class || f.getType() == Long.class)
       .map(Field::getName)
       .collect(Collectors.toList());
-    assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
+    assertTrue(longFields.stream().allMatch(n -> n.equals("total") || n.equals("doTotal")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
   }
 
   /** Regression: successful search response must carry X-Total-Count header matching body total. */
@@ -223,7 +226,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50);
+    Response resp = resource.search("LUMEN", 0, 50, 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     Object header = resp.getHeaders().getFirst("X-Total-Count");
@@ -233,7 +236,8 @@ class SearchV2RestTest {
   /** Regression: pageSize @PathParam on search() must carry @Min(1) and @Max(200). */
   @Test
   void pageSizeAnnotationHasMinOneAndMax200() throws NoSuchMethodException {
-    Method searchMethod = SearchV2Rest.class.getMethod("search", String.class, int.class, int.class);
+    Method searchMethod = SearchV2Rest.class.getMethod(
+        "search", String.class, int.class, int.class, int.class, int.class, String.class);
     Parameter pageSizeParam = searchMethod.getParameters()[2];
     List<Class<? extends Annotation>> annotationTypes = Arrays.stream(pageSizeParam.getAnnotations())
       .map(Annotation::annotationType)
@@ -242,6 +246,68 @@ class SearchV2RestTest {
     assertTrue(annotationTypes.contains(Max.class), "pageSize must have @Max");
     assertEquals(1L, pageSizeParam.getAnnotation(Min.class).value(), "@Min value must be 1");
     assertEquals(200L, pageSizeParam.getAnnotation(Max.class).value(), "@Max value must be 200");
+  }
+
+  // --- SEARCH-V2-1: collectionAppId scoping tests ---
+
+  @Test
+  void unknownCollectionAppIdReturnsBadRequest() {
+    when(collectionDAO.findByAppId("bad-appid")).thenReturn(null);
+
+    Response resp = resource.search("TR-004", 0, 50, 0, 50, "bad-appid");
+
+    assertEquals(400, resp.getStatus());
+    assertEquals("application/problem+json", resp.getMediaType().toString());
+  }
+
+  @Test
+  void scopedSearchSkipsCollectionResults() {
+    Collection scopeCol = new Collection(COLL_NEO4J_ID);
+    scopeCol.setAppId(COLL_APP_ID);
+    when(collectionDAO.findByAppId(COLL_APP_ID)).thenReturn(scopeCol);
+    stubEmptyDataObjects("TR-004");
+
+    Response resp = resource.search("TR-004", 0, 50, 0, 50, COLL_APP_ID);
+
+    assertEquals(200, resp.getStatus());
+    SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
+    long collectionItems = result.getItems().stream()
+        .filter(i -> "collection".equals(i.getKind())).count();
+    assertEquals(0, collectionItems, "Collection items must be omitted when collectionAppId is scoped");
+    // CollectionSearchService must not be called when scoped.
+    verify(collectionSearchService, never()).search(any(), any(), any(), any(), anyBoolean());
+  }
+
+  @Test
+  void scopedSearchPassesCollectionIdToDataObjectService() {
+    Collection scopeCol = new Collection(COLL_NEO4J_ID);
+    scopeCol.setAppId(COLL_APP_ID);
+    when(collectionDAO.findByAppId(COLL_APP_ID)).thenReturn(scopeCol);
+
+    BasicEntityIO doIO = new BasicEntityIO();
+    doIO.setAppId(DO_APP_ID);
+    doIO.setName("TR-004");
+    ResponseBody doResponse = new ResponseBody(
+      new ResultTriple[] { new ResultTriple(COLL_NEO4J_ID, 2L) },
+      new BasicEntityIO[] { doIO },
+      new SearchParams("TR-004", QueryType.DataObject)
+    );
+    when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+    when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(scopeCol);
+
+    Response resp = resource.search("TR-004", 0, 50, 0, 50, COLL_APP_ID);
+
+    assertEquals(200, resp.getStatus());
+    SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
+    List<SearchV2ItemIO> doItems = result.getItems().stream()
+        .filter(i -> "dataobject".equals(i.getKind())).collect(Collectors.toList());
+    assertEquals(1, doItems.size());
+    assertEquals(DO_APP_ID, doItems.get(0).getAppId());
+    // Verify DataObjectSearchService received a scope with the collection's Neo4j id.
+    verify(dataObjectSearchService).search(argThat(body ->
+        body.getScopes() != null &&
+        body.getScopes().length == 1 &&
+        Long.valueOf(COLL_NEO4J_ID).equals(body.getScopes()[0].getCollectionId())));
   }
 
   // --- helpers ---

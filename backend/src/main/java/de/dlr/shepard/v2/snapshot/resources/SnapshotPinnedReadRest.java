@@ -9,12 +9,17 @@ import de.dlr.shepard.context.snapshot.io.SnapshotDataObjectsIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -91,16 +96,19 @@ public class SnapshotPinnedReadRest {
    */
   @GET
   @Operation(
+    operationId = "getDataObjects",
     summary = "List DataObjects captured in a snapshot.",
     description =
-      "Returns the appIds of all DataObject nodes that were captured in the given snapshot " +
-      "for the specified Collection. Collections, References, and soft-deleted entities are " +
-      "excluded. Snapshot metadata (name, capturedAt, totalEntries) is included for caller " +
-      "convenience. Requires Read permission on the Collection."
+      "Returns a paginated list of DataObject appIds captured in the given snapshot for the " +
+      "specified Collection. Collections, References, and soft-deleted entities are excluded. " +
+      "Snapshot metadata (name, capturedAt, totalEntries) is included for caller convenience. " +
+      "Use ?page= (0-based, default 0) and ?pageSize= (default 500, max 2000) to page through " +
+      "large snapshots. totalDataObjects always reflects the full count across all pages. " +
+      "Requires Read permission on the Collection."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot DataObject list.",
+    description = "Snapshot DataObject list (paginated).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = SnapshotDataObjectsIO.class)
@@ -113,6 +121,8 @@ public class SnapshotPinnedReadRest {
   public Response getDataObjects(
     @PathParam("collectionAppId") String collectionAppId,
     @PathParam("snapshotAppId") String snapshotAppId,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("500") @Min(1) @Max(2000) int pageSize,
     @Context SecurityContext sc
   ) {
     // Gate 1 — authentication
@@ -137,10 +147,13 @@ public class SnapshotPinnedReadRest {
           "Snapshot '" + snapshotAppId + "' does not belong to Collection '" + collectionAppId + "'.");
     }
 
-    // Load DataObject appIds from the snapshot entries
-    List<String> dataObjectAppIds = snapshotService.listDataObjectAppIds(snapshot);
+    // Load all DataObject appIds, then slice the requested page window
+    List<String> all = snapshotService.listDataObjectAppIds(snapshot);
+    int from = Math.min(page * pageSize, all.size());
+    int to = Math.min(from + pageSize, all.size());
+    List<String> paged = all.subList(from, to);
 
-    return Response.ok(new SnapshotDataObjectsIO(snapshot, dataObjectAppIds)).build();
+    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, all.size(), page, pageSize)).build();
   }
 
   // ── private helper ────────────────────────────────────────────────────────

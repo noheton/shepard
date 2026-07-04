@@ -15,12 +15,10 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -62,12 +60,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collection export URL")
+@Tag(name = "Collections")
 public class CollectionExportUrlRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-export-url.unauthorized";
   private static final String PT_NOT_FOUND = "/problems/collection-export-url.not-found";
   private static final String PT_FORBIDDEN = "/problems/collection-export-url.forbidden";
+  private static final String PT_EXPORT_FAILED = "/problems/collection-export-url.export-failed";
+  private static final String PT_STORAGE_UNAVAILABLE = "/problems/collection-export-url.storage-unavailable";
 
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
@@ -87,6 +87,7 @@ public class CollectionExportUrlRest {
   @POST
   @Path("/{appId}/export-url")
   @Operation(
+    operationId = "getExportUrl",
     summary = "Build and upload an RO-Crate ZIP to S3, returning a presigned download URL.",
     description = "Builds the collection's RO-Crate ZIP export, uploads it to the active " +
     "S3-compatible storage backend under exports/<uuid>.zip, and returns a presigned GET URL " +
@@ -108,10 +109,11 @@ public class CollectionExportUrlRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the collection.")
   @APIResponse(responseCode = "404", description = "No collection with that appId.")
+  @APIResponse(responseCode = "500", description = "Export build or storage write failed.")
   @APIResponse(
     responseCode = "503",
-    description = "Active storage backend does not support presigned export. " +
-    "Use GET /collections/{collectionId}/export for direct streaming."
+    description = "No active storage provider configured, or active provider does not support " +
+    "presigned export. Use GET /collections/{collectionId}/export for direct streaming."
   )
   public Response getExportUrl(
     @PathParam("appId") String collectionAppId,
@@ -137,9 +139,9 @@ public class CollectionExportUrlRest {
 
     FileStorage storage = fileStorageRegistry.activeStorage().orElse(null);
     if (storage == null) {
-      throw new ServiceUnavailableException(
-        "No active storage provider — configure shepard.storage.provider"
-      );
+      return problem(PT_STORAGE_UNAVAILABLE, "Storage backend unavailable",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "No active storage provider — configure shepard.storage.provider");
     }
 
     byte[] zipBytes;
@@ -147,7 +149,8 @@ public class CollectionExportUrlRest {
       zipBytes = exportService.exportCollectionByShepardId(ogmId.get(), selection).readAllBytes();
     } catch (IOException e) {
       Log.errorf("Export ZIP build failed for collection %s: %s", collectionAppId, e.getMessage());
-      throw new InternalServerErrorException("Export build failed: " + e.getMessage());
+      return problem(PT_EXPORT_FAILED, "Export build failed",
+        Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
     }
 
     String exportKey = UUID.randomUUID().toString();
@@ -158,14 +161,15 @@ public class CollectionExportUrlRest {
       presigned = storage.presignedExportUrl(exportKey, zipBytes, fileName, ttlValidator.effectiveExportTtl());
     } catch (StorageException e) {
       Log.errorf("presignedExportUrl failed for collection %s: %s", collectionAppId, e.getMessage());
-      throw new InternalServerErrorException("Storage error: " + e.getMessage());
+      return problem(PT_EXPORT_FAILED, "Export storage write failed",
+        Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
     }
 
     if (presigned.isEmpty()) {
-      throw new ServiceUnavailableException(
+      return problem(PT_STORAGE_UNAVAILABLE, "Storage backend unavailable",
+        Response.Status.SERVICE_UNAVAILABLE,
         "Active storage provider '" + storage.id() + "' does not support presigned export. " +
-        "Use GET /collections/{collectionId}/export for direct streaming."
-      );
+        "Use GET /collections/{collectionId}/export for direct streaming.");
     }
 
     Instant expiresAt = Instant.now().plus(ttlValidator.effectiveExportTtl());

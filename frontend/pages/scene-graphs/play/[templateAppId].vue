@@ -19,6 +19,7 @@
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
 import BindChannelsDialog from "~/components/scene-graph/BindChannelsDialog.vue";
 import { materializeMapping } from "~/composables/useMaterializeMapping";
+import { fetchTemplateKind } from "~/composables/useSceneGraphPlay";
 import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
 
 useHead({ title: "Scene-graph 3D view | shepard" });
@@ -50,11 +51,39 @@ const {
   revoke: revokeBlob,
 } = useUrdfReferenceBlob();
 
+// URDF-KUKA-ORANGE-2026-07-01 — provide a packagePath so `package://kuka_quantec_support/…`
+// URIs in the URDF resolve against the /urdf-samples/kr210_r2700_2/ tree on
+// this frontend host. This is the interim fix ahead of the annotation-driven
+// URDF-PACKAGE-PATH-FROM-ANNOTATION row (aidocs/16 §SCENEGRAPH-CANVAS-MESH):
+// each URDF FileReference should carry its packagePath as a semantic
+// annotation and be resolved at render time. For today's single-URDF
+// showcase the frontend-static default is correct; when a second URDF ships
+// the annotation must land alongside it.
+const urdfPackagePath = computed<string>(() => "/urdf-samples/kr210_r2700_2");
+
 async function load() {
   loading.value = true;
   error.value = null;
   envelope.value = null;
   try {
+    // SCENEGRAPH-PLAY-VIEWKIND-BRANCH (aidocs/16 §3962): this page materializes
+    // MAPPING_RECIPE templates only. A VIEW_RECIPE appId reaches here when a
+    // collection "hero view" points at a render-recipe (small-multiples,
+    // trace-3d, …) rather than a scene-graph. Branch on templateKind so a
+    // VIEW_RECIPE is handed to the /shapes/render playground instead of failing
+    // the MAPPING_RECIPE-only materialize call with a raw, misleading error.
+    const kind = await fetchTemplateKind(templateAppId.value);
+    if (kind === "VIEW_RECIPE") {
+      await navigateTo(
+        `/shapes/render?templateAppId=${encodeURIComponent(templateAppId.value)}`,
+      );
+      return;
+    }
+    if (kind && kind !== "MAPPING_RECIPE") {
+      error.value =
+        `This template is a ${kind}, not a playable scene-graph (MAPPING_RECIPE).`;
+      return;
+    }
     const result = await materializeMapping(templateAppId.value, {});
     if (result.outputKind !== "VIEW" || !result.viewModel) {
       error.value = "This template did not materialize into a 3D view.";
@@ -137,7 +166,11 @@ onUnmounted(revokeBlob);
 
         <div v-else-if="urdfUrl" class="play-canvas">
           <ClientOnly>
-            <UrdfCanvas :urdf-url="urdfUrl" label="Scene-graph 3D view" />
+            <UrdfCanvas
+              :urdf-url="urdfUrl"
+              :package-path="urdfPackagePath"
+              label="Scene-graph 3D view"
+            />
             <template #fallback>
               <v-skeleton-loader type="image" height="500" />
             </template>

@@ -45,6 +45,7 @@ public class DataObjectCollectionScopedRdfRest {
   @Path("/{appId}/rdf")
   @Produces("text/turtle")
   @Operation(
+    operationId = "getRdfInCollection",
     summary = "Return a Turtle subgraph for the DataObject (collection-scoped alias).",
     description =
       "Collection-scoped alias for `GET /v2/data-objects/{appId}/rdf`. " +

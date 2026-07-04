@@ -25,6 +25,12 @@ export interface TemplateInstantiateRequest {
      * @memberof TemplateInstantiateRequest
      */
     name?: string | null;
+    /**
+     * Caller-supplied attribute values (form input). Merged over the template body's default attributes (caller wins per key) before SHACL validation. Keys are the descriptor's fields[].attributeKey values.
+     * @type {{ [key: string]: string; }}
+     * @memberof TemplateInstantiateRequest
+     */
+    attributes?: { [key: string]: string; } | null;
 }
 
 /**
@@ -45,6 +51,7 @@ export function TemplateInstantiateRequestFromJSONTyped(json: any, ignoreDiscrim
     return {
         
         'name': json['name'] == null ? undefined : json['name'],
+        'attributes': json['attributes'] == null ? undefined : json['attributes'],
     };
 }
 
@@ -55,6 +62,7 @@ export function TemplateInstantiateRequestToJSON(value?: TemplateInstantiateRequ
     return {
         
         'name': value['name'],
+        'attributes': value['attributes'],
     };
 }
 

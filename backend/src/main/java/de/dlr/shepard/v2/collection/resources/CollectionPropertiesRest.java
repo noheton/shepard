@@ -42,7 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{appId}/properties")
 @RequestScoped
-@Tag(name = "Collection properties")
+@Tag(name = "Collections")
 public class CollectionPropertiesRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-properties.unauthorized";

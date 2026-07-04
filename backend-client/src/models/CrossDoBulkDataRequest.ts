@@ -44,7 +44,7 @@ export interface CrossDoBulkDataRequest {
      */
     end: number;
     /**
-     * LTTB target rows per series. Default 500. Hard cap 5000.
+     * LTTB target rows per series. Minimum 1, default 500 (when null or omitted), hard cap 5000.
      * @type {number}
      * @memberof CrossDoBulkDataRequest
      */

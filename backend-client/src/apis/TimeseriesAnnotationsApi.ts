@@ -17,45 +17,17 @@ import * as runtime from '../runtime';
 import type {
   AnomalyDetectRequestIO,
   AnomalyDetectResultIO,
-  TimeseriesAnnotationIO,
 } from '../models/index';
 import {
     AnomalyDetectRequestIOFromJSON,
     AnomalyDetectRequestIOToJSON,
     AnomalyDetectResultIOFromJSON,
     AnomalyDetectResultIOToJSON,
-    TimeseriesAnnotationIOFromJSON,
-    TimeseriesAnnotationIOToJSON,
 } from '../models/index';
 
-export interface CreateTimeseriesReferenceAnnotationRequest {
-    refAppId: string;
-    timeseriesAnnotationIO: Omit<TimeseriesAnnotationIO, 'appId'>;
-}
-
-export interface DeleteTimeseriesReferenceAnnotationRequest {
-    annotationAppId: string;
-    refAppId: string;
-}
-
 export interface DetectRequest {
-    refAppId: string;
+    appId: string;
     anomalyDetectRequestIO: AnomalyDetectRequestIO;
-}
-
-export interface GetTimeseriesReferenceAnnotationRequest {
-    annotationAppId: string;
-    refAppId: string;
-}
-
-export interface ListTimeseriesReferenceAnnotationsRequest {
-    refAppId: string;
-}
-
-export interface UpdateTimeseriesReferenceAnnotationRequest {
-    annotationAppId: string;
-    refAppId: string;
-    timeseriesAnnotationIO: Omit<TimeseriesAnnotationIO, 'appId'>;
 }
 
 /**
@@ -64,124 +36,14 @@ export interface UpdateTimeseriesReferenceAnnotationRequest {
 export class TimeseriesAnnotationsApi extends runtime.BaseAPI {
 
     /**
-     * Creates a `:TimeseriesAnnotation` node and links it to the `:TimeseriesReference` identified by `refAppId` (UUID v7). The server mints `appId` (UUID v7) for the new annotation.  Body fields: `startNs` (long, required — start of the annotated window in nanoseconds relative to the timeseries epoch), `endNs` (long, optional — end of the window; omit for a point annotation), `label` (string, required, non-blank — short display name), `description` (string, optional — long-form text), `aiGenerated` (boolean, optional, default `false` — set to `true` when the annotation was produced by an AI detector such as the MAD anomaly endpoint), `confidence` (float 0.0–1.0, optional — only meaningful when `aiGenerated=true`).  Example body: `{\"startNs\": 1700000000000000000, \"endNs\": 1700000001000000000, \"label\": \"spike\", \"description\": \"unexpected pressure spike\", \"aiGenerated\": false}`.  Auth: Write permission on the parent DataObject (inherited from its Collection).  Side effects: the annotation is linked to the reference in Neo4j via a `HAS_ANNOTATION` relationship. No provenance Activity is recorded for individual annotations in TA1a.
-     * [v2] Create an annotation on a TimeseriesReference.
-     */
-    async createTimeseriesReferenceAnnotationRaw(requestParameters: CreateTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
-        if (requestParameters['refAppId'] == null) {
-            throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling createTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        if (requestParameters['timeseriesAnnotationIO'] == null) {
-            throw new runtime.RequiredError(
-                'timeseriesAnnotationIO',
-                'Required parameter "timeseriesAnnotationIO" was null or undefined when calling createTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/annotations`.replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: TimeseriesAnnotationIOToJSON(requestParameters['timeseriesAnnotationIO']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Creates a `:TimeseriesAnnotation` node and links it to the `:TimeseriesReference` identified by `refAppId` (UUID v7). The server mints `appId` (UUID v7) for the new annotation.  Body fields: `startNs` (long, required — start of the annotated window in nanoseconds relative to the timeseries epoch), `endNs` (long, optional — end of the window; omit for a point annotation), `label` (string, required, non-blank — short display name), `description` (string, optional — long-form text), `aiGenerated` (boolean, optional, default `false` — set to `true` when the annotation was produced by an AI detector such as the MAD anomaly endpoint), `confidence` (float 0.0–1.0, optional — only meaningful when `aiGenerated=true`).  Example body: `{\"startNs\": 1700000000000000000, \"endNs\": 1700000001000000000, \"label\": \"spike\", \"description\": \"unexpected pressure spike\", \"aiGenerated\": false}`.  Auth: Write permission on the parent DataObject (inherited from its Collection).  Side effects: the annotation is linked to the reference in Neo4j via a `HAS_ANNOTATION` relationship. No provenance Activity is recorded for individual annotations in TA1a.
-     * [v2] Create an annotation on a TimeseriesReference.
-     */
-    async createTimeseriesReferenceAnnotation(requestParameters: CreateTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
-        const response = await this.createTimeseriesReferenceAnnotationRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Removes the `:TimeseriesAnnotation` identified by `annotationAppId` (UUID v7) from the `:TimeseriesReference` identified by `refAppId`. Both the graph node and its `HAS_ANNOTATION` relationship to the reference are deleted.  Auth: Write permission on the parent DataObject (inherited from its Collection). Returns 404 when either `refAppId` does not resolve to a known reference or `annotationAppId` does not resolve to a known annotation.  Idempotency: the call returns 404 (not 204) if the annotation is already gone.
-     * [v2] Delete an annotation from a TimeseriesReference.
-     */
-    async deleteTimeseriesReferenceAnnotationRaw(requestParameters: DeleteTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['annotationAppId'] == null) {
-            throw new runtime.RequiredError(
-                'annotationAppId',
-                'Required parameter "annotationAppId" was null or undefined when calling deleteTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        if (requestParameters['refAppId'] == null) {
-            throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling deleteTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
-            method: 'DELETE',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * Removes the `:TimeseriesAnnotation` identified by `annotationAppId` (UUID v7) from the `:TimeseriesReference` identified by `refAppId`. Both the graph node and its `HAS_ANNOTATION` relationship to the reference are deleted.  Auth: Write permission on the parent DataObject (inherited from its Collection). Returns 404 when either `refAppId` does not resolve to a known reference or `annotationAppId` does not resolve to a known annotation.  Idempotency: the call returns 404 (not 204) if the annotation is already gone.
-     * [v2] Delete an annotation from a TimeseriesReference.
-     */
-    async deleteTimeseriesReferenceAnnotation(requestParameters: DeleteTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.deleteTimeseriesReferenceAnnotationRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Fetches the timeseries data linked to the `:TimeseriesReference` identified by `refAppId`, selects one channel series, applies the rolling-median Median Absolute Deviation (MAD) algorithm, and returns detected anomaly intervals as an `AnomalyDetectResultIO` response.  Series selection rules:   - If the reference holds exactly one series and all five filter fields (`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the request body, that series is selected automatically.   - Otherwise all non-null filter fields must together resolve to exactly one series; 400 is returned if zero or multiple series match.  Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; higher = fewer detections), `createAnnotations` (boolean, default false — when true, each detected interval is persisted as a `TimeseriesAnnotation` with `aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` (strings — series filter keys; omit all to auto-select when there is exactly one series).  Example — auto-select, default params: `{}`. Example — explicit series and tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", \"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.  Auth: Read permission is sufficient when `createAnnotations=false`; Write permission on the parent DataObject is required when `createAnnotations=true`.
+     * Fetches the timeseries data linked to the `:TimeseriesReference` identified by `appId`, selects one channel series, applies the rolling-median Median Absolute Deviation (MAD) algorithm, and returns detected anomaly intervals as an `AnomalyDetectResultIO` response.  Series selection rules:   - If the reference holds exactly one series and all five filter fields (`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the request body, that series is selected automatically.   - Otherwise all non-null filter fields must together resolve to exactly one series; 400 is returned if zero or multiple series match.  Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; higher = fewer detections), `createAnnotations` (boolean, default false — when true, each detected interval is persisted as a `TimeseriesAnnotation` with `aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` (strings — series filter keys; omit all to auto-select when there is exactly one series).  Example — auto-select, default params: `{}`. Example — explicit series and tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", \"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.  Auth: Read permission is sufficient when `createAnnotations=false`; Write permission on the parent DataObject is required when `createAnnotations=true`.
      * [v2] Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.
      */
     async detectRaw(requestParameters: DetectRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AnomalyDetectResultIO>> {
-        if (requestParameters['refAppId'] == null) {
+        if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling detect().'
+                'appId',
+                'Required parameter "appId" was null or undefined when calling detect().'
             );
         }
 
@@ -211,7 +73,7 @@ export class TimeseriesAnnotationsApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/detect-anomalies`.replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
+            path: `/v2/references/{appId}/detect-anomalies`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -222,176 +84,11 @@ export class TimeseriesAnnotationsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Fetches the timeseries data linked to the `:TimeseriesReference` identified by `refAppId`, selects one channel series, applies the rolling-median Median Absolute Deviation (MAD) algorithm, and returns detected anomaly intervals as an `AnomalyDetectResultIO` response.  Series selection rules:   - If the reference holds exactly one series and all five filter fields (`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the request body, that series is selected automatically.   - Otherwise all non-null filter fields must together resolve to exactly one series; 400 is returned if zero or multiple series match.  Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; higher = fewer detections), `createAnnotations` (boolean, default false — when true, each detected interval is persisted as a `TimeseriesAnnotation` with `aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` (strings — series filter keys; omit all to auto-select when there is exactly one series).  Example — auto-select, default params: `{}`. Example — explicit series and tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", \"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.  Auth: Read permission is sufficient when `createAnnotations=false`; Write permission on the parent DataObject is required when `createAnnotations=true`.
+     * Fetches the timeseries data linked to the `:TimeseriesReference` identified by `appId`, selects one channel series, applies the rolling-median Median Absolute Deviation (MAD) algorithm, and returns detected anomaly intervals as an `AnomalyDetectResultIO` response.  Series selection rules:   - If the reference holds exactly one series and all five filter fields (`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the request body, that series is selected automatically.   - Otherwise all non-null filter fields must together resolve to exactly one series; 400 is returned if zero or multiple series match.  Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; higher = fewer detections), `createAnnotations` (boolean, default false — when true, each detected interval is persisted as a `TimeseriesAnnotation` with `aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` (strings — series filter keys; omit all to auto-select when there is exactly one series).  Example — auto-select, default params: `{}`. Example — explicit series and tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", \"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.  Auth: Read permission is sufficient when `createAnnotations=false`; Write permission on the parent DataObject is required when `createAnnotations=true`.
      * [v2] Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.
      */
     async detect(requestParameters: DetectRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<AnomalyDetectResultIO> {
         const response = await this.detectRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Returns the `TimeseriesAnnotationIO` record for the `:TimeseriesAnnotation` identified by `annotationAppId` (UUID v7) within the `:TimeseriesReference` identified by `refAppId`. Both path params are required; 404 is returned if either the reference or the annotation is unknown.  Auth: Read permission on the parent DataObject (inherited from its Collection). The access check is performed against the `refAppId` parent reference; the annotation lookup is not independently permission-gated.  Next step: `PATCH /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` to update, or `DELETE ...` to remove.
-     * [v2] Read a single annotation by appId.
-     */
-    async getTimeseriesReferenceAnnotationRaw(requestParameters: GetTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
-        if (requestParameters['annotationAppId'] == null) {
-            throw new runtime.RequiredError(
-                'annotationAppId',
-                'Required parameter "annotationAppId" was null or undefined when calling getTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        if (requestParameters['refAppId'] == null) {
-            throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling getTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Returns the `TimeseriesAnnotationIO` record for the `:TimeseriesAnnotation` identified by `annotationAppId` (UUID v7) within the `:TimeseriesReference` identified by `refAppId`. Both path params are required; 404 is returned if either the reference or the annotation is unknown.  Auth: Read permission on the parent DataObject (inherited from its Collection). The access check is performed against the `refAppId` parent reference; the annotation lookup is not independently permission-gated.  Next step: `PATCH /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` to update, or `DELETE ...` to remove.
-     * [v2] Read a single annotation by appId.
-     */
-    async getTimeseriesReferenceAnnotation(requestParameters: GetTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
-        const response = await this.getTimeseriesReferenceAnnotationRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Returns all `:TimeseriesAnnotation` nodes attached to the `:TimeseriesReference` identified by `refAppId` (UUID v7). Each `TimeseriesAnnotationIO` record includes `appId`, `startNs` (start of the annotated window in nanoseconds since the timeseries epoch), `endNs` (end of the window, nullable for point annotations), `label` (short non-blank string), `description` (optional long-form text), `aiGenerated` (boolean flag set when the annotation was created by an AI detector), and `confidence` (nullable float 0.0–1.0).  The list is unordered; callers should sort client-side by `startNs` to render annotations in timeline order.  Auth: Read permission on the parent DataObject (inherited from its Collection). Returns 404 when the `refAppId` does not resolve to a known `:TimeseriesReference`.  Next step: `POST /v2/timeseries-references/{refAppId}/annotations` to add an annotation, or `GET /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` to fetch a single one.
-     * [v2] List all annotations on a TimeseriesReference.
-     */
-    async listTimeseriesReferenceAnnotationsRaw(requestParameters: ListTimeseriesReferenceAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesAnnotationIO>>> {
-        if (requestParameters['refAppId'] == null) {
-            throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling listTimeseriesReferenceAnnotations().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/annotations`.replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(TimeseriesAnnotationIOFromJSON));
-    }
-
-    /**
-     * Returns all `:TimeseriesAnnotation` nodes attached to the `:TimeseriesReference` identified by `refAppId` (UUID v7). Each `TimeseriesAnnotationIO` record includes `appId`, `startNs` (start of the annotated window in nanoseconds since the timeseries epoch), `endNs` (end of the window, nullable for point annotations), `label` (short non-blank string), `description` (optional long-form text), `aiGenerated` (boolean flag set when the annotation was created by an AI detector), and `confidence` (nullable float 0.0–1.0).  The list is unordered; callers should sort client-side by `startNs` to render annotations in timeline order.  Auth: Read permission on the parent DataObject (inherited from its Collection). Returns 404 when the `refAppId` does not resolve to a known `:TimeseriesReference`.  Next step: `POST /v2/timeseries-references/{refAppId}/annotations` to add an annotation, or `GET /v2/timeseries-references/{refAppId}/annotations/{annotationAppId}` to fetch a single one.
-     * [v2] List all annotations on a TimeseriesReference.
-     */
-    async listTimeseriesReferenceAnnotations(requestParameters: ListTimeseriesReferenceAnnotationsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesAnnotationIO>> {
-        const response = await this.listTimeseriesReferenceAnnotationsRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Applies a partial update to the `:TimeseriesAnnotation` identified by `annotationAppId` within the reference `refAppId`. Only fields present and non-null in the request body are applied; absent or null fields are left unchanged on the stored entity.  Patchable fields: `startNs` (long), `endNs` (long, set to null to convert a range annotation to a point), `label` (string, non-blank required if provided), `description` (string), `confidence` (float). `aiGenerated` cannot be updated via PATCH — it is set at creation time only.  Example: widen the annotated window — `{\"startNs\": 1700000000000000000, \"endNs\": 1700000005000000000}`. Example: relabel an existing annotation — `{\"label\": \"confirmed-spike\"}`.  Auth: Write permission on the parent DataObject (inherited from its Collection).
-     * [v2] Update an annotation (merge-patch: only non-null provided fields are changed).
-     */
-    async updateTimeseriesReferenceAnnotationRaw(requestParameters: UpdateTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TimeseriesAnnotationIO>> {
-        if (requestParameters['annotationAppId'] == null) {
-            throw new runtime.RequiredError(
-                'annotationAppId',
-                'Required parameter "annotationAppId" was null or undefined when calling updateTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        if (requestParameters['refAppId'] == null) {
-            throw new runtime.RequiredError(
-                'refAppId',
-                'Required parameter "refAppId" was null or undefined when calling updateTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        if (requestParameters['timeseriesAnnotationIO'] == null) {
-            throw new runtime.RequiredError(
-                'timeseriesAnnotationIO',
-                'Required parameter "timeseriesAnnotationIO" was null or undefined when calling updateTimeseriesReferenceAnnotation().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/timeseries-references/{refAppId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"refAppId"}}`, encodeURIComponent(String(requestParameters['refAppId']))),
-            method: 'PATCH',
-            headers: headerParameters,
-            query: queryParameters,
-            body: TimeseriesAnnotationIOToJSON(requestParameters['timeseriesAnnotationIO']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TimeseriesAnnotationIOFromJSON(jsonValue));
-    }
-
-    /**
-     * Applies a partial update to the `:TimeseriesAnnotation` identified by `annotationAppId` within the reference `refAppId`. Only fields present and non-null in the request body are applied; absent or null fields are left unchanged on the stored entity.  Patchable fields: `startNs` (long), `endNs` (long, set to null to convert a range annotation to a point), `label` (string, non-blank required if provided), `description` (string), `confidence` (float). `aiGenerated` cannot be updated via PATCH — it is set at creation time only.  Example: widen the annotated window — `{\"startNs\": 1700000000000000000, \"endNs\": 1700000005000000000}`. Example: relabel an existing annotation — `{\"label\": \"confirmed-spike\"}`.  Auth: Write permission on the parent DataObject (inherited from its Collection).
-     * [v2] Update an annotation (merge-patch: only non-null provided fields are changed).
-     */
-    async updateTimeseriesReferenceAnnotation(requestParameters: UpdateTimeseriesReferenceAnnotationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TimeseriesAnnotationIO> {
-        const response = await this.updateTimeseriesReferenceAnnotationRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -10,10 +10,8 @@ interface EditDataObjectDialogProps {
   dataObjectName: string;
   /**
    * Numeric collection id resolved from the loaded v2 Collection entity —
-   * required only by the Parent/Predecessor autocompletes, which still use
-   * the v1 SearchApi (documented exception: no v2 search surface yet,
-   * SEARCH-V2 in aidocs/16). Falls back to `collectionId` when that is
-   * already numeric (legacy callers).
+   * required only when `collectionId` is a UUID v7 string but no v2 search
+   * path is available. Falls back to `collectionId` when that is numeric.
    */
   collectionNumericId?: number;
 }
@@ -39,11 +37,16 @@ const { saveChanges, updatedDataObject, loading } = useEditDataObject(
 const form = useTemplateRef("form");
 watch(updatedDataObject, () => form.value?.validate(), { deep: true });
 
-// Numeric scope for the v1-search-backed autocompletes (see prop docs).
+// Numeric scope for v1-search fallback in the autocompletes (see prop docs).
 const searchCollectionId = computed<number | undefined>(() => {
   if (props.collectionNumericId !== undefined) return props.collectionNumericId;
   return typeof props.collectionId === "number" ? props.collectionId : undefined;
 });
+
+// v2 scope: when collectionId is a UUID v7 string it IS the collection appId.
+const searchCollectionAppId = computed<string | undefined>(() =>
+  typeof props.collectionId === "string" ? props.collectionId : undefined
+);
 </script>
 
 <template>
@@ -110,6 +113,7 @@ const searchCollectionId = computed<number | undefined>(() => {
             <ParentInput
               v-model:parent-id="updatedDataObject.parentId"
               :collection-id="(searchCollectionId as unknown as number)"
+              :collection-app-id="searchCollectionAppId"
             />
           </v-col>
         </v-row>
@@ -118,6 +122,7 @@ const searchCollectionId = computed<number | undefined>(() => {
             <PredecessorInput
               v-model:predecessor-ids="updatedDataObject.predecessorIds"
               :collection-id="(searchCollectionId as unknown as number)"
+              :collection-app-id="searchCollectionAppId"
             />
           </v-col>
         </v-row>

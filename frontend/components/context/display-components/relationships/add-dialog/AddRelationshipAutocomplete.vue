@@ -10,6 +10,8 @@ const searchDone = ref<boolean>(false);
 
 const props = defineProps<{
   collectionId: number;
+  /** UUID v7 of the owning collection — when supplied, search uses GET /v2/search (SEARCH-V2-3). */
+  collectionAppId?: string;
 }>();
 
 const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
@@ -18,6 +20,7 @@ const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
   () => {
     searchDone.value = true;
   },
+  props.collectionAppId,
 );
 
 const model = defineModel<DataObjectSearchResult>();

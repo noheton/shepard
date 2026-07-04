@@ -69,6 +69,12 @@ export interface ReferenceV2 {
     readonly revision?: number;
     /**
      * 
+     * @type {string}
+     * @memberof ReferenceV2
+     */
+    uniqueId?: string;
+    /**
+     * 
      * @type {number}
      * @memberof ReferenceV2
      */
@@ -136,6 +142,7 @@ export function ReferenceV2FromJSONTyped(json: any, ignoreDiscriminator: boolean
         'name': json['name'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'dataObjectId': json['dataObjectId'] == null ? undefined : json['dataObjectId'],
         'type': json['type'] == null ? undefined : json['type'],
         'kind': json['kind'] == null ? undefined : json['kind'],
@@ -152,6 +159,7 @@ export function ReferenceV2ToJSON(value?: Omit<ReferenceV2, 'id'|'createdAt'|'cr
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
         'kind': value['kind'],
         'referenceShape': value['referenceShape'],
         'fileKind': value['fileKind'],

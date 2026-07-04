@@ -92,7 +92,14 @@ export function useFetchHdfReferences(dataObjectAppId: string) {
         handleError(fetchError.value, "listHdfReferences");
         return;
       }
-      const raw = (await response.json()) as ReferenceV2IO[];
+      // BUG-DO-DETAIL-A-TOAST-2026-06-29: unwrap the paged envelope shape
+      // { items: [...] } the unified /v2/references list now returns.
+      const body = (await response.json()) as
+        | ReferenceV2IO[]
+        | { items?: ReferenceV2IO[] };
+      const raw = Array.isArray(body)
+        ? body
+        : ((body as { items?: ReferenceV2IO[] }).items ?? []);
       references.value = raw.map(toHdfReferenceIO);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Network error";

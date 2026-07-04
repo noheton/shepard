@@ -22,7 +22,7 @@ import type {
   ImportManifestIO,
   IngestEventIO,
   LockStatusIO,
-  RunSummaryIO,
+  PagedResponse,
 } from '../models/index';
 import {
     AbandonRequestIOFromJSON,
@@ -39,8 +39,8 @@ import {
     IngestEventIOToJSON,
     LockStatusIOFromJSON,
     LockStatusIOToJSON,
-    RunSummaryIOFromJSON,
-    RunSummaryIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface AbandonRequest {
@@ -57,14 +57,14 @@ export interface CancelRequest {
 }
 
 export interface GetContextRequest {
-    collectionAppId?: string;
+    collectionAppId: string;
     includeSemanticGraph?: boolean;
 }
 
 export interface GetEventsRequest {
     runId: string;
-    level?: string;
-    phase?: string;
+    level?: GetEventsLevelEnum;
+    phase?: GetEventsPhaseEnum;
 }
 
 export interface GetPlanRequest {
@@ -245,6 +245,13 @@ export class ImportApi extends runtime.BaseAPI {
      * [v2] Get the current collection state for importers/agents (IMP1)
      */
     async getContextRaw(requestParameters: GetContextRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ImportContextIO>> {
+        if (requestParameters['collectionAppId'] == null) {
+            throw new runtime.RequiredError(
+                'collectionAppId',
+                'Required parameter "collectionAppId" was null or undefined when calling getContext().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['collectionAppId'] != null) {
@@ -279,7 +286,7 @@ export class ImportApi extends runtime.BaseAPI {
      * Returns a snapshot of the target collection — DataObject count and a SHA-256 fingerprint of the collection state — so that an importer or agent can generate a manifest that is consistent with the collection as it currently exists.  When `includeSemanticGraph=true` is supplied, the response also includes the semantic annotations currently attached to DataObjects in the collection, giving agents the vocabulary they need to annotate new DataObjects consistently with existing terms.  The `includeSemanticGraph=false` (default) path is fast — it executes a single Cypher count query and skips any annotation lookup.  Auth: Read on the target Collection. 404 when the `collectionAppId` does not resolve.
      * [v2] Get the current collection state for importers/agents (IMP1)
      */
-    async getContext(requestParameters: GetContextRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImportContextIO> {
+    async getContext(requestParameters: GetContextRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ImportContextIO> {
         const response = await this.getContextRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -570,7 +577,7 @@ export class ImportApi extends runtime.BaseAPI {
      * Returns a list of run IDs known to the in-memory diagnostic log, sorted by start time descending (most recent first). Each entry includes: runId, startedAt, lastEventAt, and lastLevel (most-severe level seen: INFO / WARN / ERROR). The list is populated by both Java-side lock lifecycle events and events ingested from external processes via POST /v2/import/diagnostics/{runId}/events. Runs are evicted after 24 hours; the list does not include runs from before the last server restart.
      * [v2] List recent import runs with diagnostic summary (IMP-DIAG)
      */
-    async listRunsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RunSummaryIO>> {
+    async listRunsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -590,14 +597,14 @@ export class ImportApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => RunSummaryIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns a list of run IDs known to the in-memory diagnostic log, sorted by start time descending (most recent first). Each entry includes: runId, startedAt, lastEventAt, and lastLevel (most-severe level seen: INFO / WARN / ERROR). The list is populated by both Java-side lock lifecycle events and events ingested from external processes via POST /v2/import/diagnostics/{runId}/events. Runs are evicted after 24 hours; the list does not include runs from before the last server restart.
      * [v2] List recent import runs with diagnostic summary (IMP-DIAG)
      */
-    async listRuns(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RunSummaryIO> {
+    async listRuns(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listRunsRaw(initOverrides);
         return await response.value();
     }
@@ -691,3 +698,24 @@ export class ImportApi extends runtime.BaseAPI {
     }
 
 }
+
+/**
+ * @export
+ */
+export const GetEventsLevelEnum = {
+    Info: 'INFO',
+    Warn: 'WARN',
+    Error: 'ERROR'
+} as const;
+export type GetEventsLevelEnum = typeof GetEventsLevelEnum[keyof typeof GetEventsLevelEnum];
+/**
+ * @export
+ */
+export const GetEventsPhaseEnum = {
+    Warmup: 'WARMUP',
+    DoCreate: 'DO_CREATE',
+    RefAttach: 'REF_ATTACH',
+    FileUpload: 'FILE_UPLOAD',
+    Complete: 'COMPLETE'
+} as const;
+export type GetEventsPhaseEnum = typeof GetEventsPhaseEnum[keyof typeof GetEventsPhaseEnum];

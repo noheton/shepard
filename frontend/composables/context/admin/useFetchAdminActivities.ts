@@ -18,14 +18,14 @@ export function useFetchAdminActivities() {
   async function load() {
     isLoading.value = true;
     try {
-      const rows = await useV2ShepardApi(ProvenanceApi).value.listActivities({
+      const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
         agent: filterAgent.value || undefined,
         targetKind: filterTargetKind.value || undefined,
         targetAppId: filterTargetAppId.value || undefined,
-        pageSize: limit.value,
+        limit: limit.value,
       });
-      activities.value = rows ?? [];
-      hasMore.value = rows.length >= limit.value;
+      activities.value = Array.isArray(paged) ? paged : ((paged as unknown as { items?: Activity[] })?.items ?? []);
+      hasMore.value = (Array.isArray(paged) ? paged.length : ((paged as unknown as { items?: Activity[] })?.items?.length ?? 0)) >= limit.value;
     } catch (error) {
       activities.value = [];
       hasMore.value = false;

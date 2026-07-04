@@ -73,6 +73,7 @@ public class PublishRest {
 
   @POST
   @Operation(
+    operationId = "publish",
     summary = "Publish an entity — mint a PID via the active Minter and attach a Publication row.",
     description = "Idempotent on the first call: a re-POST without `?force=true` returns the existing " +
     "Publication. With `?force=true`, a fresh PID is minted and attached as an additional row. " +

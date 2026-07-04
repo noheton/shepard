@@ -253,8 +253,14 @@ These work the same way across every primitive:
   bookkeeping required. PV1b–PV1g (StructuredData, Spatial, Timeseries,
   RO-Crate integration, retention GC) are follow-on slices.
 - **Search.** Across all entities and attributes; semantic-annotation
-  search lights up additionally for ontology terms. Improvements
-  in flight (`aidocs/13`).
+  search lights up additionally for ontology terms. **L4 shipped
+  2026-06-29**: a dedicated `/semantic/search` page lets a researcher
+  type into a box and watch every loaded ontology term filter live
+  (debounced search-as-you-type), then see each matched term *in its
+  place* — a namespace→term tree or an interactive graph view — so you
+  can tell at a glance which vocabulary a term belongs to before you
+  annotate with it. Reachable from the Semantic hub and the
+  Vocabularies page. Further improvements in flight (`aidocs/13`).
 - **Semantic-annotation repositories — internal *or* external.**
   Reference an ontology term by IRI; resolve labels through one of
   three connector types. **External** SPARQL endpoints (the upstream
@@ -623,12 +629,15 @@ Mid-horizon:
   lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
   versions of a note so researchers can recover earlier drafts. **J1e shipped
-  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
-  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
-  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
-  they show up as **Notebook**-kind rows in the unified Data References table
-  with a one-click "Open in JupyterHub" launch button gated on the admin
-  config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
+  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out,
+  delivered via `shepard-plugin-jupyter` (installed by default; not in-core).
+  (`:JupyterConfig` singleton + `GET/PATCH /v2/admin/plugins/jupyter/config` +
+  `shepard-admin jupyter` CLI + JupyterHub compose sidecar path-mounted at
+  `/jupyterhub`; backend + CLI classes live in `plugins/jupyter/`). Notebooks
+  are no longer in a dedicated DataObject panel; they show up as
+  **Notebook**-kind rows in the unified Data References table with a one-click
+  "Open in JupyterHub" launch button gated on the admin config
+  (REF-UNIFIED-TABLE-FR1B). The launch URL composes
   `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
   can absorb it.
 - **REST-driven digital-twin scene editing** (`aidocs/data/85`, DT1

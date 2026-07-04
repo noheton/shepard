@@ -76,6 +76,7 @@ public class MffdProcessChainMappingRest {
   @POST
   @Consumes({ MEDIA_TYPE_YAML, MEDIA_TYPE_APPLICATION_YAML, MediaType.TEXT_PLAIN })
   @Operation(
+    operationId = "apply",
     summary = "Apply a MFFD process-chain mapping YAML payload (admin-only).",
     description = "Parses the YAML body, matches source and target DataObjects via " +
     "their urn:shepard:mffd:* SemanticAnnotation predicates, and MERGEs " +
@@ -95,6 +96,7 @@ public class MffdProcessChainMappingRest {
     description = "Malformed YAML or unsupported schemaVersion (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response apply(String yamlBody, @Context SecurityContext sc) {
     long startedAtMillis = System.currentTimeMillis();

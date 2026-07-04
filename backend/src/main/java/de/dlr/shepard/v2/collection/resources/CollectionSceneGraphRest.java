@@ -64,7 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection hero-view")
+@Tag(name = "Collections")
 public class CollectionSceneGraphRest {
 
   static final String MAPPING_RECIPE_KIND = "MAPPING_RECIPE";
@@ -132,6 +132,7 @@ public class CollectionSceneGraphRest {
 
   @PUT
   @Operation(
+    operationId = "link",
     summary = "Link / replace the Collection's hero view.",
     description =
       "Sets `:Collection.sceneGraphAppId` to the supplied MAPPING_RECIPE "
@@ -194,6 +195,7 @@ public class CollectionSceneGraphRest {
 
   @DELETE
   @Operation(
+    operationId = "unlink",
     summary = "Unlink the Collection's hero view.",
     description =
       "Clears `:Collection.sceneGraphAppId`. Does NOT delete the MAPPING_RECIPE "

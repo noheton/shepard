@@ -105,6 +105,7 @@ public class PersonalVocabularyRest {
     content = @Content(schema = @Schema(implementation = VocabularyIO.class))
   )
   @APIResponse(responseCode = "400", description = "Invalid name (must match [a-z0-9][a-z0-9_-]{0,63}).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Feature disabled by operator (personalVocabulariesEnabled=false).")
   @APIResponse(responseCode = "409", description = "A personal vocabulary with this name already exists for the caller.")
   public Response create(PersonalVocabularyRequestIO body) {
@@ -182,6 +183,7 @@ public class PersonalVocabularyRest {
     description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,

@@ -63,7 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/lab-journal-entries")
 @RequestScoped
-@Tag(name = "Collection lab journal entries")
+@Tag(name = "Collections")
 public class CollectionLabJournalEntriesRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/lab-journal.unauthorized";

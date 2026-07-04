@@ -4,6 +4,8 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
@@ -13,6 +15,7 @@ import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -226,5 +229,240 @@ public class CollectionMcpTools {
       DataObjectDetailV2IO detail = new DataObjectDetailV2IO(dataObject);
       return support.toJson(detail);
     });
+  }
+
+  // ── MCP-COV-02-1: Collection CRUD ────────────────────────────────────────
+
+  @Tool(
+    name = "collection_create",
+    description =
+      "Create a new Collection owned by the caller. A Collection is shepard's " +
+      "top-level research-dataset bucket (one test campaign, one mission phase, " +
+      "one manufacturing batch).\n\n" +
+      "Returns the created Collection record:\n" +
+      "  appId — carry this into `list_data_objects` / `data_object_create`\n" +
+      "  id    — internal Neo4j id (use appId in all subsequent tool calls)\n" +
+      "  name, description, status\n\n" +
+      "Status values: DRAFT (default) | IN_REVIEW | READY | PUBLISHED | ARCHIVED."
+  )
+  public String collectionCreate(
+    @ToolArg(description = "Name for the new Collection (e.g. \"LUMEN Campaign 2024-Q4\").") String name,
+    @ToolArg(required = false, description = "Optional free-text description.") String description,
+    @ToolArg(required = false, description = "Initial lifecycle status. One of: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED. Defaults to DRAFT when omitted.") String status
+  ) {
+    return support.run("collection_create", () -> {
+      contextBridge.bind();
+      if (name == null || name.isBlank()) {
+        throw McpToolSupport.invalidParams("name is required and must not be blank.");
+      }
+      CollectionIO io = new CollectionIO();
+      io.setName(name.trim());
+      if (description != null) io.setDescription(description);
+      if (status != null && !status.isBlank()) io.setStatus(status);
+      Collection created = collectionService.createCollection(io);
+      return support.toJson(collectionSummary(created));
+    });
+  }
+
+  @Tool(
+    name = "collection_update",
+    description =
+      "Update the name, description, or status of an existing Collection.\n\n" +
+      "Only the fields you supply are changed — omitted fields keep their current " +
+      "values. Returns the updated record (same shape as `collection_create`).\n\n" +
+      "Status values: DRAFT | IN_REVIEW | READY | PUBLISHED | ARCHIVED.\n\n" +
+      "To update permissions, use the REST API directly " +
+      "(`PUT /v2/collections/{appId}/permissions`)."
+  )
+  public String collectionUpdate(
+    @ToolArg(description = "UUID v7 of the Collection to update (from `list_collections`).") String collectionAppId,
+    @ToolArg(required = false, description = "New name. Omit to keep the existing name.") String name,
+    @ToolArg(required = false, description = "New description. Omit to keep existing. Pass empty string to clear.") String description,
+    @ToolArg(required = false, description = "New lifecycle status. One of: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED. Omit to keep existing.") String status
+  ) {
+    return support.run("collection_update", () -> {
+      contextBridge.bind();
+      long ogmId = support.resolveOfType(collectionAppId, "Collection", "collectionAppId");
+      Collection existing = collectionService.getCollection(ogmId);
+
+      CollectionIO io = new CollectionIO();
+      io.setName((name != null && !name.isBlank()) ? name.trim() : existing.getName());
+      io.setDescription(description != null ? description : existing.getDescription());
+      io.setStatus((status != null && !status.isBlank()) ? status : existing.getStatus());
+      // Preserve all other scalar fields unchanged.
+      io.setAttributes(existing.getAttributes() != null ? existing.getAttributes() : new HashMap<>());
+      io.setLicense(existing.getLicense());
+      io.setAccessRights(existing.getAccessRights());
+      io.setEmbargoEndDate(existing.getEmbargoEndDate());
+      io.setHeroImageUrl(existing.getHeroImageUrl());
+      io.setImportedFrom(existing.getImportedFrom());
+      io.setPromptLogMode(existing.getPromptLogMode());
+
+      Collection updated = collectionService.updateCollectionByShepardId(ogmId, io);
+      return support.toJson(collectionSummary(updated));
+    });
+  }
+
+  @Tool(
+    name = "collection_delete",
+    description =
+      "Permanently delete a Collection and ALL its DataObjects, References, and " +
+      "contained data. This operation is irreversible.\n\n" +
+      "The caller must be the Collection owner or an instance admin. " +
+      "Returns {\"deleted\": true, \"appId\": \"…\"} on success."
+  )
+  public String collectionDelete(
+    @ToolArg(description = "UUID v7 of the Collection to delete (from `list_collections`).") String collectionAppId
+  ) {
+    return support.run("collection_delete", () -> {
+      contextBridge.bind();
+      long ogmId = support.resolveOfType(collectionAppId, "Collection", "collectionAppId");
+      collectionService.deleteCollection(ogmId);
+      Map<String, Object> result = new LinkedHashMap<>();
+      result.put("deleted", true);
+      result.put("appId", collectionAppId);
+      return support.toJson(result);
+    });
+  }
+
+  // ── MCP-COV-02-1: DataObject CRUD ────────────────────────────────────────
+
+  @Tool(
+    name = "data_object_create",
+    description =
+      "Create a new DataObject inside a Collection. A DataObject is one unit of " +
+      "scientific work — one test run, one process step, one inspection.\n\n" +
+      "Returns the created record:\n" +
+      "  appId — use this in `get_data_object`, `data_object_update`, and " +
+      "           container-attachment calls\n" +
+      "  id, name, description, status\n\n" +
+      "Status values: DRAFT (default) | IN_REVIEW | READY | PUBLISHED | ARCHIVED | " +
+      "NCR_OPEN | ON_HOLD | REJECTED | CERTIFIED | CONCESSION_PENDING.\n\n" +
+      "After creation, attach timeseries, file, or structured-data containers via " +
+      "the relevant tools. Set Predecessor/Successor links via the lineage tools."
+  )
+  public String dataObjectCreate(
+    @ToolArg(description = "UUID v7 of the parent Collection (from `list_collections`).") String collectionAppId,
+    @ToolArg(description = "Name for the new DataObject (e.g. \"TR-016\", \"AFP Layup Run 5\").") String name,
+    @ToolArg(required = false, description = "Optional free-text description.") String description,
+    @ToolArg(required = false, description = "Initial lifecycle status. Defaults to DRAFT when omitted.") String status
+  ) {
+    return support.run("data_object_create", () -> {
+      contextBridge.bind();
+      if (name == null || name.isBlank()) {
+        throw McpToolSupport.invalidParams("name is required and must not be blank.");
+      }
+      long collectionOgmId = support.resolveOfType(collectionAppId, "Collection", "collectionAppId");
+      DataObjectIO io = new DataObjectIO();
+      io.setName(name.trim());
+      if (description != null) io.setDescription(description);
+      if (status != null && !status.isBlank()) io.setStatus(status);
+      DataObject created = dataObjectService.createDataObject(collectionOgmId, io);
+      return support.toJson(dataObjectSummary(created));
+    });
+  }
+
+  @Tool(
+    name = "data_object_update",
+    description =
+      "Update the name, description, or status of an existing DataObject.\n\n" +
+      "Only the fields you supply are changed — omitted fields keep their current " +
+      "values. Predecessor/Successor lineage links are preserved unchanged by this " +
+      "tool; use the lineage tools to modify them.\n\n" +
+      "Status values: DRAFT | IN_REVIEW | READY | PUBLISHED | ARCHIVED | " +
+      "NCR_OPEN | ON_HOLD | REJECTED | CERTIFIED | CONCESSION_PENDING.\n\n" +
+      "Returns the updated record (same shape as `data_object_create`)."
+  )
+  public String dataObjectUpdate(
+    @ToolArg(description = "UUID v7 of the parent Collection (from `list_collections`).") String collectionAppId,
+    @ToolArg(description = "UUID v7 of the DataObject to update (from `list_data_objects` or `get_data_object`).") String dataObjectAppId,
+    @ToolArg(required = false, description = "New name. Omit to keep existing.") String name,
+    @ToolArg(required = false, description = "New description. Omit to keep existing. Pass empty string to clear.") String description,
+    @ToolArg(required = false, description = "New lifecycle status. Omit to keep existing.") String status
+  ) {
+    return support.run("data_object_update", () -> {
+      contextBridge.bind();
+      long collectionOgmId = support.resolveOfType(collectionAppId, "Collection", "collectionAppId");
+      long doOgmId = support.resolveOfType(dataObjectAppId, "DataObject", "dataObjectAppId");
+
+      // Fetch existing to preserve predecessor links and all other scalar fields.
+      // updateDataObject always deletes then re-adds predecessors from the IO, so
+      // passing null predecessorIds would clear them — we must carry them through.
+      DataObject existing = dataObjectService.getDataObject(collectionOgmId, doOgmId);
+
+      DataObjectIO io = new DataObjectIO();
+      io.setName((name != null && !name.isBlank()) ? name.trim() : existing.getName());
+      io.setDescription(description != null ? description : existing.getDescription());
+      io.setStatus((status != null && !status.isBlank()) ? status : existing.getStatus());
+      io.setAttributes(existing.getAttributes() != null ? existing.getAttributes() : new HashMap<>());
+      io.setLicense(existing.getLicense());
+      io.setAccessRights(existing.getAccessRights());
+      io.setEmbargoEndDate(existing.getEmbargoEndDate());
+
+      // Preserve parent link.
+      DataObject parent = existing.getParent();
+      if (parent != null) io.setParentId(parent.getShepardId());
+
+      // Preserve predecessor links via their shepardIds so updateDataObject
+      // can reconstruct them (it deletes all then re-adds from the IO).
+      List<DataObject> preds = existing.getPredecessors();
+      if (preds != null && !preds.isEmpty()) {
+        long[] predIds = preds.stream()
+          .mapToLong(p -> p.getShepardId() != null ? p.getShepardId() : 0L)
+          .filter(id -> id > 0)
+          .toArray();
+        io.setPredecessorIds(predIds);
+      } else {
+        io.setPredecessorIds(new long[0]);
+      }
+
+      DataObject updated = dataObjectService.updateDataObject(collectionOgmId, doOgmId, io);
+      return support.toJson(dataObjectSummary(updated));
+    });
+  }
+
+  @Tool(
+    name = "data_object_delete",
+    description =
+      "Permanently delete a DataObject and all its References. The parent " +
+      "Collection is not deleted. This operation is irreversible.\n\n" +
+      "Returns {\"deleted\": true, \"appId\": \"…\"} on success."
+  )
+  public String dataObjectDelete(
+    @ToolArg(description = "UUID v7 of the parent Collection (from `list_collections`).") String collectionAppId,
+    @ToolArg(description = "UUID v7 of the DataObject to delete.") String dataObjectAppId
+  ) {
+    return support.run("data_object_delete", () -> {
+      contextBridge.bind();
+      long collectionOgmId = support.resolveOfType(collectionAppId, "Collection", "collectionAppId");
+      long doOgmId = support.resolveOfType(dataObjectAppId, "DataObject", "dataObjectAppId");
+      dataObjectService.deleteDataObject(collectionOgmId, doOgmId);
+      Map<String, Object> result = new LinkedHashMap<>();
+      result.put("deleted", true);
+      result.put("appId", dataObjectAppId);
+      return support.toJson(result);
+    });
+  }
+
+  // ── Response helpers ──────────────────────────────────────────────────────
+
+  private static Map<String, Object> collectionSummary(Collection c) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("appId", c.getAppId());
+    m.put("id", c.getShepardId());
+    m.put("name", c.getName());
+    m.put("description", c.getDescription());
+    m.put("status", c.getStatus());
+    return m;
+  }
+
+  private static Map<String, Object> dataObjectSummary(DataObject d) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("appId", d.getAppId());
+    m.put("id", d.getShepardId());
+    m.put("name", d.getName());
+    m.put("description", d.getDescription());
+    m.put("status", d.getStatus());
+    return m;
   }
 }

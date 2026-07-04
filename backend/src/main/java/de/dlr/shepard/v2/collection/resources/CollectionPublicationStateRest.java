@@ -54,7 +54,7 @@ import org.neo4j.ogm.model.Result;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection lifecycle")
+@Tag(name = "Collections")
 public class CollectionPublicationStateRest {
 
   private static final String PT_NOT_FOUND = "/problems/publication-state.not-found";
@@ -87,6 +87,7 @@ public class CollectionPublicationStateRest {
     description = "Current publication state.",
     content = @Content(schema = @Schema(implementation = PublicationStateIO.class))
   )
+  @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response get(
     @PathParam("collectionAppId") String collectionAppId,

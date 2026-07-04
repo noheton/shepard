@@ -15,11 +15,11 @@
 
 import * as runtime from '../runtime';
 import type {
-  ContainerSummaryIO,
+  PagedResponse,
 } from '../models/index';
 import {
-    ContainerSummaryIOFromJSON,
-    ContainerSummaryIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface ListReferencedContainersRequest {
@@ -35,7 +35,7 @@ export class CollectionReferencedContainersApi extends runtime.BaseAPI {
      * Walks Collection → DataObject → Reference → Container and returns one entry per distinct container. Returns an empty array when the collection has no data objects or none of them reference a container.  Auth: Read permission on the Collection.
      * [v2] List containers referenced by data objects in this collection (CC2).
      */
-    async listReferencedContainersRaw(requestParameters: ListReferencedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ContainerSummaryIO>>> {
+    async listReferencedContainersRaw(requestParameters: ListReferencedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -66,14 +66,14 @@ export class CollectionReferencedContainersApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ContainerSummaryIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Walks Collection → DataObject → Reference → Container and returns one entry per distinct container. Returns an empty array when the collection has no data objects or none of them reference a container.  Auth: Read permission on the Collection.
      * [v2] List containers referenced by data objects in this collection (CC2).
      */
-    async listReferencedContainers(requestParameters: ListReferencedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<ContainerSummaryIO>> {
+    async listReferencedContainers(requestParameters: ListReferencedContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listReferencedContainersRaw(requestParameters, initOverrides);
         return await response.value();
     }

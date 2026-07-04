@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/references/{appId}/detect-anomalies")
 @RequestScoped
-@Tag(name = "Timeseries annotations")
+@Tag(name = "Timeseries")
 public class AnomalyDetectionRest {
 
   @Inject
@@ -150,6 +150,7 @@ public class AnomalyDetectionRest {
 
   @POST
   @Operation(
+    operationId = "detect",
     summary = "Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.",
     description =
       "Fetches the timeseries data linked to the `:TimeseriesReference` identified by " +

@@ -76,6 +76,7 @@ public class ShapesBuildRest {
   @Path("/build")
   @RolesAllowed("authenticated")
   @Operation(
+    operationId = "build",
     summary = "Compile a JSON DSL into canonical SHACL Turtle.",
     description = "Stateless, read-only. The visual template editor emits the JSON DSL; this returns " +
     "the deterministic shape graph the same author then stores on a ShepardTemplate. A structurally " +

@@ -22,7 +22,7 @@ import {
     KipRecordToJSON,
 } from '../models/index';
 
-export interface ResolveRequest {
+export interface ResolveKipRecordRequest {
     suffix: string;
 }
 
@@ -35,11 +35,11 @@ export class KIPResolverApi extends runtime.BaseAPI {
      * Public endpoint (no auth). Returns a small JSON-LD-flavoured record per aidocs/66 §3.2 — `kernelInformationProfile` envelope with `id`, `landingPage`, `digitalObjectType`, `dateCreated`, `dateModified`, `rightsHolder`, `license`. The landingPage URL is what a casual researcher would visit; that URL may itself require authentication, which is correct: KIP records are findability metadata, not the underlying entity payload.
      * [v2] Resolve a PID minted by this shepard to its HMC Kernel Information Profile record.
      */
-    async resolveRaw(requestParameters: ResolveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<KipRecord>> {
+    async resolveKipRecordRaw(requestParameters: ResolveKipRecordRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<KipRecord>> {
         if (requestParameters['suffix'] == null) {
             throw new runtime.RequiredError(
                 'suffix',
-                'Required parameter "suffix" was null or undefined when calling resolve().'
+                'Required parameter "suffix" was null or undefined when calling resolveKipRecord().'
             );
         }
 
@@ -73,8 +73,8 @@ export class KIPResolverApi extends runtime.BaseAPI {
      * Public endpoint (no auth). Returns a small JSON-LD-flavoured record per aidocs/66 §3.2 — `kernelInformationProfile` envelope with `id`, `landingPage`, `digitalObjectType`, `dateCreated`, `dateModified`, `rightsHolder`, `license`. The landingPage URL is what a casual researcher would visit; that URL may itself require authentication, which is correct: KIP records are findability metadata, not the underlying entity payload.
      * [v2] Resolve a PID minted by this shepard to its HMC Kernel Information Profile record.
      */
-    async resolve(requestParameters: ResolveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<KipRecord> {
-        const response = await this.resolveRaw(requestParameters, initOverrides);
+    async resolveKipRecord(requestParameters: ResolveKipRecordRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<KipRecord> {
+        const response = await this.resolveKipRecordRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

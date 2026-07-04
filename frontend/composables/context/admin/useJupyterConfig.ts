@@ -78,8 +78,16 @@ export function useJupyterConfig(options?: { adminMode?: boolean }) {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       config.value = (await response.json()) as JupyterConfigIO;
     } catch (e) {
-      error.value = "Failed to load Jupyter config";
-      handleError(e, "fetching Jupyter config");
+      // Public read is a fail-soft probe — the "Open in JupyterHub" affordance
+      // simply stays hidden when the config can't be read. Surfacing a toast
+      // here would pollute every DataObject-detail page (the unified data-
+      // references table calls this on mount). Only the admin tile, which
+      // explicitly opened the config pane, gets an error toast.
+      config.value = null;
+      if (adminMode) {
+        error.value = "Failed to load Jupyter config";
+        handleError(e, "fetching Jupyter config");
+      }
     } finally {
       isLoading.value = false;
     }

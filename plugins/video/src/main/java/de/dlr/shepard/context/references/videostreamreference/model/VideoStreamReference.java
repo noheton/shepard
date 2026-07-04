@@ -1,13 +1,10 @@
 package de.dlr.shepard.context.references.videostreamreference.model;
 
-import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
-import java.util.Objects;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import org.neo4j.ogm.annotation.NodeEntity;
 
 /**
@@ -23,14 +20,15 @@ import org.neo4j.ogm.annotation.NodeEntity;
  * {@link de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}.
  *
  * <p>VID1b: extracted from backend into {@code shepard-plugin-video}.
- * Implements {@link VideoPayload} so that {@code DataObjectIO} can count
+ * Carries {@link VideoPayload} annotation so that {@code DataObjectIO} can count
  * video references without a direct import of this class.
  */
+@VideoPayload
 @NodeEntity
 @Data
-@ToString(callSuper = true)
 @NoArgsConstructor
-public class VideoStreamReference extends BasicReference implements VideoPayload {
+@EqualsAndHashCode(callSuper = true)
+public class VideoStreamReference extends BasicReference {
 
   /**
    * Opaque storage locator in the format {@code "<providerId>:<locator>"}
@@ -66,6 +64,33 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
   private String audioCodec;
 
   /**
+   * VID-FFMPEG-TRANSCODE-2026-06-29 — opaque storage locator for the
+   * browser-playable h.264 proxy produced after upload (format
+   * {@code "<providerId>:<locator>"}). Null until the transcode succeeds.
+   * The original {@link #storageLocator} stays as the canonical
+   * download / archive artefact; the proxy is purely a playback aid.
+   */
+  private String proxyStorageLocator;
+
+  /**
+   * VID-FFMPEG-TRANSCODE-2026-06-29 — lifecycle state of the proxy
+   * transcode. Values:
+   * <ul>
+   *   <li>{@code null} — not requested yet (legacy rows pre-transcode
+   *       feature; the read path treats this as
+   *       {@code proxyAvailable=false}).
+   *   <li>{@code "PENDING"} — submitted to the transcode executor;
+   *       {@link #proxyStorageLocator} is still null.
+   *   <li>{@code "READY"} — proxy bytes are in storage; the wire IO
+   *       reports {@code proxyAvailable=true}.
+   *   <li>{@code "FAILED"} — transcode errored (codec unsupported,
+   *       binary missing, timeout). UI falls back to the original
+   *       bytes.
+   * </ul>
+   */
+  private String proxyStatus;
+
+  /**
    * Wall-clock timestamp as nanoseconds since the Unix epoch (UTC). Extracted
    * from ffprobe's {@code format.tags.creation_time} ISO-8601 tag. Null if
    * the tag is absent or unparseable.
@@ -81,36 +106,5 @@ public class VideoStreamReference extends BasicReference implements VideoPayload
   /** For testing purposes only. */
   public VideoStreamReference(long id) {
     super(id);
-  }
-
-  @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + Objects.hash(
-      storageLocator, mimeType, fileSizeBytes, durationSeconds,
-      width, height, frameRate, videoCodec, audioCodec, wallClockTimestamp
-    );
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) return true;
-    if (!super.equals(obj)) return false;
-    if (!(obj instanceof VideoStreamReference)) return false;
-    VideoStreamReference other = (VideoStreamReference) obj;
-    return (
-      Objects.equals(storageLocator, other.storageLocator) &&
-      Objects.equals(mimeType, other.mimeType) &&
-      Objects.equals(fileSizeBytes, other.fileSizeBytes) &&
-      Objects.equals(durationSeconds, other.durationSeconds) &&
-      Objects.equals(width, other.width) &&
-      Objects.equals(height, other.height) &&
-      Objects.equals(frameRate, other.frameRate) &&
-      Objects.equals(videoCodec, other.videoCodec) &&
-      Objects.equals(audioCodec, other.audioCodec) &&
-      Objects.equals(wallClockTimestamp, other.wallClockTimestamp)
-    );
   }
 }

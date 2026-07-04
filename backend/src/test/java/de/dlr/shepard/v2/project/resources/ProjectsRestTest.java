@@ -279,4 +279,42 @@ class ProjectsRestTest {
     assertTrue(ann.description() != null && ann.description().contains("500"),
         "@Parameter.description for pageSize must mention the 500 cap");
   }
+
+  // ─── APISIMP-PROJECT-BY-ANNOTATION-IRI-PATH — predicate/value as @QueryParam ──
+
+  @Test
+  void byAnnotation_returns422_whenValueBlank() {
+    Response r = resource.byAnnotation(
+      PROJECT_APP_ID, "urn:shepard:mffd:layer", "", "identity", true, 0, 100);
+    assertEquals(422, r.getStatus());
+  }
+
+  @Test
+  void byAnnotation_returns422_whenValueNull() {
+    Response r = resource.byAnnotation(
+      PROJECT_APP_ID, "urn:shepard:mffd:layer", null, "identity", true, 0, 100);
+    assertEquals(422, r.getStatus());
+  }
+
+  @Test
+  void byAnnotation_predicateIsQueryParam() throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("predicate");
+    assertNotNull(param, "predicate must carry @QueryParam('predicate')");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "predicate must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for predicate");
+  }
+
+  @Test
+  void byAnnotation_valueIsQueryParam() throws NoSuchMethodException {
+    var param = findByAnnotationQueryParam("value");
+    assertNotNull(param, "value must carry @QueryParam('value')");
+    var ann = param.getAnnotation(
+        org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "value must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(),
+        "@Parameter.description must be non-blank for value");
+  }
 }

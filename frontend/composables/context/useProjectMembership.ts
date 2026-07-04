@@ -38,7 +38,14 @@ async function ensureLoaded(): Promise<void> {
         },
       });
       if (!response.ok) return;
-      const appIds: string[] = await response.json();
+      // GET /v2/projects returns the PagedResponseIO {items,...} envelope
+      // (APISIMP-PAGINATION-ENVELOPE). Tolerate both the envelope and a legacy
+      // bare array so a partial deploy never breaks the row chips with
+      // "object is not iterable".
+      const body: unknown = await response.json();
+      const appIds: string[] = Array.isArray(body)
+        ? body
+        : ((body as { items?: string[] })?.items ?? []);
       cache.value = new Set(appIds);
       isLoaded.value = true;
     } catch (e) {

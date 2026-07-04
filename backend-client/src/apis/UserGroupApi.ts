@@ -41,7 +41,7 @@ export interface DeleteUserGroupRequest {
 
 export interface EditUserGroupPermissionsRequest {
     userGroupId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface GetAllUserGroupsRequest {

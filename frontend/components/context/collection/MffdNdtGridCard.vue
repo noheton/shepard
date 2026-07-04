@@ -37,12 +37,13 @@
  * `tests/unit/mffdNdtGrid.test.ts` (30 cases).
  */
 import {
-  DataObjectApi,
-  SemanticAnnotationApi,
-  type DataObject,
+  DataObjectsApi,
+  SemanticAnnotationsApi,
+  type AnnotationV2,
+  type DataObjectListItemV2,
   type SemanticAnnotation,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import {
   EMPTY_CELL_COLOUR,
@@ -56,14 +57,18 @@ import {
   type GridCellData,
 } from "~/utils/mffdNdtGrid";
 
+// V2UI-MFFD-NDT-ANNO-V2: migrated from v1 (numeric-id DataObjectApi /
+// SemanticAnnotationApi) to v2 (appId-keyed DataObjectsApi /
+// SemanticAnnotationsApi). Prop renamed collectionId → collectionAppId.
+
 const props = defineProps<{
-  collectionId: number;
+  collectionAppId: string;
 }>();
 
 const emit = defineEmits<{
   (
     e: "select",
-    payload: { section: string; module: string; dataObjects: DataObject[] },
+    payload: { section: string; module: string; dataObjects: DataObjectListItemV2[] },
   ): void;
 }>();
 
@@ -71,37 +76,57 @@ const emit = defineEmits<{
 // connection-pool exhaustion on a large collection.
 const MAX_PARALLEL_FETCHES = 8;
 
-const dataObjectApi = useShepardApi(DataObjectApi);
-const annotationApi = useShepardApi(SemanticAnnotationApi);
+const dataObjectsApi = useV2ShepardApi(DataObjectsApi);
+const annotationsApi = useV2ShepardApi(SemanticAnnotationsApi);
 
 const buckets = ref<Map<string, GridCellData>>(new Map());
 const maxCount = ref(0);
 const isLoading = ref(true);
 const hasError = ref(false);
-const dataObjectsById = ref<Map<number, DataObject>>(new Map());
+const dataObjectsByAppId = ref<Map<string, DataObjectListItemV2>>(new Map());
 
 const { advancedMode } = useAdvancedMode();
+
+function annotationV2ToLegacy(item: AnnotationV2): SemanticAnnotation {
+  return {
+    id: 0,
+    name: item.propertyName ?? item.predicateLabel ?? "",
+    propertyName: item.propertyName ?? item.predicateLabel ?? "",
+    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
+    valueName: item.valueName ?? item.objectLiteral ?? "",
+    valueIRI: item.valueIri ?? item.objectIri ?? "",
+    propertyRepositoryId: 0,
+    valueRepositoryId: 0,
+  };
+}
 
 async function fetchAll(): Promise<void> {
   isLoading.value = true;
   hasError.value = false;
   try {
-    const dos = await dataObjectApi.value.getAllDataObjects({
-      collectionId: props.collectionId,
+    const dos = await dataObjectsApi.value.listDataObjects({
+      collectionAppId: props.collectionAppId,
     });
-    const idMap = new Map<number, DataObject>();
-    for (const d of dos) idMap.set(d.id, d);
-    dataObjectsById.value = idMap;
+    const appIdMap = new Map<string, DataObjectListItemV2>();
+    for (const d of dos) {
+      if (d.appId) appIdMap.set(d.appId, d);
+    }
+    dataObjectsByAppId.value = appIdMap;
+
+    // Only annotate DOs that carry an appId (all newly created DOs do;
+    // very old rows without appId are skipped gracefully).
+    const annotatable = dos.filter(d => !!d.appId);
 
     // Chunked per-DO annotation fetches.
     const withAnn: DataObjectWithAnnotations[] = [];
-    for (let i = 0; i < dos.length; i += MAX_PARALLEL_FETCHES) {
-      const slice = dos.slice(i, i + MAX_PARALLEL_FETCHES);
+    for (let i = 0; i < annotatable.length; i += MAX_PARALLEL_FETCHES) {
+      const slice = annotatable.slice(i, i + MAX_PARALLEL_FETCHES);
       const results = await Promise.allSettled(
         slice.map(d =>
-          annotationApi.value.getAllDataObjectAnnotations({
-            collectionId: props.collectionId,
-            dataObjectId: d.id,
+          annotationsApi.value.listAnnotations({
+            subjectAppId: d.appId!,
+            subjectKind: "DataObject",
+            pageSize: 200,
           }),
         ),
       );
@@ -109,9 +134,10 @@ async function fetchAll(): Promise<void> {
         const d = slice[j];
         const r = results[j];
         if (!d || !r) continue;
-        const annotations: SemanticAnnotation[] =
-          r.status === "fulfilled" ? r.value : [];
-        withAnn.push({ id: d.id, name: d.name, annotations });
+        const rawItems: AnnotationV2[] =
+          r.status === "fulfilled" ? (r.value.items as AnnotationV2[] ?? []) : [];
+        const annotations = rawItems.map(annotationV2ToLegacy);
+        withAnn.push({ appId: d.appId!, name: d.name, annotations });
       }
     }
 
@@ -130,7 +156,7 @@ onMounted(() => {
 });
 
 watch(
-  () => props.collectionId,
+  () => props.collectionAppId,
   () => {
     void fetchAll();
   },
@@ -174,10 +200,10 @@ function tooltipFor(section: string, module: string): string {
 
 function onCellClick(section: string, module: string): void {
   const c = cellFor(section, module);
-  const dos: DataObject[] = c
+  const dos: DataObjectListItemV2[] = c
     ? c.measurements
-        .map(m => dataObjectsById.value.get(m.dataObject.id))
-        .filter((d): d is DataObject => d !== undefined)
+        .map(m => dataObjectsByAppId.value.get(m.dataObject.appId))
+        .filter((d): d is DataObjectListItemV2 => d !== undefined)
     : [];
   emit("select", { section, module, dataObjects: dos });
 }

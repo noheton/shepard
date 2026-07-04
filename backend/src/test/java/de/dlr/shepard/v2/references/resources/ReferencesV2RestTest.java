@@ -14,6 +14,7 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.services.ReferencesV2Service;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
@@ -177,20 +178,77 @@ class ReferencesV2RestTest {
   // ─── list ──────────────────────────────────────────────────────────────────
 
   @Test
-  void list_returns200WithFileKindFilter() {
+  @SuppressWarnings("unchecked")
+  void list_returnsPagedEnvelope() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(referencesService.listByDataObject(eq("file"), eq(DO_APP_ID), eq("urdf")))
-      .thenReturn(List.of(new ReferenceV2IO()));
+      .thenReturn(List.of(new ReferenceV2IO(), new ReferenceV2IO()));
 
-    var r = resource.list("file", DO_APP_ID, "urdf", securityContext);
+    var r = resource.list("file", DO_APP_ID, "urdf", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
+    assertNotNull(r.getEntity());
+    var paged = (PagedResponseIO<ReferenceV2IO>) r.getEntity();
+    assertEquals(2, paged.total());
+    assertEquals(0, paged.page());
+    assertEquals(2, paged.items().size());
     verify(referencesService).listByDataObject("file", DO_APP_ID, "urdf");
   }
 
   @Test
   void list_returns400WhenMissingParams() {
-    var r = resource.list("file", null, null, securityContext);
+    var r = resource.list("file", null, null, 0, 50, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void list_paginationSlicesCorrectly() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    var items = List.of(new ReferenceV2IO(), new ReferenceV2IO(), new ReferenceV2IO(),
+      new ReferenceV2IO(), new ReferenceV2IO());
+    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(items);
+
+    var r = resource.list("uri", DO_APP_ID, null, 1, 2, securityContext);
+    assertEquals(200, r.getStatus());
+    var paged = (PagedResponseIO<ReferenceV2IO>) r.getEntity();
+    assertEquals(5, paged.total());
+    assertEquals(1, paged.page());
+    assertEquals(2, paged.pageSize());
+    assertEquals(2, paged.items().size());
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void list_pageOutOfBoundsReturnsEmpty() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    var items = List.of(new ReferenceV2IO(), new ReferenceV2IO());
+    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(items);
+
+    var r = resource.list("uri", DO_APP_ID, null, 5, 10, securityContext);
+    assertEquals(200, r.getStatus());
+    var paged = (PagedResponseIO<ReferenceV2IO>) r.getEntity();
+    assertEquals(2, paged.total());
+    assertEquals(0, paged.items().size());
+  }
+
+  @Test
+  void list_returns400WhenPageNegative() {
+    var r = resource.list("uri", DO_APP_ID, null, -1, 50, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void list_returns400WhenPageSizeZero() {
+    var r = resource.list("uri", DO_APP_ID, null, 0, 0, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void list_returns400WhenPageSizeTooLarge() {
+    var r = resource.list("uri", DO_APP_ID, null, 0, 201, securityContext);
     assertEquals(400, r.getStatus());
   }
 
@@ -327,7 +385,8 @@ class ReferencesV2RestTest {
   @Test
   void list_fileKindParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
     java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
-        "list", String.class, String.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
+        "list", String.class, String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "fileKind".equals(qp.value()); })
         .findFirst().orElse(null);
@@ -335,6 +394,34 @@ class ReferencesV2RestTest {
     var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
     assertNotNull(ann, "list.fileKind must carry @Parameter annotation");
     assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.fileKind");
+  }
+
+  @Test
+  void list_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "page".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.page must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.page must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.page");
+  }
+
+  @Test
+  void list_pageSizeParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "list", String.class, String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "list.pageSize must carry @QueryParam");
+    var ann = param.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
+    assertNotNull(ann, "list.pageSize must carry @Parameter annotation");
+    assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.pageSize");
   }
 
   @Test

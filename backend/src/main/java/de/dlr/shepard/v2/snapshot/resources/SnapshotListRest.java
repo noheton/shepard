@@ -7,9 +7,12 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotListItemIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -95,14 +98,6 @@ public class SnapshotListRest {
     return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
-  /** SNAPSHOT-LIST-1-REST — page envelope. */
-  public record SnapshotListPageIO(
-    List<SnapshotListItemIO> items,
-    long total,
-    int page,
-    int pageSize
-  ) {}
-
   @GET
   @Operation(
     operationId = "listSnapshots",
@@ -123,7 +118,7 @@ public class SnapshotListRest {
   @APIResponse(
     responseCode = "200",
     description = "Snapshot page (may be empty).",
-    content = @Content(schema = @Schema(implementation = SnapshotListPageIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "collectionAppId supplied but does not resolve to an existing Collection.")
@@ -138,7 +133,7 @@ public class SnapshotListRest {
     @Parameter(description =
       "Page size (default 50). Server-side clamp: [1, 200] — values outside this "
       + "range are silently clamped to the nearest boundary.")
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = sc != null && sc.getUserPrincipal() != null
@@ -181,6 +176,6 @@ public class SnapshotListRest {
       }
     }
 
-    return Response.ok(new SnapshotListPageIO(filtered, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize)).build();
   }
 }

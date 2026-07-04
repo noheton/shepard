@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.v2.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,9 +24,17 @@ import de.dlr.shepard.plugins.aas.v2.io.AasReferenceIO.AasKeyIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasShellIO;
 import de.dlr.shepard.plugins.aas.v2.io.AasShellIO.AssetInformationIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -156,15 +165,46 @@ class AasShellsRestTest {
     assertEquals(200, r.getStatus());
   }
 
+  /** JSR-380 replaces soft-clamp: verify @Min(1)/@Max(200) are declared on the pageSize param. */
   @Test
-  void pageSizeIsCappedAt200() {
-    when(collectionDAO.findAllCollectionsByShepardId(any(), any())).thenReturn(List.of());
-    when(collectionDAO.countAllCollectionsByShepardId(any())).thenReturn(0L);
-    var r = resource.listShells(0, 9999);
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<AasShellIO>) r.getEntity();
-    assertEquals(200, body.pageSize());
+  void listShellsPageSizeParamHasJsr380Constraints() throws NoSuchMethodException {
+    Method m = AasShellsRest.class.getMethod("listShells", int.class, int.class);
+    Parameter pageSizeParam = m.getParameters()[1];
+    List<Class<? extends Annotation>> types = Arrays.stream(pageSizeParam.getAnnotations())
+        .map(Annotation::annotationType).collect(Collectors.toList());
+    assertTrue(types.contains(Min.class), "pageSize must carry @Min");
+    assertTrue(types.contains(Max.class), "pageSize must carry @Max");
+    assertEquals(1L, pageSizeParam.getAnnotation(Min.class).value(), "@Min must be 1");
+    assertEquals(200L, pageSizeParam.getAnnotation(Max.class).value(), "@Max must be 200");
+  }
+
+  /** JSR-380 replaces soft-clamp: verify @PositiveOrZero is declared on the page param. */
+  @Test
+  void listShellsPageParamHasPositiveOrZeroConstraint() throws NoSuchMethodException {
+    Method m = AasShellsRest.class.getMethod("listShells", int.class, int.class);
+    Parameter pageParam = m.getParameters()[0];
+    assertNotNull(pageParam.getAnnotation(PositiveOrZero.class), "page must carry @PositiveOrZero");
+  }
+
+  /** JSR-380 replaces soft-clamp: verify @Min(1)/@Max(200) are declared on listSubmodels pageSize param. */
+  @Test
+  void listSubmodelsPageSizeParamHasJsr380Constraints() throws NoSuchMethodException {
+    Method m = AasShellsRest.class.getMethod("listSubmodels", String.class, int.class, int.class);
+    Parameter pageSizeParam = m.getParameters()[2];
+    List<Class<? extends Annotation>> types = Arrays.stream(pageSizeParam.getAnnotations())
+        .map(Annotation::annotationType).collect(Collectors.toList());
+    assertTrue(types.contains(Min.class), "pageSize must carry @Min");
+    assertTrue(types.contains(Max.class), "pageSize must carry @Max");
+    assertEquals(1L, pageSizeParam.getAnnotation(Min.class).value(), "@Min must be 1");
+    assertEquals(200L, pageSizeParam.getAnnotation(Max.class).value(), "@Max must be 200");
+  }
+
+  /** JSR-380 replaces soft-clamp: verify @PositiveOrZero is declared on listSubmodels page param. */
+  @Test
+  void listSubmodelsPageParamHasPositiveOrZeroConstraint() throws NoSuchMethodException {
+    Method m = AasShellsRest.class.getMethod("listSubmodels", String.class, int.class, int.class);
+    Parameter pageParam = m.getParameters()[1];
+    assertNotNull(pageParam.getAnnotation(PositiveOrZero.class), "page must carry @PositiveOrZero");
   }
 
   // --- resolveAppId (AAS1b Commit 1) ---
@@ -352,6 +392,51 @@ class AasShellsRestTest {
     assertEquals(5L, body.total());
     assertEquals(1, body.page());
     assertEquals(2, body.pageSize());
+  }
+
+  // --- APISIMP-AAS-GET-SHELL-UNCAPPED: SHELL_MAX_SUBMODELS cap ---
+
+  @Test
+  void getShellCapsTruncatesAt500WhenCollectionHas501DataObjects() {
+    Collection c = makeCollection("big-col", "Big");
+    // Build 501 mock DataObjects
+    List<DataObject> bigList = new java.util.ArrayList<>();
+    for (int i = 0; i < AasShellsRest.SHELL_MAX_SUBMODELS + 1; i++) {
+      bigList.add(org.mockito.Mockito.mock(DataObject.class));
+    }
+    AasShellIO shell = makeShell("big-col");
+    when(collectionDAO.findByAppId(eq("big-col"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("big-col"))).thenReturn(bigList);
+    // Expect toShell to be called with exactly SHELL_MAX_SUBMODELS elements
+    when(mappingService.toShell(eq(c), eq(bigList.subList(0, AasShellsRest.SHELL_MAX_SUBMODELS))))
+        .thenReturn(shell);
+
+    var r = resource.getShell("big-col");
+
+    assertEquals(200, r.getStatus());
+    assertEquals("true", r.getHeaderString("X-Shepard-Truncated"));
+    assertEquals(String.valueOf(AasShellsRest.SHELL_MAX_SUBMODELS),
+        r.getHeaderString("X-Shepard-Truncated-At"));
+  }
+
+  @Test
+  void getShellNoTruncationHeaderWhenAt500DataObjects() {
+    Collection c = makeCollection("ok-col", "Ok");
+    List<DataObject> list = new java.util.ArrayList<>();
+    for (int i = 0; i < AasShellsRest.SHELL_MAX_SUBMODELS; i++) {
+      list.add(org.mockito.Mockito.mock(DataObject.class));
+    }
+    AasShellIO shell = makeShell("ok-col");
+    when(collectionDAO.findByAppId(eq("ok-col"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("ok-col"))).thenReturn(list);
+    when(mappingService.toShell(eq(c), eq(list))).thenReturn(shell);
+
+    var r = resource.getShell("ok-col");
+
+    assertEquals(200, r.getStatus());
+    assertTrue(r.getHeaderString("X-Shepard-Truncated") == null
+        || !r.getHeaderString("X-Shepard-Truncated").equals("true"),
+        "No truncation header when exactly at cap");
   }
 
   // --- aasDisabledResponse (APISIMP-AAS-SHELLS-DISABLED-ENVELOPE) ---

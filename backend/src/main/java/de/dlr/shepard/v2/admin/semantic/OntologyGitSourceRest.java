@@ -242,6 +242,7 @@ public class OntologyGitSourceRest {
   @POST
   @Path("/{appId}/ingest")
   @Operation(
+    operationId = "triggerIngest",
     summary = "Trigger an immediate ingest from a git source.",
     description = "Clones the repository (shallow, --depth=1), finds files matching " +
     "pathPattern, and ingests each as a UserOntologyBundle in the internal n10s store. " +

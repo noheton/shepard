@@ -129,16 +129,16 @@
               <td>
                 <NuxtLink
                   v-if="ref.keys.length > 0"
-                  :to="`/aas/submodels/${collectionId}/${submodelRefToAppId(ref.keys[0].value)}`"
+                  :to="`/aas/submodels/${collectionId}/${submodelRefToAppId(ref.keys[0]!.value)}`"
                   class="text-primary text-decoration-none font-weight-medium"
                 >
-                  {{ ref.displayName ?? submodelRefToAppId(ref.keys[0].value) }}
+                  {{ ref.displayName ?? submodelRefToAppId(ref.keys[0]!.value) }}
                 </NuxtLink>
               </td>
               <td>
                 <div v-if="ref.keys.length > 0" class="d-flex align-center ga-1">
-                  <code class="text-caption">{{ ref.keys[0].value }}</code>
-                  <ClipboardButton :text="ref.keys[0].value" success-message="Submodel IRI copied" />
+                  <code class="text-caption">{{ ref.keys[0]!.value }}</code>
+                  <ClipboardButton :text="ref.keys[0]!.value" success-message="Submodel IRI copied" />
                 </div>
               </td>
               <td>
@@ -147,7 +147,7 @@
               <td>
                 <v-btn
                   v-if="ref.keys.length > 0"
-                  :to="`/collections/${collectionId}/dataobjects/${submodelRefToAppId(ref.keys[0].value)}`"
+                  :to="`/collections/${collectionId}/dataobjects/${submodelRefToAppId(ref.keys[0]!.value)}`"
                   variant="text"
                   size="x-small"
                   prepend-icon="mdi-open-in-new"

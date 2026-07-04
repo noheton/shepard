@@ -33,6 +33,7 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -785,7 +786,7 @@ class DataObjectV2RestTest {
   @Test
   void predecessorsReturns404WhenDataObjectUnknown() {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -794,7 +795,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -810,13 +811,39 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-pred-0011", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-pred-0011", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void predecessorsPaginationSlicesCorrectly() {
+    DataObject p1 = makeDataObject(11L, "018f-pred-0011", "pred-run-1");
+    DataObject p2 = makeDataObject(12L, "018f-pred-0012", "pred-run-2");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getPredecessors().add(p1);
+    d.getPredecessors().add(p2);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 1, 1, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals("018f-pred-0012", body.items().get(0).getAppId());
+    assertEquals(1, body.page());
+    assertEquals(1, body.pageSize());
   }
 
   @Test
@@ -831,13 +858,34 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-succ-0022", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-succ-0022", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void successorsPaginationReturnsEmptyPageBeyondEnd() {
+    DataObject succ = makeDataObject(22L, "018f-succ-0022", "next-run");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getSuccessors().add(succ);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 5, 10, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.items().size());
   }
 
   @Test
@@ -852,13 +900,37 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
-    Response r = resource.children(COLL_APP_ID, DO_APP_ID, securityContext);
+    Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-child-0033", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("018f-child-0033", body.items().get(0).getAppId());
+  }
+
+  @Test
+  void childrenPaginationTotalReflectsFullCount() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    for (int i = 0; i < 5; i++) {
+      d.getChildren().add(makeDataObject(100L + i, "018f-child-00" + i, "child-" + i));
+    }
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 2, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(5, body.total());
+    assertEquals(2, body.items().size());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
   }
 
   // ── ANC-1: predecessor-chain / successor-chain ────────────────────────────
@@ -896,10 +968,12 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertEquals("018f-pred-0010", body.get(0).getAppId());
-    assertEquals("018f-pred-0009", body.get(1).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(0, body.page());
+    assertEquals(2, body.pageSize());
+    assertEquals("018f-pred-0010", body.items().get(0).getAppId());
+    assertEquals("018f-pred-0009", body.items().get(1).getAppId());
   }
 
   @Test
@@ -916,9 +990,11 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("018f-succ-0100", body.get(0).getAppId());
+    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(0, body.page());
+    assertEquals(1, body.pageSize());
+    assertEquals("018f-succ-0100", body.items().get(0).getAppId());
   }
 
   @Test

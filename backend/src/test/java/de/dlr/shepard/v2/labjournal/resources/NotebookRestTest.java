@@ -31,7 +31,6 @@ import org.mockito.MockitoAnnotations;
  * <p>No CDI container or network required — fields are injected directly,
  * matching the pattern from {@link LabJournalRenderRestTest}.
  */
-@SuppressWarnings("unchecked")
 class NotebookRestTest {
 
   static final String DO_APP_ID = "01957000-0000-7000-8000-000000000002";
@@ -153,8 +152,7 @@ class NotebookRestTest {
   void returns200EmptyListWhenNoFiles() {
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).isEmpty();
+    assertThat((List<?>) r.getEntity()).isEmpty();
   }
 
   @Test
@@ -178,10 +176,10 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
+    var items = (List<NotebookReferenceIO>) r.getEntity();
+    assertThat(items).hasSize(1);
 
-    var io = list.get(0);
+    var io = items.get(0);
     assertThat(io.getAppId()).isEqualTo("singleton-app-1");
     assertThat(io.getFileName()).isEqualTo("analysis.ipynb");
     assertThat(io.getFileSize()).isEqualTo(8192L);
@@ -199,10 +197,10 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
+    var items = (List<NotebookReferenceIO>) r.getEntity();
+    assertThat(items).hasSize(1);
 
-    var io = list.get(0);
+    var io = items.get(0);
     assertThat(io.getAppId()).isEqualTo("bundle-app-1");
     assertThat(io.getFileName()).isEqualTo("experiment.ipynb");
     assertThat(io.getFileSize()).isEqualTo(4096L);
@@ -222,14 +220,14 @@ class NotebookRestTest {
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(2);
+    var items = (List<NotebookReferenceIO>) r.getEntity();
+    assertThat(items).hasSize(2);
 
     // Singletons come first
-    assertThat(list.get(0).getReferenceKind()).isEqualTo(ReferenceKind.SINGLETON);
-    assertThat(list.get(0).getAppId()).isEqualTo("s-1");
-    assertThat(list.get(1).getReferenceKind()).isEqualTo(ReferenceKind.BUNDLE_FILE);
-    assertThat(list.get(1).getAppId()).isEqualTo("b-1");
+    assertThat(items.get(0).getReferenceKind()).isEqualTo(ReferenceKind.SINGLETON);
+    assertThat(items.get(0).getAppId()).isEqualTo("s-1");
+    assertThat(items.get(1).getReferenceKind()).isEqualTo(ReferenceKind.BUNDLE_FILE);
+    assertThat(items.get(1).getAppId()).isEqualTo("b-1");
   }
 
   @Test
@@ -245,9 +243,9 @@ class NotebookRestTest {
       );
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(2);
-    assertThat(list).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
+    var items = (List<NotebookReferenceIO>) r.getEntity();
+    assertThat(items).hasSize(2);
+    assertThat(items).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
   }
 
   @Test
@@ -279,9 +277,9 @@ class NotebookRestTest {
       .thenReturn(List.of(singleton("s-old", "old.ipynb", null)));
 
     var r = resource.listNotebooks(DO_APP_ID, sc);
-    var list = (List<NotebookReferenceIO>) r.getEntity();
-    assertThat(list).hasSize(1);
-    assertThat(list.get(0).getFileSize()).isNull();
+    var items = (List<NotebookReferenceIO>) r.getEntity();
+    assertThat(items).hasSize(1);
+    assertThat(items.get(0).getFileSize()).isNull();
   }
 
   // ─── isIpynb helper ───────────────────────────────────────────────────────

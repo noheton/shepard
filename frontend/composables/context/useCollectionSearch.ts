@@ -1,17 +1,17 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
-import { readCollectionAppId } from "~/utils/appId";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 export interface MyCollectionSearchResult {
   collectionName: string;
-  collectionId: number;
   /**
-   * V2-LINKS: UUID-v7 appId for route construction. The search response
-   * `results` are full `Collection` entities, which carry `appId` on the
-   * wire (the generated model only declares `id`, hence the defensive cast).
-   * Navigation MUST use this, never the numeric id — the v2 detail route
-   * 404s on a numeric segment.
+   * @deprecated Numeric Neo4j id — not returned by v2 search; always 0 here.
+   * Use `collectionAppId` for navigation and any appId-keyed v2 operation.
+   * Remaining v1 callers that genuinely need the numeric id must resolve it
+   * at call time from the loaded Collection entity (see CLAUDE.md §"named
+   * v1 fallback set").
    */
+  collectionId: number;
+  /** UUID v7 — the stable cross-substrate identifier; use this for navigation. */
   collectionAppId: string | null;
 }
 
@@ -21,6 +21,8 @@ export function useCollectionSearch(
 ) {
   const isLoading = ref<boolean>(false);
   const collectionSearchResults = ref<MyCollectionSearchResult[]>([]);
+
+  const v2SearchApi = useV2ShepardApi(SearchApi);
 
   const searchDone = (callbackFn?: () => void) => {
     isLoading.value = false;
@@ -34,60 +36,25 @@ export function useCollectionSearch(
 
     isLoading.value = true;
 
-    let searchStringParam = "";
-    if (isIntegerString(query)) {
-      const searchId = parseInt(query);
-      searchStringParam = createSearchQueryFromId(searchId);
-    } else {
-      searchStringParam = createSearchQueryFromString(query);
-    }
+    const result = await v2SearchApi.value.searchV2({ q: query });
 
-    const searchResponse = await useShepardApi(SearchApi).value.search({
-      searchBody: {
-        searchParams: { query: searchStringParam, queryType: "Collection" },
-        scopes: [{ traversalRules: [] }],
-      },
-    });
-
-    if (searchResponse.results) {
-      searchResponse.results.forEach(result => {
+    result.items
+      .filter(item => item.kind === "collection")
+      .forEach(item => {
         if (
           !collectionSearchResults.value.some(
-            existingResult => existingResult.collectionId === result.id,
+            existing => existing.collectionAppId === item.appId,
           )
         ) {
           collectionSearchResults.value.push({
-            collectionId: result.id,
-            collectionName: result.name,
-            collectionAppId: readCollectionAppId(result),
+            collectionId: 0, // not exposed by v2 search; use collectionAppId
+            collectionName: item.name,
+            collectionAppId: item.appId,
           });
         }
       });
-    }
+
     searchDone(onSearchDone);
-  }
-
-  function createSearchQueryFromId(searchId: number): string {
-    const searchStringParam = {
-      property: "id",
-      operator: "eq",
-      value: searchId,
-    };
-    return JSON.stringify(searchStringParam);
-  }
-
-  function createSearchQueryFromString(query: string): string {
-    const searchStringParam = {
-      property: "name",
-      operator: "contains",
-      value: query,
-    };
-    return JSON.stringify(searchStringParam);
-  }
-
-  function isIntegerString(value: string): boolean {
-    const integerRegex = /^[+-]?\d+$/;
-    return integerRegex.test(value);
   }
 
   function resetResultList() {

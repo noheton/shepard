@@ -43,14 +43,14 @@ export interface ChannelLike {
   field?: string;
 }
 
-/** Structural subset of the generated TimeseriesContainerChannelListingApi. */
+/** Structural subset of the generated ContainersApi. */
 export interface ChannelListingClient {
-  listChannels(req: {
-    containerAppId: string;
-    size?: number;
+  listContainerChannels(req: {
+    appId: string;
+    pageSize?: number;
   }): Promise<Array<TimeseriesChannelV2>>;
-  getBulkChannelData(req: {
-    containerAppId: string;
+  getContainerBulkChannelData(req: {
+    appId: string;
     bulkChannelDataRequest: { shepardIds: string[]; start: number; end: number };
   }): Promise<Array<TimeseriesWithDataPoints>>;
 }
@@ -78,7 +78,10 @@ export async function fetchChannelListByAppId(
   const appId = containerAppId.trim();
   if (!appId) return [];
   try {
-    return await api.listChannels({ containerAppId: appId, size: 1000 });
+    // 500 is the server-side @Max on listChannels pageSize
+    // (APISIMP-CHANNEL-PAGESZ-MAX); larger values 400 with a constraint
+    // violation and the Trace3D render sees an empty channel list.
+    return await api.listContainerChannels({ appId, pageSize: 500 });
   } catch {
     return [];
   }
@@ -142,8 +145,8 @@ export async function fetchBulkTraceByAppId(
     }
     if (shepardIds.length === 0) return { byRole, channelList };
 
-    const body = await api.getBulkChannelData({
-      containerAppId: appId,
+    const body = await api.getContainerBulkChannelData({
+      appId,
       bulkChannelDataRequest: { shepardIds, start: startNs, end: endNs },
     });
 

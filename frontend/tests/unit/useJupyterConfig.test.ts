@@ -80,9 +80,9 @@ describe("useJupyterConfig — refresh()", () => {
     expect(url).toContain("/v2/admin/config/jupyter");
   });
 
-  it("sets error message on HTTP failure", async () => {
+  it("sets error message on HTTP failure (adminMode only — public mode is fail-soft)", async () => {
     mockFetchError(403);
-    const { config, error, refresh } = useJupyterConfig();
+    const { config, error, refresh } = useJupyterConfig({ adminMode: true });
     await refresh();
 
     expect(error.value).toBe("Failed to load Jupyter config");

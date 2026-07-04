@@ -23,8 +23,8 @@ import {
 } from '../models/index';
 
 export interface SearchSemanticTermsRequest {
+    q: string;
     pageSize?: number;
-    q?: string;
 }
 
 /**
@@ -37,6 +37,13 @@ export class SemanticTermSearchApi extends runtime.BaseAPI {
      * [v2] Search ontology terms in the INTERNAL semantic repository.
      */
     async searchSemanticTermsRaw(requestParameters: SearchSemanticTermsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TermSuggestion>> {
+        if (requestParameters['q'] == null) {
+            throw new runtime.RequiredError(
+                'q',
+                'Required parameter "q" was null or undefined when calling searchSemanticTerms().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['pageSize'] != null) {
@@ -75,7 +82,7 @@ export class SemanticTermSearchApi extends runtime.BaseAPI {
      * Searches `:Resource` nodes imported by n10s (neosemantics) and returns matching term suggestions for use in the annotation-picker autocomplete. Each suggestion carries `uri` (the RDF URI), `label` (preferred human-readable label), and `description` (definition or comment, may be null).  Query strategy: when the `resource_labels` fulltext index exists (created by migration `V44__Add_fulltext_index_Resource_labels.cypher`), the endpoint uses `db.index.fulltext.queryNodes` for fast prefix matching. If the index is absent it falls back to a case-insensitive `CONTAINS` scan across label, synonym, and notation properties. If no `:Resource` nodes exist at all (ontologies not seeded), both paths return an empty array without error.  Parameters:   - `q` (required) — the search string. Must be at least 2 characters.     Short strings return 400 rather than scanning the full ontology.   - `pageSize` (optional, default 20) — maximum number of results to return.     Capped at 50 server-side regardless of the supplied value.  Auth: any authenticated shepard user. There is no per-entity permission check beyond authentication — the ontology catalogue is visible to all logged-in users.
      * [v2] Search ontology terms in the INTERNAL semantic repository.
      */
-    async searchSemanticTerms(requestParameters: SearchSemanticTermsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TermSuggestion> {
+    async searchSemanticTerms(requestParameters: SearchSemanticTermsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TermSuggestion> {
         const response = await this.searchSemanticTermsRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -49,6 +49,12 @@ export interface FindingIO {
      * @memberof FindingIO
      */
     message?: string;
+    /**
+     * SHACL constraint-component IRI (sh:sourceConstraintComponent). Nullable.
+     * @type {string}
+     * @memberof FindingIO
+     */
+    constraint?: string | null;
 }
 
 /**
@@ -73,6 +79,7 @@ export function FindingIOFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'value': json['value'] == null ? undefined : json['value'],
         'severity': json['severity'] == null ? undefined : json['severity'],
         'message': json['message'] == null ? undefined : json['message'],
+        'constraint': json['constraint'] == null ? undefined : json['constraint'],
     };
 }
 
@@ -87,6 +94,7 @@ export function FindingIOToJSON(value?: FindingIO | null): any {
         'value': value['value'],
         'severity': value['severity'],
         'message': value['message'],
+        'constraint': value['constraint'],
     };
 }
 

@@ -108,6 +108,7 @@ public class DataObjectRdfRest {
   @Path("/{appId}/rdf")
   @Produces("text/turtle")
   @Operation(
+    operationId = "getRdf",
     summary = "Return a Turtle subgraph for the DataObject (SHACL focus node).",
     description =
       "Serialises the DataObject + first-level neighbors + direct semantic " +

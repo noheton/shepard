@@ -91,6 +91,12 @@ export interface DataObjectDetail {
      * @type {string}
      * @memberof DataObjectDetail
      */
+    uniqueId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof DataObjectDetail
+     */
     description?: string | null;
     /**
      * 
@@ -147,11 +153,11 @@ export interface DataObjectDetail {
      */
     readonly successorIds: Array<number>;
     /**
-     * 
-     * @type {Array<number>}
+     * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows.
+     * @type {Array<string>}
      * @memberof DataObjectDetail
      */
-    predecessorIds?: Array<number>;
+    predecessorAppIds?: Array<string> | null;
     /**
      * 
      * @type {Array<number>}
@@ -346,6 +352,7 @@ export function DataObjectDetailFromJSONTyped(json: any, ignoreDiscriminator: bo
         'name': json['name'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'description': json['description'] == null ? undefined : json['description'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'status': json['status'] == null ? undefined : json['status'],
@@ -356,7 +363,7 @@ export function DataObjectDetailFromJSONTyped(json: any, ignoreDiscriminator: bo
         'collectionId': json['collectionId'],
         'referenceIds': json['referenceIds'],
         'successorIds': json['successorIds'],
-        'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
+        'predecessorAppIds': json['predecessorAppIds'] == null ? undefined : json['predecessorAppIds'],
         'childrenIds': json['childrenIds'],
         'parentId': json['parentId'],
         'incomingIds': json['incomingIds'],
@@ -385,13 +392,14 @@ export function DataObjectDetailToJSON(value?: Omit<DataObjectDetail, 'id'|'crea
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
         'description': value['description'],
         'attributes': value['attributes'],
         'status': value['status'],
         'license': value['license'],
         'accessRights': value['accessRights'],
         'embargoEndDate': value['embargoEndDate'],
-        'predecessorIds': value['predecessorIds'],
+        'predecessorAppIds': value['predecessorAppIds'],
         'parentId': value['parentId'],
     };
 }

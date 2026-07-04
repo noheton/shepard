@@ -84,7 +84,7 @@ describe("useAasShells — init fetch", () => {
     await flush();
 
     expect(shells.value).toHaveLength(1);
-    expect(shells.value[0].idShort).toBe("TestCollection");
+    expect(shells.value[0]?.idShort).toBe("TestCollection");
     expect(total.value).toBe(7);
   });
 

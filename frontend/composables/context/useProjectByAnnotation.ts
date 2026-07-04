@@ -1,6 +1,6 @@
 /**
  * PROJ-REST-2 — composable wrapping
- * GET /v2/projects/{appId}/by-annotation/{predicate}/{value}.
+ * GET /v2/projects/{appId}/by-annotation?predicate=…&value=….
  *
  * Cross-reference: aidocs/integrations/121-project-and-subcollections.md §3.3.
  */
@@ -79,15 +79,15 @@ export function useProjectByAnnotation(
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       const qs = new URLSearchParams();
+      qs.set("predicate", pred);
+      qs.set("value", val);
       if (opts?.inherit !== undefined) qs.set("inherit", String(opts.inherit));
       if (opts?.include) qs.set("include", opts.include);
       if (opts?.page !== undefined) qs.set("page", String(opts.page));
       if (opts?.pageSize !== undefined) qs.set("pageSize", String(opts.pageSize));
 
       const url =
-        `${v2BaseUrl()}/v2/projects/${projectAppId}` +
-        `/by-annotation/${encodeURIComponent(pred)}/${encodeURIComponent(val)}` +
-        (qs.toString() ? `?${qs.toString()}` : "");
+        `${v2BaseUrl()}/v2/projects/${projectAppId}/by-annotation?${qs.toString()}`;
 
       const response = await fetch(url, {
         headers: {

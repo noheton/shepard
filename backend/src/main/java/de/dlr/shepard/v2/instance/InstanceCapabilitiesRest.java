@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-@Tag(name = "Instance identity")
+@Tag(name = "Instance")
 public class InstanceCapabilitiesRest {
 
   @Inject
@@ -46,6 +46,7 @@ public class InstanceCapabilitiesRest {
 
   @GET
   @Operation(
+    operationId = "getCapabilities",
     summary = "List the IDs of plugins that are currently ENABLED on this instance.",
     description = "Returns only ENABLED plugin IDs — a lightweight capability probe for the " +
     "frontend so it can gate plugin-specific UI surfaces (e.g. the Unhide Publishing panel). " +
@@ -57,7 +58,6 @@ public class InstanceCapabilitiesRest {
     description = "Current set of enabled plugin IDs.",
     content = @Content(schema = @Schema(implementation = InstanceCapabilitiesIO.class))
   )
-  @APIResponse(responseCode = "200", description = "Public endpoint — no authentication required.")
   public Response getCapabilities() {
     List<PluginEntry> entries = registry.list();
     List<InstanceCapabilitiesIO.PluginInfo> plugins = new ArrayList<>(entries.size());

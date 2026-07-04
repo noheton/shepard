@@ -17,8 +17,7 @@ import * as runtime from '../runtime';
 import type {
   AllowedTemplates,
   DataObject,
-  PagedResponseShepardTemplate,
-  ShepardTemplate,
+  PagedResponse,
   TemplateInstantiateRequest,
   TemplateInstantiation,
 } from '../models/index';
@@ -27,9 +26,8 @@ import {
     AllowedTemplatesToJSON,
     DataObjectFromJSON,
     DataObjectToJSON,
-    PagedResponseShepardTemplateFromJSON,
-    ShepardTemplateFromJSON,
-    ShepardTemplateToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     TemplateInstantiateRequestFromJSON,
     TemplateInstantiateRequestToJSON,
     TemplateInstantiationFromJSON,
@@ -183,7 +181,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
     /**
      * [v2] List templates the Collection owner has curated as allowed inside this Collection.
      */
-    async listAllowedRaw(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
+    async listAllowedRaw(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -222,13 +220,13 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * [v2] List templates the Collection owner has curated as allowed inside this Collection.
      */
-    async listAllowed(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
+    async listAllowed(requestParameters: ListAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listAllowedRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -236,7 +234,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
     /**
      * [v2] List templates the Collection has cited via :USES_TEMPLATE.
      */
-    async listUsedRaw(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseShepardTemplate>> {
+    async listUsedRaw(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
@@ -275,19 +273,19 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseShepardTemplateFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * [v2] List templates the Collection has cited via :USES_TEMPLATE.
      */
-    async listUsed(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseShepardTemplate> {
+    async listUsed(requestParameters: ListUsedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listUsedRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
     /**
-     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates.
+     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204; follow up with GET .../allowed to see the new set.
      * [v2] Replace the allowed-template set for this Collection.
      */
     async setAllowedRaw(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -335,7 +333,7 @@ export class CollectionTemplatesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204.
+     * Full replace (not merge). Empty list = no curation; the picker falls back to all live templates. Returns 204; follow up with GET .../allowed to see the new set.
      * [v2] Replace the allowed-template set for this Collection.
      */
     async setAllowed(requestParameters: SetAllowedRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {

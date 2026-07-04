@@ -7,6 +7,7 @@ import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.endpoints.UserGroupAttributes;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
+import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -67,6 +68,12 @@ public class UserGroupV2Rest {
   @Inject
   UserGroupService service;
 
+  @Inject
+  UserGroupSearchService searchService;
+
+  private static final String PT_BAD_REQUEST = "/problems/user-groups.bad-request";
+  private static final int MAX_MEMBERS = 500;
+
   private static Response problem(String type, String title, Response.Status status, String detail) {
     ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
     return Response.status(status).type("application/problem+json").entity(body).build();
@@ -74,8 +81,12 @@ public class UserGroupV2Rest {
 
   @GET
   @Operation(
-    summary = "List all user groups the caller can read.",
-    description = "Returns user groups the caller has at least Read permission on. Supports pagination and ordering."
+    operationId = "listUserGroups",
+    summary = "List or search user groups.",
+    description =
+      "Returns user groups the caller has at least Read permission on. " +
+      "When `q` is supplied, filters by name (OR-contains). " +
+      "Without `q`, returns all accessible groups with pagination and ordering."
   )
   @APIResponse(
     responseCode = "200",
@@ -83,16 +94,25 @@ public class UserGroupV2Rest {
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
+  @Parameter(name = "q", description = "Optional name search (case-insensitive contains). When set, ordering params are ignored.")
   @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
   @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "When true, sort descending. Default false (ascending).")
   public Response listUserGroups(
+    @QueryParam("q") String q,
     @QueryParam(Constants.QP_PAGE) @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
+    if (q != null && !q.isBlank()) {
+      List<UserGroupV2IO> items = searchService.searchByText(q).stream()
+        .map(UserGroupV2IO::new)
+        .toList();
+      long count = items.size();
+      return Response.ok(new PagedResponseIO<>(items, count, 0, count == 0 ? 1 : (int) count)).build();
+    }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
     long total = service.countAllUserGroups();
@@ -143,6 +163,7 @@ public class UserGroupV2Rest {
   @PATCH
   @Path("/{appId}")
   @Operation(
+    operationId = "patchUserGroup",
     summary = "Partially update a user group (RFC 7396 merge-patch).",
     description = "Fields present in the body replace the current value; absent fields are preserved. " +
     "Mutable fields: `name` (string), `usernames` (array of strings)."
@@ -158,12 +179,16 @@ public class UserGroupV2Rest {
   @Parameter(name = "appId", description = "UUID v7 application identifier.")
   public Response patchUserGroup(@PathParam("appId") String appId, JsonNode body) {
     if (body == null || body.isNull()) {
-      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+      return problem(PT_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
           "patch body must not be null");
     }
     String newName = body.has("name") ? body.get("name").textValue() : null;
     List<String> newUsernames = null;
     if (body.has("usernames") && body.get("usernames").isArray()) {
+      if (body.get("usernames").size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many members", Response.Status.BAD_REQUEST,
+            "usernames list may not exceed " + MAX_MEMBERS + " elements; got " + body.get("usernames").size());
+      }
       newUsernames = StreamSupport.stream(body.get("usernames").spliterator(), false)
         .map(JsonNode::textValue)
         .toList();
@@ -230,6 +255,7 @@ public class UserGroupV2Rest {
   @Path("/{appId}/permissions")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchUserGroupPermissions",
     summary = "Merge-patch permissions for a user group (RFC 7396).",
     description =
       "RFC 7396 merge-patch the permissions for the user group at `appId`. " +
@@ -252,7 +278,7 @@ public class UserGroupV2Rest {
     @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body
   ) {
     if (body == null || !body.isObject()) {
-      return problem("/problems/user-groups.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+      return problem(PT_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
           "PATCH body must be a JSON object");
     }
     var group = service.getUserGroupByAppId(appId);
@@ -265,18 +291,38 @@ public class UserGroupV2Rest {
       current.setOwner(ownerStr);
     }
     if (patch.containsKey("reader") && patch.get("reader") instanceof java.util.List<?> readerList) {
+      if (readerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many readers", Response.Status.BAD_REQUEST,
+            "reader list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setReader(readerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("writer") && patch.get("writer") instanceof java.util.List<?> writerList) {
+      if (writerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many writers", Response.Status.BAD_REQUEST,
+            "writer list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setWriter(writerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("manager") && patch.get("manager") instanceof java.util.List<?> managerList) {
+      if (managerList.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many managers", Response.Status.BAD_REQUEST,
+            "manager list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
     }
     if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
+      if (rgl.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many reader groups", Response.Status.BAD_REQUEST,
+            "readerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
     }
     if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
+      if (wgl.size() > MAX_MEMBERS) {
+        return problem(PT_BAD_REQUEST, "Too many writer groups", Response.Status.BAD_REQUEST,
+            "writerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+      }
       current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
     }
     var updated = service.updateUserGroupPermissions(current, group.getId());

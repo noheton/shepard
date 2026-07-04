@@ -38,6 +38,12 @@ export interface AasReference {
      * @memberof AasReference
      */
     keys: Array<AasKey>;
+    /**
+     * Human-readable DataObject name for display. Null when not populated.
+     * @type {string}
+     * @memberof AasReference
+     */
+    displayName?: string | null;
 }
 
 /**
@@ -61,6 +67,7 @@ export function AasReferenceFromJSONTyped(json: any, ignoreDiscriminator: boolea
         
         'type': json['type'],
         'keys': ((json['keys'] as Array<any>).map(AasKeyFromJSON)),
+        'displayName': json['displayName'] == null ? undefined : json['displayName'],
     };
 }
 
@@ -72,6 +79,7 @@ export function AasReferenceToJSON(value?: AasReference | null): any {
         
         'type': value['type'],
         'keys': ((value['keys'] as Array<any>).map(AasKeyToJSON)),
+        'displayName': value['displayName'],
     };
 }
 

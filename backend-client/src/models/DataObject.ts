@@ -134,6 +134,12 @@ export interface DataObject {
      */
     predecessorIds?: Array<number>;
     /**
+     * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows.
+     * @type {Array<string>}
+     * @memberof DataObject
+     */
+    predecessorAppIds?: Array<string> | null;
+    /**
      * 
      * @type {Array<number>}
      * @memberof DataObject
@@ -268,6 +274,7 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'referenceIds': json['referenceIds'],
         'successorIds': json['successorIds'],
         'predecessorIds': json['predecessorIds'] == null ? undefined : json['predecessorIds'],
+        'predecessorAppIds': json['predecessorAppIds'] == null ? undefined : json['predecessorAppIds'],
         'childrenIds': json['childrenIds'],
         'parentId': json['parentId'],
         'incomingIds': json['incomingIds'],
@@ -293,6 +300,7 @@ export function DataObjectToJSON(value?: Omit<DataObject, 'id'|'createdAt'|'crea
         'accessRights': value['accessRights'],
         'embargoEndDate': value['embargoEndDate'],
         'predecessorIds': value['predecessorIds'],
+        'predecessorAppIds': value['predecessorAppIds'],
         'parentId': value['parentId'],
     };
 }

@@ -16,11 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   Activity,
+  ActivityCountIO,
   ProvenanceStats,
 } from '../models/index';
 import {
     ActivityFromJSON,
     ActivityToJSON,
+    ActivityCountIOFromJSON,
+    ActivityCountIOToJSON,
     ProvenanceStatsFromJSON,
     ProvenanceStatsToJSON,
 } from '../models/index';
@@ -35,7 +38,7 @@ export interface CountActivitiesRequest {
 
 export interface ListActivitiesRequest {
     agent?: string;
-    pageSize?: number;
+    limit?: number;
     since?: number;
     targetAppId?: string;
     targetKind?: string;
@@ -44,7 +47,7 @@ export interface ListActivitiesRequest {
 
 export interface ListEntityActivitiesRequest {
     appId: string;
-    pageSize?: number;
+    limit?: number;
     since?: number;
     until?: number;
 }
@@ -65,7 +68,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
      * Cheap variant of /activities that returns only the row count, for dashboard tiles.
      * [v2] Count provenance activities matching the same filter set.
      */
-    async countActivitiesRaw(requestParameters: CountActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async countActivitiesRaw(requestParameters: CountActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ActivityCountIO>> {
         const queryParameters: any = {};
 
         if (requestParameters['agent'] != null) {
@@ -109,19 +112,20 @@ export class ProvenanceApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => ActivityCountIOFromJSON(jsonValue));
     }
 
     /**
      * Cheap variant of /activities that returns only the row count, for dashboard tiles.
      * [v2] Count provenance activities matching the same filter set.
      */
-    async countActivities(requestParameters: CountActivitiesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.countActivitiesRaw(requestParameters, initOverrides);
+    async countActivities(requestParameters: CountActivitiesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ActivityCountIO> {
+        const response = await this.countActivitiesRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**
-     * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response — paginate via narrowing the time window.
+     * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response.  **Pagination:** This endpoint uses time-cursor pagination (`since`/`until` epoch ms), not page-offset. Offset pagination produces inconsistent results as new Activities land concurrently (append-only event stream — a new row shifts all subsequent offsets). To walk a large window: record the oldest `startedAt` value in the current page and pass it as `until` on the next request. The `?page=` query parameter is not supported and is silently ignored if supplied.
      * [v2] List provenance activities (most recent first).
      */
     async listActivitiesRaw(requestParameters: ListActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Activity>>> {
@@ -131,8 +135,8 @@ export class ProvenanceApi extends runtime.BaseAPI {
             queryParameters['agent'] = requestParameters['agent'];
         }
 
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['pageSize'] = requestParameters['pageSize'];
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
         if (requestParameters['since'] != null) {
@@ -176,7 +180,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
     }
 
     /**
-     * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response — paginate via narrowing the time window.
+     * Filterable by agent / target / time window. Casual users see only their own rows; instance-admins see all. Caps at 1000 rows per response.  **Pagination:** This endpoint uses time-cursor pagination (`since`/`until` epoch ms), not page-offset. Offset pagination produces inconsistent results as new Activities land concurrently (append-only event stream — a new row shifts all subsequent offsets). To walk a large window: record the oldest `startedAt` value in the current page and pass it as `until` on the next request. The `?page=` query parameter is not supported and is silently ignored if supplied.
      * [v2] List provenance activities (most recent first).
      */
     async listActivities(requestParameters: ListActivitiesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Activity>> {
@@ -185,7 +189,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.
+     * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.  **Pagination:** Uses time-cursor pagination (`since`/`until` epoch ms) — see `GET /v2/provenance/activities` for the full rationale. The `?page=` parameter is not supported and is silently ignored.
      * [v2] Provenance trail for a single entity (most recent first).
      */
     async listEntityActivitiesRaw(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Activity>>> {
@@ -198,8 +202,8 @@ export class ProvenanceApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['pageSize'] = requestParameters['pageSize'];
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
         if (requestParameters['since'] != null) {
@@ -235,7 +239,7 @@ export class ProvenanceApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.
+     * Returns every captured Activity whose targetAppId matches the supplied entity. Casual users see only rows whose acting Agent is themselves; instance-admins see all rows targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows.  **Pagination:** Uses time-cursor pagination (`since`/`until` epoch ms) — see `GET /v2/provenance/activities` for the full rationale. The `?page=` parameter is not supported and is silently ignored.
      * [v2] Provenance trail for a single entity (most recent first).
      */
     async listEntityActivities(requestParameters: ListEntityActivitiesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Activity>> {

@@ -33,15 +33,17 @@ export interface TimeseriesChannelV2 {
      */
     shepardId: string;
     /**
-     * Legacy numeric channel id (Postgres serial).
+     * DEPRECATED: legacy numeric channel id (Postgres serial). Use shepardId instead.
      * @type {number}
      * @memberof TimeseriesChannelV2
+     * @deprecated
      */
     id: number;
     /**
-     * 
+     * DEPRECATED (APISIMP-TSCHANNEL-CONTAINER-ID): numeric Postgres serial FK exposed on wire. Use containerAppId once available — requires TS-IDb/c migration.
      * @type {number}
      * @memberof TimeseriesChannelV2
+     * @deprecated
      */
     containerId: number;
     /**

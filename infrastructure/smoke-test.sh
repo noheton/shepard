@@ -206,15 +206,13 @@ check "GET /v2/admin/features (no auth → 401)" \
       "$BACKEND_URL/v2/admin/features" \
       "401,403"
 
-# DI1 — safe delete endpoints exist (DELETE without auth → 401, not 404)
-check "DELETE /v2/timeseries-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/timeseries-containers/1" \
-      "401,403" "" DELETE
-check "DELETE /v2/file-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/file-containers/1" \
-      "401,403" "" DELETE
-check "DELETE /v2/structured-data-containers/1 (no auth → 401)" \
-      "$BACKEND_URL/v2/structured-data-containers/1" \
+# DI1 — safe delete endpoint exists (DELETE without auth → 401, not 404).
+# V2CONV container unification dissolved the per-kind DELETE routes
+# (/v2/{timeseries,file,structured-data}-containers/{id}) into the polymorphic
+# DELETE /v2/containers/{appId} (ContainersV2Rest). The container self-describes
+# its kind, so one probe covers all former per-kind routes.
+check "DELETE /v2/containers/1 (no auth → 401)" \
+      "$BACKEND_URL/v2/containers/1" \
       "401,403" "" DELETE
 
 # SA-CONT (APISIMP-SA-CONT-DELETE) — the per-kind container-annotation

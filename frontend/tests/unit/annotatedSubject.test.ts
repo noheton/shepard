@@ -167,6 +167,27 @@ describe("v2 SubjectAnnotated accessors", () => {
     });
   });
 
+  it("fetchAnnotations reads rows from the PagedResponseIO envelope", async () => {
+    // BUG-ANNOTATIONS-MAP-ENVELOPE: listAnnotations migrated to the
+    // PagedResponseIO {items,total,page,pageSize} envelope (#2104) and the
+    // generated client was regenerated to match. fetchAnnotations reads the
+    // rows from `.items`; a missing/empty envelope degrades to [] (no crash).
+    mockListAnnotations.mockResolvedValue({
+      items: [WIRE_ANNOTATION],
+      total: 1,
+      page: 0,
+      pageSize: 200,
+    });
+    const { AnnotatedDataObject } = await import("~/composables/annotated");
+
+    const out = await new AnnotatedDataObject(
+      "0192cccc-0000-7000-8000-0000000000ab",
+    ).fetchAnnotations();
+
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ propertyName: "material" });
+  });
+
   it("fetchAnnotations fails soft (returns [], no network call) for an empty appId", async () => {
     const { AnnotatedCollection } = await import("~/composables/annotated");
     const out = await new AnnotatedCollection("").fetchAnnotations();

@@ -138,6 +138,7 @@ public class ProjectsRest {
   @GET
   @Path("/{appId}/sub-collections")
   @Operation(
+    operationId = "subCollections",
     summary = "List a Project's sub-Collections.",
     description =
       "Returns every Collection that declares this Project as a parent via " +
@@ -165,20 +166,22 @@ public class ProjectsRest {
   // ─── GET by-annotation roll-up ────────────────────────────────────────────
 
   @GET
-  @Path("/{appId}/by-annotation/{predicate}/{value}")
+  @Path("/{appId}/by-annotation")
   @Operation(
+    operationId = "byAnnotation",
     summary = "Cross-Collection by-annotation roll-up over a Project.",
     description =
       "Returns every DataObject across the Project's sub-Collections whose " +
-      "direct semantic annotation matches `{predicate} = {value}`. The " +
-      "`predicate` path parameter is the predicate IRI (URL-encoded — e.g. " +
-      "`urn%3Ashepard%3Amffd%3Alayer`); the `value` parameter is the object " +
-      "literal or IRI to match.\n\n" +
+      "direct semantic annotation matches `predicate = value`. Both `predicate` " +
+      "and `value` are query parameters — `predicate` is the full predicate IRI " +
+      "(e.g. `urn:shepard:mffd:layer`); `value` is the object literal or IRI to " +
+      "match. No URL-encoding in the client is needed beyond the standard " +
+      "query-string encoding that every HTTP library performs automatically.\n\n" +
       "Pagination via `page` + `pageSize` (max 500). `include=annotations` " +
       "populates the per-row `matchedAnnotations` array with the matched " +
       "predicate+value+source rows (current implementation reports the direct " +
       "match only; full parent-walk lands as a follow-up).\n\n" +
-      "404 when the appId is not a Project. 422 when the predicate is blank."
+      "404 when the appId is not a Project. 422 when predicate or value is blank."
   )
   @APIResponse(
     responseCode = "200",
@@ -187,11 +190,21 @@ public class ProjectsRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No Project with that appId.")
-  @APIResponse(responseCode = "422", description = "Unknown / blank predicate.")
+  @APIResponse(responseCode = "422", description = "Blank predicate or blank value.")
   public Response byAnnotation(
       @PathParam("appId") String appId,
-      @PathParam("predicate") String predicate,
-      @PathParam("value") String value,
+      @Parameter(
+        description =
+          "Full predicate IRI to match (e.g. `urn:shepard:mffd:layer`). " +
+          "Must be non-blank; 422 is returned when missing or blank."
+      )
+      @QueryParam("predicate") String predicate,
+      @Parameter(
+        description =
+          "Object literal or IRI to match against the predicate. " +
+          "Must be non-blank; 422 is returned when missing or blank."
+      )
+      @QueryParam("value") String value,
       @Parameter(
         description =
           "Controls what is included in each result row beyond the DataObject identity. " +
@@ -220,10 +233,13 @@ public class ProjectsRest {
           "Number of results per page. Default 100. Maximum 500. " +
           "Values above 500 are clamped to 500."
       )
-      @QueryParam("pageSize") @DefaultValue("100") int pageSize) {
+      @QueryParam("pageSize") @DefaultValue("100") @Max(500) @Min(1) int pageSize) {
 
     if (predicate == null || predicate.isBlank()) {
-      return problem422("Missing predicate", "Predicate path parameter must be non-blank.");
+      return problem422("Missing predicate", "Predicate query parameter must be non-blank.");
+    }
+    if (value == null || value.isBlank()) {
+      return problem422("Missing value", "Value query parameter must be non-blank.");
     }
     // Existence check before doing the value-coerce work.
     if (!projectsService.isProject(appId)) return notFound(appId);

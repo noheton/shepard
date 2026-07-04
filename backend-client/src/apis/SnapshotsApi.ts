@@ -15,25 +15,23 @@
 
 import * as runtime from '../runtime';
 import type {
-  PagedResponseSnapshot,
+  PagedResponse,
+  ProblemJson,
   Snapshot,
   SnapshotDataObjects,
   SnapshotDiff,
-  SnapshotEntry,
-  SnapshotListPageIO,
 } from '../models/index';
 import {
-    PagedResponseSnapshotFromJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
+    ProblemJsonFromJSON,
+    ProblemJsonToJSON,
     SnapshotFromJSON,
     SnapshotToJSON,
     SnapshotDataObjectsFromJSON,
     SnapshotDataObjectsToJSON,
     SnapshotDiffFromJSON,
     SnapshotDiffToJSON,
-    SnapshotEntryFromJSON,
-    SnapshotEntryToJSON,
-    SnapshotListPageIOFromJSON,
-    SnapshotListPageIOToJSON,
 } from '../models/index';
 
 export interface CreateCollectionSnapshotRequest {
@@ -342,7 +340,7 @@ export class SnapshotsApi extends runtime.BaseAPI {
      * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Each `SnapshotIO` carries: `appId`, `name`, `description`, `snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, and `entryCount` (number of VersionableEntities recorded in the manifest).  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. `size` capped at 200 server-side.  Auth: Read on the Collection.  Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries of a specific Snapshot, or `GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots.
      * [v2] List Snapshots of a Collection, newest first (V2b).
      */
-    async listCollectionSnapshotsRaw(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponseSnapshot>> {
+    async listCollectionSnapshotsRaw(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -381,14 +379,14 @@ export class SnapshotsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseSnapshotFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Response envelope: `{ items[], total, page, pageSize }` (APISIMP-COLLECTION-SNAPSHOT-PLAIN-ARRAY fix).  Auth: Read on the Collection.
+     * Returns one page of non-deleted `:Snapshot` entities for the Collection identified by `collectionAppId`, ordered by `snapshotCapturedAtMs` DESC (newest first).  Each `SnapshotIO` carries: `appId`, `name`, `description`, `snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, and `entryCount` (number of VersionableEntities recorded in the manifest).  Pagination: omit `page` / `size` to get the first 50; supply both to paginate. `size` capped at 200 server-side.  Auth: Read on the Collection.  Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries of a specific Snapshot, or `GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots.
      * [v2] List Snapshots of a Collection, newest first (V2b).
      */
-    async listCollectionSnapshots(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponseSnapshot> {
+    async listCollectionSnapshots(requestParameters: ListCollectionSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listCollectionSnapshotsRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -397,7 +395,7 @@ export class SnapshotsApi extends runtime.BaseAPI {
      * Returns one page of `:Snapshot` rows the caller has Read on, ordered newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` scopes the result to a single Collection; when absent, the list spans every Collection the caller can read.  Response envelope: `{ items[], total, page, pageSize }`. **`total` reports the unfiltered count** (every snapshot in scope, not just the ones the caller can read) — so a caller looking at `items.length` vs. `total` can infer how many they can\'t see. The page is post-filtered to the readable subset, so `items.length` may be lower than `pageSize` even when more snapshots exist.  Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up).
      * [v2] List snapshots the caller can read (paginated, optionally scoped to one Collection).
      */
-    async listSnapshotsRaw(requestParameters: ListSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SnapshotListPageIO>> {
+    async listSnapshotsRaw(requestParameters: ListSnapshotsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['collectionAppId'] != null) {
@@ -429,14 +427,14 @@ export class SnapshotsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SnapshotListPageIOFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns one page of `:Snapshot` rows the caller has Read on, ordered newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` scopes the result to a single Collection; when absent, the list spans every Collection the caller can read.  Response envelope: `{ items[], total, page, pageSize }`. **`total` reports the unfiltered count** (every snapshot in scope, not just the ones the caller can read) — so a caller looking at `items.length` vs. `total` can infer how many they can\'t see. The page is post-filtered to the readable subset, so `items.length` may be lower than `pageSize` even when more snapshots exist.  Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up).
      * [v2] List snapshots the caller can read (paginated, optionally scoped to one Collection).
      */
-    async listSnapshots(requestParameters: ListSnapshotsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SnapshotListPageIO> {
+    async listSnapshots(requestParameters: ListSnapshotsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listSnapshotsRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -445,7 +443,7 @@ export class SnapshotsApi extends runtime.BaseAPI {
      * Returns every (entityAppId, revision) pair captured at snapshot time. Ordered by entityAppId ascending for deterministic diff tooling. Requires Read permission on the root Collection.
      * [v2] Read the full snapshot manifest.
      */
-    async manifestRaw(requestParameters: ManifestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SnapshotEntry>>> {
+    async manifestRaw(requestParameters: ManifestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['snapshotAppId'] == null) {
             throw new runtime.RequiredError(
                 'snapshotAppId',
@@ -476,14 +474,14 @@ export class SnapshotsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(SnapshotEntryFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns every (entityAppId, revision) pair captured at snapshot time. Ordered by entityAppId ascending for deterministic diff tooling. Requires Read permission on the root Collection.
      * [v2] Read the full snapshot manifest.
      */
-    async manifest(requestParameters: ManifestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SnapshotEntry>> {
+    async manifest(requestParameters: ManifestRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.manifestRaw(requestParameters, initOverrides);
         return await response.value();
     }

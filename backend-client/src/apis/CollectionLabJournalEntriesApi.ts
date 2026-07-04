@@ -15,15 +15,17 @@
 
 import * as runtime from '../runtime';
 import type {
-  LabJournalEntry,
+  PagedResponse,
 } from '../models/index';
 import {
-    LabJournalEntryFromJSON,
-    LabJournalEntryToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface ListLabJournalEntriesRequest {
     collectionAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 /**
@@ -32,10 +34,10 @@ export interface ListLabJournalEntriesRequest {
 export class CollectionLabJournalEntriesApi extends runtime.BaseAPI {
 
     /**
-     * Walks Collection → DataObject → LabJournalEntry once and returns every non-deleted entry, sorted by createdAt descending. Each entry carries its dataObjectId, so the frontend can group client-side without further round-trips. Returns an empty array when the collection has no data objects or none of them carry lab journal entries.  Auth: Read permission on the Collection. 401 if unauthenticated, 404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.
+     * Walks Collection → DataObject → LabJournalEntry once and returns every non-deleted entry, sorted by createdAt descending. Each entry carries its dataObjectId, so the frontend can group client-side without further round-trips. Returns an empty array when the collection has no data objects or none of them carry lab journal entries.  Auth: Read permission on the Collection. 401 if unauthenticated, 404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total entry count before paging.
      * [v2] Bulk list all lab journal entries for a collection (UI-020).
      */
-    async listLabJournalEntriesRaw(requestParameters: ListLabJournalEntriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournalEntry>>> {
+    async listLabJournalEntriesRaw(requestParameters: ListLabJournalEntriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -44,6 +46,14 @@ export class CollectionLabJournalEntriesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -66,14 +76,14 @@ export class CollectionLabJournalEntriesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(LabJournalEntryFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Walks Collection → DataObject → LabJournalEntry once and returns every non-deleted entry, sorted by createdAt descending. Each entry carries its dataObjectId, so the frontend can group client-side without further round-trips. Returns an empty array when the collection has no data objects or none of them carry lab journal entries.  Auth: Read permission on the Collection. 401 if unauthenticated, 404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.
+     * Walks Collection → DataObject → LabJournalEntry once and returns every non-deleted entry, sorted by createdAt descending. Each entry carries its dataObjectId, so the frontend can group client-side without further round-trips. Returns an empty array when the collection has no data objects or none of them carry lab journal entries.  Auth: Read permission on the Collection. 401 if unauthenticated, 404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.  Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). `X-Total-Count` header carries the total entry count before paging.
      * [v2] Bulk list all lab journal entries for a collection (UI-020).
      */
-    async listLabJournalEntries(requestParameters: ListLabJournalEntriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalEntry>> {
+    async listLabJournalEntries(requestParameters: ListLabJournalEntriesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listLabJournalEntriesRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -65,7 +65,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Collection timeline")
+@Tag(name = "Collections")
 public class CollectionTimelineRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/collection-timeline.unauthorized";
@@ -83,6 +83,7 @@ public class CollectionTimelineRest {
 
   @GET
   @Operation(
+    operationId = "timeline",
     summary = "Process-chain timeline (swimlane chronograph) for a Collection.",
     description =
       "Returns a swimlane envelope where each lane is a distinct process-type " +

@@ -15,11 +15,11 @@
 
 import * as runtime from '../runtime';
 import type {
-  OntologyAlignment,
+  PagedResponse,
 } from '../models/index';
 import {
-    OntologyAlignmentFromJSON,
-    OntologyAlignmentToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 /**
@@ -31,7 +31,7 @@ export class OntologyAlignmentRegistryApi extends runtime.BaseAPI {
      * Returns the complete set of `(:OntologyAlignment)` nodes seeded by `V67__TPL3_upper_ontology_alignment.cypher`. Each row records how a core Shepard concept maps onto an upper-ontology class (BFO 2020, IAO, PROV-O, IOF Core), including the OWL relationship type, confidence level, and aidocs source reference.  The registry is read-only at runtime; mutations require a Cypher migration. Returns an empty array when the migration has not yet run.  Auth: requires `instance-admin` role.
      * [v2] List all upper-ontology alignment rows.
      */
-    async listOntologyAlignmentsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<OntologyAlignment>> {
+    async listOntologyAlignmentsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -51,14 +51,14 @@ export class OntologyAlignmentRegistryApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => OntologyAlignmentFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns the complete set of `(:OntologyAlignment)` nodes seeded by `V67__TPL3_upper_ontology_alignment.cypher`. Each row records how a core Shepard concept maps onto an upper-ontology class (BFO 2020, IAO, PROV-O, IOF Core), including the OWL relationship type, confidence level, and aidocs source reference.  The registry is read-only at runtime; mutations require a Cypher migration. Returns an empty array when the migration has not yet run.  Auth: requires `instance-admin` role.
      * [v2] List all upper-ontology alignment rows.
      */
-    async listOntologyAlignments(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<OntologyAlignment> {
+    async listOntologyAlignments(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listOntologyAlignmentsRaw(initOverrides);
         return await response.value();
     }

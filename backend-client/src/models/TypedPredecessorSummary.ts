@@ -26,12 +26,6 @@ export interface TypedPredecessorSummary {
      */
     readonly predecessorAppId?: string;
     /**
-     * Numeric shepardId of the predecessor DataObject.
-     * @type {number}
-     * @memberof TypedPredecessorSummary
-     */
-    readonly predecessorId?: number;
-    /**
      * Display name of the predecessor DataObject.
      * @type {string}
      * @memberof TypedPredecessorSummary
@@ -81,14 +75,13 @@ export function TypedPredecessorSummaryFromJSONTyped(json: any, ignoreDiscrimina
     return {
         
         'predecessorAppId': json['predecessorAppId'] == null ? undefined : json['predecessorAppId'],
-        'predecessorId': json['predecessorId'] == null ? undefined : json['predecessorId'],
         'predecessorName': json['predecessorName'] == null ? undefined : json['predecessorName'],
         'predecessorStatus': json['predecessorStatus'] == null ? undefined : json['predecessorStatus'],
         'relationshipType': json['relationshipType'] == null ? undefined : json['relationshipType'],
     };
 }
 
-export function TypedPredecessorSummaryToJSON(value?: Omit<TypedPredecessorSummary, 'predecessorAppId'|'predecessorId'|'predecessorName'|'predecessorStatus'|'relationshipType'> | null): any {
+export function TypedPredecessorSummaryToJSON(value?: Omit<TypedPredecessorSummary, 'predecessorAppId'|'predecessorName'|'predecessorStatus'|'relationshipType'> | null): any {
     if (value == null) {
         return value;
     }

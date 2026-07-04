@@ -14,8 +14,9 @@ class ProvenanceRestStatsTest {
   void stats_entityIdParamAnnotationIsEntityId() throws NoSuchMethodException {
     // The @QueryParam on the entity-scope parameter must be "entityId" (not "id").
     // All v2 query params use descriptive names; bare "id" is ambiguous.
+    // APISIMP-PROV-ISO8601-TIMESTAMPS: since/until changed to String.
     Method method = ProvenanceRest.class.getMethod(
-        "stats", String.class, String.class, Long.class, Long.class,
+        "stats", String.class, String.class, String.class, String.class,
         jakarta.ws.rs.core.SecurityContext.class);
     String actual = Arrays.stream(method.getParameters())
         .filter(p -> {

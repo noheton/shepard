@@ -72,13 +72,16 @@ public class SearchV2Rest {
 
   @GET
   @Operation(
+    operationId = "searchV2",
     summary = "Full-text search returning appId-keyed results",
     description =
       "Searches Collections and DataObjects by name / description and returns a unified " +
       "list where every item carries its stable `appId` (UUID v7). Unlike the legacy " +
       "`POST /shepard/api/search` endpoint, no internal Neo4j node id is exposed. " +
       "Collection results are paginated via `page` / `pageSize`; DataObject results are " +
-      "returned inline alongside them. Requires authentication."
+      "paginated independently via `doPage` / `doPageSize`. When `collectionAppId` is " +
+      "supplied, DataObject results are narrowed to that collection and no collection " +
+      "items are returned (scoped DO search). Requires authentication."
   )
   @APIResponse(
     responseCode = "200",
@@ -88,7 +91,7 @@ public class SearchV2Rest {
       schema = @Schema(implementation = SearchV2ResultIO.class)
     )
   )
-  @APIResponse(responseCode = "400", description = "Query parameter `q` is blank or absent.")
+  @APIResponse(responseCode = "400", description = "Query parameter `q` is blank/absent, or `collectionAppId` is not found.")
   @APIResponse(responseCode = "401", description = "Caller is not authenticated.")
   public Response search(
     @Parameter(description = "Full-text search query (required).", required = true)
@@ -99,43 +102,82 @@ public class SearchV2Rest {
     )
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(
-      description = "Page size (1–200).",
+      description = "Page size for collection results (1–200).",
       schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50")
     )
-    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
+    @Parameter(
+      description = "Zero-based page index for DataObject results.",
+      schema = @Schema(minimum = "0", defaultValue = "0")
+    )
+    @QueryParam("doPage") @DefaultValue("0") @PositiveOrZero int doPage,
+    @Parameter(
+      description = "Page size for DataObject results (1–200).",
+      schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50")
+    )
+    @QueryParam("doPageSize") @DefaultValue("50") @Min(1) @Max(200) int doPageSize,
+    @Parameter(
+      description =
+        "Optional collection appId (UUID v7) to scope DataObject results to a single " +
+        "collection. When present, collection items are omitted from the response and " +
+        "only DataObjects belonging to the specified collection are returned. Returns " +
+        "400 if the appId does not match an existing collection."
+    )
+    @QueryParam("collectionAppId") String collectionAppId
   ) {
     if (q == null || q.isBlank()) {
       return problem("/problems/search.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
           "Query parameter 'q' is required and must be non-blank.");
     }
+
+    // Resolve optional collection scope (appId → Neo4j Long for DataObjectSearchService).
+    Long scopeCollectionId = null;
+    if (collectionAppId != null && !collectionAppId.isBlank()) {
+      Collection scopeCol = collectionDAO.findByAppId(collectionAppId);
+      if (scopeCol == null) {
+        return problem("/problems/search.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+            "Collection with appId '" + collectionAppId + "' not found.");
+      }
+      scopeCollectionId = scopeCol.getId();
+    }
+
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
+    int safeDoPage = Math.max(doPage, 0);
+    int safeDoSize = Math.min(Math.max(doPageSize, 1), 200);
 
     List<SearchV2ItemIO> items = new ArrayList<>();
     long total = 0;
 
-    // Collections — paginated
-    PaginatedCollectionList colPage = collectionSearchService.search(
-      q,
-      Optional.of(safePage),
-      Optional.of(safeSize),
-      BasicCollectionAttributes.createdAt,
-      true
-    );
-    colPage.getResults().forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
-    total += colPage.getTotalResults() != null ? colPage.getTotalResults() : 0L;
+    // Collections — paginated; skipped when a collection scope is active.
+    if (scopeCollectionId == null) {
+      PaginatedCollectionList colPage = collectionSearchService.search(
+        q,
+        Optional.of(safePage),
+        Optional.of(safeSize),
+        BasicCollectionAttributes.createdAt,
+        true
+      );
+      colPage.getResults().forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
+      total += colPage.getTotalResults() != null ? colPage.getTotalResults() : 0L;
+    }
 
-    // DataObjects — global scope (no collection/dataobject constraint)
+    // DataObjects — scoped to collection when collectionAppId provided, otherwise global.
     SearchBody body = new SearchBody(
-      new SearchScope[] { new SearchScope(null, null, new TraversalRules[0]) },
+      new SearchScope[] { new SearchScope(scopeCollectionId, null, new TraversalRules[0]) },
       new SearchParams(q, QueryType.DataObject)
     );
     ResponseBody doResult = dataObjectSearchService.search(body);
+    var allDos = doResult.getResults();
+    int doTotal = allDos.length;
+    // Overflow-safe slice: doPage * doPageSize cannot exceed Integer.MAX_VALUE.
+    int doFrom = (int) Math.min((long) safeDoPage * safeDoSize, doTotal);
+    int doTo = Math.min(doFrom + safeDoSize, doTotal);
     ResultTriple[] triples = doResult.getResultSet();
-    // Cache collection appId lookups; the result set is small so N+1 is fine.
+    // Cache collection appId lookups so N+1 cost stays bounded per page.
     Map<Long, String> collectionAppIdCache = new HashMap<>();
-    for (int i = 0; i < doResult.getResults().length; i++) {
-      var r = doResult.getResults()[i];
+    for (int i = doFrom; i < doTo; i++) {
+      var r = allDos[i];
       Long colId = (triples != null && i < triples.length) ? triples[i].getCollectionId() : null;
       String colAppId = null;
       if (colId != null) {
@@ -146,9 +188,9 @@ public class SearchV2Rest {
       }
       items.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject", colAppId));
     }
-    total += doResult.getResults().length;
+    total += doTotal;
 
-    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q))
+    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, doTotal, safeDoPage, safeDoSize, q))
         .header("X-Total-Count", total)
         .build();
   }

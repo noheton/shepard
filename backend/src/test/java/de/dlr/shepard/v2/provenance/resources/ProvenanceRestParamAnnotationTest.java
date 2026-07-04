@@ -13,6 +13,9 @@ import org.junit.jupiter.api.Test;
  * {@code @Parameter} annotations are present on the five content-negotiation
  * variants of {@link ProvenanceRest}.  The primary JSON method was already
  * annotated; these tests prevent the variant params from silently regressing.
+ *
+ * <p>APISIMP-PROV-ISO8601-TIMESTAMPS: since/until params are now {@code String}
+ * (accept both ISO 8601 and epoch-ms); reflection signatures updated accordingly.
  */
 class ProvenanceRestParamAnnotationTest {
 
@@ -35,46 +38,73 @@ class ProvenanceRestParamAnnotationTest {
   }
 
   @Test
-  void listActivitiesProvJson_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesProvJson_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesProvJson",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       Integer.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "pageSize"), "listActivitiesProvJson.pageSize");
+    assertDocumented(queryParam(m, "limit"), "listActivitiesProvJson.limit");
   }
 
   @Test
-  void listActivitiesJsonLd_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesJsonLd_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesJsonLd",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       Integer.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "pageSize"), "listActivitiesJsonLd.pageSize");
+    assertDocumented(queryParam(m, "limit"), "listActivitiesJsonLd.limit");
   }
 
   @Test
   void listEntityActivitiesProvJson_sinceParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listEntityActivitiesProvJson",
-      String.class, Long.class, Long.class, Integer.class,
+      String.class, String.class, String.class, Integer.class,
       jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "since"), "listEntityActivitiesProvJson.since");
+  }
+
+  @Test
+  void listEntityActivitiesProvJson_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "listEntityActivitiesProvJson",
+      String.class, String.class, String.class, Integer.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesProvJson.limit");
   }
 
   @Test
   void listEntityActivitiesJsonLd_sinceParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listEntityActivitiesJsonLd",
-      String.class, Long.class, Long.class, Integer.class, String.class,
+      String.class, String.class, String.class, Integer.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "since"), "listEntityActivitiesJsonLd.since");
+  }
+
+  @Test
+  void listEntityActivitiesJsonLd_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "listEntityActivitiesJsonLd",
+      String.class, String.class, String.class, Integer.class, String.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesJsonLd.limit");
+  }
+
+  @Test
+  void listEntityActivities_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+    Method m = ProvenanceRest.class.getMethod(
+      "listEntityActivities",
+      String.class, String.class, String.class, Integer.class,
+      jakarta.ws.rs.core.SecurityContext.class);
+    assertDocumented(queryParam(m, "limit"), "listEntityActivities.limit");
   }
 
   @Test
   void countActivitiesJsonLd_targetKindParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "countActivitiesJsonLd",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       String.class, jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "targetKind"), "countActivitiesJsonLd.targetKind");
   }
@@ -85,7 +115,7 @@ class ProvenanceRestParamAnnotationTest {
   void countActivities_agentParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "countActivities",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "agent"), "countActivities.agent");
   }
@@ -94,7 +124,7 @@ class ProvenanceRestParamAnnotationTest {
   void countActivities_targetKindParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "countActivities",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "targetKind"), "countActivities.targetKind");
   }
@@ -103,7 +133,7 @@ class ProvenanceRestParamAnnotationTest {
   void countActivities_sinceParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "countActivities",
-      String.class, String.class, String.class, Long.class, Long.class,
+      String.class, String.class, String.class, String.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
     assertDocumented(queryParam(m, "since"), "countActivities.since");
   }

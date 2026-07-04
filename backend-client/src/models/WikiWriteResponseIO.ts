@@ -20,20 +20,20 @@ import { mapValues } from '../runtime';
  */
 export interface WikiWriteResponseIO {
     /**
-     * Neo4j OGM id of the created LabJournalEntry. Deprecated — use labJournalEntryAppId.
+     * 
      * @type {number}
      * @memberof WikiWriteResponseIO
      * @deprecated
      */
     labJournalEntryId?: number;
     /**
-     * UUID v7 appId of the created LabJournalEntry.
+     * 
      * @type {string}
      * @memberof WikiWriteResponseIO
      */
-    labJournalEntryAppId?: string | null;
+    labJournalEntryAppId?: string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof WikiWriteResponseIO
      */

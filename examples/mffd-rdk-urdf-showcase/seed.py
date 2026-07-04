@@ -491,9 +491,11 @@ def upload_singleton_file_reference(
     headers = {"X-API-KEY": api_key}
 
     # --- idempotency check ---------------------------------------------------
+    # APISIMP-FILE-PATH-RETIRE-2: legacy /v2/files/by-data-object retired.
     try:
         list_resp = _http.get(
-            f"{v2}/files/by-data-object/{do_app_id}",
+            f"{v2}/references",
+            params={"kind": "file", "dataObjectAppId": do_app_id},
             headers=headers,
             timeout=15,
         )
@@ -556,15 +558,23 @@ def _get_do_app_id(host: str, api_key: str, coll_id: int, do_id: int) -> str:
 
 def _list_singleton_files_by_do(v2_base: str, api_key: str, do_app_id: str) -> list[dict]:
     """List FR1b singletons attached to a DataObject. Empty list on 404/403."""
+    # APISIMP-FILE-PATH-RETIRE-2: /v2/files/by-data-object/{appId} retired (410).
+    # New path: /v2/references?kind=file&dataObjectAppId=<doAppId>.
     resp = _http.get(
-        f"{v2_base}/files/by-data-object/{do_app_id}",
+        f"{v2_base}/references",
+        params={"kind": "file", "dataObjectAppId": do_app_id},
         headers={"X-API-KEY": api_key, "Accept": "application/json"},
         timeout=30,
     )
-    if resp.status_code in (403, 404):
+    if resp.status_code in (403, 404, 410):
         return []
     resp.raise_for_status()
-    return resp.json() or []
+    body = resp.json()
+    if isinstance(body, list):
+        return body
+    if isinstance(body, dict) and isinstance(body.get("items"), list):
+        return body["items"]
+    return []
 
 
 def upload_singleton_file_reference(apis: Apis, coll: Collection, do: DataObject,
@@ -597,22 +607,39 @@ def upload_singleton_file_reference(apis: Apis, coll: Collection, do: DataObject
     fname = file_path.name
     ctype = _content_type_for(file_path)
 
-    # POST /v2/files?parentDataObjectAppId=...&name=...  multipart `file=...`.
-    # The endpoint mints a new :SingletonFileReference, writes bytes into the
-    # shared `_shepard_files` Mongo namespace, and returns 201 + the appId.
-    params = {"parentDataObjectAppId": do_app, "name": ref_name}
-    files = {"file": (fname, file_path.read_bytes(), ctype)}
-    resp = _http.post(
-        f"{v2}/files",
-        params=params,
-        files=files,
+    # APISIMP-FILE-PATH-RETIRE-2: legacy POST /v2/files retired (410).
+    # New two-step flow:
+    #   1) POST /v2/references?kind=file&dataObjectAppId=<doAppId>  body: {"name":"..."}
+    #   2) PUT  /v2/references/{appId}/content?filename=<original-name>  octet-stream body
+    resp1 = _http.post(
+        f"{v2}/references",
+        params={"kind": "file", "dataObjectAppId": do_app},
+        json={"name": ref_name},
         headers={"X-API-KEY": api_key, "Accept": "application/json"},
-        timeout=180,
+        timeout=60,
     )
-    resp.raise_for_status()
-    payload = resp.json()
-    _log("OK", ref_name, "SingletonFileRef", payload.get("appId"))
-    return payload
+    resp1.raise_for_status()
+    created = resp1.json()
+    new_app_id = created.get("appId")
+    if not new_app_id:
+        raise RuntimeError(f"POST /v2/references did not return appId for {ref_name}: {created!r}")
+
+    # PUT must use application/octet-stream regardless of detected mime —
+    # the new endpoint stores raw bytes; the originalFilename query param
+    # carries the user-visible name.
+    resp2 = _http.put(
+        f"{v2}/references/{new_app_id}/content",
+        params={"filename": fname},
+        data=file_path.read_bytes(),
+        headers={
+            "X-API-KEY": api_key,
+            "Content-Type": "application/octet-stream",
+        },
+        timeout=300,
+    )
+    resp2.raise_for_status()
+    _log("OK", ref_name, "SingletonFileRef", new_app_id)
+    return created
 
 
 # ---------------------------------------------------------------------------
@@ -709,18 +736,35 @@ def upload_joint_trajectory(apis: Apis, coll: Collection, do: DataObject,
 # ---------------------------------------------------------------------------
 # Joint-channel annotations (urn:shepard:urdf:joint = <jointName>)
 
+def _resolve_container_app_id(host: str, api_key: str, container_id: int) -> str:
+    """Map a Neo4j numeric container id → the unified UUID appId via the v1
+    container endpoint (still byte-compat for upstream). Needed because the
+    new /v2/containers/{appId}/channels path is appId-keyed."""
+    resp = _http.get(
+        f"{host}/timeseriesContainers/{container_id}",
+        headers={"X-API-KEY": api_key, "Accept": "application/json"},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    app_id = (resp.json() or {}).get("appId")
+    if not app_id:
+        raise RuntimeError(f"No appId on TimeseriesContainer {container_id}")
+    return app_id
+
+
 def annotate_joint_channels(host: str, api_key: str, container_id: int) -> None:
     """Write urn:shepard:urdf:joint annotations to each KR210 joint channel.
 
-    Calls:
-      GET  /v2/timeseries-containers/{containerId}/channels
-      POST /v2/timeseries-containers/{containerId}/channels/{shepardId}/annotations
+    Calls (APISIMP-CONT-NS-COLLAPSE — appId-keyed):
+      GET  /v2/containers/{appId}/channels
+      POST /v2/containers/{appId}/channels/{shepardId}/annotations
 
     This is what makes the UrdfChannelPicker auto-bind channels to URDF
     joints (annotation-driven preselection per URDF-WEBVIEW-1 §3 and the
     project_annotation_preselection_principle).
     """
     v2 = _v2_base(host)
+    container_app_id = _resolve_container_app_id(host, api_key, container_id)
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
 
     all_channels: list[dict] = []
@@ -728,8 +772,8 @@ def annotate_joint_channels(host: str, api_key: str, container_id: int) -> None:
     page_size = 200
     while True:
         resp = _http.get(
-            f"{v2}/timeseries-containers/{container_id}/channels",
-            params={"page": page, "size": page_size},
+            f"{v2}/containers/{container_app_id}/channels",
+            params={"page": page, "pageSize": page_size},
             headers=headers,
             timeout=30,
         )
@@ -753,7 +797,7 @@ def annotate_joint_channels(host: str, api_key: str, container_id: int) -> None:
             continue
         # Annotation value = the joint name (matches the URDF joint declaration).
         resp = _http.post(
-            f"{v2}/timeseries-containers/{container_id}/channels/{shepard_id}/annotations",
+            f"{v2}/containers/{container_app_id}/channels/{shepard_id}/annotations",
             json={"predicate": URDF_JOINT_PREDICATE, "value": field},
             headers=headers,
             timeout=30,
@@ -764,7 +808,7 @@ def annotate_joint_channels(host: str, api_key: str, container_id: int) -> None:
             # Older instance — predicate may be inferred from endpoint context.
             # Try the v2 axis-roles shape (single `value` field).
             resp2 = _http.post(
-                f"{v2}/timeseries-containers/{container_id}/channels/{shepard_id}/annotations",
+                f"{v2}/containers/{container_app_id}/channels/{shepard_id}/annotations",
                 json={"value": field},
                 headers=headers,
                 timeout=30,
@@ -852,12 +896,13 @@ def ensure_view_recipe_template(host: str, api_key: str, joint_channel_ids: dict
 def lookup_joint_channel_ids(host: str, api_key: str, container_id: int) -> dict[str, str]:
     """Return jointName → channel shepardId for the trajectory we just uploaded."""
     v2 = _v2_base(host)
+    container_app_id = _resolve_container_app_id(host, api_key, container_id)
     out: dict[str, str] = {}
     page = 0
     while True:
         resp = _http.get(
-            f"{v2}/timeseries-containers/{container_id}/channels",
-            params={"page": page, "size": 200},
+            f"{v2}/containers/{container_app_id}/channels",
+            params={"page": page, "pageSize": 200},
             headers={"X-API-KEY": api_key, "Accept": "application/json"},
             timeout=30,
         )

@@ -38,7 +38,7 @@ import {
 } from '../models/index';
 
 export interface CreateCollectionRequest {
-    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'>;
+    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'>;
 }
 
 export interface CreateVersionRequest {
@@ -52,7 +52,7 @@ export interface DeleteCollectionRequest {
 
 export interface EditCollectionPermissionsRequest {
     collectionId: number;
-    permissions: Omit<Permissions, 'entityId'>;
+    permissions: Omit<Permissions, 'entityId'|'readerGroupIds'|'writerGroupIds'>;
 }
 
 export interface ExportCollectionRequest {
@@ -96,12 +96,12 @@ export interface GetVersionsRequest {
 
 export interface PatchCollectionRequest {
     collectionId: number;
-    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'>;
+    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'>;
 }
 
 export interface UpdateCollectionRequest {
     collectionId: number;
-    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'sceneGraphAppId'>;
+    collection: Omit<Collection, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'appId'|'revision'|'createdByOrcid'|'dataObjectIds'|'incomingIds'|'defaultFileContainerAppId'|'sceneGraphAppId'>;
 }
 
 /**

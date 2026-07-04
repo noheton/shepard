@@ -16,6 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   JsonNode,
+  PagedResponse,
   Permissions,
   Roles,
   UserGroupAttributes,
@@ -24,6 +25,8 @@ import type {
 import {
     JsonNodeFromJSON,
     JsonNodeToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
     PermissionsFromJSON,
     PermissionsToJSON,
     RolesFromJSON,
@@ -56,7 +59,7 @@ export interface GetUserGroupV2Request {
 
 export interface ListUserGroupsRequest {
     page?: number;
-    size?: number;
+    pageSize?: number;
     orderBy?: UserGroupAttributes;
     orderDesc?: boolean;
 }
@@ -291,15 +294,15 @@ export class UserGroupsApi extends runtime.BaseAPI {
      * Returns user groups the caller has at least Read permission on. Supports pagination and ordering.
      * [v2] List all user groups the caller can read.
      */
-    async listUserGroupsRaw(requestParameters: ListUserGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<UserGroupV2>>> {
+    async listUserGroupsRaw(requestParameters: ListUserGroupsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
             queryParameters['page'] = requestParameters['page'];
         }
 
-        if (requestParameters['size'] != null) {
-            queryParameters['size'] = requestParameters['size'];
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['orderBy'] != null) {
@@ -327,14 +330,14 @@ export class UserGroupsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(UserGroupV2FromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * Returns user groups the caller has at least Read permission on. Supports pagination and ordering.
      * [v2] List all user groups the caller can read.
      */
-    async listUserGroups(requestParameters: ListUserGroupsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<UserGroupV2>> {
+    async listUserGroups(requestParameters: ListUserGroupsRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listUserGroupsRaw(requestParameters, initOverrides);
         return await response.value();
     }

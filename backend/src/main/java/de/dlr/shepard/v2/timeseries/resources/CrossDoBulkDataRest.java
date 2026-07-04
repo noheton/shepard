@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/data-objects/cross-timeseries-bulk")
 @RequestScoped
-@Tag(name = "Timeseries cross-DataObject view")
+@Tag(name = "Timeseries")
 public class CrossDoBulkDataRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/timeseries-cross-do.unauthorized";
@@ -87,6 +87,7 @@ public class CrossDoBulkDataRest {
 
   @POST
   @Operation(
+    operationId = "getCrossDoBulkData",
     summary = "Fetch one channel-predicate series across many DataObjects (TS-CROSS-DO-VIEW-1).",
     description =
       "Resolves each DataObject (by appId) to the channel whose `SemanticAnnotation.propertyIRI` " +

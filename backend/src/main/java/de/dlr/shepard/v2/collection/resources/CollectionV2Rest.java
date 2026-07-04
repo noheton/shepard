@@ -14,6 +14,8 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.v2.collection.io.CollectionV2IO;
+import de.dlr.shepard.v2.collection.io.CreateCollectionV2IO;
+import de.dlr.shepard.v2.collection.io.UpdateCollectionV2IO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -21,6 +23,8 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.Validator;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
@@ -153,7 +157,7 @@ public class CollectionV2Rest {
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400",
-    description = "Bean Validation rejected the query — `page` or `pageSize` is negative.")
+    description = "Bean Validation rejected the query — `page` is negative, or `pageSize` is outside [1, 200].")
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
@@ -161,11 +165,9 @@ public class CollectionV2Rest {
     @QueryParam(Constants.QP_NAME) String name,
     @Parameter(description = "0-based page index. Default 0. Negative values are rejected (400).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Page size. Default 50; clamped server-side to [1, 200]. Negative values are rejected (400).")
-    @QueryParam("pageSize") @DefaultValue("50") @PositiveOrZero int pageSize
+    @Parameter(description = "Page size. Default 50. Must be between 1 and 200 inclusive (400 otherwise).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     // Load all user-visible collections without DB-side pagination so we can
     // compute the true filtered total, then paginate in memory (same pattern
@@ -178,10 +180,10 @@ public class CollectionV2Rest {
         .toList();
 
     int total = all.size();
-    int from = (int) Math.min((long) safePage * safeSize, total);
-    int to = (int) Math.min((long) from + safeSize, total);
+    int from = (int) Math.min((long) page * pageSize, total);
+    int to = (int) Math.min((long) from + pageSize, total);
 
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, safePage, safeSize))
+    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
       .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
@@ -247,8 +249,8 @@ public class CollectionV2Rest {
       "the delimiter characters `Space, Comma, Point, Slash`).\n" +
       "  - `status` (optional, one of `DRAFT`, `IN_REVIEW`, `READY`, " +
       "`PUBLISHED`, `ARCHIVED`).\n" +
-      "  - `defaultFileContainerId` (optional, legacy long id of a FileContainer " +
-      "to serve as the Collection's default).\n\n" +
+      "  - `defaultFileContainerAppId` (optional, UUID v7 appId of a " +
+      "FileContainer to serve as the Collection's default; resolved server-side).\n\n" +
       "Example minimal body: `{\"name\": \"My experiment\"}`.\n" +
       "Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", " +
       "\"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, " +
@@ -275,10 +277,22 @@ public class CollectionV2Rest {
   public Response create(
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = CollectionIO.class))
-    ) @Valid CollectionIO body
+      content = @Content(schema = @Schema(implementation = CreateCollectionV2IO.class))
+    ) @Valid CreateCollectionV2IO body
   ) {
-    Collection created = collectionService.createCollection(body);
+    CollectionIO io = new CollectionIO();
+    io.setName(body.getName());
+    io.setDescription(body.getDescription());
+    io.setAttributes(body.getAttributes() != null ? body.getAttributes() : new java.util.HashMap<>());
+    io.setStatus(body.getStatus());
+    io.setLicense(body.getLicense());
+    io.setAccessRights(body.getAccessRights());
+    io.setEmbargoEndDate(body.getEmbargoEndDate());
+    io.setHeroImageUrl(body.getHeroImageUrl());
+    io.setImportedFrom(body.getImportedFrom());
+    io.setPromptLogMode(body.getPromptLogMode());
+    io.setDefaultFileContainerAppId(body.getDefaultFileContainerAppId());
+    Collection created = collectionService.createCollection(io);
     return Response.status(Response.Status.CREATED).entity(new CollectionV2IO(created)).build();
   }
 
@@ -322,7 +336,7 @@ public class CollectionV2Rest {
       description = "Partial Collection (RFC 7396). Every field is optional; absent fields are preserved.",
       content = @Content(
         mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
-        schema = @Schema(implementation = CollectionIO.class)
+        schema = @Schema(implementation = UpdateCollectionV2IO.class)
       )
     ) JsonNode patch,
     @Context SecurityContext sc

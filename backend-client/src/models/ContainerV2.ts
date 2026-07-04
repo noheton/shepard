@@ -87,6 +87,12 @@ export interface ContainerV2 {
      */
     status?: ContainerV2StatusEnum | null;
     /**
+     * 
+     * @type {string}
+     * @memberof ContainerV2
+     */
+    uniqueId?: string;
+    /**
      * Container family of this container: file | timeseries | structured-data | hdf. Derived from the entity; never numeric.
      * @type {string}
      * @memberof ContainerV2
@@ -148,6 +154,7 @@ export function ContainerV2FromJSONTyped(json: any, ignoreDiscriminator: boolean
         'revision': json['revision'] == null ? undefined : json['revision'],
         'type': ContainerTypeFromJSON(json['type']),
         'status': json['status'] == null ? undefined : json['status'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'kind': json['kind'] == null ? undefined : json['kind'],
         'payload': json['payload'] == null ? undefined : json['payload'],
     };
@@ -161,6 +168,7 @@ export function ContainerV2ToJSON(value?: Omit<ContainerV2, 'id'|'createdAt'|'cr
         
         'name': value['name'],
         'status': value['status'],
+        'uniqueId': value['uniqueId'],
         'kind': value['kind'],
         'payload': value['payload'],
     };

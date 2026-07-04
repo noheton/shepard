@@ -14,21 +14,14 @@
 
 
 import * as runtime from '../runtime';
-import type {
-  VideoStreamReference,
-} from '../models/index';
-import {
-    VideoStreamReferenceFromJSON,
-    VideoStreamReferenceToJSON,
-} from '../models/index';
 
-export interface DownloadRequest {
+export interface DownloadVideoStreamReferenceRequest {
     appId: string;
     dataObjectAppId: string;
     range?: string;
 }
 
-export interface UploadRequest {
+export interface UploadVideoStreamReferenceRequest {
     dataObjectAppId: string;
     name?: string;
     file?: Blob;
@@ -40,21 +33,21 @@ export interface UploadRequest {
 export class VideoStreamReferencesApi extends runtime.BaseAPI {
 
     /**
-     * Streams the video bytes stored for the `VideoStreamReference` identified by `appId` (UUID v7). Designed for both download (`?download=1` + `Content-Disposition: attachment`) and inline HTML5 `<video>` playback.  **Range requests:** a single `Range: bytes=START-END` header is honoured (single-range only; multi-range and suffix-range are declined per HttpRangeUtil semantics). A valid range returns HTTP 206 with `Content-Range` and `Accept-Ranges: bytes` headers — this is what unlocks browser-native scrubbing on multi-GB MP4s. An unsatisfiable range (start ≥ total) returns 416 with `Content-Range: bytes *_/TOTAL`. The `Accept-Ranges: bytes` header is always included in 200 responses so clients can probe range support.  **Auth:** Read permission on the parent DataObject. The browser cannot send a custom `Authorization` header on `<video src>`, so the JWT may be supplied via the `?access_token=…` query param fallback handled by `JWTFilter`.  **Content-Disposition:** set to `attachment; filename=\"<originalName>\"` for explicit download UX. HTML5 `<video>` ignores this and plays inline anyway.
-     * [v2] Download the raw video bytes for a VideoStreamReference (VID1a + MFFD-VIDEOREF-SCALE-1).
+     * **APISIMP-VIDEO-STREAMREF-PATH**: this path has been replaced by the unified `GET /v2/references/{appId}/content` endpoint (range-aware, same 206 semantics).  Returns **410 Gone** permanently.
+     * [v2] [GONE] Range-aware video download — use GET /v2/references/{appId}/content instead.
      */
-    async downloadRaw(requestParameters: DownloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Blob>> {
+    async downloadVideoStreamReferenceRaw(requestParameters: DownloadVideoStreamReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['appId'] == null) {
             throw new runtime.RequiredError(
                 'appId',
-                'Required parameter "appId" was null or undefined when calling download().'
+                'Required parameter "appId" was null or undefined when calling downloadVideoStreamReference().'
             );
         }
 
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling download().'
+                'Required parameter "dataObjectAppId" was null or undefined when calling downloadVideoStreamReference().'
             );
         }
 
@@ -85,34 +78,26 @@ export class VideoStreamReferencesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.BlobApiResponse(response);
+        return new runtime.VoidApiResponse(response);
     }
 
     /**
-     * Streams the video bytes stored for the `VideoStreamReference` identified by `appId` (UUID v7). Designed for both download (`?download=1` + `Content-Disposition: attachment`) and inline HTML5 `<video>` playback.  **Range requests:** a single `Range: bytes=START-END` header is honoured (single-range only; multi-range and suffix-range are declined per HttpRangeUtil semantics). A valid range returns HTTP 206 with `Content-Range` and `Accept-Ranges: bytes` headers — this is what unlocks browser-native scrubbing on multi-GB MP4s. An unsatisfiable range (start ≥ total) returns 416 with `Content-Range: bytes *_/TOTAL`. The `Accept-Ranges: bytes` header is always included in 200 responses so clients can probe range support.  **Auth:** Read permission on the parent DataObject. The browser cannot send a custom `Authorization` header on `<video src>`, so the JWT may be supplied via the `?access_token=…` query param fallback handled by `JWTFilter`.  **Content-Disposition:** set to `attachment; filename=\"<originalName>\"` for explicit download UX. HTML5 `<video>` ignores this and plays inline anyway.
-     * [v2] Download the raw video bytes for a VideoStreamReference (VID1a + MFFD-VIDEOREF-SCALE-1).
+     * **APISIMP-VIDEO-STREAMREF-PATH**: this path has been replaced by the unified `GET /v2/references/{appId}/content` endpoint (range-aware, same 206 semantics).  Returns **410 Gone** permanently.
+     * [v2] [GONE] Range-aware video download — use GET /v2/references/{appId}/content instead.
      */
-    async download(requestParameters: DownloadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Blob | null | undefined > {
-        const response = await this.downloadRaw(requestParameters, initOverrides);
-        switch (response.raw.status) {
-            case 200:
-                return await response.value();
-            case 206:
-                return null;
-            default:
-                return await response.value();
-        }
+    async downloadVideoStreamReference(requestParameters: DownloadVideoStreamReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.downloadVideoStreamReferenceRaw(requestParameters, initOverrides);
     }
 
     /**
-     * Multipart body. The \'file\' part carries the video bytes. The optional \'name\' query parameter sets the Reference name (defaults to the uploaded filename). ffprobe metadata is extracted server-side (best-effort; upload succeeds even if ffprobe is absent).
-     * [v2] Upload a video file and create a VideoStreamReference.
+     * **APISIMP-VIDEO-STREAMREF-PATH**: this endpoint has been replaced by the unified two-step pattern:  1. `POST /v2/references?kind=video&dataObjectAppId={doAppId}` with JSON `{\"name\":\"video.mp4\"}` → returns `{appId}` 2. `PUT /v2/references/{appId}/content?filename=video.mp4` with raw `application/octet-stream` body  Returns **410 Gone** permanently.
+     * [v2] [GONE] Multipart video upload — use two-step pattern instead.
      */
-    async uploadRaw(requestParameters: UploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VideoStreamReference>> {
+    async uploadVideoStreamReferenceRaw(requestParameters: UploadVideoStreamReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
         if (requestParameters['dataObjectAppId'] == null) {
             throw new runtime.RequiredError(
                 'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling upload().'
+                'Required parameter "dataObjectAppId" was null or undefined when calling uploadVideoStreamReference().'
             );
         }
 
@@ -164,16 +149,15 @@ export class VideoStreamReferencesApi extends runtime.BaseAPI {
             body: formParams,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => VideoStreamReferenceFromJSON(jsonValue));
+        return new runtime.VoidApiResponse(response);
     }
 
     /**
-     * Multipart body. The \'file\' part carries the video bytes. The optional \'name\' query parameter sets the Reference name (defaults to the uploaded filename). ffprobe metadata is extracted server-side (best-effort; upload succeeds even if ffprobe is absent).
-     * [v2] Upload a video file and create a VideoStreamReference.
+     * **APISIMP-VIDEO-STREAMREF-PATH**: this endpoint has been replaced by the unified two-step pattern:  1. `POST /v2/references?kind=video&dataObjectAppId={doAppId}` with JSON `{\"name\":\"video.mp4\"}` → returns `{appId}` 2. `PUT /v2/references/{appId}/content?filename=video.mp4` with raw `application/octet-stream` body  Returns **410 Gone** permanently.
+     * [v2] [GONE] Multipart video upload — use two-step pattern instead.
      */
-    async upload(requestParameters: UploadRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VideoStreamReference> {
-        const response = await this.uploadRaw(requestParameters, initOverrides);
-        return await response.value();
+    async uploadVideoStreamReference(requestParameters: UploadVideoStreamReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.uploadVideoStreamReferenceRaw(requestParameters, initOverrides);
     }
 
 }

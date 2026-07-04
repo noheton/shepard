@@ -201,6 +201,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/file")
   @Produces(MediaType.APPLICATION_OCTET_STREAM)
   @Operation(
+    operationId = "downloadFile",
     summary = "Download the single-file payload of a container by appId.",
     description =
       "Streams the raw single-file payload for the container at `appId`, when its " +
@@ -481,6 +482,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/files/{fileName}/versions")
   @Operation(
+    operationId = "listVersions",
     summary = "List all payload versions for a named file in a container by appId.",
     description =
       "Returns the complete upload history for the file identified by `fileName` within " +
@@ -491,7 +493,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Version list (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PayloadVersionIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -520,7 +522,8 @@ public class ContainersV2Rest {
           null))
         .build();
     }
-    return Response.ok(versionsOpt.get()).build();
+    List<PayloadVersionIO> versionList = versionsOpt.get();
+    return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())).build();
   }
 
   // ─── stats ───────────────────────────────────────────────────────────────
@@ -583,7 +586,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "List of linked DataObjects (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -608,7 +611,8 @@ public class ContainersV2Rest {
           null))
         .build();
     }
-    return Response.ok(linkedOpt.get()).build();
+    List<DataObjectIO> linkedList = linkedOpt.get();
+    return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())).build();
   }
 
   // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
@@ -636,8 +640,8 @@ public class ContainersV2Rest {
     @PathParam("appId") String appId,
     @Parameter(description = "0-based page index. Default `0`. Values past the last page return an empty items list.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Number of channels per page. Default `200`. Must be >= 0.")
-    @QueryParam("pageSize") @DefaultValue("200") @PositiveOrZero int pageSize,
+    @Parameter(description = "Number of channels per page. Default `200`. Must be between 1 and 500 (400 on violation).")
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -992,11 +996,11 @@ public class ContainersV2Rest {
     operationId = "listChannelAnnotations",
     summary = "List semantic annotations on a timeseries channel.",
     description =
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 500.\n\n" +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
-  @APIResponse(responseCode = "200", description = "List of annotations (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY,
-      implementation = SemanticAnnotationIO.class)))
+  @APIResponse(responseCode = "200",
+    description = "Paged list of channel annotations with X-Total-Count header (may be empty).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1004,6 +1008,10 @@ public class ContainersV2Rest {
   public Response listChannelAnnotations(
       @PathParam("appId") String appId,
       @PathParam("channelShepardId") String channelShepardId,
+      @Parameter(description = "Zero-based page index (default 0).")
+        @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+      @Parameter(description = "Items per page, capped at 500 (default 200).")
+        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1014,7 +1022,7 @@ public class ContainersV2Rest {
         Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    var result = resolved.get().handler().listChannelAnnotations(appId, channelShepardId);
+    var result = resolved.get().handler().listChannelAnnotations(appId, channelShepardId, page, pageSize);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
@@ -1094,7 +1102,7 @@ public class ContainersV2Rest {
     return result.get();
   }
 
-  // ── APISIMP-CONT-NS-COLLAPSE-4: temporal annotations ───────────────────────
+  // ── APISIMP-CONT-NS-COLLAPSE-4 / APISIMP-CONTAINER-TEMPORAL-ANNOTATIONS-UNCAPPED ──
 
   @GET
   @Path("/{appId}/temporal-annotations")
@@ -1102,18 +1110,21 @@ public class ContainersV2Rest {
     operationId = "listTemporalAnnotations",
     summary = "List all temporal annotations on a container.",
     description =
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 500.\n\n" +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "JSON array of TimeseriesAnnotationIO records; may be empty.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY,
-      implementation = TimeseriesAnnotationIO.class)))
+    description = "Paged list of temporal annotations with X-Total-Count header (may be empty).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
   public Response listTemporalAnnotations(
       @PathParam("appId") String appId,
+      @Parameter(description = "Zero-based page index (default 0).")
+        @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+      @Parameter(description = "Items per page, capped at 500 (default 200).")
+        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1124,7 +1135,7 @@ public class ContainersV2Rest {
         Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    var result = resolved.get().handler().listTemporalAnnotations(appId);
+    var result = resolved.get().handler().listTemporalAnnotations(appId, page, pageSize);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No temporal-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no temporal-annotation concept");
@@ -1274,6 +1285,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/permissions")
   @Operation(
+    operationId = "getPermissions",
     summary = "Get permissions for a container by appId.",
     description =
       "Returns the current permissions for the container at `appId`.\n\n" +
@@ -1304,6 +1316,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/permissions")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchPermissions",
     summary = "Merge-patch permissions for a container by appId.",
     description =
       "RFC 7396 merge-patch the permissions for the container at `appId`. " +
@@ -1424,6 +1437,7 @@ public class ContainersV2Rest {
   @Path("/{appId}/payload/{oid}/thumbnail")
   @Produces("image/png")
   @Operation(
+    operationId = "getThumbnail",
     summary = "Get a PNG thumbnail for a file payload.",
     description =
       "Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. " +
@@ -1459,6 +1473,7 @@ public class ContainersV2Rest {
   @POST
   @Path("/{appId}/upload-url")
   @Operation(
+    operationId = "getUploadUrl",
     summary = "Obtain a presigned PUT URL to upload a file directly to storage.",
     description =
       "Returns a short-lived PUT URL and the assigned oid. Upload file bytes with a single " +
@@ -1491,6 +1506,7 @@ public class ContainersV2Rest {
   @POST
   @Path("/{appId}/upload-url/commit")
   @Operation(
+    operationId = "commitUpload",
     summary = "Register a file uploaded via presigned PUT.",
     description =
       "After the PUT upload completes, call this to create the ShepardFile record and attach it " +
@@ -1522,6 +1538,7 @@ public class ContainersV2Rest {
   @GET
   @Path("/{appId}/files/{oid}/download-url")
   @Operation(
+    operationId = "getDownloadUrl",
     summary = "Obtain a presigned GET URL to download a file directly from storage.",
     description =
       "Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the " +

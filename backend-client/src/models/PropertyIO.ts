@@ -13,6 +13,12 @@
  */
 
 import { mapValues } from '../runtime';
+import type { HintsIO } from './HintsIO';
+import {
+    HintsIOFromJSON,
+    HintsIOFromJSONTyped,
+    HintsIOToJSON,
+} from './HintsIO';
 import type { InMemberIO } from './InMemberIO';
 import {
     InMemberIOFromJSON,
@@ -62,6 +68,18 @@ export interface PropertyIO {
      * @memberof PropertyIO
      */
     node?: string | null;
+    /**
+     * Regex the literal value must match (sh:pattern).
+     * @type {string}
+     * @memberof PropertyIO
+     */
+    pattern?: string | null;
+    /**
+     * Non-validating form-presentation hints (DASH editor, label, order, group, placeholder, cell mapping — doc 125 §4).
+     * @type {HintsIO}
+     * @memberof PropertyIO
+     */
+    hints?: HintsIO | null;
 }
 
 /**
@@ -88,6 +106,8 @@ export function PropertyIOFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'maxCount': json['maxCount'] == null ? undefined : json['maxCount'],
         '_in': json['in'] == null ? undefined : ((json['in'] as Array<any>).map(InMemberIOFromJSON)),
         'node': json['node'] == null ? undefined : json['node'],
+        'pattern': json['pattern'] == null ? undefined : json['pattern'],
+        'hints': json['hints'] == null ? undefined : HintsIOFromJSON(json['hints']),
     };
 }
 
@@ -103,6 +123,8 @@ export function PropertyIOToJSON(value?: PropertyIO | null): any {
         'maxCount': value['maxCount'],
         'in': value['_in'] == null ? undefined : ((value['_in'] as Array<any>).map(InMemberIOToJSON)),
         'node': value['node'],
+        'pattern': value['pattern'],
+        'hints': HintsIOToJSON(value['hints']),
     };
 }
 

@@ -7,6 +7,8 @@ import de.dlr.shepard.v2.semantic.io.PredicateStatsIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -61,7 +63,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "Semantic predicate statistics")
+@Tag(name = "Semantics")
 public class SemanticPredicateStatsRest {
 
   static final String PROBLEM_TYPE_BAD_IRI = "/problems/semantic.predicate.bad-iri";
@@ -72,6 +74,7 @@ public class SemanticPredicateStatsRest {
   @GET
   @Path("/{predicateIriBase64}/stats")
   @Operation(
+    operationId = "getPredicateStats",
     summary = "Per-predicate usage statistics across all :SemanticAnnotation rows.",
     description =
       "Returns aggregate counts and a sample of annotated entities for the given predicate IRI. " +
@@ -89,11 +92,11 @@ public class SemanticPredicateStatsRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getPredicateStats(
     @PathParam("predicateIriBase64") String predicateIriBase64,
-    @QueryParam("topValuesLimit") @DefaultValue("20")
-    @Parameter(description = "Maximum number of distinct object-value rows to return in `topValues` (default: 20).")
+    @QueryParam("topValuesLimit") @DefaultValue("20") @Max(200) @Min(1)
+    @Parameter(description = "Maximum number of distinct object-value rows to return in `topValues` (default: 20, max: 200).")
     int topValuesLimit,
-    @QueryParam("sampleLimit") @DefaultValue("10")
-    @Parameter(description = "Maximum number of sample-entity rows to return in `sampleEntities` (default: 10).")
+    @QueryParam("sampleLimit") @DefaultValue("10") @Max(50) @Min(1)
+    @Parameter(description = "Maximum number of sample-entity rows to return in `sampleEntities` (default: 10, max: 50).")
     int sampleLimit
   ) {
     String iri = decodeIri(predicateIriBase64);

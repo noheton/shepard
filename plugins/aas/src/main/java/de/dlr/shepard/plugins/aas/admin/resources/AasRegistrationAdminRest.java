@@ -9,6 +9,9 @@ import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -68,19 +71,17 @@ public class AasRegistrationAdminRest {
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response listRegistrations(
-    @Parameter(description = "0-based page index. Default 0.")
-    @QueryParam("page") @DefaultValue("0") int page,
-    @Parameter(description = "Page size. Default 50, max " + MAX_PAGE_SIZE + ".")
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize
+    @Parameter(description = "0-based page index. Default 0. Returns 400 when negative.")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, range [1, " + MAX_PAGE_SIZE + "]. Default 50. Returns 400 when out of range.")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(MAX_PAGE_SIZE) int pageSize
   ) {
-    int safePage = Math.max(page, 0);
-    int safeSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     long total = registrationDAO.countAll();
-    List<AasRegistrationIO> rows = registrationDAO.listAll(safePage, safeSize)
+    List<AasRegistrationIO> rows = registrationDAO.listAll(page, pageSize)
       .stream()
       .map(AasRegistrationIO::from)
       .toList();
-    return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize)).build();
   }
 
   @POST

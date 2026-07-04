@@ -22,9 +22,10 @@ export function useFetchCollectionLabJournalEntries(collectionAppId: Ref<string 
   async function fetch(appId: string) {
     isLoading.value = true;
     try {
-      entries.value = await api.value.listLabJournalEntries({
+      const response = await api.value.listLabJournalEntries({
         collectionAppId: appId,
       });
+      entries.value = (response.items ?? []) as LabJournalEntry[];
     } catch (e) {
       handleError(e as ResponseError, "listCollectionLabJournalEntries");
       entries.value = [];

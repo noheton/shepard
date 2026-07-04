@@ -1,10 +1,10 @@
 package de.dlr.shepard.v2.admin.users;
 
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -52,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Admin — git credential preseed")
+@Tag(name = "Admin")
 public class AdminUserGitCredentialRest {
 
   private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/admin-git-credentials.bad-request";
@@ -100,9 +101,6 @@ public class AdminUserGitCredentialRest {
       );
     }
   }
-
-  /** ADM-USR-GIT-BACKEND-1 — list envelope. */
-  public record AdminGitCredentialListIO(List<AdminGitCredentialListItemIO> items) {}
 
   /** ADM-USR-GIT-BACKEND-1 — rotate body: caller supplies a fresh PAT. */
   public record AdminGitCredentialRotateIO(String newPat) {}
@@ -218,7 +216,7 @@ public class AdminUserGitCredentialRest {
   @APIResponse(
     responseCode = "200",
     description = "List of credentials (may be empty).",
-    content = @Content(schema = @Schema(implementation = AdminGitCredentialListIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AdminGitCredentialListItemIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
@@ -235,12 +233,13 @@ public class AdminUserGitCredentialRest {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    return Response.ok(new AdminGitCredentialListIO(items)).build();
+    return Response.ok(items).build();
   }
 
   @POST
   @Path("/{appId}/rotate")
   @Operation(
+    operationId = "rotate",
     summary = "Rotate a git credential's PAT (admin-only).",
     description =
       "Replaces the encrypted PAT on the named credential and stamps " +

@@ -1,11 +1,9 @@
-import type { CreateDataObjectRequest } from "@dlr-shepard/backend-client";
+import type { CreateDataObjectV2Request } from "@dlr-shepard/backend-client";
 
-export type DataObjectToCreate = CreateDataObjectRequest["dataObject"] & {
+// Writable fields accepted by POST /v2/collections/{appId}/data-objects.
+export type DataObjectToCreate = CreateDataObjectV2Request["createDataObjectV2"] & {
+  // Make these required at the type level; the v2 body accepts them as optional.
   description: string;
   attributes: { [key: string]: string };
   predecessorIds: number[];
-  // LIC1 (FAIR-1): SPDX license id (free-text). Null = undeclared.
-  license?: string | null;
-  // LIC1 (FAIR-1): controlled accessRights enum value.
-  accessRights?: string | null;
 };

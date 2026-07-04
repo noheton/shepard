@@ -18,6 +18,7 @@ import type {
   CreateDQRIO,
   DQRIO,
   DQRResultIO,
+  PagedResponse,
 } from '../models/index';
 import {
     CreateDQRIOFromJSON,
@@ -26,6 +27,8 @@ import {
     DQRIOToJSON,
     DQRResultIOFromJSON,
     DQRResultIOToJSON,
+    PagedResponseFromJSON,
+    PagedResponseToJSON,
 } from '../models/index';
 
 export interface AssignRequest {
@@ -39,6 +42,8 @@ export interface EvaluateRequest {
 
 export interface ListDataQualityRequirementsRequest {
     collectionAppId: string;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface RemoveRequest {
@@ -148,10 +153,10 @@ export class DataQualityRequirementsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns all Data Quality Requirements that have been assigned to this Collection via the APPLIES_TO relationship. Results are unordered and unfiltered — include both enabled and disabled DQRs.  Auth: Read permission on the Collection.
+     * Returns all Data Quality Requirements that have been assigned to this Collection via the APPLIES_TO relationship. Results are unordered and unfiltered — include both enabled and disabled DQRs.  Pagination (APISIMP-PAGINATION-LIST-DQR): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all DQRs. `X-Total-Count` header carries the total DQR count before paging.  Auth: Read permission on the Collection.
      * [v2] List DQRs assigned to this Collection (TPL10).
      */
-    async listDataQualityRequirementsRaw(requestParameters: ListDataQualityRequirementsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<DQRIO>>> {
+    async listDataQualityRequirementsRaw(requestParameters: ListDataQualityRequirementsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['collectionAppId'] == null) {
             throw new runtime.RequiredError(
                 'collectionAppId',
@@ -160,6 +165,14 @@ export class DataQualityRequirementsApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -178,14 +191,14 @@ export class DataQualityRequirementsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(DQRIOFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns all Data Quality Requirements that have been assigned to this Collection via the APPLIES_TO relationship. Results are unordered and unfiltered — include both enabled and disabled DQRs.  Auth: Read permission on the Collection.
+     * Returns all Data Quality Requirements that have been assigned to this Collection via the APPLIES_TO relationship. Results are unordered and unfiltered — include both enabled and disabled DQRs.  Pagination (APISIMP-PAGINATION-LIST-DQR): supply both `page` (0-based) and `pageSize` (1–200) to receive a slice. Omit both to return all DQRs. `X-Total-Count` header carries the total DQR count before paging.  Auth: Read permission on the Collection.
      * [v2] List DQRs assigned to this Collection (TPL10).
      */
-    async listDataQualityRequirements(requestParameters: ListDataQualityRequirementsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<DQRIO>> {
+    async listDataQualityRequirements(requestParameters: ListDataQualityRequirementsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listDataQualityRequirementsRaw(requestParameters, initOverrides);
         return await response.value();
     }

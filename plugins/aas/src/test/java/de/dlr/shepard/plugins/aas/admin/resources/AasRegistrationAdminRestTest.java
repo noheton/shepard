@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.admin.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -16,9 +17,17 @@ import de.dlr.shepard.plugins.aas.admin.io.AasRegistrationIO;
 import de.dlr.shepard.plugins.aas.admin.io.AasSyncResultIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -107,28 +116,26 @@ class AasRegistrationAdminRestTest {
     assertEquals("HTTP 503: Service Unavailable", body.items().get(0).errorMessage());
   }
 
+  /** JSR-380 replaces soft-clamp: verify @Min(1)/@Max(MAX_PAGE_SIZE) are declared on pageSize param. */
   @Test
-  void pageSizeIsCappedAt200() {
-    when(registrationDAO.countAll()).thenReturn(0L);
-    when(registrationDAO.listAll(0, AasRegistrationAdminRest.MAX_PAGE_SIZE)).thenReturn(List.of());
-
-    Response r = rest.listRegistrations(0, 9999);
-
-    @SuppressWarnings("unchecked")
-    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
-    assertEquals(AasRegistrationAdminRest.MAX_PAGE_SIZE, body.pageSize());
+  void listRegistrationsPageSizeParamHasJsr380Constraints() throws NoSuchMethodException {
+    Method m = AasRegistrationAdminRest.class.getMethod("listRegistrations", int.class, int.class);
+    Parameter pageSizeParam = m.getParameters()[1];
+    List<Class<? extends Annotation>> types = Arrays.stream(pageSizeParam.getAnnotations())
+        .map(Annotation::annotationType).collect(Collectors.toList());
+    assertTrue(types.contains(Min.class), "pageSize must carry @Min");
+    assertTrue(types.contains(Max.class), "pageSize must carry @Max");
+    assertEquals(1L, pageSizeParam.getAnnotation(Min.class).value(), "@Min must be 1");
+    assertEquals((long) AasRegistrationAdminRest.MAX_PAGE_SIZE,
+        pageSizeParam.getAnnotation(Max.class).value(), "@Max must equal MAX_PAGE_SIZE");
   }
 
+  /** JSR-380 replaces soft-clamp: verify @PositiveOrZero is declared on the page param. */
   @Test
-  void negativePageIsClampedToZero() {
-    when(registrationDAO.countAll()).thenReturn(0L);
-    when(registrationDAO.listAll(0, 50)).thenReturn(List.of());
-
-    Response r = rest.listRegistrations(-5, 50);
-
-    @SuppressWarnings("unchecked")
-    PagedResponseIO<AasRegistrationIO> body = (PagedResponseIO<AasRegistrationIO>) r.getEntity();
-    assertEquals(0, body.page());
+  void listRegistrationsPageParamHasPositiveOrZeroConstraint() throws NoSuchMethodException {
+    Method m = AasRegistrationAdminRest.class.getMethod("listRegistrations", int.class, int.class);
+    Parameter pageParam = m.getParameters()[0];
+    assertNotNull(pageParam.getAnnotation(PositiveOrZero.class), "page must carry @PositiveOrZero");
   }
 
   // --- POST /v2/admin/aas/registrations/sync ---

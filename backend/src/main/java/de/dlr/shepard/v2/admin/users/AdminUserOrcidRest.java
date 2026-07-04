@@ -42,7 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
-@Tag(name = "Admin — user ORCID preseed")
+@Tag(name = "Admin")
 public class AdminUserOrcidRest {
 
   private static final String PT_NOT_FOUND = "/problems/admin-user-orcid.not-found";

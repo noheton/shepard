@@ -1,40 +1,22 @@
 /**
- * UX-SPATIAL-VIEWER-OR-BANNER — unit tests for the VideoContainerPage scaffold.
+ * PLACEHOLDER-video-container — unit tests for the VideoContainerPage.
  *
  * The video container page (/containers/video/[containerId]) uses the same
  * three-branch display pattern as every other container page:
  *
- *   v-if="!!container"       → show container name + in-development banner
+ *   v-if="!!container"       → show container name + VideoStreamReferencesPane
  *   v-else-if="isFetchError" → show NotFoundPanel
  *   v-else                   → show CenteredLoadingSpinner
  *
  * These tests verify the static contract for the branch-resolver function
  * without mounting the full Vuetify tree (same pattern as NotFoundPanel.test.ts).
  *
- * Note: the video container page currently uses a synthetic resolve (no
- * backend endpoint exists yet — VID2). When VID2 ships a real
- * /v2/video-containers/{id} endpoint, replace the synthetic resolve and
- * update these tests to cover the real HTTP path.
+ * VID1a: the page now renders VideoStreamReferencesPane (real player surface)
+ * instead of the previous "in development" banner. When VID2 ships a real
+ * /v2/video-containers/{id} endpoint, replace the synthetic container resolve
+ * and update these tests to cover the real HTTP path.
  */
 import { describe, it, expect } from "vitest";
-
-// Static contract: banner text must match the template in
-// frontend/pages/containers/video/[containerId]/index.vue.
-const EXPECTED_BANNER_TITLE = "Video stream viewer — in development (VID2)";
-const EXPECTED_BANNER_TEXT =
-  "The in-browser video viewer is not yet available. Video stream references are accessible from the DataObject detail page. Check back when VID2 ships.";
-
-describe("VideoContainerPage — static banner contract", () => {
-  it("specifies the correct banner title", () => {
-    expect(EXPECTED_BANNER_TITLE).toBe(
-      "Video stream viewer — in development (VID2)",
-    );
-  });
-
-  it("specifies the correct banner body text", () => {
-    expect(EXPECTED_BANNER_TEXT).toContain("not yet available");
-  });
-});
 
 describe("VideoContainerPage — three-branch display logic", () => {
   /**
@@ -76,5 +58,43 @@ describe("VideoContainerPage — three-branch display logic", () => {
     expect(
       resolveDisplayBranch({ id: "xyz", name: "Name" }, true),
     ).toBe("data");
+  });
+});
+
+describe("VideoContainerPage — video references section (VID1a)", () => {
+  /**
+   * VID1a: the container page passes containerId as dataObjectAppId to
+   * VideoStreamReferencesPane. These tests verify the identity mapping and
+   * the synthetic container name derivation used while /v2/video-containers
+   * is not yet implemented.
+   */
+
+  function deriveDataObjectAppId(containerId: string): string {
+    // containerId IS the dataObjectAppId until VID2 ships its own entity.
+    return containerId;
+  }
+
+  function deriveSyntheticContainerName(containerId: string): string {
+    return `Video Container ${containerId}`;
+  }
+
+  it("passes containerId unchanged as dataObjectAppId to the references pane", () => {
+    const containerId = "01930000-0000-0000-0000-000000000001";
+    expect(deriveDataObjectAppId(containerId)).toBe(containerId);
+  });
+
+  it("handles empty containerId gracefully", () => {
+    expect(deriveDataObjectAppId("")).toBe("");
+  });
+
+  it("derives synthetic container name from containerId", () => {
+    expect(deriveSyntheticContainerName("abc-123")).toBe(
+      "Video Container abc-123",
+    );
+  });
+
+  it("synthetic name uses containerId as the label when backend has no container entity", () => {
+    const cid = "01930000-dead-beef-cafe-000000000099";
+    expect(deriveSyntheticContainerName(cid)).toContain(cid);
   });
 });

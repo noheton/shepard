@@ -70,6 +70,12 @@ export interface FileBundleReference {
     readonly revision?: number;
     /**
      * 
+     * @type {string}
+     * @memberof FileBundleReference
+     */
+    uniqueId?: string;
+    /**
+     * 
      * @type {number}
      * @memberof FileBundleReference
      */
@@ -92,6 +98,12 @@ export interface FileBundleReference {
      * @memberof FileBundleReference
      */
     readonly containerMongoId?: string | null;
+    /**
+     * appId (UUID v7) of the underlying FileContainer. Use this to address payload bytes via the unified /v2/containers/{appId}/payload/... endpoints (APISIMP-CONT-NS-COLLAPSE).
+     * @type {string}
+     * @memberof FileBundleReference
+     */
+    readonly containerAppId?: string | null;
     /**
      * Sub-Reference grouping — at least one (the default group, named 'default') for every bundle.
      * @type {Array<FileGroup>}
@@ -130,21 +142,24 @@ export function FileBundleReferenceFromJSONTyped(json: any, ignoreDiscriminator:
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'revision': json['revision'] == null ? undefined : json['revision'],
+        'uniqueId': json['uniqueId'] == null ? undefined : json['uniqueId'],
         'dataObjectId': json['dataObjectId'] == null ? undefined : json['dataObjectId'],
         'type': json['type'] == null ? undefined : json['type'],
         'appId': json['appId'] == null ? undefined : json['appId'],
         'containerMongoId': json['containerMongoId'] == null ? undefined : json['containerMongoId'],
+        'containerAppId': json['containerAppId'] == null ? undefined : json['containerAppId'],
         'groups': json['groups'] == null ? undefined : ((json['groups'] as Array<any>).map(FileGroupFromJSON)),
     };
 }
 
-export function FileBundleReferenceToJSON(value?: Omit<FileBundleReference, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'revision'|'dataObjectId'|'type'|'appId'|'containerMongoId'|'groups'> | null): any {
+export function FileBundleReferenceToJSON(value?: Omit<FileBundleReference, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'revision'|'dataObjectId'|'type'|'appId'|'containerMongoId'|'containerAppId'|'groups'> | null): any {
     if (value == null) {
         return value;
     }
     return {
         
         'name': value['name'],
+        'uniqueId': value['uniqueId'],
     };
 }
 

@@ -30,7 +30,7 @@ beforeEach(() => {
   mockSearchContainers.mockReset();
   // v2 API — used for collections + dataobjects
   (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ globalSearch: mockGlobalSearch }),
+    ref({ searchV2: mockGlobalSearch }),
   );
   // v1 API — used for containers only (via useContainerSearch)
   (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(

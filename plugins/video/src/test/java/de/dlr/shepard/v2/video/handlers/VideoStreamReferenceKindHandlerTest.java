@@ -68,4 +68,59 @@ class VideoStreamReferenceKindHandlerTest {
     body.put("name", 42);
     assertThrows(BadRequestException.class, () -> handler.create("do-app-1", body));
   }
+
+  // ── VID-FFMPEG-TRANSCODE-2026-06-29 — proxy fields in toIO ────────────────
+
+  /** BasicReferenceIO requires a non-null dataObject on the source ref. */
+  private static VideoStreamReference newRefWithParent() {
+    var ref = new VideoStreamReference();
+    ref.setAppId("ref-1");
+    var parent = new de.dlr.shepard.context.collection.entities.DataObject();
+    parent.setId(123L);
+    parent.setShepardId(123L);
+    ref.setDataObject(parent);
+    return ref;
+  }
+
+  @Test
+  void toIOSurfacesProxyAvailableTrueWhenReady() {
+    var ref = newRefWithParent();
+    ref.setProxyStatus("READY");
+    ref.setProxyStorageLocator("gridfs:container:proxy-oid");
+    var io = handler.toIO(ref);
+
+    assertEquals(Boolean.TRUE, io.getPayload().get("proxyAvailable"));
+    assertEquals("READY", io.getPayload().get("proxyStatus"));
+    assertEquals("gridfs:container:proxy-oid", io.getPayload().get("proxyOid"));
+  }
+
+  @Test
+  void toIOSurfacesProxyAvailableFalseWhenPending() {
+    var ref = newRefWithParent();
+    ref.setProxyStatus("PENDING");
+    var io = handler.toIO(ref);
+
+    assertEquals(Boolean.FALSE, io.getPayload().get("proxyAvailable"));
+    assertEquals("PENDING", io.getPayload().get("proxyStatus"));
+  }
+
+  @Test
+  void toIOTreatsNullStatusAsUnavailable() {
+    var ref = newRefWithParent();
+    var io = handler.toIO(ref);
+
+    assertEquals(Boolean.FALSE, io.getPayload().get("proxyAvailable"));
+    assertEquals(null, io.getPayload().get("proxyStatus"));
+    assertEquals(null, io.getPayload().get("proxyOid"));
+  }
+
+  @Test
+  void toIOTreatsFailedAsUnavailableForFallback() {
+    var ref = newRefWithParent();
+    ref.setProxyStatus("FAILED");
+    var io = handler.toIO(ref);
+
+    assertEquals(Boolean.FALSE, io.getPayload().get("proxyAvailable"));
+    assertEquals("FAILED", io.getPayload().get("proxyStatus"));
+  }
 }

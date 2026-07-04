@@ -17,7 +17,6 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.SetEnabled
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadMetadata;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResult;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
-import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleListIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
@@ -44,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -147,6 +147,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/refresh-ontologies")
   @Operation(
+    operationId = "refreshOntologies",
     summary = "Refresh bundled ontologies against their pinned canonical URLs.",
     description = "Walks every bundle in ontologies-manifest.json (or the subset named in " +
     "request.bundles), fetches each bundle's canonicalUrl, recomputes its SHA-256, and " +
@@ -214,6 +215,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/refresh-snapshots")
   @Operation(
+    operationId = "refreshSnapshots",
     summary = "Refresh stale SemanticAnnotation label snapshots.",
     description =
       "Pages through every :SemanticAnnotation node in batches of 500, "
@@ -243,6 +245,7 @@ public class SemanticAdminRest {
   @GET
   @Path("/ontologies")
   @Operation(
+    operationId = "listOntologies",
     summary = "List every pre-seeded + operator-uploaded ontology bundle.",
     description = "Built-ins first (manifest declaration order), then user-uploaded bundles " +
     "(id ASC). Each row's `enabled` is the effective state under the precedence rules " +
@@ -250,7 +253,7 @@ public class SemanticAdminRest {
   )
   @APIResponse(
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = OntologyBundleListIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = OntologyBundleIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role (RFC 7807).")
@@ -269,12 +272,13 @@ public class SemanticAdminRest {
     List<BundleView> merged = configService.listMerged(manifest);
     List<OntologyBundleIO> rows = new ArrayList<>(merged.size());
     for (BundleView v : merged) rows.add(OntologyBundleIO.from(v));
-    return Response.ok(new OntologyBundleListIO(rows)).build();
+    return Response.ok(rows).build();
   }
 
   @POST
   @Path("/ontologies/{bundleId}/disable")
   @Operation(
+    operationId = "disableOntology",
     summary = "Runtime-disable an ontology bundle.",
     description = "Adds the id to :SemanticConfig.disabledBundles. The bundle stops seeding on " +
     "the next startup. Refused (409 RFC 7807 semantic.bundle.required) for bundles whose " +
@@ -295,6 +299,7 @@ public class SemanticAdminRest {
   @POST
   @Path("/ontologies/{bundleId}/enable")
   @Operation(
+    operationId = "enableOntology",
     summary = "Runtime-enable a previously-disabled ontology bundle.",
     description = "Removes the id from :SemanticConfig.disabledBundles. No-op if the id is not " +
     "currently disabled. The bundle seeds on the next startup."
@@ -356,6 +361,7 @@ public class SemanticAdminRest {
   @Path("/ontologies")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
+    operationId = "uploadOntology",
     summary = "Upload an operator-supplied ontology bundle.",
     description = "Multipart: file=<ttl bytes> plus metadata={\"id\":...,\"name\":...," +
     "\"iriPrefix\":...,\"canonicalUrl\":...,\"license\":...}. Server SHA-256s the bytes, " +
@@ -384,10 +390,19 @@ public class SemanticAdminRest {
       );
     }
 
+    if (metadataJson == null || metadataJson.isBlank()) {
+      return problem(
+        PROBLEM_TYPE_BUNDLE_BAD_METADATA,
+        "Missing metadata part",
+        Status.BAD_REQUEST,
+        "Multipart upload must include a 'metadata' part with JSON ontology metadata."
+      );
+    }
+
     UploadMetadata meta;
     try {
       meta = parseMetadata(metadataJson);
-    } catch (RuntimeException ex) {
+    } catch (IllegalArgumentException ex) {
       return problem(
         PROBLEM_TYPE_BUNDLE_BAD_METADATA,
         "Invalid metadata",
@@ -473,6 +488,7 @@ public class SemanticAdminRest {
   @DELETE
   @Path("/ontologies/{bundleId}")
   @Operation(
+    operationId = "deleteOntology",
     summary = "Remove an operator-uploaded ontology bundle.",
     description = "Drops the on-disk TTL + the :UserOntologyBundle catalogue row. Refused " +
     "(409 RFC 7807 semantic.bundle.builtin-not-removable) for built-in bundle ids — those " +
@@ -546,9 +562,6 @@ public class SemanticAdminRest {
 
   /** Parse the multipart 'metadata' JSON part into the service-layer DTO. */
   private static UploadMetadata parseMetadata(String json) {
-    if (json == null || json.isBlank()) {
-      throw new IllegalArgumentException("metadata part is required");
-    }
     try {
       var node = new ObjectMapper().readTree(json);
       String id = textOrNull(node, "id");

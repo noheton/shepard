@@ -119,6 +119,24 @@ describe("useFetchVideoStreamReferences", () => {
     expect(isLoading.value).toBe(false);
   });
 
+  it("BUG-DO-DETAIL-A-TOAST-2026-06-29 — unwraps the paged envelope { items: [...] }", async () => {
+    // Backend has flipped /v2/references list endpoints to a PagedResponseIO
+    // envelope. Without unwrap, raw.map(...) throws TypeError and surfaces as
+    // the "Error while fetching reference … .map is not a function" toast on
+    // the DataObject detail page.
+    mockFetch.mockReturnValue(okResponse({ items: [RAW_VIDEO_REF], totalElements: 1 }));
+
+    const { useFetchVideoStreamReferences } = await import(
+      "~/composables/context/useFetchVideoStreamReferences"
+    );
+    const { references, fetchError } = useFetchVideoStreamReferences("do-app-001");
+    await flush();
+
+    expect(fetchError.value).toBeNull();
+    expect(references.value).toHaveLength(1);
+    expect(references.value[0]!.appId).toBe("vid-ref-001");
+  });
+
   it("downloadUrl uses the unified /v2/references/{appId}/content path", async () => {
     mockFetch.mockReturnValue(okResponse([]));
 
