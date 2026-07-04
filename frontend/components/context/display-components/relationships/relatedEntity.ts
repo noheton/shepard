@@ -83,13 +83,11 @@ export function isDataObjectReferenceV2(entity: unknown): entity is DataObjectRe
 }
 
 /**
- * REFS-V2-PANELS-3: v2 summary shape for predecessor/successor DataObjects.
- * Mirrors the backend DataObjectSummaryIO (appId, id, name, status, createdAt, createdBy).
- * The numeric `id` is kept for the delete flow (PATCH predecessorIds) until
- * appId-keyed delete ships.
+ * REFS-V2-PANELS-3 / APISIMP-SUMMARY-IO-NUMERIC-ID: v2 summary shape for
+ * predecessor/successor DataObjects. Mirrors DataObjectSummaryIO (appId, name,
+ * status, createdAt, createdBy). No numeric id — appId is the sole identifier.
  */
 export type PredecessorV2 = {
-  id: number;
   appId: string;
   name: string;
   status: string;
@@ -99,7 +97,6 @@ export type PredecessorV2 = {
 };
 
 export type SuccessorV2 = {
-  id: number;
   appId: string;
   name: string;
   status: string;

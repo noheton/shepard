@@ -220,11 +220,64 @@ export function useUpdateDataObjectRelationship(
     deletePredecessor(toBeDeletedSuccessorId, dataobjectId);
   }
 
+  /**
+   * APISIMP-SUMMARY-IO-NUMERIC-ID: delete a predecessor identified by appId.
+   * Resolves the predecessor's numeric id via a GET (needed for the
+   * predecessorIds PATCH body) and delegates to deletePredecessor.
+   * When the resolved DataObject has no numeric id (post-reset entity),
+   * the operation fails with a user-visible error —
+   * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH tracks the appId-native PATCH fix.
+   */
+  async function deletePredecessorByAppId(
+    dataobjectId: number,
+    predecessorAppId: string,
+  ) {
+    let predecessor: DataObject | undefined;
+    try {
+      predecessor = await getDataObjectV2(collectionHandle, predecessorAppId);
+    } catch (error) {
+      handleError(error, "resolveDataObject");
+      return;
+    }
+    if (!predecessor?.id) {
+      handleError(
+        "Cannot remove predecessor: numeric id unavailable (BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH).",
+        "deletePredecessor",
+      );
+      return;
+    }
+    await deletePredecessor(dataobjectId, predecessor.id);
+  }
+
+  /** APISIMP-SUMMARY-IO-NUMERIC-ID: delete a successor identified by appId. */
+  async function deleteSuccessorByAppId(
+    dataobjectId: number,
+    successorAppId: string,
+  ) {
+    let successor: DataObject | undefined;
+    try {
+      successor = await getDataObjectV2(collectionHandle, successorAppId);
+    } catch (error) {
+      handleError(error, "resolveDataObject");
+      return;
+    }
+    if (!successor?.id) {
+      handleError(
+        "Cannot remove successor: numeric id unavailable (BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH).",
+        "deleteSuccessor",
+      );
+      return;
+    }
+    await deletePredecessor(successor.id, dataobjectId);
+  }
+
   return {
     addPredecessor,
     addSuccessor,
     deletePredecessor,
     deleteSuccessor,
+    deletePredecessorByAppId,
+    deleteSuccessorByAppId,
     loading,
   };
 }

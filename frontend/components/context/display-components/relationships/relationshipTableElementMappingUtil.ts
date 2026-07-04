@@ -9,6 +9,20 @@ import { isCollectionReferenceV2, isDataObjectReferenceV2, isPredecessorOrSucces
 import type { RelationshipTableElement } from "./relationshipTableElement";
 import { readCollectionAppId, readDataObjectAppId } from "~/utils/appId";
 
+/**
+ * APISIMP-SUMMARY-IO-NUMERIC-ID: derive a stable positive 32-bit int from an
+ * appId (UUID v7) so PredecessorV2 / SuccessorV2 rows can use it as a unique
+ * synthetic row id without carrying a numeric Neo4j id on the wire.
+ */
+function appIdToSyntheticInt(appId: string): number {
+  let hash = 5381;
+  for (let i = 0; i < appId.length; i++) {
+    hash = ((hash << 5) + hash) + appId.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash) || 1;
+}
+
 export function mapRelatedEntityToRelationshipTableElement(
   relatedEntity: RelatedEntity,
   // V2-LINKS: the appId of the collection this relationships table is rendered
@@ -28,12 +42,19 @@ export function mapRelatedEntityToRelationshipTableElement(
   // V2-SWEEP-004-3: v2 URI reference wire shape (kind=uri, appId always present).
   const isUriV2 = isURIReferenceV2(relatedEntity);
 
+  // APISIMP-SUMMARY-IO-NUMERIC-ID: PredecessorV2/SuccessorV2 no longer carry a
+  // numeric Neo4j id on the wire. Use a stable hash of their appId as the row
+  // id so each row has a unique lookup key in getRelationshipElementById.
+  const rowId = isPredecessorOrSuccessorV2(relatedEntity)
+    ? appIdToSyntheticInt(relatedEntity.appId)
+    : ((relatedEntity as { id?: number }).id ?? 0);
+
   return {
-    id: relatedEntity.id,
+    id: rowId,
     relationship: mapRelationshipType(relatedEntity),
     name: mapName(relatedEntity, parentCollectionAppId),
     information: {
-      referenceId: relatedEntity.id,
+      referenceId: rowId,
       referenceAppId: readReferenceAppId(relatedEntity),
       referenceKind: mapReferenceKind(relatedEntity),
       type: mapType(relatedEntity),
@@ -44,11 +65,12 @@ export function mapRelatedEntityToRelationshipTableElement(
       createdBy: relatedEntity.createdBy,
     },
     actions: {
-      elementId: relatedEntity.id,
+      elementId: rowId,
       annotatable: isAnnotatable(relatedEntity),
       referenceAppId: readReferenceAppId(relatedEntity),
       referenceKind: mapReferenceKind(relatedEntity),
       uriRefAppId: uriEntity?.appId ?? (isUriV2 ? relatedEntity.appId : undefined),
+      predecessorAppId: isPredecessorOrSuccessorV2(relatedEntity) ? relatedEntity.appId : undefined,
       uriRefEditData: uriEntity
         ? {
             name: uriEntity.name,
@@ -168,9 +190,9 @@ function mapType(
   if (isURIReferenceV2(entity)) {
     return { type: "Link" };
   }
-  // REFS-V2-PANELS-3: v2 summary shape — numeric id present for delete flow.
+  // APISIMP-SUMMARY-IO-NUMERIC-ID: v2 summary has no numeric id; use appId.
   if (isPredecessorOrSuccessorV2(entity)) {
-    return { type: "Data Object", id: entity.id };
+    return { type: "Data Object", appId: entity.appId };
   }
   if (instanceOfDataObject(entity)) {
     return {

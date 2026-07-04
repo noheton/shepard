@@ -334,7 +334,6 @@ export function useRelatedEntities(
       const items = (data as { items?: unknown[] })?.items;
       if (!Array.isArray(items)) return [];
       return (items as Record<string, unknown>[]).map(item => ({
-        id: (item.id as number) ?? 0,
         appId: item.appId as string,
         name: item.name as string,
         status: (item.status as string) ?? "",
@@ -390,7 +389,6 @@ export function useRelatedEntities(
       const items = (data as { items?: unknown[] })?.items;
       if (!Array.isArray(items)) return [];
       return (items as Record<string, unknown>[]).map(item => ({
-        id: (item.id as number) ?? 0,
         appId: item.appId as string,
         name: item.name as string,
         status: (item.status as string) ?? "",

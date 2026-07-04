@@ -15,6 +15,9 @@ import org.junit.jupiter.api.Test;
  * {@code createdAt} (ISO-8601 string) and {@code createdBy} (display name)
  * so the Predecessor / Successor panel can sort and credit entries without
  * falling back to the v1 {@code getAllDataObjects} endpoint.
+ *
+ * <p>APISIMP-SUMMARY-IO-NUMERIC-ID: the Neo4j numeric {@code id} field must
+ * NOT appear on the /v2/ wire — appId (UUID v7) is the sole public identifier.
  */
 class DataObjectSummaryIOCreatedFieldsTest {
 
@@ -23,7 +26,7 @@ class DataObjectSummaryIOCreatedFieldsTest {
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Test
-  void wireShape_includes_id_whenSet() throws Exception {
+  void wireShape_excludes_numericId() throws Exception {
     DataObject d = new DataObject();
     d.setId(42L);
     d.setAppId("018f-pred-00");
@@ -32,8 +35,8 @@ class DataObjectSummaryIOCreatedFieldsTest {
     var io = new DataObjectSummaryIO(d);
     JsonNode json = MAPPER.valueToTree(io);
 
-    assertThat(json.has("id")).isTrue();
-    assertThat(json.get("id").asLong()).isEqualTo(42L);
+    assertThat(json.has("id")).isFalse();
+    assertThat(json.get("appId").asText()).isEqualTo("018f-pred-00");
   }
 
   @Test

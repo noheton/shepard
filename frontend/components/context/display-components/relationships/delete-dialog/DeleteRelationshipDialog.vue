@@ -26,7 +26,12 @@ const {
   showDialog.value = false;
 });
 
-const { deletePredecessor, deleteSuccessor } = useUpdateDataObjectRelationship(
+const {
+  deletePredecessor,
+  deleteSuccessor,
+  deletePredecessorByAppId,
+  deleteSuccessorByAppId,
+} = useUpdateDataObjectRelationship(
   props.collectionId,
   () => {
     showDialog.value = false;
@@ -72,10 +77,21 @@ async function deleteRelationship() {
       break;
     }
     case "Data Object": {
+      // APISIMP-SUMMARY-IO-NUMERIC-ID: prefer appId-keyed delete when available
+      // (PredecessorV2/SuccessorV2 rows always carry predecessorAppId now).
+      const predAppId = props.tableElement.actions.predecessorAppId;
       if (props.tableElement.relationship === "Successor") {
-        deleteSuccessor(props.dataObjectId, referenceId);
+        if (predAppId) {
+          deleteSuccessorByAppId(props.dataObjectId, predAppId);
+        } else {
+          deleteSuccessor(props.dataObjectId, referenceId);
+        }
       } else if (props.tableElement.relationship === "Predecessor") {
-        deletePredecessor(props.dataObjectId, referenceId);
+        if (predAppId) {
+          deletePredecessorByAppId(props.dataObjectId, predAppId);
+        } else {
+          deletePredecessor(props.dataObjectId, referenceId);
+        }
       } else {
         throw Error("Unknown DataObject relationship");
       }
