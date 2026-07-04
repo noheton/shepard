@@ -19,6 +19,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 const {
   deleteCollectionReference,
   deleteDataObjectReference,
+  deleteReferenceV2,
   deleteUriReference,
   deleteUriReferenceV2,
 } = useDeleteReferences(props.collectionId, props.dataObjectId, () => {
@@ -51,11 +52,23 @@ async function deleteRelationship() {
       break;
     }
     case "Collection Reference": {
-      deleteCollectionReference(referenceId);
+      // APISIMP-DELETE-REFS-V2: prefer v2 delete (appId-keyed) when available.
+      const colRefAppId = props.tableElement.information.referenceAppId;
+      if (colRefAppId) {
+        deleteReferenceV2(colRefAppId);
+      } else {
+        deleteCollectionReference(referenceId);
+      }
       break;
     }
     case "Data Object Reference": {
-      deleteDataObjectReference(referenceId);
+      // APISIMP-DELETE-REFS-V2: prefer v2 delete (appId-keyed) when available.
+      const doRefAppId = props.tableElement.information.referenceAppId;
+      if (doRefAppId) {
+        deleteReferenceV2(doRefAppId);
+      } else {
+        deleteDataObjectReference(referenceId);
+      }
       break;
     }
     case "Data Object": {
