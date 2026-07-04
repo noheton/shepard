@@ -219,7 +219,7 @@ class ProvenanceRestJsonLdTest {
     );
 
     assertEquals(406, r.getStatus());
-    assertEquals(MediaType.APPLICATION_JSON_TYPE, r.getMediaType());
+    assertEquals("application/problem+json", r.getMediaType().toString());
     ProblemJson body = (ProblemJson) r.getEntity();
     assertNotNull(body);
     assertEquals(406, body.status());
