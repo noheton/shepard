@@ -67,6 +67,116 @@ Document each new endpoint's path in the same PR's `aidocs/34`
 tracker row, calling out whether it's `/shepard/api/` (compat
 surface, additive only) or `/v2/` (this fork's development surface).
 
+## Always: this fork's frontend builds on /v2/ exclusively
+
+**The Shepard frontend (`frontend/`) consumes only `/v2/` endpoints
+and addresses entities only by `appId`.** The `/shepard/api/` v1
+surface exists for upstream-byte-compatibility for *third-party*
+clients — it is **not** something our own frontend reaches for.
+
+Concrete consequences:
+
+1. **Composables import only the v2 helper.** `useV2ShepardApi(...)`
+   for every generated client. `useShepardApi(...)` (basePath
+   `/shepard/api`) is a legacy carrier and is being phased out — new
+   code MUST NOT call it, and existing call sites get migrated
+   opportunistically.
+2. **Generated v2 clients must go through `useV2ShepardApi`.**
+   Pairing a v2 client with the v1 helper builds the wrong URL
+   (`/shepard/api/v2/...` → 404). This is the failure shape that
+   produced the operator-surfaced `listReferencedContainers 404`
+   on 2026-06-03. The audit `findings` row in `aidocs/44` tracks
+   the remaining migration.
+3. **Route params and identifiers are `appId` (UUID v7) strings,
+   not numeric Neo4j IDs.** Routes, links, props, payload keys,
+   query params all carry the appId. The numeric `id` is an
+   implementation detail of v1; if a still-v1-only operation needs
+   it, resolve it from the loaded v2 entity's `.id` property at
+   call time — never let a numeric id appear in a route, a router
+   `push`, an emit, or a stored preference.
+4. **The exception: a small, named v1 fallback set.** Endpoints
+   that genuinely do not yet have a v2 counterpart (currently:
+   `getCollectionRoles`, parts of timeseries channel content,
+   the import wizard's v15 endpoints) keep their v1 calls, but:
+   a) the call site documents *why* with a one-line comment
+   citing the missing v2 endpoint, b) a backlog row in
+   `aidocs/16` exists to add the v2 counterpart, c) the v1 call
+   uses the numeric id resolved from the v2 entity — never the
+   route param directly.
+5. **Reviewers reject** new frontend code that imports
+   `useShepardApi` for a fresh feature, that exposes a numeric
+   id in a route or link, or that resolves entities by Neo4j
+   numeric id when an appId is in hand.
+
+This is the structural fix for the recurring "/shepard/api/v2/..."
+404 class of bugs and the numeric-vs-appId route confusion that
+caused the 007-PAGE cluster. Pairs with the existing API-version
+policy above (v2 is the development surface) and the
+`appId → shepardId` rename rule (single coordinated pass; until
+that lands, all new frontend code reads `appId` consistently).
+
+## Always: plugin backends build on the /v2/ surface + appId
+
+**Every `shepard-plugin-*` module's backend builds on the `/v2/`
+surface and addresses entities only by `appId`.** This is the
+backend sibling of the frontend-v2-only rule above. The
+`/shepard/api/...` v1 surface is frozen for *third-party*
+upstream-byte-compatibility — a plugin we author is not a
+third-party client and MUST NOT build on it.
+
+This mirrors how mature plugin hosts version their contract:
+Grafana plugins declare a host-version floor
+(`grafanaDependency: ">=9.0.0"`) and build only on GA host
+surfaces, never experimental ones; a Shepard plugin declares
+`shepardCompatibility` (e.g. `">=6.0.0-SNAPSHOT,<7"`) and builds
+only on the stable fork (`/v2/`) surface.
+
+Concrete consequences:
+
+1. **New plugin REST lands under `/v2/<plugin-or-resource>/...`.**
+   Never a new method on a `/shepard/api/` resource, never a fresh
+   `@Path(Constants.SHEPARD_API + ...)`. Admin surfaces go under
+   `/v2/admin/<plugin>/...` (the established A3b/N1c2/UH1a shape).
+2. **Path params and identifiers are `appId` (UUID v7) strings.**
+   No numeric Neo4j `Long` in a plugin endpoint's `@PathParam` or
+   `@QueryParam`. If a still-v1-only operation needs the numeric
+   id, resolve it from the loaded v2 entity's `.id` at call time —
+   never expose it on the wire.
+3. **Plugins compile against the shared SPI/core layer, not the
+   frozen v1 REST surface.** `de.dlr.shepard.spi.*`,
+   `de.dlr.shepard.storage.*`, `de.dlr.shepard.auth.permission.*`,
+   `de.dlr.shepard.context.collection.*` are the in-tree SPI/shared
+   contracts every plugin compiles against — they are *not* the v1
+   REST surface and are fine to import. The interfaces themselves
+   expose appId-/UUID-keyed contracts (`FileStorage` keys on UUID,
+   `PayloadKind` on string names). **If an SPI interface forces a
+   v1/numeric dependency, that is a finding to flag — don't silently
+   rewrite core SPI, since it affects every plugin.**
+4. **The exception: a frozen upstream-byte-compat REST surface that
+   the plugin inherited.** A payload kind whose v1 paths predate the
+   fork and appear in `openapi-5.4.0.json` (currently the
+   `spatiotemporal` plugin's `spatialDataContainers` +
+   `spatialDataReferences` numeric-id resources) keeps those v1
+   resources *unchanged* — rewriting them breaks third-party
+   upstream clients. Instead, ship a `/v2/<resource>/{appId}`
+   sibling shelf (SPATIAL-V6-003 + `PLUGIN-V2-001`) and migrate this
+   fork's own callers to it. The frozen resource is a compat
+   carrier, not a surface we extend.
+5. **The named carrier exception: `shepard-plugin-v1-compat`.** This
+   plugin's *job* is to gate, meter, and deprecate the v1 surface —
+   it is the only module allowed to know about v1 wholesale, and even
+   its own admin REST is `/v2/admin/legacy/v1/...`.
+6. **Reviewers reject** a plugin PR that adds a new
+   `@Path(Constants.SHEPARD_API + ...)`, exposes a numeric id in a
+   plugin endpoint, or resolves entities by Neo4j numeric id when an
+   appId is in hand.
+
+The audit `findings` doc is
+`aidocs/agent-findings/plugin-v2-only-audit.md`; the parity backlog
+is `PLUGIN-V2-*` in `aidocs/16`. Pairs with the API-version policy,
+the frontend-v2-only rule, the `appId → shepardId` rename rule, and
+the "evolve in a new namespace" principle below.
+
 ## Always: keep `aidocs/42-vision.md` current
 
 `aidocs/42-vision.md` is the **live researcher-facing vision** of
@@ -504,6 +614,90 @@ AI-substrate enabler. Per-kind shapes cause EAV bloat and bridge-node
 sprawl. The 2026-05-24 SEMA-V6 design (`aidocs/semantics/100`) is the
 canonical reference.
 
+## Always: every shipped feature is reachable from the top-nav before beta
+
+A feature is **not `beta`** in `aidocs/44` until a regular user can reach
+it from the top navigation (Home / Collections / Containers / a new
+top-level entry / a clearly labelled subnav / a hub-tile grid that
+itself is top-nav-reachable). Deep-URL-only surfaces stay `alpha`
+regardless of how complete the backend is.
+
+**Reviewer test for `alpha` → `beta` promotion:** open the deployed UI,
+sign in as a non-admin user, and click — without prior knowledge of the
+URL — until you reach the feature. If you can't, the row stays `alpha`
+and a `*-NAV` sub-row gets filed in `aidocs/16`.
+
+What counts as a nav surface:
+
+- Top navbar entries (Home / Collections / Containers / new top-level)
+- Persistent sidebar entries
+- Hub-tile grids reachable from the above (`/admin` landing,
+  `/me` profile, future "Tools" hub)
+- DataObject / Collection / Container detail pages showing the
+  feature as a panel, action button, or "Open in …" affordance
+
+What does **not** count: typed URL bar, bookmarked deep links, links
+the operator mails you, scene-graph appIds pasted into Slack. If the
+only way to find the feature is to already know its URL, it's `alpha`.
+
+Admin-only features count when reachable from the `/admin` hub tile
+grid AND the admin role-grant is documented in the plugin's
+`install.md` so an operator can hand it out.
+
+Plugins follow the same rule: a plugin's payload kind needs an entry
+in the DataObject "Add reference" menu, and any plugin admin surface
+needs an `/admin` tile.
+
+This rule pairs with the existing five (ship a UI stub; complete
+create+edit+delete+list per reference type; user-facing docs in step;
+vision currency; feature-matrix currency). The stub gets you to
+`alpha`; nav-reachable + functional + tested gets you to `beta`;
+vision/matrix/docs land in the same PR.
+
+A feature shipped to deploy without a nav entry is a bug, not a
+release. The 2026-05-30 SCENEGRAPH-REST-1-UI surfaced this — the page
+worked, but flo had no way to find it. That's the failure mode the
+rule prevents.
+
+## Always: tool entry points are in-context first
+
+A tool that takes an entity `appId` as input — SPARQL playground,
+snapshot diff, shape validator, shapes render, scene-graph editor,
+vocabulary browser — **primary entry point is the entity's detail
+page**, pre-populated with that entity's appId. The top-level Tools
+menu is a fallback for entry-less starts (typed query, idle
+exploration). It is not the canonical entry shape.
+
+Asking the user to paste an appId is a leaky abstraction — the user
+already had the entity in hand five seconds ago. Pre-populating from
+context is the cheap path to the same affordance, and it composes
+with the "UI never asks for paths/URLs" rule (the appId is already
+known; never make the user type it).
+
+Reviewer test for a new tool surface: is there a Collection,
+DataObject, Container, or Reference detail page where the user would
+already be standing when they reach for this tool? If yes, that page
+MUST have a button — and the global Tools menu entry is `alpha` until
+the in-context affordance ships. If no such page exists (the tool is
+genuinely entry-less), the global menu is the canonical entry.
+
+Concrete map for the current Tools cluster (TOOLS-NAV-01 family):
+
+- **SPARQL playground** → "Query this collection's graph" on Collection
+  detail; "Query this entity's annotations" on DataObject detail.
+- **Snapshot diff** → "Compare with…" row action in `SnapshotsPane`.
+- **Shape validator** → "Validate against shape" on DataObject detail
+  when a template is attached.
+- **Shapes render** → "Render this view" on DataObject detail when a
+  view-recipe template is available.
+- **Scene-graph editor** → "Open in scene-graph editor" on a URDF /
+  RDK FileReference detail page (SCENEGRAPH-NAV-02).
+- **Vocabularies / ontology browser** → "Show terms used by this
+  Collection / DataObject" on its detail page.
+
+The Tools menu remains the global cross-reference; it doesn't carry
+the load of the primary user flow.
+
 ## Always: ship a UI stub for every backend feature
 
 Every PR that ships a non-trivial backend feature — new endpoint, new entity,
@@ -531,6 +725,102 @@ fixes, migration scripts, dependency bumps, backend-only test additions.
 Cross-references: `feedback_done_criteria.md` (parent rule — "backend + frontend
 + tests; all three"); `feedback_ui_api_parity.md` (converse — every UI action
 callable via REST; this rule's converse — every REST action visible via UI).
+
+## Always: singleton FileReference for one-file uploads; FileBundleReference only when bundling >1
+
+Whenever a Reference will carry exactly one file, mint a **singleton
+FileReference (FR1b)** via `POST /v2/files` — not a
+`FileBundleReference`. Reserve `FileBundleReference` for genuinely
+multi-file bundles (image series, mesh sets, archive contents).
+
+Rules:
+
+1. **Default for one-file shapes is the singleton.** `POST /v2/files
+   ?parentDataObjectAppId=…&name=…` with multipart `file=…`. Returns
+   201 + the new appId. That appId resolves directly to the bytes via
+   `GET /v2/files/{appId}/content` and feeds every backend resolver
+   that takes an appId (UrdfResolver, KRL interpret's
+   `SingletonFileReferenceService.findByAppId(...)`, etc.).
+2. **The bundle endpoint is for >1 file.** Use it for mesh sets, image
+   series, archive-extraction outputs — surfaces where the operator
+   genuinely needs to pick which inner file to act on.
+3. **UI consequence.** Singletons render no selection step — the UI
+   moves straight to the action ("Run / preview" on a `.src`, "Open
+   in URDF view", "Open in Jupyter"). Bundles holding a single file
+   force a pointless "which file?" picker.
+4. **Backfill rule.** Existing `:FileBundleReference` nodes whose
+   `fileOids[]` length = 1 are technical debt. File migration rows;
+   a backfill script re-shapes them as singletons with a PROV-O
+   Activity for the transformation. The B agent surfaced the canonical
+   instance on 2026-05-30 — the showcase `kr210-r2700-urdf` was a
+   single-file bundle and couldn't be resolved by the KRL interpret
+   service. Track migration under `SINGLETON-FILE-MIGRATION` in
+   `aidocs/16`.
+
+**Why:** the singleton is the single addressing layer for the
+"reference IS the data" contract. Bundles holding one file are an
+abstraction tax: the UI has to render the selection step, the backend
+has to dereference twice, and any appId-keyed downstream service
+silently misses the file because the bundle appId isn't a singleton
+appId. Singletons let every UI surface and every resolver work the
+same way — `appId` in, content out.
+
+Exceptions: bundles whose CARDINALITY is genuinely uncertain
+(operator drops 1 image but might add a series later) — pick based on
+likely steady-state cardinality. When in doubt, ship singleton; merging
+N singletons into a bundle later is a backend mutation; splitting a
+bundle is loss-of-history.
+
+## Always: UI never asks for paths/URLs — pulls from references
+
+UI surfaces never expose path or URL input fields to the user. Data is
+always addressed by `appId` through a Reference (FileReference,
+TimeseriesReference, etc.) and the backend resolves to the actual
+URL — signed S3 URL, internal compose DNS, presigned, storage-backend
+override — when needed. The Reference layer is the architectural seam
+that owns URL resolution; the UI never sees URLs and never asks the
+user to type one.
+
+Rules:
+
+1. **Input shape.** UI takes an `appId` (or a Reference picker), never
+   a free-form text field that wants a path or URL. The picker scopes
+   itself to compatible references in the current context (e.g. URDF
+   picker → FileReferences whose name ends `.urdf` or whose semantic
+   annotation is `urn:shepard:urdf:role = urdf`).
+2. **Resolution at the backend.** Endpoints accepting a Reference
+   appId resolve the URL internally — via the FileReference content
+   endpoint, a per-kind resolver like `UrdfResolver`, or a future
+   generic `/v2/references/{appId}/resolve`. The frontend never
+   constructs the URL itself.
+3. **Companion data travels with the Reference.** `packagePath` (URDF
+   mesh-resolution root), `signedUrlTTL` (S3 lifetime), `mimeType`
+   override, etc. live as semantic annotations on the FileReference —
+   e.g. `urn:shepard:urdf:package-path` on the URDF FileReference —
+   not as separate UI form fields.
+4. **Existing path/URL inputs are technical debt.** Audit + migrate
+   per the `UI-PATHS-FROM-REFERENCES` row in `aidocs/16`. A free-form
+   override may stay for one deprecation window as an "advanced
+   override" with a visible warning, but disappears by the next
+   minor release.
+5. **The canonical violator** (operator-surfaced 2026-05-30) is
+   `GET /v2/shapes/render?renderer=urdf&urdfUrl=…&packagePath=…`.
+   The right shape is `?renderer=urdf&urdfFileAppId=…` — the
+   backend resolves URDF + meshes from the FileReference + its
+   annotations.
+
+**Why:** asking the user to type a path is a leaky abstraction that
+breaks the moment storage backends change, breaks for operators on
+a different host, breaks for K8s deploys without the same volume
+layout, breaks the permission gate (paths bypass `:Permissions`),
+and forces the user to know shape details they shouldn't. References
+are the single addressing layer; everything else compose-traverses
+them.
+
+Exceptions: external documentation links (cross-references to
+GitHub, w3.org, vendor docs) are fine — those are external
+resources, not Shepard data. The rule is specifically about
+Shepard-owned data.
 
 ## Always: the audit trail is a graph, not a log
 

@@ -1,0 +1,4 @@
+# MFFD source-format fixtures: preserve CRLF as ingested from the real export.
+# The parser regression suite asserts behaviour against the bytes as shipped
+# by the source system; do not normalize line endings.
+*.txt -text

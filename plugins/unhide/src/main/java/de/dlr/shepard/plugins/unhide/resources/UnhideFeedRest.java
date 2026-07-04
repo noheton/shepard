@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -99,6 +100,7 @@ public class UnhideFeedRest {
   @GET
   @Path("/feed.jsonld")
   @Operation(
+    operationId = "getUnhideFeed",
     summary = "Helmholtz Unhide harvest feed (schema.org + metadata4ing JSON-LD).",
     description = "Lists every Collection on this shepard instance in the schema.org / " +
     "metadata4ing JSON-LD shape that Unhide's inward-mappings consume. Cursor-paginated " +
@@ -126,8 +128,11 @@ public class UnhideFeedRest {
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
   public Response feed(
+    @Parameter(description = "0-based page index. Default 0. When absent, defaults to 0.")
     @QueryParam("page") Integer page,
-    @QueryParam("page-size") Integer pageSize,
+    @Parameter(description = "Records per page. When absent, defaults to " + UnhideFeedService.DEFAULT_PAGE_SIZE + ". Clamped server-side by UnhideFeedService.")
+    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "When true, each returned record is validated against its SHACL shape before inclusion. Validation failures are skipped. Default false.")
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
     @Context UriInfo uriInfo,
@@ -141,7 +146,7 @@ public class UnhideFeedRest {
         "Unhide integration is disabled",
         Status.SERVICE_UNAVAILABLE,
         "This shepard instance has the Helmholtz Unhide integration turned off. " +
-        "An instance-admin can enable it via PATCH /v2/admin/unhide/config or " +
+        "An instance-admin can enable it via PATCH /v2/admin/config/unhide or " +
         "`shepard-admin unhide enable`."
       );
     }
@@ -161,7 +166,7 @@ public class UnhideFeedRest {
             Status.UNAUTHORIZED,
             "This feed is non-public. Set X-API-KEY to the harvest API key (mint via " +
             "POST /v2/admin/unhide/harvest-key/rotate), flip feedPublic=true via " +
-            "PATCH /v2/admin/unhide/config, or authenticate as an instance-admin."
+            "PATCH /v2/admin/config/unhide, or authenticate as an instance-admin."
           );
         }
       } else {

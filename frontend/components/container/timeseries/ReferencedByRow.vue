@@ -1,33 +1,103 @@
 <script setup lang="ts">
-import {
-  TimeseriesReferenceApi,
-  type DataObject,
-  type Timeseries,
-  type TimeseriesReference,
-} from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import type { DataObject, ReferenceV2 } from "@dlr-shepard/backend-client";
+import { readDataObjectAppId } from "~/utils/appId";
+import { useCollectionAppIdResolver } from "~/composables/context/useCollectionAppIdResolver";
+
+// BUG-DO-DETAIL-A-TOAST-2026-06-29: bypass the generated ReferencesApi
+// client whose `listReferencesRaw` does `jsonValue.map(...)` and throws
+// the moment the backend flips to a PagedResponseIO envelope. Raw fetch
+// + envelope unwrap matches the other v2 reference composables.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
 
 const props = defineProps<{
   dataObject: DataObject;
   containerId: number;
 }>();
 
+// V2-LINKS: routes carry the UUID-v7 appId, never the numeric Neo4j id.
+// The DataObject carries its own appId but only a numeric collectionId, so
+// we resolve the owning collection's appId via the shared cache.
+const { resolve: resolveCollectionAppId, peek: peekCollectionAppId } =
+  useCollectionAppIdResolver();
+const collectionAppIdRef = ref<string | null>(
+  peekCollectionAppId(props.dataObject.collectionId),
+);
+onMounted(async () => {
+  collectionAppIdRef.value = await resolveCollectionAppId(
+    props.dataObject.collectionId,
+  );
+});
+
+const doAppId = computed(() => readDataObjectAppId(props.dataObject));
+const collectionHref = computed(() =>
+  collectionAppIdRef.value ? `/collections/${collectionAppIdRef.value}` : null,
+);
+const dataObjectHref = computed(() =>
+  collectionAppIdRef.value && doAppId.value
+    ? `/collections/${collectionAppIdRef.value}/dataObjects/${doAppId.value}`
+    : null,
+);
+
 const expanded = ref(false);
 const loading = ref(false);
 const loaded = ref(false);
-const refsForContainer = ref<TimeseriesReference[]>([]);
+const refsForContainer = ref<ReferenceV2[]>([]);
+
+// Per-kind payload shape for timeseries references.
+type TsPayload = {
+  start?: number;
+  end?: number;
+  timeseriesContainerId?: number;
+  timeseries?: Array<{
+    device?: string;
+    field?: string;
+    location?: string;
+    measurement?: string;
+    symbolicName?: string;
+  }>;
+};
+
+function tsPayload(ref: ReferenceV2): TsPayload {
+  return (ref.payload ?? {}) as TsPayload;
+}
 
 async function fetchReferences() {
   if (loaded.value || loading.value) return;
+  const appId = doAppId.value;
+  if (!appId) return;
   loading.value = true;
   try {
-    const all = await useShepardApi(TimeseriesReferenceApi)
-      .value.getAllTimeseriesReferences({
-        collectionId: props.dataObject.collectionId,
-        dataObjectId: props.dataObject.id,
-      });
-    refsForContainer.value = all.filter(
-      r => r.timeseriesContainerId === props.containerId,
+    // V1-EXCEPTION replaced: was useShepardApi(TimeseriesReferenceApi) with numeric IDs.
+    // Now uses the v2 unified endpoint keyed by dataObjectAppId (UUID v7).
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const url =
+      `${v2BaseUrl()}/v2/references` +
+      `?kind=timeseries&dataObjectAppId=${encodeURIComponent(appId)}`;
+    const response = await fetch(url, {
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        Accept: "application/json",
+      },
+    });
+    if (!response.ok && response.status !== 404 && response.status !== 400) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const body = response.ok
+      ? ((await response.json()) as ReferenceV2[] | { items?: ReferenceV2[] })
+      : ([] as ReferenceV2[]);
+    const refs = Array.isArray(body)
+      ? body
+      : ((body as { items?: ReferenceV2[] }).items ?? []);
+    refsForContainer.value = refs.filter(
+      r => tsPayload(r).timeseriesContainerId === props.containerId,
     );
     loaded.value = true;
   } catch (e) {
@@ -42,7 +112,7 @@ function onToggleExpand() {
   if (expanded.value) fetchReferences();
 }
 
-function channelLabel(ts: Timeseries): string {
+function channelLabel(ts: NonNullable<TsPayload["timeseries"]>[number]): string {
   return [ts.device, ts.field, ts.location, ts.measurement, ts.symbolicName]
     .filter(Boolean)
     .join(" · ");
@@ -68,14 +138,16 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
          scanning the linked-by list can spot tagged datasets at a glance. -->
     <div class="dataobject-annotations">
       <SemanticAnnotationList
-        :annotated="new AnnotatedDataObject(dataObject.collectionId, dataObject.id)"
+        v-if="doAppId"
+        :annotated="new AnnotatedDataObject(doAppId)"
         :can-delete="false"
       />
     </div>
     <template #append>
       <div class="d-flex ga-1 align-center">
         <v-btn
-          :to="`/collections/${dataObject.collectionId}`"
+          v-if="collectionHref"
+          :to="collectionHref"
           variant="text"
           size="x-small"
           icon="mdi-folder-outline"
@@ -83,7 +155,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           aria-label="Open collection"
         />
         <v-btn
-          :to="`/collections/${dataObject.collectionId}/dataObjects/${dataObject.id}`"
+          v-if="dataObjectHref"
+          :to="dataObjectHref"
           variant="text"
           size="x-small"
           icon="mdi-arrow-right"
@@ -123,16 +196,16 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           <span class="text-body-2 font-weight-medium">{{ ref.name }}</span>
           <v-spacer />
           <span class="text-caption text-medium-emphasis">
-            {{ ref.timeseries.length }}
-            channel{{ ref.timeseries.length === 1 ? "" : "s" }}
+            {{ (tsPayload(ref).timeseries ?? []).length }}
+            channel{{ (tsPayload(ref).timeseries ?? []).length === 1 ? "" : "s" }}
           </span>
         </div>
         <div class="text-caption text-medium-emphasis mb-2 font-mono">
-          {{ nanosToHumanRange(ref.start, ref.end) }}
+          {{ nanosToHumanRange(tsPayload(ref).start ?? 0, tsPayload(ref).end ?? 0) }}
         </div>
         <div class="d-flex flex-wrap ga-1 mb-2">
           <v-chip
-            v-for="(ts, idx) in ref.timeseries"
+            v-for="(ts, idx) in (tsPayload(ref).timeseries ?? [])"
             :key="idx"
             size="x-small"
             variant="tonal"
@@ -144,7 +217,8 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
         <!-- Semantic annotations attached to this TimeseriesReference -->
         <div class="annotation-row">
           <SemanticAnnotationList
-            :annotated="new AnnotatedReference(dataObject.collectionId, dataObject.id, ref.id)"
+            v-if="ref.appId"
+            :annotated="new AnnotatedReference(ref.appId, 'TimeseriesReference')"
             :can-delete="false"
           />
         </div>

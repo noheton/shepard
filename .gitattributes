@@ -9,6 +9,8 @@
 *.jpg binary
 *.ico binary
 *.ttf binary
+*.stl binary
+*.dae binary
 
 # Reference HTM dumps (DLR CD-Handbuch theme references) — leave bytes
 # untouched so they don't keep showing as modified under eol=lf.

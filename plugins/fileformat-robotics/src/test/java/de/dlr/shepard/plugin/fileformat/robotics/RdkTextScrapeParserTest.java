@@ -2,6 +2,7 @@ package de.dlr.shepard.plugin.fileformat.robotics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.spi.fileparser.FileParserPlugin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;

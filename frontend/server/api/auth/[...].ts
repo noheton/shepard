@@ -122,14 +122,17 @@ export default NuxtAuthHandler({
     signIn: "/auth/signIn",
   },
   events: {
-    async signOut(message) {
-      const logOutUrl = await getLogoutUrl(OIDC_CONFIGURATION_URL);
-      logOutUrl.searchParams.set("id_token_hint", message.token.idToken);
-      try {
-        await fetch(logOutUrl);
-      } catch (error) {
-        console.error("Error during logout:", error);
-      }
+    // BUG-SIGNOUT-KC-SSO-LINGERS — formerly fetched Keycloak's
+    // `end_session_endpoint` server-side here. That cleared the Keycloak
+    // server-side session but left the user's browser SSO cookie intact,
+    // so a subsequent sign-in silently re-authed against the warm SSO
+    // session. The fix lives client-side: `HeaderBar.handleAuth()` now
+    // redirects the *browser* to `end_session_endpoint` (resolved via
+    // `/api/auth-logout-url`), which is the only way to clear the SSO
+    // cookie. This event handler is intentionally left empty — the
+    // browser-side redirect is sufficient.
+    async signOut() {
+      // no-op — see comment above.
     },
   },
 });

@@ -912,4 +912,102 @@ public class TimeseriesReferenceServiceTest {
       )
     );
   }
+
+  // ── REF-EDIT-1: updateChannelAndBounds tests ─────────────────────────────────
+
+  @Test
+  public void updateChannelAndBounds_updatesStart_whenPresent() {
+    TimeseriesReference ref = new TimeseriesReference();
+    ref.setStart(1000L);
+    ref.setEnd(2000L);
+    ref.setReferencedTimeseriesList(new java.util.ArrayList<>());
+
+    TimeseriesReferenceIO patch = new TimeseriesReferenceIO();
+    patch.setStart(5000L);
+    patch.setEnd(2000L);
+    patch.setTimeseries(List.of());
+
+    java.util.Map<String, Object> patchMap = new java.util.HashMap<>();
+    patchMap.put("start", 5000L);
+
+    when(timeseriesReferenceDAO.createOrUpdate(ref)).thenReturn(ref);
+
+    TimeseriesReference result = referenceService.updateChannelAndBounds(ref, patch, patchMap);
+
+    assertEquals(5000L, result.getStart());
+    assertEquals(2000L, result.getEnd()); // unchanged
+  }
+
+  @Test
+  public void updateChannelAndBounds_leavesStartUnchanged_whenAbsent() {
+    TimeseriesReference ref = new TimeseriesReference();
+    ref.setStart(1000L);
+    ref.setEnd(2000L);
+    ref.setReferencedTimeseriesList(new java.util.ArrayList<>());
+
+    TimeseriesReferenceIO patch = new TimeseriesReferenceIO();
+    patch.setStart(0L);
+    patch.setEnd(0L);
+    patch.setTimeseries(List.of());
+
+    java.util.Map<String, Object> patchMap = new java.util.HashMap<>();
+    // "start" key deliberately absent from patchMap
+
+    when(timeseriesReferenceDAO.createOrUpdate(ref)).thenReturn(ref);
+
+    TimeseriesReference result = referenceService.updateChannelAndBounds(ref, patch, patchMap);
+
+    assertEquals(1000L, result.getStart()); // unchanged
+    assertEquals(2000L, result.getEnd());   // unchanged
+  }
+
+  @Test
+  public void updateChannelAndBounds_updatesChannels_whenPresent() {
+    ReferencedTimeseriesNodeEntity existing = new ReferencedTimeseriesNodeEntity("meas1", "dev1", "loc1", "sym1", "f1");
+    TimeseriesReference ref = new TimeseriesReference();
+    ref.setStart(1000L);
+    ref.setEnd(2000L);
+    ref.setReferencedTimeseriesList(new java.util.ArrayList<>(List.of(existing)));
+
+    de.dlr.shepard.data.timeseries.model.Timeseries newCh =
+        new de.dlr.shepard.data.timeseries.model.Timeseries("vibration", "turbopump", "bearing", "vib", "value");
+
+    TimeseriesReferenceIO patch = new TimeseriesReferenceIO();
+    patch.setTimeseries(List.of(newCh));
+    patch.setStart(1000L);
+    patch.setEnd(2000L);
+
+    java.util.Map<String, Object> patchMap = new java.util.HashMap<>();
+    patchMap.put("timeseries", List.of(new java.util.HashMap<>()));
+
+    when(timeseriesDAO.find("vibration", "turbopump", "bearing", "vib", "value")).thenReturn(null);
+    when(timeseriesReferenceDAO.createOrUpdate(ref)).thenReturn(ref);
+
+    TimeseriesReference result = referenceService.updateChannelAndBounds(ref, patch, patchMap);
+
+    assertEquals(1, result.getReferencedTimeseriesList().size());
+    assertEquals("vibration", result.getReferencedTimeseriesList().get(0).getMeasurement());
+  }
+
+  @Test
+  public void updateChannelAndBounds_handlesNullTimeseries_gracefully() {
+    TimeseriesReference ref = new TimeseriesReference();
+    ref.setStart(1000L);
+    ref.setEnd(2000L);
+    ref.setReferencedTimeseriesList(new java.util.ArrayList<>());
+
+    TimeseriesReferenceIO patch = new TimeseriesReferenceIO();
+    patch.setTimeseries(null);
+    patch.setStart(1000L);
+    patch.setEnd(2000L);
+
+    java.util.Map<String, Object> patchMap = new java.util.HashMap<>();
+    patchMap.put("timeseries", null);
+
+    when(timeseriesReferenceDAO.createOrUpdate(ref)).thenReturn(ref);
+
+    // Null timeseries in patchMap — should NOT throw, should just leave the list alone
+    assertDoesNotThrow(() -> referenceService.updateChannelAndBounds(ref, patch, patchMap));
+  }
+
 }

@@ -8,9 +8,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  */
 public class ContainerSummaryIO {
 
-  @Schema(description = "Neo4j OGM id — use for legacy navigation routes.")
-  private long id;
-
   @Schema(description = "Application-level UUID-v7 identifier.")
   private String appId;
 
@@ -25,15 +22,11 @@ public class ContainerSummaryIO {
 
   public ContainerSummaryIO() {}
 
-  public ContainerSummaryIO(long id, String appId, String name, String containerType) {
-    this.id = id;
+  public ContainerSummaryIO(String appId, String name, String containerType) {
     this.appId = appId;
     this.name = name;
     this.containerType = containerType;
   }
-
-  public long getId() { return id; }
-  public void setId(long id) { this.id = id; }
 
   public String getAppId() { return appId; }
   public void setAppId(String appId) { this.appId = appId; }

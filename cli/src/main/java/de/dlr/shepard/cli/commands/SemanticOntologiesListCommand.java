@@ -47,7 +47,7 @@ public final class SemanticOntologiesListCommand extends AbstractCommand {
     }
 
     TableFormatter table = new TableFormatter("ID", "SOURCE", "ENABLED", "REQ", "LICENSE", "IRI PREFIX");
-    for (OntologyBundle b : list.getBundles()) {
+    for (OntologyBundle b : list.getItems()) {
       table.addRow(
         safe(b.getId()),
         safe(b.getSource()),

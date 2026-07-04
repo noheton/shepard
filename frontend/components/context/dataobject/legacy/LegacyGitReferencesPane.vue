@@ -3,7 +3,7 @@ import type {
   CreateGitReferenceIO,
   GitReferenceIO,
   PatchGitReferenceIO,
-} from "@dlr-shepard/backend-client";
+} from "~/composables/context/gitReferenceTypes";
 import { useFetchGitCredentials } from "~/composables/context/useFetchGitCredentials";
 import { useFetchGitReferences } from "~/composables/context/useFetchGitReferences";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
@@ -135,7 +135,7 @@ const urlSuggestions = computed(() =>
       No git credentials configured — autocomplete won't work and private repos will be inaccessible.
       <template #append>
         <v-btn
-          :to="'/user#git-credentials'"
+          :to="'/me#git-credentials'"
           variant="text"
           size="small"
         >

@@ -1,11 +1,11 @@
 package de.dlr.shepard.provenance.services;
 
 import de.dlr.shepard.provenance.daos.ActivityDAO;
+import de.dlr.shepard.v2.admin.provenance.services.ProvenanceConfigService;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Nightly retention job for {@link de.dlr.shepard.provenance.entities.Activity}
@@ -29,11 +29,8 @@ public class ProvenanceRetentionJob {
   @Inject
   ActivityDAO activityDAO;
 
-  @ConfigProperty(name = "shepard.provenance.enabled", defaultValue = "true")
-  boolean provenanceEnabled;
-
-  @ConfigProperty(name = "shepard.provenance.retention-days", defaultValue = "730")
-  long retentionDays;
+  @Inject
+  ProvenanceConfigService provenanceConfigService;
 
   /**
    * Nightly run at 03:42. The cron-string is fixed; if an operator
@@ -42,12 +39,14 @@ public class ProvenanceRetentionJob {
    */
   @Scheduled(cron = "0 42 3 * * ?")
   public void runNightly() {
-    if (!provenanceEnabled) {
-      Log.debug("Provenance retention skipped — shepard.provenance.enabled=false");
+    // FTOGGLE-PROV-1: runtime-mutable checks via ProvenanceConfigService.
+    if (!provenanceConfigService.effectiveEnabled()) {
+      Log.debug("Provenance retention skipped — provenance disabled at runtime");
       return;
     }
+    long retentionDays = provenanceConfigService.effectiveRetentionDays();
     if (retentionDays < 0) {
-      Log.debug("Provenance retention skipped — shepard.provenance.retention-days < 0 (keep forever)");
+      Log.debug("Provenance retention skipped — retentionDays < 0 (keep forever)");
       return;
     }
     long cutoff = System.currentTimeMillis() - retentionDays * MILLIS_PER_DAY;
@@ -71,6 +70,6 @@ public class ProvenanceRetentionJob {
    * endpoint.
    */
   public long currentCutoffMillis() {
-    return System.currentTimeMillis() - retentionDays * MILLIS_PER_DAY;
+    return System.currentTimeMillis() - provenanceConfigService.effectiveRetentionDays() * MILLIS_PER_DAY;
   }
 }

@@ -369,7 +369,17 @@ c.Spawner.environment = {
     "SHEPARD_BACKEND_URL": os.environ.get("SHEPARD_BACKEND_URL", "http://backend:8080"),
 }
 c.Spawner.auth_state_hook = lambda spawner, auth_state: spawner.environment.update(
-    {"SHEPARD_OIDC_ACCESS_TOKEN": (auth_state or {}).get("access_token", "")}
+    {
+        "SHEPARD_OIDC_ACCESS_TOKEN":  (auth_state or {}).get("access_token", ""),
+        # J1e-PR-08-TOKEN-REFRESH 2026-05-30: forward refresh_token + token-
+        # endpoint URL + client credentials so the kernel can mint a fresh
+        # access token whenever the original expires (default Keycloak access-
+        # token TTL is 5–60 min; kernel sessions outlive that easily).
+        "SHEPARD_OIDC_REFRESH_TOKEN": (auth_state or {}).get("refresh_token", ""),
+        "SHEPARD_OIDC_TOKEN_URL":     f"{internal_issuer_url}/protocol/openid-connect/token",
+        "SHEPARD_OIDC_CLIENT_ID":     os.environ["JUPYTERHUB_KEYCLOAK_CLIENT_ID"],
+        "SHEPARD_OIDC_CLIENT_SECRET": os.environ.get("JUPYTERHUB_KEYCLOAK_CLIENT_SECRET", ""),
+    }
 )
 c.GenericOAuthenticator.enable_auth_state = True
 

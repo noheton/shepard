@@ -22,7 +22,7 @@ public class CollectionContainersDAO {
     "-[:" + Constants.HAS_REFERENCE + "]->(ref)" +
     "-[:" + Constants.IS_IN_CONTAINER + "]->(cont) " +
     "WHERE (do.deleted IS NULL OR do.deleted = false) " +
-    "RETURN DISTINCT id(cont) AS neoId, cont.appId AS appId, cont.name AS name, " +
+    "RETURN DISTINCT cont.appId AS appId, cont.name AS name, " +
     "CASE " +
     "  WHEN cont:TimeseriesContainer   THEN 'TIMESERIES' " +
     "  WHEN cont:FileContainer         THEN 'FILE' " +
@@ -39,7 +39,6 @@ public class CollectionContainersDAO {
     var items = new ArrayList<ContainerSummaryIO>();
     for (var row : result) {
       var io = new ContainerSummaryIO(
-        ((Number) row.get("neoId")).longValue(),
         (String) row.get("appId"),
         (String) row.get("name"),
         (String) row.get("containerType")

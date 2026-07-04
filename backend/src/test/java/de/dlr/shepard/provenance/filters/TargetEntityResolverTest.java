@@ -134,14 +134,15 @@ class TargetEntityResolverTest {
 
   @Test
   void verbSuffixPathLandsOnDeepestPair() {
-    // /v2/timeseries-references/<id>/detect-anomalies — tail segment is a verb
-    // (no id), walk left to (timeseries-references, <id>).
+    // /v2/references/<id>/detect-anomalies — tail segment is a verb (no id),
+    // walk left to (references, <id>). After APISIMP-TSREF-NS-COLLAPSE the
+    // endpoint lives on /v2/references/{appId}/... so targetKind is BasicReference.
     String ref = "018f9c5a-7e26-7000-a000-000000000030";
     Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic(
-      "/v2/timeseries-references/" + ref + "/detect-anomalies"
+      "/v2/references/" + ref + "/detect-anomalies"
     );
     assertTrue(r.isPresent());
-    assertEquals("TimeseriesReference", r.get().kind());
+    assertEquals("BasicReference", r.get().kind());
     assertEquals(ref, r.get().appId());
   }
 

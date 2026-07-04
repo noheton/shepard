@@ -17,10 +17,12 @@ import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.vocabularies.io.PersonalVocabularyRequestIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -167,24 +169,28 @@ class PersonalVocabularyRestTest {
   // ─── GET tests ───────────────────────────────────────────────────────────
 
   @Test
-  void listReturnsEmptyListWhenUserHasNoPersonalVocabs() {
+  void listReturnsEmptyPageWhenUserHasNoPersonalVocabs() {
     String userAppId = "user-app-id-alice";
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
     when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(List.of());
 
-    Response response = rest.list();
+    Response response = rest.list(0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
+    assertEquals(0L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertEquals("0", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
-  void listReturnsPersonalVocabsForCaller() {
+  void listReturnsPersonalVocabsForCallerFirstPage() {
     String userAppId = "user-app-id-alice";
     String uri1 = "urn:shepard:personal:" + userAppId + ":vocab-a";
     String uri2 = "urn:shepard:personal:" + userAppId + ":vocab-b";
@@ -197,32 +203,97 @@ class PersonalVocabularyRestTest {
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
     when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
 
-    Response response = rest.list();
+    Response response = rest.list(0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
+    PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertNotNull(body);
-    assertEquals(2, body.size());
-    assertTrue(body.stream().allMatch(v -> "PERSONAL".equals(v.getType())));
-    assertTrue(body.stream().allMatch(v -> userAppId.equals(v.getOwnedByUserAppId())));
+    assertEquals(2, body.items().size());
+    assertEquals(2L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertTrue(body.items().stream().allMatch(v -> "PERSONAL".equals(v.getType())));
+    assertTrue(body.items().stream().allMatch(v -> userAppId.equals(v.getOwnedByUserAppId())));
+    assertEquals("2", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
-  void listReturnsEmptyListWhenUserHasNoAppId() {
+  void listReturnsEmptyPageWhenUserHasNoAppId() {
     User noAppIdUser = new User("bob");
     // appId is null by default
 
     when(authCtx.getCurrentUserName()).thenReturn("bob");
     when(userDAO.find("bob")).thenReturn(noAppIdUser);
 
-    Response response = rest.list();
+    Response response = rest.list(0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> body = (List<VocabularyIO>) response.getEntity();
-    assertTrue(body.isEmpty());
+    PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(body.items().isEmpty());
+    assertEquals(0L, body.total());
     verify(vocabDAO, never()).listPersonalByOwner(any());
+  }
+
+  @Test
+  void listPaginatesCorrectlySecondPage() {
+    String userAppId = "user-app-id-alice";
+    List<Vocabulary> owned = IntStream.range(0, 7)
+      .mapToObj(i -> savedVocab("appid-" + i,
+        "urn:shepard:personal:" + userAppId + ":vocab-" + i,
+        "vocab-" + i, userAppId))
+      .toList();
+
+    when(authCtx.getCurrentUserName()).thenReturn("alice");
+    when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
+    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
+
+    Response response = rest.list(1, 5);  // page 1, size 5 → items 5-6
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(7L, body.total());
+    assertEquals(1, body.page());
+    assertEquals(5, body.pageSize());
+    assertEquals("7", response.getHeaderString("X-Total-Count"));
+  }
+
+  @Test
+  void listReturnsBeyondEndAsEmptyItems() {
+    String userAppId = "user-app-id-alice";
+    String uri1 = "urn:shepard:personal:" + userAppId + ":vocab-a";
+    List<Vocabulary> owned = List.of(savedVocab("appid-1", uri1, "vocab-a", userAppId));
+
+    when(authCtx.getCurrentUserName()).thenReturn("alice");
+    when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
+    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
+
+    Response response = rest.list(5, 50);  // page 5, size 50 — beyond the single item
+
+    assertEquals(200, response.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(body.items().isEmpty());
+    assertEquals(1L, body.total());
+    assertEquals("1", response.getHeaderString("X-Total-Count"));
+  }
+
+  @Test
+  void listXTotalCountHeaderPresent() {
+    String userAppId = "user-app-id-alice";
+    String uri1 = "urn:shepard:personal:" + userAppId + ":vocab-a";
+
+    when(authCtx.getCurrentUserName()).thenReturn("alice");
+    when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
+    when(vocabDAO.listPersonalByOwner(userAppId))
+      .thenReturn(List.of(savedVocab("appid-1", uri1, "vocab-a", userAppId)));
+
+    Response response = rest.list(0, 50);
+
+    assertEquals("1", response.getHeaderString("X-Total-Count"));
   }
 
   @Test

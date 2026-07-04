@@ -42,6 +42,35 @@ function setViewMode(mode: ViewMode) {
 // UI-011a: per-page advanced-mode toggle so users can flip the mode
 // directly from the collections header without opening their profile.
 const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
+
+// ── UX-WALK-2026-05-29-05 — Density toggle (compact ↔ default) ───────────
+// Persisted to localStorage so the preference survives page reloads.
+const DENSE_MODE_KEY = "shepard.collections.denseMode";
+
+function readStoredDenseMode(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(DENSE_MODE_KEY) === "true";
+}
+
+const dense = ref<boolean>(readStoredDenseMode());
+
+function toggleDense() {
+  dense.value = !dense.value;
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(DENSE_MODE_KEY, String(dense.value));
+  }
+}
+
+// Show a "Create another collection" CTA when the list is short (< 5 items)
+// and the user is not actively searching — fills 4K whitespace with intent.
+const showFewCollectionsCta = computed(
+  () =>
+    !loading.value &&
+    !searchResultHint.value &&
+    serverItems.value.length > 0 &&
+    serverItems.value.length < 5 &&
+    pageCount.value <= 1,
+);
 </script>
 
 <template>
@@ -122,6 +151,22 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
               {{ advancedMode ? "Advanced" : "Basic" }}
             </v-chip>
           </v-col>
+          <!-- UX-WALK-2026-05-29-05: density toggle — compact ↔ default (list view only) -->
+          <v-col v-if="viewMode === 'list'" cols="auto" class="pb-4 d-flex align-center">
+            <v-btn
+              icon
+              variant="text"
+              density="compact"
+              size="small"
+              class="mr-1"
+              :color="dense ? 'primary' : undefined"
+              :title="dense ? 'Compact rows — click for spacious' : 'Spacious rows — click for compact'"
+              data-testid="collection-dense-toggle"
+              @click="toggleDense"
+            >
+              <v-icon>{{ dense ? 'mdi-table-row' : 'mdi-table-large' }}</v-icon>
+            </v-btn>
+          </v-col>
           <!-- #36: view-mode toggle — list ↔ gallery -->
           <v-col cols="auto" class="pb-4 d-flex align-center">
             <v-btn-toggle
@@ -174,6 +219,7 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
               :server-items="serverItems"
               :loading="loading"
               :page-count="pageCount"
+              :dense="dense"
             />
             <!-- Gallery / card view (#36) -->
             <template v-else>
@@ -203,6 +249,32 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
                 "
               />
             </template>
+
+            <!-- UX-WALK-2026-05-29-05: "Create another collection" CTA fills
+                 4K whitespace when there are only a few rows in the table. -->
+            <v-card
+              v-if="showFewCollectionsCta"
+              variant="tonal"
+              class="mt-8 mx-auto"
+              max-width="480"
+              data-testid="few-collections-cta"
+            >
+              <v-card-text class="text-center pa-8">
+                <v-icon size="48" class="mb-4" color="primary">mdi-folder-plus-outline</v-icon>
+                <div class="text-h6 mb-2">Ready for more?</div>
+                <div class="text-body-2 text-medium-emphasis mb-4">
+                  Group related data objects into a new collection.
+                </div>
+                <v-btn
+                  color="primary"
+                  prepend-icon="mdi-plus"
+                  data-testid="few-collections-cta-btn"
+                  @click="showCreateDialog = true"
+                >
+                  Create collection
+                </v-btn>
+              </v-card-text>
+            </v-card>
           </v-col>
         </template>
       </v-row>
@@ -210,7 +282,7 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
     <CreateCollectionDialog
       v-if="showCreateDialog"
       v-model:show-dialog="showCreateDialog"
-      @collection-created="(id: number) => router.push(collectionsPath + id)"
+      @collection-created="(appIdOrId: string) => router.push(collectionsPath + appIdOrId)"
     />
   </PageShell>
 </template>

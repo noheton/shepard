@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.CollectionProperties;
@@ -41,8 +42,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{appId}/properties")
 @RequestScoped
-@Tag(name = "Collection properties (v2)")
+@Tag(name = "Collections")
 public class CollectionPropertiesRest {
+
+  private static final String PT_UNAUTHORIZED = "/problems/collection-properties.unauthorized";
+  private static final String PT_NOT_FOUND = "/problems/collection-properties.not-found";
+  private static final String PT_FORBIDDEN = "/problems/collection-properties.forbidden";
 
   @Inject
   CollectionPropertiesDAO propertiesDAO;
@@ -52,6 +57,7 @@ public class CollectionPropertiesRest {
 
   @GET
   @Operation(
+    operationId = "getCollectionProperties",
     summary = "Read the per-Collection settings node.",
     description =
       "Returns the `:CollectionProperties` node attached to the Collection identified by " +
@@ -77,12 +83,15 @@ public class CollectionPropertiesRest {
   @APIResponse(responseCode = "404", description = "No Collection found with the supplied appId.")
   public Response read(@PathParam("appId") String collectionAppId, @Context SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     Optional<Long> ogmId = propertiesDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PT_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     CollectionProperties props = propertiesDAO.ensureFor(collectionAppId);
@@ -91,6 +100,7 @@ public class CollectionPropertiesRest {
 
   @PATCH
   @Operation(
+    operationId = "patchCollectionProperties",
     summary = "Partial-update the per-Collection settings node.",
     description =
       "Applies a partial update to the `:CollectionProperties` node for the Collection " +
@@ -123,12 +133,15 @@ public class CollectionPropertiesRest {
     @Context SecurityContext securityContext
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
+      Response.Status.UNAUTHORIZED, "caller identity unknown");
 
     Optional<Long> ogmId = propertiesDAO.findCollectionIdByAppId(collectionAppId);
-    if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+    if (ogmId.isEmpty()) return problem(PT_NOT_FOUND, "Collection not found",
+      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Manage, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Manage access required",
+        Response.Status.FORBIDDEN, "caller lacks Manage on Collection '" + collectionAppId + "'");
     }
 
     CollectionProperties props = propertiesDAO.ensureFor(collectionAppId);
@@ -140,5 +153,10 @@ public class CollectionPropertiesRest {
     }
     CollectionProperties saved = propertiesDAO.createOrUpdate(props);
     return Response.ok(CollectionPropertiesIO.from(saved)).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    return Response.status(status).type("application/problem+json")
+      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
   }
 }

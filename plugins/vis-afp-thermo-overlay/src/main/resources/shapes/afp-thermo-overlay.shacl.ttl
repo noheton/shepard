@@ -1,0 +1,217 @@
+# afp-thermo-overlay.shacl.ttl — AfpThermoOverlayShape, a MAPPING_RECIPE shape.
+#
+# MFFD-RENDER-AFP-THERMO-OVERLAY slice 1 — shape declaration for the AFP
+# TCP timeseries + OTvis NDT synced dual-pane renderer.
+#
+# A MAPPING_RECIPE template targeting this shape accepts two data-object
+# bindings for the same (Section, Module) tile and renders them as a
+# synced dual-pane view:
+#   left pane  = Trace3D: AFP robot-head 3D trajectory, vertex-colour mapped
+#                from a selected TCP channel (temperature / force / speed /
+#                pressure).
+#   right pane = OTvis heatmap: post-layup NDT thermography image for the
+#                same tile, showing the inspection result as a colour map.
+#
+# Canonical use case: "Compare the AFP process trace for tile S4·M13·L18
+# against the NDT inspection result." — the complete process-vs-inspection
+# loop for one MFFD upper-fuselage AFP course.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` names):
+#   http://semantics.dlr.de/shepard/transform#AfpThermoOverlayShape
+#
+# Consumed by (phase 1 scope — shape + manifest only; executor arrives in slice 2):
+#   • POST /v2/shapes/validate — Jena SHACL validator accepts this shape as an
+#     allow-listed MAPPING_RECIPE concretion.
+#   • POST /v2/mappings/{templateAppId}/materialize (slice 2) — dispatches to
+#     AfpThermoOverlayTransformExecutor via the TransformExecutorRegistry.
+#   • frontend/components/mffd/AfpThermoOverlayPlaceholder.vue — placeholder stub
+#     shown while the executor (slice 2) and real renderer (slice 3) land.
+#
+# Cross-refs:
+#   aidocs/16-dispatcher-backlog.md — MFFD-RENDER-AFP-THERMO-OVERLAY row
+#   backend/src/main/java/de/dlr/shepard/v2/shapes/mffd/MffdAfpCourseKind.java
+#   backend/src/main/java/de/dlr/shepard/v2/shapes/mffd/MffdNdtOtvisMeasurementKind.java
+#   plugins/vis-trace3d/ — Trace3D renderer (slice 2 executor builds on this)
+#   plugins/vis-afp-thermo-overlay/docs/reference.md
+#   backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl — meta-shape
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix afpthermo: <http://semantics.dlr.de/shepard/transform/afp-thermo#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: AfpThermoOverlayRecipe ────────────────────────────────────────────
+
+afpthermo:AfpThermoOverlayRecipe a owl:Class ;
+    rdfs:label "AFP thermo-overlay recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that renders a synced dual-pane view: AFP robot-head 3D trace coloured by TCP channel (left) + OTvis NDT heatmap for the same (Section, Module, Layer) tile (right). The canonical process-vs-inspection comparison view for MFFD upper-fuselage AFP layup quality review."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: AfpThermoOverlayShape ─────────────────────────────────────────────
+
+transform:AfpThermoOverlayShape a sh:NodeShape ;
+    sh:targetClass afpthermo:AfpThermoOverlayRecipe ;
+
+    rdfs:comment "Dispatch key: mappingRecipeShape = http://semantics.dlr.de/shepard/transform#AfpThermoOverlayShape" ;
+
+    # ── Input bindings — required ───────────────────────────────────────
+
+    # appId of the AFP process DataObject whose TimeseriesReference holds the
+    # TCP channels (tcp-temperature, consolidation-force, head-speed,
+    # nip-pressure) logged during the layup of this tile.
+    sh:property [
+        sh:path     afpthermo:afpDataObjectAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "AFP DataObject appId" ;
+        sh:description "appId (UUID v7) of the AFP course DataObject. Must carry at least one TimeseriesReference with TCP channel data (logged by the AFP robot during layup). See MffdAfpCourseKind for the expected annotation set." ;
+        sh:order    10 ;
+    ] ;
+
+    # appId of the OTvis NDT DataObject for the same (Section, Module, Layer)
+    # tile — the post-layup inspection result to compare against the process
+    # trace.
+    sh:property [
+        sh:path     afpthermo:ndtDataObjectAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "NDT DataObject appId" ;
+        sh:description "appId (UUID v7) of the OTvis NDT measurement DataObject for the same tile. Must carry the mffd:ndt-{section,module,layer,frame} annotations that the executor uses to confirm it's the correct tile match. See MffdNdtOtvisMeasurementKind." ;
+        sh:order    11 ;
+    ] ;
+
+    # ── Tile coordinates — optional; resolve ambiguity when one DataObject
+    #    spans multiple tiles (e.g. an AFP course stitching two modules) ──
+
+    sh:property [
+        sh:path     afpthermo:section ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Section" ;
+        sh:description "MFFD upper-shell section label, e.g. 'S4'. When omitted, the executor reads the section from the AFP DataObject's urn:shepard:mffd:afp-section annotation. Provide only when the DataObject covers multiple sections and you want to clip to one." ;
+        sh:order    20 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:module ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Module" ;
+        sh:description "MFFD upper-shell module label, e.g. 'M13'. When omitted, read from the AFP DataObject's urn:shepard:mffd:afp-module annotation." ;
+        sh:order    21 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:plyNumber ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:name     "Ply number" ;
+        sh:description "AFP ply number (1-based) to display. When omitted, all plies in the afpDataObjectAppId are shown (stacked or animated per syncMode). Providing plyNumber clips the Trace3D trajectory to the selected ply only." ;
+        sh:order    22 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:courseNumber ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:name     "Course number" ;
+        sh:description "AFP course number within the ply (1-based). When provided together with plyNumber, the Trace3D trajectory is clipped to this single course — the finest-grained 'process vs. inspection' comparison unit." ;
+        sh:order    23 ;
+    ] ;
+
+    # ── Visualisation parameters — optional ────────────────────────────
+
+    sh:property [
+        sh:path     afpthermo:tcpChannel ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:in       ( "tcp-temperature" "consolidation-force" "head-speed" "nip-pressure" ) ;
+        sh:name     "TCP channel" ;
+        sh:description "Which AFP TCP channel maps to vertex colour on the Trace3D trajectory. Default: 'tcp-temperature' (colour = head temperature in °C during layup — the most directly comparable metric to the NDT heatmap). 'consolidation-force' is useful for investigating bond-line defects; 'head-speed' for coverage gaps; 'nip-pressure' for consolidation uniformity." ;
+        sh:order    30 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:colourMap ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:in       ( "hot" "inferno" "plasma" "viridis" "rdbu" ) ;
+        sh:name     "Colour map" ;
+        sh:description "Colour map for both the Trace3D vertex colours and the NDT heatmap. Default: 'hot' (black→red→yellow→white) — the standard thermography convention so both panes read on the same scale. 'rdbu' is appropriate when comparing signed ΔT (heating vs. cooling)." ;
+        sh:order    31 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:syncMode ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:in       ( "side-by-side" "overlay" "split" ) ;
+        sh:name     "Sync mode" ;
+        sh:description "Layout mode. 'side-by-side' (default): Trace3D left, NDT heatmap right, with a shared colour scale bar. 'overlay': NDT heatmap texture projected onto the ply geometry in the Trace3D pane. 'split': a split slider that sweeps between the AFP trace view and the NDT heatmap." ;
+        sh:order    32 ;
+    ] ;
+
+    # ── Time window — optional; clips the AFP timeseries ───────────────
+
+    sh:property [
+        sh:path     afpthermo:timeWindowStartUs ;
+        sh:datatype xsd:long ;
+        sh:maxCount 1 ;
+        sh:name     "Time window start (µs)" ;
+        sh:description "Epoch-microsecond start of the AFP timeseries clip. When omitted the executor uses the TimeseriesReference's full range. Providing a window crops the displayed trajectory to the exact sub-course of interest (e.g. a speed-dip anomaly at a specific timestamp)." ;
+        sh:order    40 ;
+    ] ;
+
+    sh:property [
+        sh:path     afpthermo:timeWindowEndUs ;
+        sh:datatype xsd:long ;
+        sh:maxCount 1 ;
+        sh:name     "Time window end (µs)" ;
+        sh:description "Epoch-microsecond end of the AFP timeseries clip. Must be > timeWindowStartUs when both are provided. When omitted the executor uses the full timeseries range." ;
+        sh:order    41 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting AfpThermoOverlayShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#AfpThermoOverlayShape",
+#   "afpDataObjectAppId": "019f0000-0000-7000-8000-000000000201",
+#   "ndtDataObjectAppId": "019f0000-0000-7000-8000-000000000042",
+#   "section": "S4",
+#   "module": "M13",
+#   "plyNumber": 18,
+#   "tcpChannel": "tcp-temperature",
+#   "colourMap": "hot",
+#   "syncMode": "side-by-side"
+# }
+#
+# Materialize (slice 2 executor required):
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {} }
+#
+#   → 200 {
+#       "outputKind": "VIEW",
+#       "viewModel": {
+#         "kind": "afp-thermo-overlay",
+#         "syncMode": "side-by-side",
+#         "tcpChannel": "tcp-temperature",
+#         "colourMap": "hot",
+#         "colourScaleMin": 28.4,
+#         "colourScaleMax": 94.7,
+#         "trace3d": {
+#           "frames": [ { "x": 1.23, "y": 0.45, "z": 0.12, "colour": 0.63 }, ... ]
+#         },
+#         "ndtHeatmap": {
+#           "width": 512, "height": 512,
+#           "pixelData": "<base64-encoded float32 array>"
+#         }
+#       }
+#     }

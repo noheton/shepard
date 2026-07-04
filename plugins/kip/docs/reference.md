@@ -35,7 +35,7 @@ version).
 ```
 
 **Not found (404):** RFC 7807 `application/problem+json` with
-`type: https://shepard.dlr.de/problems/kip.pid.not-found`.
+`type: /problems/kip.pid.not-found`.
 
 ## Config keys
 

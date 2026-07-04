@@ -1,0 +1,8 @@
+&ACCESS RVP
+&REL 1
+DEF hello_world()
+  ; Minimal smoke-test KRL program.
+  PTP {X 0, Y 0, Z 500, A 0, B 0, C 0}
+  WAIT SEC 1
+  LIN {X 100, Y 0, Z 500, A 0, B 0, C 0}
+END

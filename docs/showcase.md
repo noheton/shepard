@@ -274,7 +274,7 @@ Open **About → Organization** in the app bar's overflow menu. The
 demo instance is preseeded with DLR's ROR id (`04bwf3e34`); the page
 fetches live details from ror.org and shows the organisation name,
 location, established date, and primary website. An admin sets the
-ROR id once via `PATCH /v2/admin/instance/ror` and every authenticated
+ROR id once via `PATCH /v2/admin/config/ror` and every authenticated
 user can read it through `GET /v2/instance/identity`.
 
 ### TS-IDc — single-key channel addressing (AFP thermal trail demo)

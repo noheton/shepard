@@ -15,11 +15,14 @@ export function useCollectionRouteParams() {
 
   const route = useRoute();
   const routeParams = ref<CollectionRouteParams>({
-    collectionId: initialParams.collectionId ?? NaN,
+    // BUG-COLL-APPID-ROUTE-001: ids are strings (UUID v7 or numeric).
+    // `""` is the unset sentinel — isCollectionRouteParams rejects it.
+    collectionId: initialParams.collectionId ?? "",
     dataObjectId: initialParams.dataObjectId,
     timeseriesReferenceId: initialParams.timeseriesReferenceId,
     fileReferenceId: initialParams.fileReferenceId,
     structuredDataReferenceId: initialParams.structuredDataReferenceId,
+    videoStreamReferenceId: initialParams.videoStreamReferenceId,
   });
 
   watch(

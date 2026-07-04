@@ -2,6 +2,17 @@ set -e
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
+	-- Pre-create extensions the Flyway migrations need. These require
+	-- superuser, which the unprivileged shepard app user (Flyway connects as
+	-- it) does not have — so on a from-scratch cluster the migration
+	-- V1.11.0__add_shepard_id_to_timeseries.sql would fail with
+	-- "permission denied to create extension". Create them here as the
+	-- bootstrap superuser so the migration's CREATE EXTENSION IF NOT EXISTS
+	-- is a harmless no-op. (Hardening for full-instance reset — see
+	-- docs/admin/runbooks/13-full-instance-reset.md.)
+	CREATE EXTENSION IF NOT EXISTS pgcrypto;
+	CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
 	CREATE USER $POSTGRES_SHEPARD_USER WITH PASSWORD '$POSTGRES_SHEPARD_USER_PW';
   GRANT CREATE, USAGE ON SCHEMA public TO $POSTGRES_SHEPARD_USER;
 	GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO $POSTGRES_SHEPARD_USER;

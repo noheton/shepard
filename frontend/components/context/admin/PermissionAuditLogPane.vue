@@ -110,25 +110,25 @@ function formatTime(iso: string) {
         hide-default-footer
         density="compact"
       >
-        <template #item.occurredAt="{ item }">
+        <template #[`item.occurredAt`]="{ item }">
           <span class="text-caption text-no-wrap">{{ formatTime(item.occurredAt) }}</span>
         </template>
 
-        <template #item.actorUsername="{ item }">
+        <template #[`item.actorUsername`]="{ item }">
           <span>{{ item.actorUsername ?? "—" }}</span>
         </template>
 
-        <template #item.entityKind="{ item }">
+        <template #[`item.entityKind`]="{ item }">
           <span class="text-caption">{{ item.entityKind ?? "—" }}</span>
         </template>
 
-        <template #item.action="{ item }">
+        <template #[`item.action`]="{ item }">
           <v-chip :color="actionColor(item.action)" size="small" label>
             {{ item.action }}
           </v-chip>
         </template>
 
-        <template #item.detailJson="{ item }">
+        <template #[`item.detailJson`]="{ item }">
           <span class="text-caption text-truncate" style="max-width: 300px; display: inline-block;">
             {{ item.detailJson ?? "—" }}
           </span>

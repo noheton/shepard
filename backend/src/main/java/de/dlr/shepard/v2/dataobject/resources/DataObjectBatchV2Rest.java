@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.dataobject.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.ShepardException;
@@ -45,6 +46,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * is processed independently: failures on item N do not prevent items
  * N+1..M from being attempted.
  *
+ * <p><b>Cross-collection root.</b> This endpoint lives at {@code /v2/data-objects/batch}
+ * rather than under a Collection path because a single batch request may target
+ * <em>multiple</em> Collections; no single {@code collectionAppId} segment would
+ * correctly scope it. Each item carries its own {@code collectionAppId} and is
+ * permission-checked independently (Write on that Collection).
+ *
  * <p><b>Permissions.</b> The caller must be authenticated. Each item's
  * target collection is permission-checked independently for Write access.
  * The permission result per {@code collectionAppId} is memoised within the
@@ -67,11 +74,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
-@Tag(name = "DataObjects (v2)")
+@Tag(name = "DataObjects")
 public class DataObjectBatchV2Rest {
 
   /** Maximum number of items accepted in a single batch request. */
   static final int MAX_BATCH_SIZE = 500;
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   @Inject
   DataObjectService dataObjectService;
@@ -84,6 +96,7 @@ public class DataObjectBatchV2Rest {
 
   @POST
   @Operation(
+    operationId = "batch",
     summary = "Bulk-create DataObjects across one or more Collections (HTTP 207).",
     description =
       "Accepts a JSON array of DataObject creation requests (1–500 items) and returns " +
@@ -136,18 +149,17 @@ public class DataObjectBatchV2Rest {
   ) {
     // ── auth gate ──────────────────────────────────────────────────────────
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem("/problems/data-objects.unauthorized", "Authentication required",
+        Response.Status.UNAUTHORIZED, "Authentication is required to submit a batch create request.");
 
     // ── size validation ────────────────────────────────────────────────────
     if (items == null || items.isEmpty()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"Batch must contain at least 1 item.\"}")
-        .build();
+      return problem("/problems/data-objects.batch.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Batch must contain at least 1 item.");
     }
     if (items.size() > MAX_BATCH_SIZE) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("{\"error\":\"Batch size " + items.size() + " exceeds the maximum of " + MAX_BATCH_SIZE + " items.\"}")
-        .build();
+      return problem("/problems/data-objects.batch.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Batch size " + items.size() + " exceeds the maximum of " + MAX_BATCH_SIZE + " items.");
     }
 
     // ── process items sequentially ─────────────────────────────────────────

@@ -1,0 +1,145 @@
+# krl-trajectory.shacl.ttl — KrlTrajectoryShape, a MAPPING_RECIPE shape.
+#
+# V2CONV-B5 — the convergence of the bespoke `/v2/krl/*` namespace into the
+# generic MAPPING_RECIPE mechanism (aidocs/platform/191 decision #2, the
+# transform-direction sibling of V2CONV-B4's SceneGraphPlayShape).
+#
+# A KRL interpret is no longer a bespoke `POST /v2/krl/interpret` call. Instead
+# it is a MAPPING_RECIPE template that BINDS:
+#   • a KRL .src/.krl FileReference (the robot program — resolved to bytes on
+#     demand by the executor, the single source of truth);
+#   • a URDF FileReference (the kinematic tree the IK solver resolves against);
+#   • the TimeseriesContainer the derived joint trajectory is written into;
+#   • the DataObject the derived TimeseriesReference is attached under;
+#   • optional companion .dat FileReferences + frame/seed overrides.
+#
+# Materializing this recipe via `POST /v2/mappings/{templateAppId}/materialize`
+# dispatches to the KrlTrajectoryTransformExecutor (in-tree), which resolves the
+# bound .src + URDF FileReferences, invokes the KRL interpreter sidecar, persists
+# the resulting joint-angle trajectory as a NEW TimeseriesReference, and returns
+# a REFERENCE result carrying that derived reference's appId.
+#
+# This is the REFERENCE-direction sibling of the SceneGraphPlayShape (which
+# returns a VIEW). KRL mints a derived reference (the joint trajectory); the
+# scene-graph play projects a view envelope. Both flow through the same generic
+# TransformExecutor SPI + materialize endpoint.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` field
+# names): http://semantics.dlr.de/shepard/transform#KrlTrajectoryShape
+#
+# Consumed by:
+#   • POST /v2/mappings/{templateAppId}/materialize — resolves this shape IRI
+#     to KrlTrajectoryTransformExecutor via the fail-soft
+#     TransformExecutorRegistry; runs it; returns
+#     TransformResult.reference(derivedTimeseriesReferenceAppId).
+#   • frontend InterpretAsTrajectoryButton.vue → useKrlTrajectory.ts — creates/
+#     opens a MAPPING_RECIPE targeting this shape on a .src/.krl FileReference
+#     detail page, then materializes it and links the derived TimeseriesReference.
+#
+# Cross-refs:
+#   aidocs/platform/191-v2-surface-convergence.md §decision-2 — the dissolution
+#   aidocs/16-dispatcher-backlog.md — V2CONV-B5 row
+#   aidocs/integrations/117-krl-interpreter.md — the sidecar protocol (unchanged)
+#   docs/reference/krl-interpreter.md — the MAPPING_RECIPE trajectory transform
+#   backend/src/main/java/de/dlr/shepard/spi/transform/TransformExecutor.java
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix krl:       <http://semantics.dlr.de/shepard/transform/krl#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: KrlTrajectoryRecipe ───────────────────────────────────────
+
+krl:KrlTrajectoryRecipe a owl:Class ;
+    rdfs:label "KRL trajectory recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that binds a KRL .src/.krl FileReference + a URDF FileReference (plus the target DataObject + TimeseriesContainer), materialized by the KRL interpreter sidecar into a NEW joint-trajectory TimeseriesReference. Replaces the bespoke POST /v2/krl/interpret endpoint (V2CONV-B5)."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: KrlTrajectoryShape ────────────────────────────────────────
+
+krl:KrlTrajectoryShape a sh:NodeShape ;
+    sh:targetClass krl:KrlTrajectoryRecipe ;
+
+    # The dispatch-key IRI MUST appear in the template body's
+    # `mappingRecipeShape` field for the materialize endpoint to route here.
+    rdfs:comment "Bound via mappingRecipeShape = http://semantics.dlr.de/shepard/transform#KrlTrajectoryShape" ;
+
+    # The KRL .src/.krl FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     krl:srcFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "KRL .src/.krl FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the KRL robot program. Resolved to bytes on demand by the executor. Bind via materialize role 'srcFileAppId'." ;
+        sh:order    10 ;
+    ] ;
+
+    # The URDF FileReference appId — REQUIRED.
+    sh:property [
+        sh:path     krl:urdfFileReferenceAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "URDF FileReference appId" ;
+        sh:description "appId of the singleton FileReference (FR1b) carrying the robot's URDF XML, the kinematic tree the IK solver resolves against. Bind via materialize role 'urdfFileAppId'." ;
+        sh:order    20 ;
+    ] ;
+
+    # The target DataObject appId — REQUIRED (where the derived ref attaches).
+    sh:property [
+        sh:path     krl:targetDataObjectAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "Target DataObject appId" ;
+        sh:description "appId of the DataObject the derived joint-trajectory TimeseriesReference is attached under. The owning Collection's write permission gates the materialize call." ;
+        sh:order    30 ;
+    ] ;
+
+    # The TimeseriesContainer appId — REQUIRED (the trajectory storage substrate).
+    sh:property [
+        sh:path     krl:timeseriesContainerAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "TimeseriesContainer appId" ;
+        sh:description "appId of the TimeseriesContainer the derived joint-trajectory data points are written into (channels joint_0 … joint_N)." ;
+        sh:order    40 ;
+    ] ;
+
+    # Optional companion .dat FileReference appIds — JSON array string.
+    sh:property [
+        sh:path     krl:datFileReferenceAppIds ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Companion .dat FileReference appIds" ;
+        sh:description "Optional JSON array of companion .dat FileReference appIds, e.g. [\"019e...\",\"019e...\"]. Resolved to bytes alongside the .src and passed to the sidecar." ;
+        sh:order    50 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting KrlTrajectoryShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#KrlTrajectoryShape",
+#   "srcFileReferenceAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#   "urdfFileReferenceAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33",
+#   "targetDataObjectAppId": "019e7245-1b2c-7d3e-af40-bb22cc33dd44",
+#   "timeseriesContainerAppId": "019e7246-2c3d-7e4f-b051-cc33dd44ee55"
+# }
+#
+# Materialize:
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {
+#       "srcFileAppId": "019e7243-f995-7914-be80-53e367aa5172",
+#       "urdfFileAppId": "019e7244-0a1b-7c2d-9e3f-aa11bb22cc33" } }
+#
+#   → 200 { "outputKind": "REFERENCE",
+#           "derivedReferenceAppId": "019e7247-...",  // the joint trajectory
+#           "executor": "KrlTrajectoryTransformExecutor" }

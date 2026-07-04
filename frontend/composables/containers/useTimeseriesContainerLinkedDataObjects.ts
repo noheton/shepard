@@ -1,14 +1,16 @@
 /**
  * CC1b — fetch DataObjects linked to a TimeseriesContainer via their references.
  *
- * Calls GET /v2/timeseries-containers/{containerId}/linked-data-objects.
+ * Calls GET /v2/containers/{containerAppId}/linked-data-objects
+ * (APISIMP-CONT-LDO-UNIFY — the per-kind timeseries-containers path was
+ * collapsed onto the unified container surface).
  * Uses raw fetch (same pattern as usePublishEntity / FileContainerAccessor)
  * because the v2 endpoints are not in the generated backend-client base path.
  *
- * Takes the numeric container id from the route (same id used by the legacy
- * /shepard/api/timeseriesContainers/{id} surface) so no wait for appId is needed.
+ * Accepts a static string or a Ref<string | null> so callers that resolve appId
+ * asynchronously can pass a computed ref; the fetch fires once the appId is non-null.
  */
-
+import type { Ref } from "vue";
 import type { DataObject } from "@dlr-shepard/backend-client";
 
 function v2BaseUrl(): string {
@@ -20,11 +22,19 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-export function useTimeseriesContainerLinkedDataObjects(containerId: number) {
+export function useTimeseriesContainerLinkedDataObjects(containerAppId: string | Ref<string | null>) {
+  const appIdRef: Ref<string | null> = isRef(containerAppId)
+    ? containerAppId
+    : ref(containerAppId || null);
   const dataObjects = ref<DataObject[]>([]);
   const isLoading = ref(true);
 
   async function fetchLinkedDataObjects() {
+    const id = appIdRef.value;
+    if (!id) {
+      isLoading.value = false;
+      return;
+    }
     isLoading.value = true;
     const { data: session } = useAuth();
     const accessToken = session.value?.accessToken;
@@ -34,7 +44,7 @@ export function useTimeseriesContainerLinkedDataObjects(containerId: number) {
     }
 
     try {
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/linked-data-objects`;
+      const url = `${v2BaseUrl()}/v2/containers/${encodeURIComponent(id)}/linked-data-objects`;
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -42,7 +52,7 @@ export function useTimeseriesContainerLinkedDataObjects(containerId: number) {
         },
       });
       if (response.ok) {
-        dataObjects.value = (await response.json()) as DataObject[];
+        dataObjects.value = ((await response.json()) as { items: DataObject[] }).items ?? [];
       } else {
         handleError(
           new Error(`HTTP ${response.status}`),
@@ -58,7 +68,7 @@ export function useTimeseriesContainerLinkedDataObjects(containerId: number) {
     }
   }
 
-  fetchLinkedDataObjects();
+  watch(appIdRef, (id) => { if (id) fetchLinkedDataObjects(); }, { immediate: true });
 
   return { dataObjects, isLoading };
 }

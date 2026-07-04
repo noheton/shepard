@@ -224,7 +224,7 @@ file collector not public but basically a node red flow:
                 "keyType": "other",
                 "keyValue": "X-API-KEY",
                 "valueType": "other",
-                "valueValue": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrcmViX2ZsIiwiaXNzIjoiaHR0cDovL2JhY2tlbmQuYnQtYXUtY3ViZTIuaW50cmEuZGxyLmRlL3NoZXBhcmQvYXBpLyIsIm5iZiI6MTczOTg5MjgwMCwiaWF0IjoxNzM5ODkyODAwLCJqdGkiOiIwMmRhYjM3ZS02M2E1LTRlYmQtYmUxYy0wOTllYjNjNzdlZTUifQ.xC4D2euvrs9Paq5MTFo4Yy1aUlMX5PL-gHw60OETHoReNX4S5jRXUXaOyZnjyHC_h3_oHmcy1A295iN0xQvmQnhwTVxd6JcC9-BdiMJHeraEUnXpEgp1toNLsRqe6y6XI5K4Wt_Q4fFjaGZHfsrEej4ebc89qfBXlHnhz4PYPxQgLqGq37G4MZVYZ8AUi3Wuoqn17H7IyGkKFTTqveZYd8hq9nQpsU0IxVLkvfCsfEkrMnIpcld9Inz8T9JmUVQRPxP1K8BZKSN_YMO3hLTF6_qJGuju-_F1ew1ug5cmidZRBklVkvRHEu5h4Y_Z9ns4LrSfvZ2v-kbelkfwBH7Mug"
+                "valueValue": "[REDACTED-JWT — rotate token; see aidocs/16 Open user decisions #1]"
             }
         ],
         "x": 590,
@@ -362,7 +362,7 @@ file collector not public but basically a node red flow:
                 "keyType": "other",
                 "keyValue": "X-API-KEY",
                 "valueType": "other",
-                "valueValue": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrcmViX2ZsIiwiaXNzIjoiaHR0cDovL2JhY2tlbmQuYnQtYXUtY3ViZTMuaW50cmEuZGxyLmRlL3NoZXBhcmQvYXBpLyIsIm5iZiI6MTc0NTMxMzE1MCwiaWF0IjoxNzQ1MzEzMTUwLCJqdGkiOiJmZjM2Y2FkOC03YjJmLTRlZjYtYTE1Ny1lYWZjZWExZDE3ZjMifQ.cPrXIIgYx9eLenMqci7KOGx2YTCFk2KtGHcczmOB1_tfrFwVclNvcihmskazHbposooaI1XKv2sj4LrxgxtrqDZ2mGfG0_75ztQs6tGQb69OMtEMVhHh_ge4xaVj8DbnJUxnox73j4FnNJI1DvS3Vp7HYJeUcEok09_4UCV8tWUGeAz2libcHeQlYRMTobttcmCZRLO7ft35LU8RD-tsx0PAoIpgqQFyg4qsOohv3GRBFX0wuNGZ4hLIAQuP-n5kopSj8TB7lX1ID5UTeltoEQlPaZcR1-JEpSegpSOCh0yCySIAQ4QUCAVanb8xfBEn5J7SuPiKsiU_SC5KTV3oQQ"
+                "valueValue": "[REDACTED-JWT — rotate token; see aidocs/16 Open user decisions #1]"
             }
         ],
         "x": 850,

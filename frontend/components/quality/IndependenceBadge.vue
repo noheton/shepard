@@ -18,7 +18,11 @@
  *
  * Emits nothing — this is a read-only display component.
  */
-import { IndependenceProofApi } from "@dlr-shepard/backend-client";
+import {
+  DataQualityApi,
+  type SharedAncestorIO,
+  type SharedAnnotationIO,
+} from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const props = defineProps<{
@@ -33,22 +37,12 @@ type State = "loading" | "independent" | "not-independent" | "error";
 const state = ref<State>("loading");
 const errorMessage = ref<string | null>(null);
 
-interface SharedAncestor {
-  ancestorAppId: string;
-  reachableFromA: string[];
-  reachableFromB: string[];
-}
-interface SharedAnnotation {
-  key: string;
-  value: string;
-  fromA: string[];
-  fromB: string[];
-}
+// V2-SWEEP-001-CLIENT-REGEN: use the regenerated client's shared-provenance
+// IO types (fields are optional on the wire) instead of local mirror types.
+const sharedAncestors = ref<SharedAncestorIO[]>([]);
+const sharedAnnotations = ref<SharedAnnotationIO[]>([]);
 
-const sharedAncestors = ref<SharedAncestor[]>([]);
-const sharedAnnotations = ref<SharedAnnotation[]>([]);
-
-const api = useV2ShepardApi(IndependenceProofApi);
+const api = useV2ShepardApi(DataQualityApi);
 
 async function runCheck() {
   state.value = "loading";
@@ -57,9 +51,11 @@ async function runCheck() {
   sharedAnnotations.value = [];
 
   try {
-    const result = await api.value.checkIndependence({
-      setA: props.setA,
-      setB: props.setB,
+    const result = await api.value.check({
+      independenceProofRequestIO: {
+        setA: props.setA,
+        setB: props.setB,
+      },
     });
     if (result.independent) {
       state.value = "independent";

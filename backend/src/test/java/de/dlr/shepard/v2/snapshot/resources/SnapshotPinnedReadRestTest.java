@@ -108,7 +108,7 @@ class SnapshotPinnedReadRestTest {
   @Test
   void returns401_whenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(401);
   }
 
@@ -117,7 +117,7 @@ class SnapshotPinnedReadRestTest {
   @Test
   void returns404_whenCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
@@ -127,7 +127,7 @@ class SnapshotPinnedReadRestTest {
   void returns403_whenNoReadPermission() {
     when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, 0L))
       .thenReturn(false);
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(403);
   }
 
@@ -136,7 +136,7 @@ class SnapshotPinnedReadRestTest {
   @Test
   void returns404_whenSnapshotNotFound() {
     when(snapshotService.findByAppId(SNAP_APP_ID)).thenReturn(null);
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
@@ -144,20 +144,19 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void returns409_whenSnapshotBelongsToDifferentCollection() {
-    // The snapshot's root collection has a different appId
     Collection otherCollection = new Collection();
     otherCollection.setId(99L);
     otherCollection.setAppId(OTHER_COLL_APP_ID);
     snapshot.setCollection(otherCollection);
 
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(409);
   }
 
   @Test
   void returns409_whenSnapshotHasNullCollection() {
     snapshot.setCollection(null);
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(409);
   }
 
@@ -166,24 +165,28 @@ class SnapshotPinnedReadRestTest {
   @Test
   void returns200_withEmptyList_whenNoDataObjectsInSnapshot() {
     when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(List.of());
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
     assertThat(body.dataObjectAppIds()).isEmpty();
+    assertThat(body.totalDataObjects()).isEqualTo(0);
     assertThat(body.totalEntries()).isEqualTo(5);
   }
 
   @Test
   void returns200_withCorrectDataObjectAppIds() {
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
     assertThat(body.dataObjectAppIds()).containsExactly(DO_APP_ID_1, DO_APP_ID_2);
+    assertThat(body.totalDataObjects()).isEqualTo(2);
+    assertThat(body.page()).isEqualTo(0);
+    assertThat(body.pageSize()).isEqualTo(500);
   }
 
   @Test
   void returns200_snapshotMetadataFieldsAreCorrect() {
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
     assertThat(body.snapshotAppId()).isEqualTo(SNAP_APP_ID);
@@ -191,5 +194,52 @@ class SnapshotPinnedReadRestTest {
     assertThat(body.snapshotName()).isEqualTo("v1.0");
     assertThat(body.snapshotCapturedAt().toEpochMilli()).isEqualTo(CAPTURED_AT_MS);
     assertThat(body.totalEntries()).isEqualTo(5);
+  }
+
+  // ── 200 — pagination ──────────────────────────────────────────────────────
+
+  @Test
+  void paginates_firstPage_returnsCorrectSlice() {
+    // 5 items, pageSize=2, page=0 → first 2 items
+    String id3 = "01900000-0000-7000-8000-000000000050";
+    String id4 = "01900000-0000-7000-8000-000000000060";
+    String id5 = "01900000-0000-7000-8000-000000000070";
+    List<String> all = List.of(DO_APP_ID_1, DO_APP_ID_2, id3, id4, id5);
+    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(all);
+
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 2, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
+    assertThat(body.dataObjectAppIds()).containsExactly(DO_APP_ID_1, DO_APP_ID_2);
+    assertThat(body.totalDataObjects()).isEqualTo(5);
+    assertThat(body.page()).isEqualTo(0);
+    assertThat(body.pageSize()).isEqualTo(2);
+  }
+
+  @Test
+  void paginates_secondPage_returnsCorrectSlice() {
+    // 5 items, pageSize=2, page=1 → items at index 2 and 3
+    String id3 = "01900000-0000-7000-8000-000000000050";
+    String id4 = "01900000-0000-7000-8000-000000000060";
+    String id5 = "01900000-0000-7000-8000-000000000070";
+    List<String> all = List.of(DO_APP_ID_1, DO_APP_ID_2, id3, id4, id5);
+    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(all);
+
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 1, 2, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
+    assertThat(body.dataObjectAppIds()).containsExactly(id3, id4);
+    assertThat(body.totalDataObjects()).isEqualTo(5);
+    assertThat(body.page()).isEqualTo(1);
+  }
+
+  @Test
+  void paginates_beyondLastPage_returnsEmptyList() {
+    // page=10 with only 2 items total → empty list, total still 2
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 10, 500, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
+    assertThat(body.dataObjectAppIds()).isEmpty();
+    assertThat(body.totalDataObjects()).isEqualTo(2);
   }
 }

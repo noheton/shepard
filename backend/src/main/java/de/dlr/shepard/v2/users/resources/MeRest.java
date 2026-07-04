@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
@@ -52,6 +53,9 @@ public class MeRest {
   @Inject
   CollectionWatcherDAO collectionWatcherDAO;
 
+  private static final String PROBLEM_TYPE_UNAUTHORIZED = "/problems/me.unauthorized";
+  private static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/me.bad-request";
+
   // ─── GET /v2/users/me ──────────────────────────────────────────────────────
 
   /**
@@ -59,6 +63,7 @@ public class MeRest {
    */
   @GET
   @Operation(
+    operationId = "getMe",
     summary = "Return the caller's enriched v2 profile.",
     description = "Includes all upstream User fields plus v2 additions: " +
     "`watchedCollectionCount` (CW1) — number of collections the caller is watching."
@@ -71,7 +76,8 @@ public class MeRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getMe(@Context SecurityContext securityContext) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(PROBLEM_TYPE_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED,
+          "Authentication is required to access this endpoint.");
     }
     User current = userService.getCurrentUser();
     UserIO userIO = new UserIO(current);
@@ -84,6 +90,7 @@ public class MeRest {
   @PATCH
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
+    operationId = "patchMe",
     summary = "Partial-update the caller's User record.",
     description = "RFC 7396 JSON Merge Patch. Accepts `orcid` (U1a), `displayName` (U1b), and " +
     "`anonymizeInProvenance` (PROV1l, GDPR opt-out — when true, identity is omitted from :Activity records). " +
@@ -102,11 +109,11 @@ public class MeRest {
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = de.dlr.shepard.v2.users.io.PatchMeIO.class))) JsonNode patch,
     @Context SecurityContext securityContext
   ) {
-    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (securityContext.getUserPrincipal() == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Unauthorized",
+        Response.Status.UNAUTHORIZED, "Authentication is required to access this endpoint.");
     if (patch == null || !patch.isObject()) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)")
-        .build();
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body",
+        Response.Status.BAD_REQUEST, "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
     User current = userService.getCurrentUser();
@@ -120,14 +127,15 @@ public class MeRest {
         if (value.isEmpty()) {
           current.setOrcid(null);
         } else if (!OrcidValidator.isValid(value)) {
-          return Response.status(Response.Status.BAD_REQUEST)
-            .entity("orcid must match NNNN-NNNN-NNNN-NNN[N|X] and pass the ISO 7064 mod 11-2 checksum")
-            .build();
+          return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid ORCID",
+            Response.Status.BAD_REQUEST,
+            "orcid must match NNNN-NNNN-NNNN-NNN[N|X] and pass the ISO 7064 mod 11-2 checksum");
         } else {
           current.setOrcid(value);
         }
       } else {
-        return Response.status(Response.Status.BAD_REQUEST).entity("orcid must be a string or null").build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid field type",
+          Response.Status.BAD_REQUEST, "orcid must be a string or null");
       }
     }
     // U1b: displayName override.
@@ -140,7 +148,8 @@ public class MeRest {
         // Empty string clears (matches the wire-shape semantics on orcid).
         current.setDisplayName(value.isEmpty() ? null : value);
       } else {
-        return Response.status(Response.Status.BAD_REQUEST).entity("displayName must be a string or null").build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid field type",
+          Response.Status.BAD_REQUEST, "displayName must be a string or null");
       }
     }
     // PROV1l: anonymizeInProvenance opt-in/out.
@@ -151,9 +160,8 @@ public class MeRest {
       } else if (anon.isBoolean()) {
         current.setAnonymizeInProvenance(anon.asBoolean());
       } else {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity("anonymizeInProvenance must be a boolean or null")
-          .build();
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid field type",
+          Response.Status.BAD_REQUEST, "anonymizeInProvenance must be a boolean or null");
       }
     }
 
@@ -162,5 +170,10 @@ public class MeRest {
 
     User saved = userDAO.createOrUpdate(current);
     return Response.ok(new UserIO(saved)).build();
+  }
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

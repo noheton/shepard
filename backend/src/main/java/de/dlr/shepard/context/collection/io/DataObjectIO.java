@@ -6,7 +6,9 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
+import java.util.Arrays;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +29,29 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private long[] successorIds;
 
   private long[] predecessorIds;
+
+  /**
+   * BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH — appId (UUID v7) companion for
+   * {@link #predecessorIds}. On GET responses, populated in parallel with
+   * {@code predecessorIds} (nulls filtered for pre-L2b rows that lack appIds).
+   *
+   * <p>On PATCH bodies: when non-null and non-empty, overrides {@code predecessorIds}
+   * as the authoritative predecessor source. Callers on post-L2b instances (UUID v7
+   * only, no numeric shepardId) MUST use this field instead of {@code predecessorIds}.
+   *
+   * <p>Back-compat: callers that only send {@code predecessorIds} are unaffected —
+   * if this field is absent / null in the request, the service falls back to
+   * {@code predecessorIds}. If both are present, this field wins.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    description =
+      "BUG-PREDECESSOR-IDS-NUMERIC-IN-V2-PATCH: appId (UUID v7) array of predecessor " +
+      "DataObjects. On PATCH bodies, when non-null and non-empty, overrides predecessorIds. " +
+      "On GET responses, populated alongside predecessorIds; nulls filtered for pre-L2b rows."
+  )
+  private String[] predecessorAppIds;
 
   @Schema(readOnly = true, required = true)
   private long[] childrenIds;
@@ -94,6 +119,31 @@ public class DataObjectIO extends AbstractDataObjectIO {
   private int structuredDataReferenceCount;
 
   /**
+   * TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1 — {@code appId} of the
+   * {@code :ShepardTemplate} this DataObject was created from, or
+   * {@code null} when the DataObject was created without a template
+   * (or predates the template wiring). Read-only — minted server-side
+   * by {@code ShepardTemplateDAO.recordCreatedFrom} at create time.
+   *
+   * <p>Surfaced so the frontend can render the in-context tools menu's
+   * <strong>Validate against shape</strong> / <strong>Render view</strong>
+   * actions only when a template is attached (the destination tools
+   * accept the {@code templateAppId} as a query param for prefill).
+   *
+   * <p>Absent from the wire when {@code null} thanks to {@link JsonInclude#NON_NULL},
+   * so upstream v5.2.0 clients see no change in the wire shape on
+   * DataObjects that lack an attached template.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    readOnly = true,
+    description = "TOOLS-CONTEXT-DO-TEMPLATE-DETECT-1: appId of the :ShepardTemplate this DataObject was created from. " +
+      "Stamped server-side at create time; read-only. Absent from the wire when null."
+  )
+  private String attachedTemplateAppId;
+
+  /**
    * No v2 {@code long} counterpart exists yet for video-stream references.
    * This field remains active (not deprecated) until {@code DataObjectListItemV2IO} grows a
    * {@code videoCount} field. Tracked in the backlog as API2-video. The {@code int} type will
@@ -109,6 +159,10 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.referenceIds = extractShepardIds(dataObject.getReferences());
     this.successorIds = extractShepardIds(dataObject.getSuccessors());
     this.predecessorIds = extractShepardIds(dataObject.getPredecessors());
+    this.predecessorAppIds = dataObject.getPredecessors().stream()
+        .map(DataObject::getAppId)
+        .filter(Objects::nonNull)
+        .toArray(String[]::new);
     this.childrenIds = extractShepardIds(dataObject.getChildren());
     this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
     this.incomingIds = extractShepardIds(dataObject.getIncoming());
@@ -119,7 +173,8 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.structuredDataReferenceCount = (int) dataObject.getReferences().stream()
         .filter(r -> r instanceof StructuredDataReference).count();
     this.videoStreamReferenceCount = (int) dataObject.getReferences().stream()
-        .filter(r -> r instanceof VideoPayload).count();
+        .filter(r -> r.getClass().isAnnotationPresent(VideoPayload.class)).count();
+    this.attachedTemplateAppId = dataObject.getAttachedTemplateAppId();
   }
 
   @Override
@@ -133,9 +188,11 @@ public class DataObjectIO extends AbstractDataObjectIO {
       HasId.areEqualSets(referenceIds, other.referenceIds) &&
       HasId.areEqualSets(successorIds, other.successorIds) &&
       HasId.areEqualSets(predecessorIds, other.predecessorIds) &&
+      Arrays.equals(predecessorAppIds, other.predecessorAppIds) &&
       HasId.areEqualSets(childrenIds, other.childrenIds) &&
       Objects.equals(parentId, other.parentId) &&
-      HasId.areEqualSets(incomingIds, other.incomingIds)
+      HasId.areEqualSets(incomingIds, other.incomingIds) &&
+      Objects.equals(attachedTemplateAppId, other.attachedTemplateAppId)
     );
   }
 
@@ -149,7 +206,9 @@ public class DataObjectIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(childrenIds);
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + HasId.hashcodeHelper(predecessorIds);
+    result = prime * result + Arrays.hashCode(predecessorAppIds);
     result = prime * result + Objects.hashCode(parentId);
+    result = prime * result + Objects.hashCode(attachedTemplateAppId);
 
     return result;
   }

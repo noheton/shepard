@@ -582,8 +582,22 @@ public class OntologySeedService {
     return out;
   }
 
-  /** Read a bundled ontology file from classpath as bytes. */
+  /**
+   * Read a bundled ontology file as bytes. Built-ins carry a bare file name
+   * resolved against the {@code /ontologies/} classpath prefix; user-uploaded
+   * bundles carry an absolute filesystem path into the user-bundles-dir and
+   * must be read from disk (a classpath lookup can never find them — the
+   * BTKVS-A2 ingest gap).
+   */
   byte[] readBundleBytes(String fileName) {
+    java.nio.file.Path diskPath = java.nio.file.Path.of(fileName);
+    if (diskPath.isAbsolute()) {
+      try {
+        return java.nio.file.Files.readAllBytes(diskPath);
+      } catch (IOException ex) {
+        throw new OntologySeedException("Failed to read user bundle " + fileName + ": " + ex.getMessage(), ex);
+      }
+    }
     String resourcePath = ONTOLOGY_RESOURCE_PREFIX + fileName;
     InputStream in = classLoader.getResourceAsStream(stripLeadingSlash(resourcePath));
     if (in == null) {

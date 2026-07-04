@@ -78,8 +78,13 @@ defineProps<{
 </template>
 
 <style lang="scss" scoped>
+/* LAYOUT-4K-CENTERED-EMPTY-001 / L3: widened from 1400px so the per-
+   section tile grid (used by /me, /admin, /about, /configuration) fills
+   the 4K canvas. Capped at 2400px + auto-centered to keep tile row
+   length readable on ultrawide displays. */
 .section-index-landing {
-  max-width: 1400px;
+  max-width: 2400px;
+  margin: 0 auto;
 }
 
 .section-landing-card {

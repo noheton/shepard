@@ -115,7 +115,7 @@ shepard organises everything into five primitives:
 
 | Primitive | What it represents | Example |
 |---|---|---|
-| **Collection** | A campaign, project, or topic — the top-level grouping | "LUMEN-Inspired Hot-Fire Test Campaign — Q3 2024" |
+| **Collection** | A campaign, project, or topic — the top-level grouping. **PROJ-1 shipped 2026-06-02**: a Collection can be marked as a **Project** (annotation `urn:shepard:project = "true"`) to bundle other Collections non-exclusively via `urn:shepard:partOf`. Projects surface at `/projects` in the top nav, get a Project-flavoured `/v2/projects/{appId}` REST namespace, a sub-Collections panel on the Collection detail page, four MCP tools, and free-text programme labels (`urn:shepard:programme`). One Collection can be a member of multiple Projects. | "LUMEN-Inspired Hot-Fire Test Campaign — Q3 2024" (a Collection); "MFFD Upper Shell" (a Project that bundles 5 step Collections) |
 | **DataObject** | A logical thing inside a Collection, freely nestable, with attributes | "TR-004 — fired run with anomaly" |
 | **Reference** | A pointer from a DataObject to a payload of one of five kinds | "`tr-004-sensors`" — TimeseriesReference |
 | **Annotation** | A semantic tag from an ontology attached to a Collection, DataObject, Reference, Timeseries channel, **or Container itself** (SA-CONT shipped) | `phase = ramp_up`, `severity = HIGH`, `instrument = "B&K LAN-XI"` |
@@ -153,7 +153,22 @@ Plus payload kinds (the things References point at):
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
-  PostGIS (optional feature toggle).
+  PostGIS (default-on after SPATIAL-V6-GATE-CLEANUP).
+  *(MFFD W7, 2026-06-02: TPS laser-stripe pointclouds and FSD TCP
+  trajectories from AFP tapelaying are promoted from opaque
+  FileReferences into typed SpatialDataContainers by
+  `plugins/spatial-importer/`; the SpatialPointsCanvas viewer renders
+  them in-browser as colour-mapped point scatters or trajectory tubes;
+  the optional `frameAppId` anchors each container in a CST1
+  CoordinateFrame so the pointcloud sits inside the W5 RoboDK scene.
+  MFFD W7b, 2026-06-02: the same plugin now also decodes the TPS
+  raw-data line-scan PNGs (`TPS raw data.N`, 1292×964 8-bit grayscale,
+  37 chunks per Track) as `kind=brush-trace` SpatialDataContainers —
+  each PNG row is one sensor-measurement instant along the AFP track,
+  the row's 1292-element intensity vector lives in the
+  `measurements.intensities` JSONB, and the SpatialPointsCanvas adds a
+  third render mode that voxel-decimates the brush-trace field to a
+  responsive heatmap-style point grid.)*
 - **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
   create/read/delete + opt-in `hdf` compose profile + HTTP Basic
   Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the
@@ -169,13 +184,21 @@ Plus payload kinds (the things References point at):
 
 These work the same way across every primitive:
 
-- **Lifecycle status** *(ST1a shipped)*. Every Collection and
-  DataObject carries an optional free-form `status` string.
-  Suggested values DRAFT / IN_REVIEW / READY / PUBLISHED /
-  ARCHIVED; any custom string is accepted. Shown as a coloured
-  chip next to the entity name; editable via the description
-  edit dialog. The field is omitted from JSON when null so
-  upstream API clients are unaffected.
+- **Lifecycle status** *(ST1a / MFG1 / QM1a shipped)*. Every Collection and
+  DataObject carries an optional `status` string drawn from a closed enum:
+  DRAFT / IN_REVIEW / READY / PUBLISHED / ARCHIVED (standard lifecycle) plus
+  NCR_OPEN / ON_HOLD / REJECTED / CERTIFIED / CONCESSION_PENDING (EN 9100 §8.7
+  quality-engineering branch — role-gated on write). Each renders as a
+  distinctly-coloured chip — including an amber-outlined "Concession Pending"
+  badge with a shield-alert icon for the disposition window. The status
+  closed-set enforcement (MFG5) and the quality-engineer role gate (MFG1)
+  mean an auditor can scan a Collection and see at a glance which DataObjects
+  have an open non-conformance, which sit in disposition, and which have been
+  certified. The accompanying "Disposition record" template (QM1c) carries the
+  EN 9100 §8.7 fields (NCR id, defect type, disposition decision, approver
+  ORCID + username, timestamp, notes) as a structured payload on the NCR
+  DataObject. The field is omitted from JSON when null so upstream API
+  clients see no change.
 - **License + access rights** *(LIC1 / FAIR-1 shipped)*. Every
   Collection and DataObject carries an optional `license` (SPDX
   identifier expression, e.g. `CC-BY-4.0`, `MIT`, `Apache-2.0`,
@@ -193,7 +216,14 @@ These work the same way across every primitive:
 - **Lineage / predecessors.** Every DataObject can point at one or
   more predecessors. The "TR-006 was the bearing-replaced re-test
   of TR-004" relationship is a graph edge, traversable in both
-  directions.
+  directions. **Each edge carries a typed PROV-O / FAIR²R
+  relationship** (PROV1k + QM1b shipped): `prov:wasInformedBy` (default /
+  generic), `prov:wasRevisionOf` (re-test), `fair2r:repairs` (rework),
+  `fair2r:concession` (use-as-is disposition). The relationship type can
+  be set at create time or annotated onto an existing edge via
+  `PATCH /v2/collections/{cid}/data-objects/{did}/predecessors/{predAppId}` —
+  so the 9-retry rework loop in `bridgewelding/AF_3` (the MFFD AFP showcase)
+  carries audit-grade disposition metadata in the graph itself.
 - **Versioning + snapshots.** `Version` is a user-visible label.
   **Snapshots** *(V2b + V2c + V2e shipped, UI1a shipped)* are machine-faithful, immutable,
   point-in-time records of an entire Collection subtree — one
@@ -223,8 +253,14 @@ These work the same way across every primitive:
   bookkeeping required. PV1b–PV1g (StructuredData, Spatial, Timeseries,
   RO-Crate integration, retention GC) are follow-on slices.
 - **Search.** Across all entities and attributes; semantic-annotation
-  search lights up additionally for ontology terms. Improvements
-  in flight (`aidocs/13`).
+  search lights up additionally for ontology terms. **L4 shipped
+  2026-06-29**: a dedicated `/semantic/search` page lets a researcher
+  type into a box and watch every loaded ontology term filter live
+  (debounced search-as-you-type), then see each matched term *in its
+  place* — a namespace→term tree or an interactive graph view — so you
+  can tell at a glance which vocabulary a term belongs to before you
+  annotate with it. Reachable from the Semantic hub and the
+  Vocabularies page. Further improvements in flight (`aidocs/13`).
 - **Semantic-annotation repositories — internal *or* external.**
   Reference an ontology term by IRI; resolve labels through one of
   three connector types. **External** SPARQL endpoints (the upstream
@@ -385,6 +421,47 @@ These work the same way across every primitive:
   Phase 2 — `RdkToUrdfExporter` sidecar, Foxglove iframe fallback,
   in-browser trajectory record button, Trace3D+URDF scene
   composition — queued under URDF-WEBVIEW-1.
+- **Derive new data from existing references with a mapping recipe**
+  *(V2CONV-B3 shipped 2026-06-03)*. A `MAPPING_RECIPE` template binds
+  references a researcher already has — a CAD/URDF file, a joint-angle
+  timeseries, a robot program — and **materialises a derived output**:
+  a new reference, or a played/rendered view. The researcher never
+  types a path or URL; they pick the input references by name, and
+  `POST /v2/mappings/{templateAppId}/materialize` resolves everything
+  server-side. This is the generic seam that dissolved the bespoke
+  scene-graph and KRL namespaces — both shipped on this mechanism
+  (**V2CONV-B4** scene-graph converged 2026-06-04; **V2CONV-B5+A6**
+  KRL animation converged 2026-06-04). Any plugin registers a
+  `TransformExecutor` against its recipe's shape and lights up a new
+  "derive this" action with zero new API surface. A built-in identity
+  transform ships so the flow is exercisable out of the box before any
+  plugin is installed. Every materialise run is recorded as a typed
+  provenance Activity, so a derived dataset always carries the recipe
+  + inputs that produced it.
+- **Click a KRL program, see it animate** *(KRL-INTERPRETER-01..06
+  shipped; V2CONV-B5+A6 converged 2026-06-04; -07 MFFD end-to-end
+  showcase next)*. The MFFD AFP cell, the bridge welding cell, and
+  every other ZLP robotic cell at DLR Augsburg ship motion programs as
+  KUKA KRL (`.src` + `.dat`). Shepard animates them without a Windows
+  VM or RoboDK: open the `.src` FileReference, click **"Run / preview"**,
+  pick a URDF FileReference (preselected when only one is present), and
+  `POST /v2/mappings/{templateAppId}/materialize` resolves it via the
+  `krl-interpreter` plugin (`pykrlparser + ikpy`, pure-Python,
+  MIT/Apache-2.0). The resulting 6-channel joint trajectory lands as a
+  `TimeseriesReference` annotated with `urn:shepard:urdf:joint:joint_<n>`
+  — the URDF viewer auto-binds and plays it back without a manual
+  channel-pick step. Every materialise run records a `:MappingActivity`
+  carrying the interpreter version + IK convergence stats so the EN 9100
+  audit trail can reproduce the trajectory months later. The result panel
+  marks every trajectory as **interpreter-resolved offline replay** (per
+  the §13.1 IME/AQE audit-label guidance). **V2CONV-B5+A6 (2026-06-04)**:
+  the bespoke `/v2/krl/*` namespace is gone; KRL is now a
+  `MAPPING_RECIPE` transform-shape routed through the generic
+  materialisation path — the same minimalist-core convergence as
+  scene-graph. The `krl-interpreter` plugin is opt-in (enable via
+  `COMPOSE_PROFILES=krl-interpreter docker compose up -d`; when absent
+  the panel surfaces this hint verbatim). The MFFD end-to-end showcase
+  (-07) is next in this family.
 
 ## How you actually use it
 
@@ -412,10 +489,24 @@ Five typical entry points:
    expanded channel row — 1-second averages for fast load even on large
    datasets); **container storage stats chip** (point count displayed as
    a coloured chip in the timeseries container header); **Collection
-   Lineage Graph** (interactive force-directed graph on the collection
+   Lineage Graph** (interactive dagre-layered graph on the collection
    page showing parent/child and predecessor/successor edges between
-   datasets — drag, zoom, hover for status, click to highlight
-   neighbours); **DataObject Provenance Graph** (force-directed graph on
+   datasets — drag, zoom, hover for status, click to open the dataset
+   detail page; **2026-06-02 — MFFD-scale rewrite** removes the silent
+   150-DO ceiling, adds three-tier Level-Of-Detail (macro ply / process
+   bubbles below 0.3 zoom, meso nodes-only below 0.8, full labels above),
+   filter pills for status / process-type / "Around DO N", and a
+   minimap; renders the full ~20k-edge MFFD lineage in one pane —
+   LINEAGE-GRAPH-MFFD-SCALE shipped 2026-06-02); **Collection Timeline** (process-chain swimlane
+   chronograph on the Collection landing page — one row per
+   process-type derived from `urn:shepard:mffd:process-type`
+   annotations, day-binned DataObject counts as stacked bars in OK /
+   NCR / REJECTED colour; bin-size toggle 1 / 7 / 30 days with
+   server-side auto-coarsening so a 2.6-year campaign stays
+   renderable; the cardinality-friendly answer to "when did NCRs
+   cluster, when did we re-test?" — the temporal projection of the same
+   data that the Lineage graph projects structurally —
+   COLL-TIMELINE-1 shipped 2026-06-02); **DataObject Provenance Graph** (force-directed graph on
    the dataset detail page linking the dataset to related datasets and to
    the users who acted on it, with edge labels for action kinds and
    counts); **personal landing page** (authenticated users land on a
@@ -435,7 +526,13 @@ Five typical entry points:
    **session-expiry warning** (a snackbar fires 5 minutes before the
    access token expires, offering a "Stay signed in" button); **chunk
    error guard** (dynamic-import failures after a deploy now trigger a
-   single silent page reload rather than a broken UI loop).
+   single silent page reload rather than a broken UI loop);
+   **synchronised multi-payload player** (MFFD-MULTIPLAYER-1 — a
+   shared time cursor on the DataObject detail page binds timeseries
+   chart, video playhead, thermography summary, and spatial trajectory
+   readout into a single play/pause/scrub control, so scrubbing the
+   toolbar moves every payload at once — for finding "what happened
+   at t=8.2s when the TCP temperature spiked?" without flipping tabs).
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/lumen-showcase/notebooks/` are the canonical
@@ -499,8 +596,14 @@ The four things on the near horizon, in priority order:
    step** when creating a DataObject or Collection — the blank form is
    the secondary "Start from blank" path. DataObject creation calls the
    T1e server-side instantiation endpoint; Collection creation pre-fills
-   the form and records the `:USES_TEMPLATE` edge. Next: process design +
-   runtime (PR1).
+   the form and records the `:USES_TEMPLATE` edge. **TPL-INHERIT shipped**:
+   an admin template can now **extend a parent template** — the child inherits
+   the parent's fields, reference-creation hints, icon, and annotation defaults,
+   overriding any of them with its own. The admin editor shows the inherited
+   fields read-only alongside the child's own, and DataObject-from-template
+   creation pre-fills from the merged set, so a campaign's process steps can
+   share a common base recipe without copy-pasting it into each. Next: process
+   design + runtime (PR1).
 4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
    **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
    edit dialog in-flight. RO-Crate exports now cite authors when the
@@ -526,12 +629,15 @@ Mid-horizon:
   lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
   versions of a note so researchers can recover earlier drafts. **J1e shipped
-  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out
-  (`:JupyterConfig` singleton + `/v2/admin/jupyter/config` + `shepard-admin
-  jupyter` CLI). Notebooks are no longer in a dedicated DataObject panel;
-  they show up as **Notebook**-kind rows in the unified Data References table
-  with a one-click "Open in JupyterHub" launch button gated on the admin
-  config (REF-UNIFIED-TABLE-FR1B). The launch URL composes
+  (replaces J1c)** — instance-wide admin-configurable JupyterHub link-out,
+  delivered via `shepard-plugin-jupyter` (installed by default; not in-core).
+  (`:JupyterConfig` singleton + `GET/PATCH /v2/admin/plugins/jupyter/config` +
+  `shepard-admin jupyter` CLI + JupyterHub compose sidecar path-mounted at
+  `/jupyterhub`; backend + CLI classes live in `plugins/jupyter/`). Notebooks
+  are no longer in a dedicated DataObject panel; they show up as
+  **Notebook**-kind rows in the unified Data References table with a one-click
+  "Open in JupyterHub" launch button gated on the admin config
+  (REF-UNIFIED-TABLE-FR1B). The launch URL composes
   `{hubUrl}/hub/spawn?file={download-url}` so any standard JupyterHub deploy
   can absorb it.
 - **REST-driven digital-twin scene editing** (`aidocs/data/85`, DT1
@@ -542,10 +648,41 @@ Mid-horizon:
   edit produces a `:Activity` with a `:WAS_DERIVED_FROM` link back to
   the prior activity for the same scene, giving the audit chain a
   proper graph walk. URDF export pipes the scene into Foxglove / RViz
-  / Isaac via the canonical robot-description format. Real graph
-  browser UI (SCENEGRAPH-REST-1-UI) and per-scene permission anchor
-  (SCENEGRAPH-PERMS-1) queued; placeholder page at `/scene-graphs/<appId>`
-  ships meanwhile.
+  / Isaac via the canonical robot-description format. **Scene-graph
+  browser UI shipped (SCENEGRAPH-REST-1-UI)** — page at
+  `/scene-graphs/{appId}` with frame tree + sticky inspector + joints
+  table + Add/Edit/Delete dialogs + URDF download. **First real-data
+  scene-graph shipped** — the MFFD AFP cell at ZLP Augsburg materialised
+  as a two-robot KR210 R2700/2 scene (`r10_` + `r20_` subtrees under a
+  shared `cell_base` root, 21 frames + 18 joints) by
+  `examples/mffd-rdk-urdf-showcase/scenegraph/build_mffd_scene.py` —
+  pure-stdlib URDF parser, idempotent re-runs, follow-on
+  `urn:shepard:scenegraph:scene-appId` annotation on the kr210 URDF
+  FileReference so the scene is discoverable from its source artefact.
+  **Per-scene permission gate shipped (SCENEGRAPH-PERMS-1, 2026-05-31)**
+  — scenes inherit Read/Write from their source URDF FileReference's
+  parent Collection. **Collection-level hero scene-graph shipped
+  (COLL-SCENE-1 + COLL-SCENE-2-UI, 2026-06-02)** — every Collection
+  can pin one `:DigitalTwinScene` (the physical robot cell, test
+  bench, instrument layout) that renders as a URDF-viewer band above
+  the Collection's DataObject list. The MFFD AFP cell now surfaces
+  directly on the Collection landing page that contains its tracks
+  rather than living one click away in `/scene-graphs/{appId}`.
+  **Scene-graph converged into the generic MAPPING_RECIPE mechanism
+  (V2CONV-B4, 2026-06-04)** — a scene-graph is no longer a stored
+  frames/joints graph but a `MAPPING_RECIPE` template binding a URDF
+  FileReference (parsed on demand) + an optional joint TimeseriesReference,
+  played back by the Trace3D renderer via
+  `POST /v2/mappings/{templateAppId}/materialize` against the
+  `SceneGraphPlayShape`. The bespoke `/v2/scene-graphs/*` namespace, the
+  stored `:DigitalTwinScene` graph, and the `scene_graph_*` MCP tools were
+  removed; the URDF FileReference is the single source of truth. The 3D
+  view is reached in-context from a URDF FileReference's detail page
+  ("Create / Open 3D view"), and a Collection's hero view now pins a
+  MAPPING_RECIPE template. This is the same minimalist-core convergence
+  that the v2-surface-convergence design (`aidocs/platform/191`) applies
+  across the fork: domain verticals become template shapes routed through
+  generic SPIs, not bespoke namespaces.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
@@ -556,7 +693,15 @@ Mid-horizon:
   pure Java, no ML library, LLM-independent; configurable rolling
   window (default 51) and Z-score threshold k (default 6.0);
   optional `createAnnotations=true` persists one `TimeseriesAnnotation`
-  per contiguous anomaly run. **AI1a shipped** — `shepard-plugin-ai`
+  per contiguous anomaly run. **MFFD-NDT-QUALITY-1 shipped** —
+  `POST /v2/thermography/analyze` + `GET /v2/thermography/{appId}/plate-heatmap`
+  for FileBundleReferences of TIFF frames: pure deterministic Java
+  metric (no AI backend required); per-frame peak-delta-c +
+  hot-spot centroid; bundle-wide composite plate heatmap; DataObject-
+  level `quality-score` chip green / amber / red on the detail page.
+  The MFFD upper-shell NDT use case can find an overheated ply at a
+  glance instead of clicking through 6,000 thermal frames. **AI1a shipped** —
+  `shepard-plugin-ai`
   LlmProvider SPI: connects any OpenAI-compatible endpoint per
   capability slot (TEXT / FAST_TEXT / …); admin-configurable at
   runtime via `PATCH /v2/admin/ai/capabilities/{capability}`; writes
@@ -665,9 +810,27 @@ Mid-horizon:
   upload (`POST /v2/data-objects/{appId}/video-stream-references`),
   ffprobe metadata extraction (`durationSeconds`, `width`, `height`,
   `frameRate`, `videoCodec`, `audioCodec`), and `wallClockTimestamp`
-  as the TM1 temporal anchor. Still ahead: HLS segmentation, live
-  ingest via `shepard-video-collector` / MediaMTX sidecar,
-  video-time + wall-clock navigation, frame extraction (VID1d).
+  as the TM1 temporal anchor. **MFFD-VIDEOREF-SCALE-1 shipped
+  2026-06-02**: the download endpoint honours HTTP Range requests
+  (206 Partial Content + `Content-Range` + `Accept-Ranges`) so a
+  researcher can scrub a multi-GB welding video inside the browser
+  without downloading the whole file first. `JWTFilter` accepts the
+  JWT via `?access_token=…` per RFC 6750 §2.3 because the HTML5
+  `<video>` element can't inject custom headers. Still ahead: HLS
+  segmentation for very-long videos (`MFFD-VIDEOREF-HLS-1`), live
+  ingest via `shepard-video-collector` / MediaMTX sidecar
+  (`MFFD-VIDEOREF-LIVE-1`), AI keyframe extraction
+  (`MFFD-VIDEOREF-KEYFRAME-1`), transcoding pipeline
+  (`MFFD-VIDEOREF-TRANSCODE-1`).
+- **ImageBundle at MFFD scale** (`MFFD-IMAGEBUNDLE-PAGINATE-1` +
+  `MFFD-IMAGEBUNDLE-SCRUBBER-1` shipped 2026-06-02). A new paginated
+  `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files`
+  endpoint plus a generic `ImageBundleViewer.vue` frame scrubber
+  (large preview + range slider + virtualised thumbnail strip,
+  lazy-loaded thumbnails). Built specifically for the 313,538-PNG-frame
+  MFFD TPS raw-data cardinality (38 frames × 8,251 tracks per the
+  AAC1 inventory). Compare-mode across DataObjects deferred to
+  `MFFD-IMAGEBUNDLE-COMPARE-1`.
 - **`FileReference` → `FileBundleReference` + `FileGroup` rename**
   (`aidocs/53`, FR1 series — **FR1a + FR1b shipped**. FR1a: V21
   migration adds the second label + default group; `/v2/bundles/{appId}`

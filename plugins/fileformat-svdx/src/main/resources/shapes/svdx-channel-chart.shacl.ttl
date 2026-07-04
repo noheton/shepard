@@ -1,0 +1,154 @@
+# svdx-channel-chart.shacl.ttl — SvdxChannelChartShape, a VIEW_RECIPE shape.
+#
+# VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29 PR-3 / SVDX-PARSED-CONTENT-SHAPE-2026-06-29.
+#
+# The first VIEW_RECIPE concretion that consumes the urn:shepard:svdx:* manifest
+# annotations the SvdxManifestParser emits on every uploaded .svdx file (see
+# plugins/fileformat-svdx/src/main/java/.../SvdxManifestParser.java).
+#
+# Background — what this shape solves
+# -----------------------------------
+# F-svdx-content (screenshots/F-svdx-content.png) showed an SVDX DataObject
+# landing — citation, annotations, file-reference panel — but NOT the *shape* of
+# the data inside the .svdx (the parsed channels). The MFFD spot-welding seed
+# (collection mffd-spot-welding, 019ed455-67f7-7725-bf2d-7cd1b67aca9f) carries 21
+# .svdx FileReferences, 20 of which already have 213 urn:shepard:svdx:*
+# semantic-annotation rows each (channelName, symbolName, dataType, amsNetId,
+# port, channelCount, ...). The data IS there — what was missing was a recipe
+# that renders the catalogue.
+#
+# Why a VIEW_RECIPE (and not a one-off Vue page)
+# ----------------------------------------------
+# Per the VIEWER-AS-VIEW-RECIPE-RULE-2026-06-29 doctrine in
+# aidocs/16-dispatcher-backlog.md: every file viewer surface (URDF, OTvis,
+# video, SVDX, future kinds) must ship as a `VIEW_RECIPE` ShepardTemplate
+# consumed through POST /v2/shapes/render — not a bespoke Vue page. View-recipes
+# are the single, semantic, declarative substrate for "how to render this
+# artefact"; bespoke pages fork the renderer dispatch, template editor, MCP
+# discovery, and the agent-facing contract.
+#
+# A separate TimeseriesReference IS NOT REQUIRED
+# ----------------------------------------------
+# The sibling SvdxCsvIngestShape (svdx-csv-ingest.shacl.ttl, V2CONV-A7) mints a
+# derived TimeseriesReference from the operator-generated .csv sibling. That
+# MAPPING_RECIPE produces the *quantitative* data. This VIEW_RECIPE is the
+# *qualitative* sibling — it surfaces the channel CATALOGUE (which channels were
+# recorded, on which device, in which dataType) from the manifest alone, with no
+# .csv required. The two compose: an admin can attach both recipes to the same
+# DataObject; this recipe renders the channel inventory; the derived
+# TimeseriesReference (if it exists) renders the actual samples.
+#
+# Today's seeded welding files have NO .csv siblings (SVDX-CSV-SIBLINGS-MISSING),
+# so the SvdxCsvIngestShape can't materialize. This recipe is the only one that
+# can surface their content right now.
+#
+# Dispatch key (the IRI the VIEW_RECIPE body's `viewRecipeShape` field names):
+# http://semantics.dlr.de/shepard-ui/svdx#SvdxChannelChartShape
+#
+# Consumed by:
+#   • POST /v2/shapes/render — resolves this shape IRI to SvdxChannelChartRenderer
+#     via the fail-soft ViewRecipeRendererRegistry. Reads the focus
+#     FileReference's urn:shepard:svdx:* annotations via SemanticAnnotationDAO
+#     and projects them as a structured catalogue + per-channel binding entries.
+#
+# Cross-refs:
+#   aidocs/16-dispatcher-backlog.md — VIEWER-AS-VIEW-RECIPE-RULE PR-3 +
+#     SVDX-PARSED-CONTENT-SHAPE-2026-06-29 rows
+#   plugins/fileformat-svdx/src/main/java/.../SvdxManifestParser.java —
+#     producer of the urn:shepard:svdx:* annotations this recipe consumes
+#   backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl — meta-shape
+#   memory/feedback_file_viewers_as_view_recipe.md — the doctrine
+
+@prefix shepard:    <http://semantics.dlr.de/shepard-upper#> .
+@prefix shepard-ui: <http://semantics.dlr.de/shepard-ui#> .
+@prefix svdx-ui:    <http://semantics.dlr.de/shepard-ui/svdx#> .
+@prefix svdx:       <urn:shepard:svdx:> .
+@prefix sh:         <http://www.w3.org/ns/shacl#> .
+@prefix owl:        <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:       <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:        <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: SvdxChannelChartViewRecipe ────────────────────────────────
+
+svdx-ui:SvdxChannelChartViewRecipe a owl:Class ;
+    rdfs:label "SVDX channel chart view recipe"@en ;
+    rdfs:comment "A VIEW_RECIPE specialisation that renders the channel catalogue (channelName / symbolName / dataType / amsNetId / port) extracted from a Beckhoff TwinCAT Scope .svdx file's manifest. Consumes urn:shepard:svdx:* SemanticAnnotations emitted on upload by the SvdxManifestParser (FileParserPlugin). NOT the quantitative data renderer — for sample values use the SvdxCsvIngestShape MAPPING_RECIPE sibling, which mints a derived TimeseriesReference from the paired CSV export."@en ;
+    rdfs:subClassOf shepard-ui:ViewRecipe .
+
+# ─── Shape: SvdxChannelChartShape ─────────────────────────────────────
+
+svdx-ui:SvdxChannelChartShape a sh:NodeShape ;
+    sh:targetClass svdx-ui:SvdxChannelChartViewRecipe ;
+
+    # The dispatch-key IRI MUST appear in the template body's
+    # `viewRecipeShape` field for the render endpoint to route here.
+    rdfs:comment "Bound via viewRecipeShape = http://semantics.dlr.de/shepard-ui/svdx#SvdxChannelChartShape" ;
+
+    # ─── Focus addressing ─────────────────────────────────────────────
+    #
+    # The recipe expects either:
+    #   (a) a focusShepardId that resolves to a .svdx SingletonFileReference, OR
+    #   (b) a focusShepardId that resolves to a DataObject whose only file-ref
+    #       child is a .svdx (the F-svdx-content shot's scenario).
+    # The renderer probes both — see SvdxChannelChartRenderer for the resolution
+    # cascade.
+
+    # ─── Optional rendering knobs ─────────────────────────────────────
+
+    sh:property [
+        sh:path     svdx-ui:groupBy ;
+        sh:datatype xsd:string ;
+        sh:in       ( "dataType" "amsNetId" "symbolPrefix" "none" ) ;
+        sh:name     "Group channels by" ;
+        sh:description "How the frontend chart groups the channel catalogue. `dataType` groups REAL32 / INT16 / BIT / UINT64 buckets. `amsNetId` groups by TwinCAT ADS host (typical of multi-device recordings). `symbolPrefix` groups by the leading GVL/PRG path component of the SymbolName (e.g. RobotData.* vs GVL_IO_US.*). `none` lists channels in declared order. Default: `dataType`." ;
+        sh:order    10 ;
+    ] ;
+
+    sh:property [
+        sh:path     svdx-ui:showAcquisitions ;
+        sh:datatype xsd:boolean ;
+        sh:name     "Surface ADS acquisitions" ;
+        sh:description "When true, the projection includes ADS-acquisition entries (the data-source layer; typically more entries than rendered channels because of trigger groups). When false, only the rendered <Channel> entries are projected. Default: true." ;
+        sh:order    20 ;
+    ] ;
+
+    sh:property [
+        sh:path     svdx-ui:maxChannels ;
+        sh:datatype xsd:int ;
+        sh:name     "Maximum channels to project" ;
+        sh:description "Cap on the number of channel/acquisition entries returned. Defaults to 200; the MFFD welding files top out around 46 channels / 149 acquisitions, so the default surfaces the full catalogue. Set to a small number for a preview card on a dashboard tile." ;
+        sh:order    30 ;
+    ] .
+
+# ─── Worked example (informational) ───────────────────────────────────
+#
+# A VIEW_RECIPE template body targeting SvdxChannelChartShape:
+#
+# {
+#   "templateKind": "VIEW_RECIPE",
+#   "title": "TwinCAT Scope channels (.svdx)",
+#   "renderer": "svdx-channel-chart",
+#   "viewRecipeShape": "http://semantics.dlr.de/shepard-ui/svdx#SvdxChannelChartShape",
+#   "svdx-ui:groupBy": "dataType",
+#   "svdx-ui:showAcquisitions": true,
+#   "svdx-ui:maxChannels": 200
+# }
+#
+# Render call against an SVDX DataObject (focusShepardId = the DO appId — the
+# renderer walks its child FileReferences and finds the .svdx automatically):
+#
+#   POST /v2/shapes/render
+#   { "templateAppId": "<svdx-channel-chart-template-appId>",
+#     "focusShepardId": "<svdx-dataobject-appId>" }
+#
+# Or against a .svdx FileReference directly:
+#
+#   POST /v2/shapes/render
+#   { "templateAppId": "<svdx-channel-chart-template-appId>",
+#     "focusShepardId": "<svdx-filereference-appId>" }
+#
+# Both return a 200 with channelBindings populated. One ChannelBindingProjection
+# per channel / acquisition (status=OK; channelSelector = JSON of the channel's
+# {channelName, symbolName, dataType, amsNetId, port}; resolved.channelRef = the
+# FileReference appId). The shape's groupBy/showAcquisitions knobs steer how the
+# frontend renders the projected list.

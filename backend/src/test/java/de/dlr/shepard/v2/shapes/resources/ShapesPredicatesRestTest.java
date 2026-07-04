@@ -6,10 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.shapes.io.PredicateVocabularyEntryIO;
 import de.dlr.shepard.v2.shapes.repositories.PredicateVocabularyRepository;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +27,10 @@ import org.mockito.MockitoAnnotations;
  *   <li>No substrate filter → {@link PredicateVocabularyRepository#findAll()} called</li>
  *   <li>Substrate filter → {@link PredicateVocabularyRepository#findBySubstrate(String)} called</li>
  *   <li>Blank substrate filter treated as absent (calls findAll)</li>
- *   <li>Empty result set → 200 with empty list</li>
+ *   <li>Empty result set → 200 with empty items list</li>
  *   <li>Endpoint is @RolesAllowed("authenticated")</li>
+ *   <li>limit param caps the returned items list</li>
+ *   <li>PagedResponseIO envelope is returned with correct total</li>
  * </ol>
  */
 class ShapesPredicatesRestTest {
@@ -46,7 +50,7 @@ class ShapesPredicatesRestTest {
 
   @Test
   void predicatesEndpoint_isAnnotatedWithAuthenticatedRole() throws Exception {
-    var method = ShapesPredicatesRest.class.getMethod("predicates", String.class);
+    var method = ShapesPredicatesRest.class.getMethod("predicates", String.class, int.class);
     RolesAllowed annotation = method.getAnnotation(RolesAllowed.class);
     assertNotNull(annotation, "GET /v2/shapes/predicates must be @RolesAllowed-gated");
     assertEquals("authenticated", annotation.value()[0]);
@@ -59,13 +63,14 @@ class ShapesPredicatesRestTest {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
     when(repository.findAll()).thenReturn(List.of(entry));
 
-    Response r = rest.predicates(null);
+    Response r = rest.predicates(null, 200);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PredicateVocabularyEntryIO> body = (List<PredicateVocabularyEntryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("neo4j", body.get(0).substrate());
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals("neo4j", body.items().get(0).substrate());
     verify(repository).findAll();
   }
 
@@ -73,7 +78,7 @@ class ShapesPredicatesRestTest {
   void blankSubstrateFilter_callsFindAll() {
     when(repository.findAll()).thenReturn(List.of());
 
-    Response r = rest.predicates("  ");
+    Response r = rest.predicates("  ", 200);
 
     assertEquals(200, r.getStatus());
     verify(repository).findAll();
@@ -86,13 +91,14 @@ class ShapesPredicatesRestTest {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
     when(repository.findBySubstrate("neo4j")).thenReturn(List.of(entry));
 
-    Response r = rest.predicates("neo4j");
+    Response r = rest.predicates("neo4j", 200);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PredicateVocabularyEntryIO> body = (List<PredicateVocabularyEntryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("neo4j", body.get(0).substrate());
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals("neo4j", body.items().get(0).substrate());
     verify(repository).findBySubstrate("neo4j");
   }
 
@@ -101,29 +107,65 @@ class ShapesPredicatesRestTest {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#approvalDocument", "garage");
     when(repository.findBySubstrate("garage")).thenReturn(List.of(entry));
 
-    Response r = rest.predicates("garage");
+    Response r = rest.predicates("garage", 200);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PredicateVocabularyEntryIO> body = (List<PredicateVocabularyEntryIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("garage", body.get(0).substrate());
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals("garage", body.items().get(0).substrate());
     verify(repository).findBySubstrate("garage");
   }
 
   // ─── empty result ──────────────────────────────────────────────────────────
 
   @Test
-  void emptyRepository_returns200WithEmptyList() {
+  void emptyRepository_returns200WithEmptyItemsList() {
     when(repository.findAll()).thenReturn(List.of());
 
-    Response r = rest.predicates(null);
+    Response r = rest.predicates(null, 200);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PredicateVocabularyEntryIO> body = (List<PredicateVocabularyEntryIO>) r.getEntity();
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
     assertNotNull(body);
-    assertTrue(body.isEmpty());
+    assertTrue(body.items().isEmpty());
+    assertEquals(0L, body.total());
+  }
+
+  // ─── limit capping ─────────────────────────────────────────────────────────
+
+  @Test
+  void limitParam_capsReturnedItems() {
+    List<PredicateVocabularyEntryIO> all = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      all.add(makeEntry("http://example.org/p" + i, "neo4j"));
+    }
+    when(repository.findAll()).thenReturn(all);
+
+    Response r = rest.predicates(null, 3);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
+    assertEquals(3, body.items().size());
+    assertEquals(10L, body.total());
+    assertEquals(3, body.pageSize());
+    assertEquals(0, body.page());
+  }
+
+  @Test
+  void limitGreaterThanTotal_returnsAllItems() {
+    var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
+    when(repository.findAll()).thenReturn(List.of(entry));
+
+    Response r = rest.predicates(null, 500);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
   }
 
   // ─── helper ────────────────────────────────────────────────────────────────

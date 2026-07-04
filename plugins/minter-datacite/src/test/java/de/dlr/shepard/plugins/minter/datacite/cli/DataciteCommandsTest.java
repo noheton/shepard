@@ -54,7 +54,7 @@ class DataciteCommandsTest {
 
   @Test
   void status_humanOutput_rendersTable() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteStatusCommand(), backend.baseUrl(), "test-key");
 
@@ -68,7 +68,7 @@ class DataciteCommandsTest {
 
   @Test
   void status_jsonOutput_emitsParseableJson() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteStatusCommand(), backend.baseUrl(), "test-key", "--output=json");
 
@@ -81,7 +81,7 @@ class DataciteCommandsTest {
   void status_humanOutput_showsUnsetForBlankCredential() {
     String body = STATUS_BODY.replace("\"passwordSet\":true", "\"passwordSet\":false")
       .replace("\"passwordFingerprint\":\"deadbeef\"", "\"passwordFingerprint\":null");
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> body);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> body);
 
     Captured cap = CliRunner.run(new DataciteStatusCommand(), backend.baseUrl(), "test-key");
 
@@ -93,7 +93,7 @@ class DataciteCommandsTest {
 
   @Test
   void enable_sendsPatchWithEnabledTrue() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteEnableCommand(), backend.baseUrl(), "test-key");
 
@@ -108,7 +108,7 @@ class DataciteCommandsTest {
   @Test
   void enable_warnsWhenPasswordMissing() {
     String body = STATUS_BODY.replace("\"passwordSet\":true", "\"passwordSet\":false");
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> body);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> body);
 
     Captured cap = CliRunner.run(new DataciteEnableCommand(), backend.baseUrl(), "test-key");
 
@@ -118,7 +118,7 @@ class DataciteCommandsTest {
 
   @Test
   void disable_sendsPatchWithEnabledFalse() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteDisableCommand(), backend.baseUrl(), "test-key");
 
@@ -131,7 +131,7 @@ class DataciteCommandsTest {
 
   @Test
   void setApiUrl_sendsPatch() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(
       new DataciteSetApiUrlCommand(),
@@ -147,7 +147,7 @@ class DataciteCommandsTest {
 
   @Test
   void setApiUrl_blankArgClearsField() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteSetApiUrlCommand(), backend.baseUrl(), "test-key", "");
 
@@ -157,7 +157,7 @@ class DataciteCommandsTest {
 
   @Test
   void setPrefix_sendsPatch() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteSetPrefixCommand(), backend.baseUrl(), "test-key", "10.1234");
 
@@ -167,7 +167,7 @@ class DataciteCommandsTest {
 
   @Test
   void setRepositoryId_sendsPatch() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteSetRepositoryIdCommand(), backend.baseUrl(), "test-key", "DLR.X");
 
@@ -177,7 +177,7 @@ class DataciteCommandsTest {
 
   @Test
   void setPublisher_sendsPatch() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteSetPublisherCommand(), backend.baseUrl(), "test-key", "Some Institute");
 
@@ -187,7 +187,7 @@ class DataciteCommandsTest {
 
   @Test
   void setLandingPageBase_sendsPatch() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(
       new DataciteSetLandingPageBaseCommand(),
@@ -202,7 +202,7 @@ class DataciteCommandsTest {
 
   @Test
   void setState_sendsPatchWithValue() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     Captured cap = CliRunner.run(new DataciteSetStateCommand(), backend.baseUrl(), "test-key", "registered");
 
@@ -214,7 +214,7 @@ class DataciteCommandsTest {
   void setState_serverRejectionFlowsThroughAsError() {
     // Server returns 400 problem+json — CLI exits non-zero.
     backend.route(
-      "/v2/admin/minters/datacite/config",
+      "/v2/admin/config/minter-datacite",
       400,
       rr -> "{\"type\":\"/problems/minters.datacite.config.bad-state\",\"title\":\"Invalid patch value\",\"status\":400,\"detail\":\"bad state\"}"
     );
@@ -345,7 +345,7 @@ class DataciteCommandsTest {
 
   @Test
   void apiKeyHeaderForwarded() {
-    backend.route("/v2/admin/minters/datacite/config", 200, rr -> STATUS_BODY);
+    backend.route("/v2/admin/config/minter-datacite", 200, rr -> STATUS_BODY);
 
     CliRunner.run(new DataciteStatusCommand(), backend.baseUrl(), "secret-api-key");
 

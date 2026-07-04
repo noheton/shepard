@@ -3,6 +3,8 @@ package de.dlr.shepard.auth.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.role.daos.RoleDAO;
+import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.Constants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -73,6 +75,16 @@ public class JwtTokenAuthService {
   @Inject
   RoleDAO roleDAO;
 
+  /**
+   * ROLE-GRANT-STALE-SESSION-02 — request-scoped DAO used to read the
+   * affected user's {@code roleChangedAt} stamp on every JWT parse. Null
+   * in test-only constructors that don't exercise the gate; in that case
+   * {@link #lookupRoleChangedAtMillis(String)} returns {@code null} and
+   * the gate is a no-op.
+   */
+  @Inject
+  UserDAO userDAO;
+
   /** Required by the CDI runtime for {@code @ApplicationScoped} proxy generation. */
   protected JwtTokenAuthService() {
     this.oidcPublicKey = null;
@@ -131,6 +143,23 @@ public class JwtTokenAuthService {
     String usernameClaim,
     RoleDAO roleDAO
   ) {
+    this(oidcPublicKey, requiredOidcRole, rolesClaimPath, instanceAdminClaimValue, usernameClaim, roleDAO, null);
+  }
+
+  /**
+   * Test-only constructor that also injects a {@link UserDAO} so the
+   * ROLE-GRANT-STALE-SESSION-02 gate can be exercised in unit tests.
+   * Production code uses CDI injection of both DAOs.
+   */
+  JwtTokenAuthService(
+    PublicKey oidcPublicKey,
+    String requiredOidcRole,
+    String[] rolesClaimPath,
+    String instanceAdminClaimValue,
+    String usernameClaim,
+    RoleDAO roleDAO,
+    UserDAO userDAO
+  ) {
     this.oidcPublicKey = oidcPublicKey;
     this.requiredOidcRole = requiredOidcRole == null ? "" : requiredOidcRole;
     this.rolesClaimPath = rolesClaimPath == null ? new String[0] : rolesClaimPath;
@@ -138,6 +167,7 @@ public class JwtTokenAuthService {
       instanceAdminClaimValue == null ? "" : instanceAdminClaimValue.trim();
     this.usernameClaim = usernameClaim == null ? "" : usernameClaim.trim();
     this.roleDAO = roleDAO;
+    this.userDAO = userDAO;
   }
 
   /**
@@ -198,12 +228,64 @@ public class JwtTokenAuthService {
 
     String username = extractUsername(body, subject);
 
-    Set<String> resolvedRoles = resolveDualSourceRoles(username, idpRoles);
-
     java.util.Date issuedAt = body.getIssuedAt();
     long iat = issuedAt != null ? issuedAt.getTime() / 1000L : 0L;
 
-    return new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
+    // ROLE-GRANT-STALE-SESSION-02 — reject tokens that pre-date the user's
+    // most recent role mutation so the user is forced to re-auth and pick
+    // up the new role set. The Neo4j read is the same cost as the role-
+    // lookup below; we accept the per-request cost. Throws so the filter
+    // can produce a 401 with a structured `error: "role_changed"` body
+    // distinct from generic invalid-token responses.
+    Long roleChangedAtMillis = lookupRoleChangedAtMillis(username);
+    if (roleChangedAtMillis != null && iat > 0L) {
+      long iatMillis = iat * 1000L;
+      if (iatMillis < roleChangedAtMillis) {
+        Log.warnf(
+          "Rejecting JWT for '%s': iat=%dms predates roleChangedAt=%dms",
+          username,
+          iatMillis,
+          roleChangedAtMillis
+        );
+        throw new RoleChangedSinceTokenIssuedException(iatMillis, roleChangedAtMillis);
+      }
+    }
+
+    Set<String> resolvedRoles = resolveDualSourceRoles(username, idpRoles);
+
+    JWTPrincipal jwtPrincipal = new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
+    // BUG-USER-PROVISION-EMAIL-COLLISION: carry the email claim so AuthenticationContext
+    // can pass it to UserService.getCurrentUser as a fallback when the stored username
+    // diverges from the token's preferred_username (e.g. service-account UUID vs. "admin").
+    String emailClaim = body.get("email", String.class);
+    if (emailClaim != null && !emailClaim.isBlank()) {
+      jwtPrincipal.setEmail(emailClaim);
+    }
+    return jwtPrincipal;
+  }
+
+  /**
+   * ROLE-GRANT-STALE-SESSION-02 — read the user's {@code roleChangedAt}
+   * stamp from Neo4j. Returns {@code null} when the user is unknown (the
+   * principal will still be minted; the gate only fires on known users)
+   * OR the field is unset (pre-feature rows) OR the DAO is unavailable
+   * (test setups without UserDAO injection). Defensive try/catch so a
+   * Neo4j hiccup on the gate read does not break authentication
+   * altogether — a transient DAO error simply lets the token through
+   * (fail-open on a secondary check; the primary signature gate has
+   * already passed).
+   */
+  Long lookupRoleChangedAtMillis(String username) {
+    if (userDAO == null || username == null || username.isBlank()) return null;
+    try {
+      User u = userDAO.find(username);
+      if (u == null) return null;
+      java.util.Date stamp = u.getRoleChangedAt();
+      return stamp == null ? null : stamp.getTime();
+    } catch (RuntimeException ex) {
+      Log.warnf("Failed to load roleChangedAt for %s: %s", username, ex.getMessage());
+      return null;
+    }
   }
 
   /**

@@ -81,6 +81,10 @@ public class SpatialDataContainerService
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setName(containerIO.getName());
+    // MFFD-SPATIAL-FRAME-HANDSHAKE: pass through the optional CoordinateFrame appId
+    // so the Neo4j entity carries the same frame identity as its PostGIS sibling
+    // row. Null is permitted (the field is optional). See aidocs/data/85.
+    toCreate.setFrameAppId(containerIO.getFrameAppId());
 
     var created = containerDao.createOrUpdate(toCreate);
     permissionsService.createPermissions(created, user, PermissionType.Private);

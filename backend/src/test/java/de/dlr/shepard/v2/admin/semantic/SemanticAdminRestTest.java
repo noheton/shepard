@@ -27,7 +27,6 @@ import de.dlr.shepard.context.semantic.services.OntologyConfigService.RemoveResu
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.SetEnabledResult;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService.UploadResult;
 import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleIO;
-import de.dlr.shepard.v2.admin.semantic.io.OntologyBundleListIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesRequestIO;
 import de.dlr.shepard.v2.admin.semantic.io.RefreshOntologiesResultIO;
 import jakarta.annotation.security.RolesAllowed;
@@ -45,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+@SuppressWarnings("unchecked")
 class SemanticAdminRestTest {
 
   private OntologyRefreshService refreshService;
@@ -291,10 +291,10 @@ class SemanticAdminRestTest {
     var r = rest.listOntologies(securityContext);
 
     assertEquals(200, r.getStatus());
-    OntologyBundleListIO body = (OntologyBundleListIO) r.getEntity();
-    assertEquals(2, body.getBundles().size());
-    assertEquals("prov-o", body.getBundles().get(0).getId());
-    assertEquals("user", body.getBundles().get(1).getSource());
+    List<OntologyBundleIO> body = (List<OntologyBundleIO>) r.getEntity();
+    assertEquals(2, body.size());
+    assertEquals("prov-o", body.get(0).getId());
+    assertEquals("user", body.get(1).getSource());
   }
 
   @Test
@@ -302,8 +302,8 @@ class SemanticAdminRestTest {
     when(configService.listMerged(any())).thenReturn(List.of());
     var r = rest.listOntologies(securityContext);
     assertEquals(200, r.getStatus());
-    OntologyBundleListIO body = (OntologyBundleListIO) r.getEntity();
-    assertTrue(body.getBundles().isEmpty());
+    List<OntologyBundleIO> body = (List<OntologyBundleIO>) r.getEntity();
+    assertTrue(body.isEmpty());
   }
 
   @Test
@@ -762,10 +762,21 @@ class SemanticAdminRestTest {
   }
 
   @Test
-  void upload_blankMetadata_returns400() throws Exception {
+  void upload_blankMetadata_returns400Problem() throws Exception {
     FileUpload fu = makeFileUpload("@prefix x: <http://x/> .".getBytes(StandardCharsets.UTF_8));
     var r = rest.uploadOntology(fu, "", securityContext);
     assertEquals(400, r.getStatus());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals(SemanticAdminRest.PROBLEM_TYPE_BUNDLE_BAD_METADATA, body.type());
+  }
+
+  @Test
+  void upload_nullMetadata_returns400Problem() throws Exception {
+    FileUpload fu = makeFileUpload("@prefix x: <http://x/> .".getBytes(StandardCharsets.UTF_8));
+    var r = rest.uploadOntology(fu, null, securityContext);
+    assertEquals(400, r.getStatus());
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertEquals(SemanticAdminRest.PROBLEM_TYPE_BUNDLE_BAD_METADATA, body.type());
   }
 
   @Test

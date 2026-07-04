@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {
-  CreateGitCredentialIO,
-  GitCredentialIO,
-  PatchGitCredentialIO,
+  CreateGitCredential,
+  GitCredential,
+  PatchGitCredential,
 } from "@dlr-shepard/backend-client";
 import { useFetchGitCredentials } from "~/composables/context/useFetchGitCredentials";
 import { useManageGitCredentials } from "~/composables/context/useManageGitCredentials";
@@ -13,20 +13,20 @@ const { create, patch, remove, isSaving, saveError } = useManageGitCredentials()
 const showAddDialog = ref(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
-const editingCredential = ref<GitCredentialIO | null>(null);
+const editingCredential = ref<GitCredential | null>(null);
 const deletingAppId = ref<string | null>(null);
 
 const showAddPat = ref(false);
 const showEditPat = ref(false);
 
-const addForm = ref<CreateGitCredentialIO>({
+const addForm = ref<CreateGitCredential>({
   host: "",
   displayName: "",
   username: "",
   pat: "",
 });
 
-const editForm = ref<PatchGitCredentialIO>({
+const editForm = ref<PatchGitCredential>({
   displayName: "",
   username: "",
   pat: "",
@@ -38,7 +38,7 @@ function openAddDialog() {
   showAddDialog.value = true;
 }
 
-function openEditDialog(credential: GitCredentialIO) {
+function openEditDialog(credential: GitCredential) {
   editingCredential.value = credential;
   editForm.value = {
     displayName: credential.displayName ?? "",
@@ -76,7 +76,7 @@ async function submitAdd() {
 
 async function submitEdit() {
   if (!editingCredential.value) return;
-  const body: PatchGitCredentialIO = {
+  const body: PatchGitCredential = {
     displayName: editForm.value.displayName?.trim() || null,
     username: editForm.value.username?.trim() || undefined,
   };
@@ -98,9 +98,10 @@ async function confirmDelete() {
   }
 }
 
-function truncateAppId(appId: string): string {
-  return appId.length > 12 ? appId.slice(0, 12) + "…" : appId;
-}
+// II3 (ui-scrutinizer-2026-05-30): truncation + click-to-copy moved into
+// the shared `<CopyableAppIdChip>` (utils/appId.ts). Settling on the 8…4
+// shape across every surface (was 12…+ here) so the user sees the same
+// affordance on every appId-bearing table.
 </script>
 
 <template>
@@ -141,8 +142,11 @@ function truncateAppId(appId: string): string {
             <td>{{ cred.host }}</td>
             <td>{{ cred.displayName ?? "—" }}</td>
             <td>{{ cred.username }}</td>
-            <td class="app-id-column" :title="cred.appId">
-              {{ truncateAppId(cred.appId) }}
+            <td class="app-id-column">
+              <CopyableAppIdChip
+                :app-id="cred.appId"
+                testid="git-credentials-row-appid"
+              />
             </td>
             <td class="action-column">
               <ActionButton

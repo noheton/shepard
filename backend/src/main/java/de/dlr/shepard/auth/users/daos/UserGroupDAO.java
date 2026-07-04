@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 @RequestScoped
 public class UserGroupDAO extends GenericDAO<UserGroup> {
@@ -16,6 +17,29 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
   @Override
   public Class<UserGroup> getEntityType() {
     return UserGroup.class;
+  }
+
+  /** V2-SWEEP-002 — look up a UserGroup by its UUID v7 appId. Returns {@code null} when not found or deleted. */
+  public UserGroup findByAppId(String appId) {
+    if (appId == null || appId.isBlank()) return null;
+    String cypher = "MATCH (g:UserGroup {appId: $appId}) WHERE NOT g.deleted RETURN g";
+    var hits = session.query(UserGroup.class, cypher, Map.of("appId", appId));
+    var stub = StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+    if (stub == null) return null;
+    return session.load(UserGroup.class, stub.getId(), DEPTH_ENTITY);
+  }
+
+  /** Counts UserGroups visible to {@code username} — mirrors {@link #findAllUserGroups} WHERE clause. */
+  public long countAllUserGroups(String username) {
+    String query = "MATCH %s WHERE %s RETURN count(ug) AS c".formatted(
+        CypherQueryHelper.getObjectPart("ug", "UserGroup", false),
+        CypherQueryHelper.getReadableByQuery("ug", username));
+    var it = session.query(query, Map.of()).queryResults().iterator();
+    if (it.hasNext()) {
+      Object c = it.next().get("c");
+      return c instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
   }
 
   public List<UserGroup> findAllUserGroups(QueryParamHelper params, String username) {

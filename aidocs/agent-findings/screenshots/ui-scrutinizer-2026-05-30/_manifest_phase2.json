@@ -1,0 +1,80 @@
+[
+  {
+    "route": "/collections/019e6ffc-89a4-76b5-8dbb-15888646a904",
+    "slug": "collection-lumen-live",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/collection-lumen-live.png",
+    "status": 200,
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Error while fetching collection roles: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "loadingStuck": false,
+    "bodyExcerpt": "Skip to main content\nDeutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)\nHome\nCollections\nContainers\nTools\nSearch\nA\nSign Out\nNotifications\nMark all read\nNo notifications\nCOLLECTION\nCONTENTS\nCONTAINERS\nNot found\nThe resource you are looking for does not exist or has been deleted.\nGo back\nError while fetching collection roles:\nID ERROR - Collection with id 19 is null or deleted\nClose"
+  },
+  {
+    "route": "/collections/019e6ff9-2bf7-732c-aa1c-2b504302a1e4",
+    "slug": "collection-mffd-live",
+    "screenshot": "/opt/shepard/aidocs/agent-findings/screenshots/ui-scrutinizer-2026-05-30/collection-mffd-live.png",
+    "status": 200,
+    "placeholderHits": [],
+    "textPlaceholderHits": [],
+    "consoleErrors": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection roles: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Error while fetching collection: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection roles: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching collection: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 19 is null or deleted\"}",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ],
+    "loadingStuck": false,
+    "bodyExcerpt": "Skip to main content\nDeutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)\nHome\nCollections\nContainers\nTools\nSearch\nA\nSign Out\nNotifications\nMark all read\nNo notifications\nCOLLECTION\nCONTENTS\nCONTAINERS\nNot found\nThe resource you are looking for does not exist or has been deleted.\nGo back\nError while fetching collection:\nID ERROR - Collection with id 19 is null or deleted\nClose"
+  },
+  {
+    "slug": "do-disco-fail-lumen",
+    "route": "/collections/019e6ffc-89a4-76b5-8dbb-15888646a904",
+    "status": "n/a",
+    "placeholderHits": [],
+    "consoleErrors": [
+      "no DO link"
+    ],
+    "loadingStuck": false
+  }
+]

@@ -2,9 +2,18 @@
 import { useEditDataObject } from "./useEditDataObject";
 
 interface EditDataObjectDialogProps {
-  collectionId: number;
-  dataObjectId: number;
+  // V2-SWEEP Wave 1: ids may be appId (UUID v7) strings — they are
+  // stringified into the v2 fetch/PATCH paths, whose EntityIdResolver
+  // accepts UUID v7 or legacy numeric form transparently.
+  collectionId: number | string;
+  dataObjectId: number | string;
   dataObjectName: string;
+  /**
+   * Numeric collection id resolved from the loaded v2 Collection entity —
+   * required only when `collectionId` is a UUID v7 string but no v2 search
+   * path is available. Falls back to `collectionId` when that is numeric.
+   */
+  collectionNumericId?: number;
 }
 
 const props = defineProps<EditDataObjectDialogProps>();
@@ -27,6 +36,17 @@ const { saveChanges, updatedDataObject, loading } = useEditDataObject(
 
 const form = useTemplateRef("form");
 watch(updatedDataObject, () => form.value?.validate(), { deep: true });
+
+// Numeric scope for v1-search fallback in the autocompletes (see prop docs).
+const searchCollectionId = computed<number | undefined>(() => {
+  if (props.collectionNumericId !== undefined) return props.collectionNumericId;
+  return typeof props.collectionId === "number" ? props.collectionId : undefined;
+});
+
+// v2 scope: when collectionId is a UUID v7 string it IS the collection appId.
+const searchCollectionAppId = computed<string | undefined>(() =>
+  typeof props.collectionId === "string" ? props.collectionId : undefined
+);
 </script>
 
 <template>
@@ -61,7 +81,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
             <v-select
               v-model="updatedDataObject.status"
               label="Status"
-              :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED', 'NCR_OPEN', 'ON_HOLD', 'REJECTED', 'CERTIFIED']"
+              :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED', 'NCR_OPEN', 'ON_HOLD', 'REJECTED', 'CERTIFIED', 'CONCESSION_PENDING']"
               clearable
               hint="Optional lifecycle status. Leave blank to clear."
               persistent-hint
@@ -92,7 +112,8 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
           <v-col class="pb-2">
             <ParentInput
               v-model:parent-id="updatedDataObject.parentId"
-              :collection-id="collectionId"
+              :collection-id="(searchCollectionId as unknown as number)"
+              :collection-app-id="searchCollectionAppId"
             />
           </v-col>
         </v-row>
@@ -100,7 +121,8 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
           <v-col class="pt-2">
             <PredecessorInput
               v-model:predecessor-ids="updatedDataObject.predecessorIds"
-              :collection-id="collectionId"
+              :collection-id="(searchCollectionId as unknown as number)"
+              :collection-app-id="searchCollectionAppId"
             />
           </v-col>
         </v-row>

@@ -1,0 +1,188 @@
+# ndt-grid.shacl.ttl — NdtGridShape, a MAPPING_RECIPE shape.
+#
+# MFFD-RENDER-NDT-GRID slice 1 — shape declaration for the NDT thermography
+# grid mosaic renderer.
+#
+# A MAPPING_RECIPE template targeting this shape binds a Shepard Collection
+# of mffd:ndt-otvis-measurement DataObjects and renders them as a 2D mosaic:
+#   rows    = one SMFL dimension (default: Layer)
+#   columns = another SMFL dimension or composite (default: Section-Module tile)
+#   colour  = mean ΔT per tile (mean-delta-t mode) or pass/fail/review
+#             from the NDT quality annotation (pass-fail mode).
+#
+# "Show me layer 18 of Q1" is the canonical use case:
+#   layerFilter="L18", rowDimension="section", columnDimension="module"
+#   → a grid where each cell is one (Section, Module) tile at ply L18.
+#
+# Dispatch key (the IRI the MAPPING_RECIPE body's `mappingRecipeShape` field
+# names): http://semantics.dlr.de/shepard/transform#NdtGridShape
+#
+# Consumed by (phase 1 scope — shape + manifest only; executor arrives in slice 2):
+#   • POST /v2/shapes/validate — Jena SHACL validator accepts this shape as one
+#     of the allow-listed MAPPING_RECIPE concretions.
+#   • POST /v2/mappings/{templateAppId}/materialize (slice 2) — dispatches to
+#     NdtGridTransformExecutor via the TransformExecutorRegistry.
+#   • frontend/components/mffd/NdtGridViewPlaceholder.vue — placeholder stub
+#     shown while the executor (slice 2) and real renderer (slice 3) land.
+#
+# Cross-refs:
+#   aidocs/16-dispatcher-backlog.md — MFFD-RENDER-NDT-GRID row
+#   backend/src/main/java/de/dlr/shepard/v2/shapes/mffd/MffdNdtOtvisMeasurementKind.java
+#   plugins/vis-ndt-grid/docs/reference.md
+#   backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl — meta-shape
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix transform: <http://semantics.dlr.de/shepard/transform#> .
+@prefix ndtgrid:   <http://semantics.dlr.de/shepard/transform/ndt-grid#> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class: NdtGridRecipe ──────────────────────────────────────────────
+
+ndtgrid:NdtGridRecipe a owl:Class ;
+    rdfs:label "NDT grid mosaic recipe"@en ;
+    rdfs:comment "A MAPPING_RECIPE that renders an NDT OTvis thermography Collection as a 2D S×M×L×F grid mosaic. Cell colour encodes mean ΔT (thermal gradient) or pass/fail/review quality assessment. The canonical MFFD quality-verification view."@en ;
+    rdfs:subClassOf transform:MappingRecipe .
+
+# ─── Shape: NdtGridShape ──────────────────────────────────────────────
+
+transform:NdtGridShape a sh:NodeShape ;
+    sh:targetClass ndtgrid:NdtGridRecipe ;
+
+    rdfs:comment "Dispatch key: mappingRecipeShape = http://semantics.dlr.de/shepard/transform#NdtGridShape" ;
+
+    # ── Input binding — required ────────────────────────────────────────
+
+    # The Shepard Collection appId whose DataObjects are the NDT tiles.
+    # The executor queries all DataObjects in this Collection annotated with
+    # urn:shepard:mffd:ndt-section / ndt-module / ndt-layer / ndt-frame.
+    sh:property [
+        sh:path     ndtgrid:collectionAppId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name     "NDT Collection appId" ;
+        sh:description "appId of the Shepard Collection containing the mffd:ndt-otvis-measurement DataObjects to render. Each DataObject must carry urn:shepard:mffd:ndt-{section,module,layer,frame} annotations (as seeded by MffdNdtOtvisMeasurementKind) for the executor to place it in the grid." ;
+        sh:order    10 ;
+    ] ;
+
+    # ── Grid axis bindings — optional; defaults documented in description ──
+
+    sh:property [
+        sh:path     ndtgrid:rowDimension ;
+        sh:datatype xsd:string ;
+        sh:in       ( "section" "module" "layer" "frame" ) ;
+        sh:maxCount 1 ;
+        sh:name     "Row dimension" ;
+        sh:description "Which SMFL axis is mapped to grid rows. Default: 'layer'. For the canonical 'show me layer 18 of Q1' view: set rowDimension='section' and columnDimension='module', then layerFilter='L18'." ;
+        sh:order    20 ;
+    ] ;
+
+    sh:property [
+        sh:path     ndtgrid:columnDimension ;
+        sh:datatype xsd:string ;
+        sh:in       ( "section" "module" "layer" "frame" "section-module" ) ;
+        sh:maxCount 1 ;
+        sh:name     "Column dimension" ;
+        sh:description "Which SMFL axis is mapped to grid columns. Default: 'section-module' (composite Section-Module tile identifier, e.g. 'S4-M13'). Set to 'module' if all DataObjects share a single section and the row dimension is 'layer'." ;
+        sh:order    21 ;
+    ] ;
+
+    # ── Colour rendering ────────────────────────────────────────────────
+
+    sh:property [
+        sh:path     ndtgrid:colourMode ;
+        sh:datatype xsd:string ;
+        sh:in       ( "mean-delta-t" "pass-fail" ) ;
+        sh:maxCount 1 ;
+        sh:name     "Colour mode" ;
+        sh:description "Cell rendering mode. 'mean-delta-t': cell colour encodes the mean thermographic ΔT across the OTvis frame sequence for that tile — quantitative thermal gradient view. 'pass-fail': cell colour encodes the quality disposition (pass/fail/review) from the qualityAnnotationPredicate semantic annotation — AS9100 §8.7 traceability view. Default: 'mean-delta-t'." ;
+        sh:order    30 ;
+    ] ;
+
+    sh:property [
+        sh:path     ndtgrid:colourMap ;
+        sh:datatype xsd:string ;
+        sh:in       ( "hot" "plasma" "inferno" "gray" "rdbu" "viridis" ) ;
+        sh:maxCount 1 ;
+        sh:name     "Colour map" ;
+        sh:description "Colour map applied when colourMode='mean-delta-t'. Default: 'hot' (black→red→yellow→white) — the standard thermography convention. 'rdbu' is appropriate for ΔT centred on zero (heating/cooling symmetry). Ignored when colourMode='pass-fail'." ;
+        sh:order    31 ;
+    ] ;
+
+    sh:property [
+        sh:path     ndtgrid:qualityAnnotationPredicate ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Quality annotation predicate" ;
+        sh:description "Semantic annotation predicate the executor reads when colourMode='pass-fail'. Must be an IRI string. Default (when omitted): 'urn:shepard:mffd:ndt-quality'. Expected annotation values: 'pass', 'fail', 'review', 'pending'. Any other value renders as grey (unknown)." ;
+        sh:order    32 ;
+    ] ;
+
+    # ── Dimension filters — optional; restrict the tile set ─────────────
+
+    sh:property [
+        sh:path     ndtgrid:layerFilter ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Layer filter" ;
+        sh:description "Restrict the rendered tiles to a single layer label, e.g. 'L18'. The label format matches the OTvisFilenameParser output (letter prefix + integer, optionally '+' for planned extra layers). Omitted = all layers rendered (rowDimension='layer' then shows the full set)." ;
+        sh:order    40 ;
+    ] ;
+
+    sh:property [
+        sh:path     ndtgrid:sectionFilter ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Section filter" ;
+        sh:description "Restrict the rendered tiles to a single section label, e.g. 'S4'. Omitted = all sections." ;
+        sh:order    41 ;
+    ] ;
+
+    sh:property [
+        sh:path     ndtgrid:moduleFilter ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name     "Module filter" ;
+        sh:description "Restrict the rendered tiles to a single module label, e.g. 'M13'. Omitted = all modules." ;
+        sh:order    42 ;
+    ] .
+
+# ─── Worked example (informational) ────────────────────────────────────────
+#
+# A MAPPING_RECIPE template body targeting NdtGridShape:
+#
+# {
+#   "templateKind": "MAPPING_RECIPE",
+#   "mappingRecipeShape": "http://semantics.dlr.de/shepard/transform#NdtGridShape",
+#   "collectionAppId": "019e8000-0000-7000-8000-000000000042",
+#   "rowDimension": "section",
+#   "columnDimension": "module",
+#   "colourMode": "mean-delta-t",
+#   "colourMap": "hot",
+#   "layerFilter": "L18"
+# }
+#
+# Materialize (slice 2 executor required):
+#   POST /v2/mappings/{templateAppId}/materialize
+#   { "inputReferenceAppIds": {} }
+#
+#   → 200 {
+#       "outputKind": "VIEW",
+#       "viewModel": {
+#         "kind": "ndt-grid",
+#         "rowDimension": "section",
+#         "columnDimension": "module",
+#         "colourMode": "mean-delta-t",
+#         "colourMap": "hot",
+#         "rows": ["S4", "S5", "S6"],
+#         "columns": ["M13", "M14", "M15"],
+#         "cells": [
+#           { "row": "S4", "col": "M13", "value": 2.37, "status": "RESOLVED" },
+#           { "row": "S4", "col": "M14", "value": 1.89, "status": "RESOLVED" },
+#           ...
+#         ]
+#       }
+#     }

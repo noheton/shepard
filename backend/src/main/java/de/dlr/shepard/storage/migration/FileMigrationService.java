@@ -8,6 +8,7 @@ import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StoragePutRequest;
 import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
+import de.dlr.shepard.v2.admin.storage.services.AutosweepConfigService;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -149,14 +149,8 @@ public class FileMigrationService {
   @Inject
   FileStorageRegistry registry;
 
-  @ConfigProperty(name = "shepard.migration.auto-sweep.enabled", defaultValue = "false")
-  boolean autoSweepEnabled;
-
-  @ConfigProperty(name = "shepard.migration.auto-sweep.source", defaultValue = "")
-  String autoSweepSource;
-
-  @ConfigProperty(name = "shepard.migration.auto-sweep.target", defaultValue = "")
-  String autoSweepTarget;
+  @Inject
+  AutosweepConfigService autosweepConfigService;
 
   private final AtomicReference<FileMigrationState> stateRef =
     new AtomicReference<>(FileMigrationState.idle());
@@ -224,16 +218,18 @@ public class FileMigrationService {
    */
   @Scheduled(every = "{shepard.migration.auto-sweep.interval}")
   public void autoSweep() {
-    if (!autoSweepEnabled) {
-      Log.debug("FS1e2 auto-sweep skipped — shepard.migration.auto-sweep.enabled=false");
+    if (!autosweepConfigService.effectiveEnabled()) {
+      Log.debug("FS1e2 auto-sweep skipped — autosweep disabled");
       return;
     }
+    String autoSweepSource = autosweepConfigService.effectiveSource();
+    String autoSweepTarget = autosweepConfigService.effectiveTarget();
     if (autoSweepSource == null || autoSweepSource.isBlank()) {
-      Log.warn("FS1e2 auto-sweep: shepard.migration.auto-sweep.source is not configured — skipping");
+      Log.warn("FS1e2 auto-sweep: source adapter is not configured — skipping");
       return;
     }
     if (autoSweepTarget == null || autoSweepTarget.isBlank()) {
-      Log.warn("FS1e2 auto-sweep: shepard.migration.auto-sweep.target is not configured — skipping");
+      Log.warn("FS1e2 auto-sweep: target adapter is not configured — skipping");
       return;
     }
     if (stateRef.get().status() == FileMigrationStatus.RUNNING) {

@@ -125,6 +125,30 @@ class OntologySeedServiceTest {
   }
 
   @Test
+  void readBundleBytes_absolutePath_readsFromDisk() throws Exception {
+    // User-uploaded bundles register an ABSOLUTE filesystem path (the
+    // user-bundles-dir); the classpath prefix can never resolve them.
+    var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    java.nio.file.Path tmp = java.nio.file.Files.createTempFile("user-bundle", ".ttl");
+    try {
+      byte[] payload = SAMPLE_TTL.getBytes(StandardCharsets.UTF_8);
+      java.nio.file.Files.write(tmp, payload);
+      byte[] read = svc.readBundleBytes(tmp.toAbsolutePath().toString());
+      org.junit.jupiter.api.Assertions.assertArrayEquals(payload, read);
+    } finally {
+      java.nio.file.Files.deleteIfExists(tmp);
+    }
+  }
+
+  @Test
+  void readBundleBytes_absolutePathMissing_throwsSeedException() {
+    var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    org.junit.jupiter.api.Assertions.assertThrows(OntologySeedService.OntologySeedException.class, () ->
+      svc.readBundleBytes("/definitely/not/here/bundle.ttl")
+    );
+  }
+
+  @Test
   void seed_importsValidBundle_andSendsCorrectCypher() {
     Session session = mock(Session.class);
     String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
@@ -608,8 +632,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + chameo + ssn-sosa + iec-61360 (N1k) + metadata4ing-hpmc (M4I-f) = 18.
-    assertEquals(18, ids.size(), "expected 18 bundled ontologies");
+    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) + chameo + ssn-sosa + iec-61360 (N1k) + iot-lite + metadata4ing-hpmc (M4I-f) = 19.
+    assertEquals(19, ids.size(), "expected 19 bundled ontologies");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -662,7 +686,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(17, kept.size(), "skip-bundles=obo-relations should leave 17 entries");
+    assertEquals(18, kept.size(), "skip-bundles=obo-relations should leave 18 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
@@ -734,7 +758,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(17, kept.size(), "skip-bundles=metadata4ing should leave 17 entries");
+    assertEquals(18, kept.size(), "skip-bundles=metadata4ing should leave 18 entries");
     assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
     assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
@@ -842,7 +866,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(17, kept.size(), "skip-bundles=metadata4ing-hpmc should leave 17 entries");
+    assertEquals(18, kept.size(), "skip-bundles=metadata4ing-hpmc should leave 18 entries");
     assertFalse(kept.contains("metadata4ing-hpmc"), "metadata4ing-hpmc should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing-hpmc must not affect prov-o");
     assertTrue(kept.contains("metadata4ing"), "skip-bundles=metadata4ing-hpmc must not affect metadata4ing");

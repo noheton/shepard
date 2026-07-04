@@ -126,7 +126,11 @@ public class AiRegistry {
       }
     }
 
-    this.byId = Map.copyOf(idMap);
+    // Preserve discovery/insertion order — Map.copyOf() returns an unordered
+    // immutable map, which makes allIds()/keySet() iteration non-deterministic
+    // (the order-sensitive AiRegistryTest assertion and any ordered consumer
+    // depend on the LinkedHashMap order built above).
+    this.byId = Collections.unmodifiableMap(new LinkedHashMap<>(idMap));
     Map<AiCapability, Set<String>> sealed = new EnumMap<>(AiCapability.class);
     capMap.forEach((k, v) -> sealed.put(k, Collections.unmodifiableSet(new LinkedHashSet<>(v))));
     this.byCapability = Collections.unmodifiableMap(sealed);

@@ -1,7 +1,7 @@
 /**
  * TH1b — fetches a thumbnail for a single file in a FileContainer.
  *
- * Endpoint: GET /v2/file-containers/{containerAppId}/payload/{oid}/thumbnail?size=200
+ * Endpoint: GET /v2/containers/{containerAppId}/payload/{oid}/thumbnail?size=200
  *
  * Returns a blob URL (revoke when component unmounts) or null when the
  * file type is unsupported (HTTP 404) or generation is unavailable (HTTP 503).
@@ -74,7 +74,7 @@ export function useFetchFileThumbnail(
     }
 
     const url =
-      `${v2BaseUrl()}/v2/file-containers/` +
+      `${v2BaseUrl()}/v2/containers/` +
       `${encodeURIComponent(containerAppId)}/payload/` +
       `${encodeURIComponent(oid)}/thumbnail?size=${size}`;
 

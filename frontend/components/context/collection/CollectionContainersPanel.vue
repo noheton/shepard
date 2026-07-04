@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContainerSummary } from "@dlr-shepard/backend-client";
+import type { ContainerV2 } from "@dlr-shepard/backend-client";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
 import {
   iconForContainerType,
@@ -14,17 +14,16 @@ const props = defineProps<{
 const collectionAppId = computed(() => props.collectionAppId);
 const { containers, isLoading } = useFetchCollectionContainers(collectionAppId);
 
-function containerPath(c: ContainerSummary): string {
-  // Detail-page route is `/containers/<segment>/<id>/`.
-  return `/containers/${urlSegmentForContainerType(c.containerType)}${c.id}/`;
+function containerPath(c: ContainerV2): string {
+  return `/containers/${urlSegmentForContainerType(c.kind ?? "")}${c.appId}/`;
 }
 
-function containerIcon(type: string): string {
-  return iconForContainerType(type);
+function containerIcon(type: string | undefined): string {
+  return iconForContainerType(type ?? "");
 }
 
-function containerLabel(type: string): string {
-  return labelForContainerType(type);
+function containerLabel(type: string | undefined): string {
+  return labelForContainerType(type ?? "");
 }
 </script>
 
@@ -47,11 +46,11 @@ function containerLabel(type: string): string {
     <v-list v-else density="compact" class="pa-0">
       <v-list-item
         v-for="c in containers"
-        :key="c.id"
+        :key="c.appId ?? c.id"
         :to="containerPath(c)"
-        :prepend-icon="containerIcon(c.containerType)"
-        :title="c.name ?? `Container ${c.id}`"
-        :subtitle="containerLabel(c.containerType)"
+        :prepend-icon="containerIcon(c.kind)"
+        :title="c.name ?? `Container ${c.appId}`"
+        :subtitle="containerLabel(c.kind)"
         rounded
       />
     </v-list>

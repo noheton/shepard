@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.users.resources;
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
 import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.users.io.CreateGitCredentialIO;
 import de.dlr.shepard.v2.users.io.GitCredentialIO;
 import de.dlr.shepard.v2.users.io.PatchGitCredentialIO;
@@ -49,7 +50,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/me/git-credentials")
 @RequestScoped
-@Tag(name = "Git credentials (v2)")
+@Tag(name = "Git credentials")
 public class MeCredentialsRest {
 
   @Inject
@@ -59,7 +60,9 @@ public class MeCredentialsRest {
   Optional<String> encryptionKey;
 
   @GET
-  @Operation(summary = "List the caller's Git credentials.")
+  @Operation(
+    operationId = "listUserGitCredentials",
+    summary = "List the caller's Git credentials.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = GitCredentialIO.class))
@@ -67,16 +70,19 @@ public class MeCredentialsRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(@Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     List<GitCredentialIO> result = gitCredentialDAO.findAllByUser(caller).stream().map(GitCredentialIO::new).toList();
     return Response.ok(result).build();
   }
 
   @POST
-  @Operation(summary = "Create a new Git credential for the caller.")
+  @Operation(
+    operationId = "createGitCredential",
+    summary = "Create a new Git credential for the caller.")
   @APIResponse(
     responseCode = "201",
+    description = "Git credential created for the caller.",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
   )
   @APIResponse(responseCode = "400", description = "host, username, or pat is missing/blank.")
@@ -88,17 +94,17 @@ public class MeCredentialsRest {
     @Context UriInfo uriInfo
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    if (body == null) return Response.status(Response.Status.BAD_REQUEST).entity("Request body is required").build();
+    if (body == null) return problem(Response.Status.BAD_REQUEST, "Request body is required");
     if (body.getHost() == null || body.getHost().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("host is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "host is required and must be non-blank");
     }
     if (body.getUsername() == null || body.getUsername().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("username is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "username is required and must be non-blank");
     }
     if (body.getPat() == null || body.getPat().isBlank()) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("pat is required and must be non-blank").build();
+      return problem(Response.Status.BAD_REQUEST, "pat is required and must be non-blank");
     }
 
     byte[] key = resolveKey();
@@ -117,7 +123,9 @@ public class MeCredentialsRest {
 
   @GET
   @Path("/{appId}")
-  @Operation(summary = "Get a single Git credential by appId.")
+  @Operation(
+    operationId = "getGitCredential",
+    summary = "Get a single Git credential by appId.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
@@ -126,16 +134,18 @@ public class MeCredentialsRest {
   @APIResponse(responseCode = "404", description = "Not found or not owned by caller.")
   public Response read(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     GitCredential cred = gitCredentialDAO.findByUserAndAppId(caller, appId);
-    if (cred == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (cred == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
     return Response.ok(new GitCredentialIO(cred)).build();
   }
 
   @PATCH
   @Path("/{appId}")
-  @Operation(summary = "Partially update a Git credential.")
+  @Operation(
+    operationId = "patchGitCredential",
+    summary = "Partially update a Git credential.")
   @APIResponse(
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = GitCredentialIO.class))
@@ -149,7 +159,7 @@ public class MeCredentialsRest {
     @Context SecurityContext securityContext
   ) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     if (body != null && body.getPat() != null && !body.getPat().isBlank()) {
       byte[] key = resolveKey();
@@ -157,7 +167,7 @@ public class MeCredentialsRest {
     }
 
     GitCredential existing = gitCredentialDAO.findByUserAndAppId(caller, appId);
-    if (existing == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (existing == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
 
     GitCredential delta = new GitCredential();
     if (body != null) {
@@ -172,22 +182,24 @@ public class MeCredentialsRest {
     }
 
     GitCredential updated = gitCredentialDAO.updateByUserAndAppId(caller, appId, delta);
-    if (updated == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (updated == null) return problem(Response.Status.NOT_FOUND, "Git credential not found");
     return Response.ok(new GitCredentialIO(updated)).build();
   }
 
   @DELETE
   @Path("/{appId}")
-  @Operation(summary = "Delete a Git credential.")
+  @Operation(
+    operationId = "deleteGitCredential",
+    summary = "Delete a Git credential.")
   @APIResponse(responseCode = "204", description = "Deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "Not found or not owned by caller.")
   public Response delete(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     String caller = callerOrNull(securityContext);
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     boolean deleted = gitCredentialDAO.deleteByUserAndAppId(caller, appId);
-    return deleted ? Response.noContent().build() : Response.status(Response.Status.NOT_FOUND).build();
+    return deleted ? Response.noContent().build() : problem(Response.Status.NOT_FOUND, "Git credential not found");
   }
 
   private String callerOrNull(SecurityContext sc) {
@@ -213,9 +225,25 @@ public class MeCredentialsRest {
   }
 
   private Response notImplementedNoKey() {
-    return Response
-      .status(Response.Status.NOT_IMPLEMENTED)
-      .entity("PAT storage is disabled: shepard.secrets.encryption-key is not configured")
+    return problem(
+      Response.Status.NOT_IMPLEMENTED,
+      "PAT storage is disabled: shepard.secrets.encryption-key is not configured"
+    );
+  }
+
+  private static Response problem(Response.Status status, String detail) {
+    String type = switch (status) {
+      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
+      case FORBIDDEN -> "urn:shepard:error:forbidden";
+      case BAD_REQUEST -> "urn:shepard:error:validation";
+      case NOT_FOUND -> "urn:shepard:error:not-found";
+      case CONFLICT -> "urn:shepard:error:conflict";
+      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
+      default -> "urn:shepard:error:internal";
+    };
+    return Response.status(status)
+      .type("application/problem+json")
+      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
       .build();
   }
 }

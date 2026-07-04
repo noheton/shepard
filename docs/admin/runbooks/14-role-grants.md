@@ -16,13 +16,29 @@ tested: "— (procedure derived from codebase; not exercised end-to-end)"
 > currently signed in. Covers both grant paths (REST + direct Cypher) and
 > explains the mandatory sign-out + sign-back-in step.
 >
-> **This is a workaround, not the structural fix.** The real fixes are tracked
-> as `ROLE-GRANT-STALE-SESSION-02` (backend per-token rejection or Keycloak
-> session forced-logout) and `ROLE-GRANT-STALE-SESSION-03` (frontend hint on
-> 403 to "your session may be out of date") in
-> [`aidocs/16-dispatcher-backlog.md`](../../../aidocs/16-dispatcher-backlog.md).
-> Until those land, the human-in-the-loop sign-out is the operational gap.
-> Surfaced 2026-05-29 during `J1e-PR-05-VERIFY-SSO`.
+> **Update (2026-05-31): the structural fix shipped as
+> `ROLE-GRANT-STALE-SESSION-02` (`a252ae16b` + `0c9bbdb1e`).** When an admin
+> grants or revokes `instance-admin` via the v2 REST endpoint OR direct Cypher,
+> the affected user's next request with a pre-grant JWT now returns **HTTP 401
+> with body `{"exception":"role_changed", "message":"Your session was issued
+> before a role change. Sign out and back in to get the new role."}`** rather
+> than a silent 403. The frontend's `UnauthorizedView` upgrades its hint copy
+> from the -03 speculative wording ("did you just get the grant?") to a
+> definitive prompt ("Your role just changed"). The human-in-the-loop
+> sign-out step below is still required — but the user now gets a clear
+> message instead of a silent failure.
+>
+> The Cypher path (Path B below) does NOT call `InstanceAdminService.stampRoleChangedAt`,
+> so it bypasses the gate stamp. **Prefer Path A whenever the backend is
+> reachable** — it stamps `:User.roleChangedAt` and triggers the structured
+> 401. If you must use Path B, follow up with a manual `SET u.roleChangedAt =
+> timestamp()` on the affected `:User` (see "Manual stamp via Cypher" below).
+>
+> The Keycloak-side forced-logout alternative (delete user's Keycloak session
+> via admin REST) was rejected as the design — it requires Keycloak admin
+> credentials we don't have at the operator boundary and couples the fix to
+> the IdP. Surfaced 2026-05-29 during `J1e-PR-05-VERIFY-SSO`; structural fix
+> shipped 2026-05-31.
 
 ---
 
@@ -129,10 +145,34 @@ If the command runs with no error but no edge is created, the most likely
 cause is `${TARGET_USER}` not matching any `:User.username` — re-run step 0
 to confirm the `sub` UUID is correct.
 
-> **Cypher path skips the audit trail.** Path A writes a typed `:Activity`
-> via the request-level `ProvenanceCaptureFilter`. Path B does not — the edge
-> exists but no provenance edge records who granted it or when. Prefer Path
-> A whenever the backend is reachable.
+> **Cypher path skips the audit trail AND the ROLE-GRANT-STALE-SESSION-02
+> stamp.** Path A writes a typed `:Activity` via the request-level
+> `ProvenanceCaptureFilter` AND stamps `:User.roleChangedAt = now` so the
+> next stale JWT is rejected with the structured `role_changed` 401. Path B
+> does neither — the edge exists but no provenance row records the grant,
+> and the user's active session continues to silently pass the gate. **Prefer
+> Path A whenever the backend is reachable.** If you must use Path B, run
+> the manual stamp below.
+
+### Manual stamp via Cypher (Path B follow-up)
+
+When you've granted via direct Cypher and the affected user has an active
+session, stamp `roleChangedAt` so their pre-grant JWT is rejected with the
+structured 401:
+
+```bash
+# [nuclide]
+docker exec infrastructure-neo4j-1 \
+  cypher-shell -u neo4j -p "${NEO4J_PASSWORD}" \
+  "MATCH (u:User {username: '${TARGET_USER}'})
+   SET u.roleChangedAt = timestamp();"
+```
+
+`timestamp()` is millis-since-epoch — exactly the shape
+`JwtTokenAuthService.lookupRoleChangedAtMillis(...)` compares against the
+JWT's `iat * 1000`. After this, the user's next request with a pre-grant
+JWT gets HTTP 401 + `{"exception":"role_changed", ...}` and the
+`UnauthorizedView` surfaces the definitive "Your role just changed" hint.
 
 ---
 
@@ -154,13 +194,18 @@ request they make carries the role set from the pre-grant moment.
 Operator action: tell the user to **sign out, then sign back in**. On the
 sign-back-in, Keycloak issues a fresh access token; the next request to
 Shepard re-parses it, re-reads `:HAS_ROLE`, and the new grant is now in the
-role set.
+role set. The fresh token's `iat` exceeds the user's `roleChangedAt` stamp
+so the new gate (ROLE-GRANT-STALE-SESSION-02) passes naturally.
 
-> Until `ROLE-GRANT-STALE-SESSION-02` lands a forced-logout (Keycloak admin
-> REST) or a per-token timestamp gate, this human-in-the-loop step is the
-> only mechanism. Don't skip it — the symptom is a 403 on an `@RolesAllowed`
-> route that the user "should" have access to, which is hard to diagnose
-> without this runbook.
+> **The structural fix is in place (ROLE-GRANT-STALE-SESSION-02, `a252ae16b`).**
+> If the user lingers on a pre-grant tab, they no longer hit a silent 403 —
+> the first request hits a structured **HTTP 401 with body
+> `{"exception":"role_changed", "message":"Your session was issued before a
+> role change. Sign out and back in to get the new role."}`** and the
+> frontend's `UnauthorizedView` upgrades its hint copy from the speculative
+> "did you just get the grant?" to the definitive "Your role just changed".
+> Don't skip the sign-out step either way — the gate forces the issue
+> regardless.
 
 ---
 

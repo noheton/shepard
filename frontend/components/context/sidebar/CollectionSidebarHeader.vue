@@ -99,7 +99,7 @@ const exportCollection = () => {
   </div>
   <v-card
     :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
-    :to="collectionsPath + `${collection?.id}`"
+    :to="collectionAppId ? collectionsPath + collectionAppId : undefined"
     flat
     hover
     rounded="0"
@@ -158,7 +158,7 @@ const exportCollection = () => {
             <EditPermissionsDialog
               v-if="showEditPermissionsDialog"
               v-model:show-dialog="showEditPermissionsDialog"
-              :shepard-object-accessor="new CollectionAccessor(collection.id)"
+              :shepard-object-accessor="new CollectionAccessor(collectionAppId!)"
             />
           </div>
         </div>

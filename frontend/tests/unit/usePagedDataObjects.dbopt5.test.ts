@@ -19,8 +19,22 @@ vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
   useV2ShepardApi: vi.fn(),
 }));
 
-const mockListDataObjectsWithCount = vi.fn();
+// V2-SWEEP-001-CLIENT-REGEN: the regenerated client dropped the hand-rolled
+// `listDataObjectsWithCount`; the composable now calls `listDataObjectsRaw` and
+// reads the total from the X-Total-Count response header. The mock returns an
+// ApiResponse-shaped object ({ raw: { headers }, value() }).
+const mockListDataObjectsRaw = vi.fn();
 const mockGetAllDataObjects = vi.fn();
+
+/** Build an ApiResponse-shaped mock with the given items + total-count header. */
+function rawResponse(items: unknown[], total: number | null) {
+  const headers = new Headers();
+  if (total !== null) headers.set("X-Total-Count", String(total));
+  return {
+    raw: { headers },
+    value: () => Promise.resolve(items),
+  };
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -28,7 +42,7 @@ beforeEach(() => {
     ref({ getAllDataObjects: mockGetAllDataObjects }),
   );
   (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ listDataObjectsWithCount: mockListDataObjectsWithCount }),
+    ref({ listDataObjectsRaw: mockListDataObjectsRaw }),
   );
 });
 
@@ -36,7 +50,7 @@ const flush = () => new Promise<void>(r => setTimeout(r, 0));
 
 describe("DB-OPT5 — usePagedDataObjects sends panel-shaped ?fields=", () => {
   it("passes a non-empty fields CSV to the v2 API", async () => {
-    mockListDataObjectsWithCount.mockResolvedValue({ items: [], total: 0 });
+    mockListDataObjectsRaw.mockReturnValue(rawResponse([], 0));
     const collectionAppId = ref<string | null>("018f9c5a-7e26-7000-a000-000000000010");
     const name = ref("");
     const status = ref<"" | string>("");
@@ -54,15 +68,15 @@ describe("DB-OPT5 — usePagedDataObjects sends panel-shaped ?fields=", () => {
 
     await flush();
 
-    expect(mockListDataObjectsWithCount).toHaveBeenCalledTimes(1);
-    const req = mockListDataObjectsWithCount.mock.calls[0]![0];
+    expect(mockListDataObjectsRaw).toHaveBeenCalledTimes(1);
+    const req = mockListDataObjectsRaw.mock.calls[0]![0];
     expect(req.fields).toBeTruthy();
     expect(typeof req.fields).toBe("string");
     expect(req.fields.length).toBeGreaterThan(20);
   });
 
   it("includes every field the CollectionDataObjectsPanel renders", async () => {
-    mockListDataObjectsWithCount.mockResolvedValue({ items: [], total: 0 });
+    mockListDataObjectsRaw.mockReturnValue(rawResponse([], 0));
     const collectionAppId = ref<string | null>("018f9c5a-7e26-7000-a000-000000000010");
     const name = ref("");
     const status = ref<"" | string>("");
@@ -80,7 +94,7 @@ describe("DB-OPT5 — usePagedDataObjects sends panel-shaped ?fields=", () => {
 
     await flush();
 
-    const req = mockListDataObjectsWithCount.mock.calls[0]![0];
+    const req = mockListDataObjectsRaw.mock.calls[0]![0];
     const fields = (req.fields as string).split(",").map(s => s.trim());
     // Identity / navigation
     expect(fields).toContain("id");
@@ -119,7 +133,7 @@ describe("DB-OPT5 — usePagedDataObjects sends panel-shaped ?fields=", () => {
       timeBoundsStart: 1_000_000_000,
       timeBoundsEnd: 9_000_000_000,
     };
-    mockListDataObjectsWithCount.mockResolvedValue({ items: [trimmedItem], total: 1 });
+    mockListDataObjectsRaw.mockReturnValue(rawResponse([trimmedItem], 1));
 
     const collectionAppId = ref<string | null>("018f9c5a-7e26-7000-a000-000000000010");
     const name = ref("");

@@ -7,7 +7,7 @@ last-stage-change: 2026-05-23
 
 **Status.** Living document. Updated whenever a repo enters or leaves
 the ecosystem, a plugin design lands, or a standard is adopted.
-**Snapshot date.** 2026-05-21.
+**Snapshot date.** 2026-05-30.
 **Audience.** Contributors, operators, evaluators, funders. Sister
 docs: `aidocs/42-vision.md` (researcher pitch),
 `aidocs/44-fork-vs-upstream-feature-matrix.md` (per-feature progress),
@@ -73,6 +73,7 @@ explicitly.
 | **`infusion-analysis` / ODIX** | local at ZLP; not fully public [DLR-internal] | Jupyter + `shepard-client >5.0.0` + `sparqlwrapper` + pandas + networkx | Early prototype; loop demonstrated in production | Semantic process-analysis loop over Liquid Resin Infusion data: ontology-stored constraints (`:hasConstraint` min/max) checked against timeseries metrics; out-of-band readings flagged with `:causesDefect` consequences (e.g. `:DrySpot`). The hand-coded precedent for SHACL-driven QA (`aidocs/semantics/95 §14ee`). Targets `frontend.bt-au-cube3.intra.dlr.de` — a separate Shepard instance from the ZLP general install. |
 | **`rebar-infrastructure`** | `gitlab.dlr.de/rebar/rebar-infrastructure` [DLR-internal] | Apache Airflow + MLflow + MinIO + Marquez / OpenLineage + Postgres + Redis + Celery, docker-compose | Active reference (last commit 2024); pattern, not necessarily integration target | Cross-institute (BT-BGF, BT-ZAP, FK/ZLP, KI, MO, RM, SC-IVS, WF) MLOps cooperation. Airflow DAGs as the pipeline unit, MLflow for tracking, MinIO for artefacts, Marquez emitting OpenLineage. Shepard is the FAIR-publish + regulatory-evidence wrapper on top: REBAR runs the computation, Shepard captures the lineage. Integration via OpenLineage/MLflow/FAIR4ML standards, **not** REBAR-specific — `shepard-plugin-mlops` (§4) is the generic adapter. Server: `bt-au-rebar.intra.dlr.de`. |
 | **`instdlr` (INST.DLR)** | Helmholtz Cloud, maintained by Federico Díaz Capriles (DLR); DOI `10.5281/zenodo.15180781` | FastAPI + MongoDB + Caddy | Mature, citable | PIDINST-schema instrument registry. Mints PIDs for physical instruments (manufacturer, model, serial number, measured-variable). The missing link for EN 9100 calibration traceability — a Shepard `SemanticAnnotation` with `propertyIRI = schema:instrument` and `valueIRI = <instdlr-handle>` ties the data to its calibrated source instrument. |
+| **BT-KVS group (Carbon Fibre Reinforced Composites / Kohlenstofffaserverstärkte Keramiken)** | DLR ZLP Augsburg [DLR-internal] | Streamlit + FastAPI (`laufzettel-readout`, `docket_version_upgrader`) | Active — running a "Laufzettel" (process docket) workflow for C/C and C/SiC fabrication; shared `example.json` docket data 2026-05-29 | Manages structured process-docket records encoding every fabrication step, material batch, and quality checkpoint for ceramic matrix composites. Currently using a bespoke Streamlit + FastAPI stack around a versioned JSON schema (`v1` → `v2` → `v3` upgrade path). The nominated upstream contribution path to Shepard is **`shepard-plugin-btkvs-docket`** (BTKVS-C1) — a typed `PayloadKind` for the docket JSON format with SHACL validation. Near-term integration phases: BTKVS-B1/B2 (SHACL form templates from docket shape), BTKVS-C1 (plugin PayloadKind + `POST /v2/btkvs/dockets`), BTKVS-C2 (Excel ↔ JSON round-trip driven by `urn:btkvs:cell-mapping` annotations). Design refs: `aidocs/integrations/116-btkvs-improved-schema.md`, `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`; showcase: `examples/btkvs-docket-showcase/`. |
 
 Both active named Shepard instances at the institute level are part
 of the picture: `shepard BT` at Augsburg / ZLP and `shepard RY`
@@ -151,6 +152,7 @@ plugin. The roadmap as of this snapshot:
 | **`shepard-plugin-minter-epic`** (KIP1c) | 📐 designed | ePIC handle minter — sibling of the DataCite minter for instances that want PIDs without DOI semantics | `aidocs/integrations/66` |
 | **`shepard-plugin-airflow`** | 📐 designed (subset of mlops) | Airflow operators `ShepardReadOp` / `ShepardWriteOp` / `ShepardProvOp`; marquez-bridge sidecar translating OpenLineage events to Predecessor/Successor edges | `aidocs/integrations/83` Mode A/B/C |
 | **`shepard-plugin-invenio-publish`** | 📐 designed | InvenioRDM push-deposit adapter — sub-module of `shepard-plugin-publish` | `aidocs/integrations/72` |
+| **`shepard-plugin-btkvs-docket`** | 📐 designed (BTKVS-C1) | Typed `PayloadKind` for BT-KVS process-docket JSON; `POST /v2/btkvs/dockets` ingestion with SHACL validation; Excel ↔ JSON round-trip (BTKVS-C2). Replaces the group's bespoke FastAPI wiring. Upstream contribution path for the DLR ZLP BT-KVS group | `aidocs/integrations/116-btkvs-improved-schema.md`, `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md` |
 
 ---
 
@@ -278,11 +280,12 @@ horizon. Each becomes credible once the corresponding feature lands.
    │ git repos     │  │ hdf · video · git│  │     re3data /       │
    │ Confluence    │  │ dbpedia-ref      │  │     InvenioRDM      │
    │ instdlr (PID) │  │ minter-epic      │  │ wiki-writer  →      │
-   │               │  │ airflow          │  │   Confluence        │
+   │ BT-KVS docket │  │ airflow          │  │   Confluence        │
    │               │  │ invenio-publish  │  │                     │
    │               │  │ mlops            │  │                     │
    │               │  │ ai               │  │                     │
    │               │  │ mcp (shipped)    │  │                     │
+   │               │  │ btkvs-docket     │  │                     │
    └───────────────┘  └──────────────────┘  └─────────────────────┘
 ```
 
@@ -455,3 +458,6 @@ ecosystem diagram):
 - shepard-stc-config-helper (DLR-internal): `gitlab.dlr.de/zlp-augsburg/inner-source/shepard-stc-config-helper`
 - rebar-infrastructure (DLR-internal): `gitlab.dlr.de/rebar/rebar-infrastructure`; docs at `rebar.pages.gitlab.dlr.de/rebarpages/`
 - instdlr (INST.DLR): Helmholtz Cloud, DOI `10.5281/zenodo.15180781`
+- BT-KVS docket design: `aidocs/integrations/116-btkvs-improved-schema.md`
+- BT-KVS docket showcase findings: `aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`
+- BT-KVS showcase seed: `examples/btkvs-docket-showcase/`

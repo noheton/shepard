@@ -25,10 +25,18 @@
       <!-- Desktop: inline nav links -->
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
+      <!-- PROJ-NAV-1 — Projects entry between Collections and Containers
+           (aidocs/integrations/121-project-and-subcollections.md §4.2).
+           Projects bundle non-exclusive child Collections via urn:shepard:partOf. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/projects">Projects</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
-      <!-- Semantic discovery affordance moved to /me#semantic per
-           SEMA-NAV-PLACEMENT-DECISION option (b) on 2026-05-24.
-           Standalone /semantic/* routes remain valid for bookmarking + sharing. -->
+      <!-- TOOLS-NAV-01 (2026-05-30) — top-level Tools menu lifts six
+           research-tooling routes from 4-click depth (avatar → /me →
+           Semantic tile → page) to 1-click. Closes the SCENEGRAPH-REST-1-UI
+           top-nav-reachability finding (CLAUDE.md "every shipped feature
+           reachable from the top-nav before beta"). The SemanticPane.vue
+           hub-tile pattern in /me#semantic stays for one release cycle. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/tools">Tools</v-btn>
       <v-btn
         v-if="isInstanceAdmin"
         class="nav-item d-none d-md-inline-flex"
@@ -110,7 +118,8 @@
                 density="compact"
                 :title="c.collectionName"
                 data-testid="header-search-result-collection"
-                @click="onPick('collection', c.collectionId)"
+                :disabled="!c.collectionAppId"
+                @click="onPickCollection(c)"
               >
                 <template #append>
                   <v-chip size="x-small" variant="tonal" color="primary">collection</v-chip>
@@ -214,6 +223,10 @@
     </div>
 
     <template #append>
+      <!-- Persistent contextual help: a visible "?" that opens the doc for the
+           current page (UX finding 2026-06-13 — Help was reachable only behind
+           the overflow menu, so a first-time researcher couldn't find it). -->
+      <ContextualHelpButton />
       <!-- Desktop: secondary nav behind overflow menu -->
       <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">
@@ -356,8 +369,11 @@
     <v-list nav>
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
+      <!-- PROJ-NAV-1: mirror the desktop Projects entry on the mobile drawer. -->
+      <v-list-item title="Projects" to="/projects" prepend-icon="mdi-folder-multiple" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
-      <!-- Semantic discovery moved to /me#semantic per SEMA-NAV-PLACEMENT-DECISION (b) 2026-05-24 -->
+      <!-- TOOLS-NAV-01 (2026-05-30) — mirror of the desktop Tools entry. -->
+      <v-list-item title="Tools" to="/tools" prepend-icon="mdi-tools" @click="mobileDrawerOpen = false" />
       <v-list-item
         v-if="isInstanceAdmin"
         title="Admin"
@@ -399,6 +415,7 @@ import { useTheme } from "vuetify";
 import type { ContainerType } from "@dlr-shepard/backend-client";
 import { useGlobalSearch } from "~/composables/context/useGlobalSearch";
 import type { DataObjectSearchResult } from "~/composables/context/useDataObjectSearch";
+import type { MyCollectionSearchResult } from "~/composables/context/useCollectionSearch";
 import type { MyContainerSearchResult } from "~/composables/context/useContainerSearch";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
@@ -524,11 +541,44 @@ const isInstanceAdmin = computed(() =>
   hasInstanceAdminRole(data.value?.accessToken),
 );
 
-const handleAuth = () => {
+const handleAuth = async () => {
   if (isSignedIn) {
     const signInCookie = useCookie(signInRedirectCookie);
     signInCookie.value = undefined;
-    signOut({ callbackUrl: "/" });
+    // BUG-SIGNOUT-KC-SSO-LINGERS — sign-out must redirect the *browser* to
+    // Keycloak's end_session_endpoint (not just fetch it server-side) so the
+    // SSO cookie on the user's browser gets cleared. Without this, the next
+    // sign-in silently re-auths via the warm SSO session and no password
+    // prompt appears. The realm's `post.logout.redirect.uris: "+"` config
+    // accepts any redirect URI, so we send the user back to the app root.
+    const idToken = (data.value as unknown as { idToken?: string } | null)
+      ?.idToken;
+    let endSessionUrl: string | null = null;
+    try {
+      const res = await $fetch<{ url: string }>("/api/auth-logout-url");
+      endSessionUrl = res.url;
+    } catch {
+      // Resolver failed — fall through to plain signOut (server-side fetch
+      // path still works for the Keycloak-side session; only the browser
+      // SSO cookie won't get cleared). Better than leaving the user signed
+      // in indefinitely.
+    }
+    // Clear nuxt-auth's own session cookie first so the SPA reflects the
+    // signed-out state immediately. `redirect: false` keeps control here
+    // so we can drive the browser to Keycloak ourselves.
+    await signOut({ redirect: false });
+    if (endSessionUrl && idToken) {
+      const target = new URL(endSessionUrl);
+      target.searchParams.set("id_token_hint", idToken);
+      target.searchParams.set(
+        "post_logout_redirect_uri",
+        window.location.origin + "/",
+      );
+      window.location.href = target.toString();
+      return;
+    }
+    // Fallback: land on the app root via a normal navigation.
+    window.location.href = "/";
     return;
   }
   signIn(undefined);
@@ -568,17 +618,21 @@ function closeDropdown() {
   dropdownOpen.value = false;
 }
 
-function onPick(kind: "collection", id: number) {
-  if (kind === "collection") {
-    closeDropdown();
-    void router.push(`/collections/${id}`);
-  }
+// V2-LINKS: navigate on the UUID-v7 appId only. The search results carry the
+// collection/dataobject appId on the wire; the numeric id 404s on the v2
+// detail route (operator-surfaced /collections/367014 dead link).
+function onPickCollection(c: MyCollectionSearchResult) {
+  if (!c.collectionAppId) return;
+  closeDropdown();
+  void router.push(`/collections/${c.collectionAppId}`);
 }
 
 function onPickDataObject(d: DataObjectSearchResult) {
-  if (d.collectionId === undefined) return;
+  if (!d.dataObjectAppId || !d.parentCollectionAppId) return;
   closeDropdown();
-  void router.push(`/collections/${d.collectionId}/dataobjects/${d.dataObjectId}`);
+  void router.push(
+    `/collections/${d.parentCollectionAppId}/dataobjects/${d.dataObjectAppId}`,
+  );
 }
 
 function onPickContainer(c: MyContainerSearchResult) {
@@ -587,6 +641,11 @@ function onPickContainer(c: MyContainerSearchResult) {
   if (route) void router.push(route);
 }
 
+// V1-EXCEPTION (V2-LINKS / CONTAINER-V2-ROUTE in aidocs/16): container detail
+// pages fetch via the v1-generated `getXContainer({ containerId })`, whose path
+// resolves only the numeric Neo4j id (the frozen v1 container GET 404s on an
+// appId). Keep numeric here until the container accessors move to a v2
+// appId-keyed GET.
 function containerRoute(t: ContainerType, id: number): string | null {
   switch (t) {
     case "FILE":

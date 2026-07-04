@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.snapshot.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -8,12 +9,17 @@ import de.dlr.shepard.context.snapshot.io.SnapshotDataObjectsIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -56,7 +62,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects")
 @RequestScoped
-@Tag(name = "Snapshots (v2)")
+@Tag(name = "Snapshots")
 public class SnapshotPinnedReadRest {
 
   @Inject
@@ -67,6 +73,16 @@ public class SnapshotPinnedReadRest {
 
   @Inject
   EntityIdResolver entityIdResolver;
+
+  private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
+  private static final String PT_FORBIDDEN = "/problems/snapshots.forbidden";
+  private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
+  private static final String PT_CONFLICT = "/problems/snapshots.ownership-conflict";
+
+  private static Response problem(String type, String title, Response.Status status, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
+  }
 
   /**
    * Returns the DataObject {@code appId} list captured in a snapshot.
@@ -80,16 +96,19 @@ public class SnapshotPinnedReadRest {
    */
   @GET
   @Operation(
+    operationId = "getDataObjects",
     summary = "List DataObjects captured in a snapshot.",
     description =
-      "Returns the appIds of all DataObject nodes that were captured in the given snapshot " +
-      "for the specified Collection. Collections, References, and soft-deleted entities are " +
-      "excluded. Snapshot metadata (name, capturedAt, totalEntries) is included for caller " +
-      "convenience. Requires Read permission on the Collection."
+      "Returns a paginated list of DataObject appIds captured in the given snapshot for the " +
+      "specified Collection. Collections, References, and soft-deleted entities are excluded. " +
+      "Snapshot metadata (name, capturedAt, totalEntries) is included for caller convenience. " +
+      "Use ?page= (0-based, default 0) and ?pageSize= (default 500, max 2000) to page through " +
+      "large snapshots. totalDataObjects always reflects the full count across all pages. " +
+      "Requires Read permission on the Collection."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot DataObject list.",
+    description = "Snapshot DataObject list (paginated).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = SnapshotDataObjectsIO.class)
@@ -102,11 +121,13 @@ public class SnapshotPinnedReadRest {
   public Response getDataObjects(
     @PathParam("collectionAppId") String collectionAppId,
     @PathParam("snapshotAppId") String snapshotAppId,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("500") @Min(1) @Max(2000) int pageSize,
     @Context SecurityContext sc
   ) {
     // Gate 1 — authentication
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     // Gate 2 — collection exists; Gate 3 — caller has Read permission
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
@@ -114,20 +135,25 @@ public class SnapshotPinnedReadRest {
 
     // Gate 4 — snapshot exists
     Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return Response.status(Response.Status.NOT_FOUND).build();
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+        "No Snapshot with appId '" + snapshotAppId + "'.");
 
     // Gate 5 — snapshot belongs to this collection (ownership check)
     if (
       snapshot.getCollection() == null ||
       !collectionAppId.equals(snapshot.getCollection().getAppId())
     ) {
-      return Response.status(Response.Status.CONFLICT).build();
+      return problem(PT_CONFLICT, "Conflict", Response.Status.CONFLICT,
+          "Snapshot '" + snapshotAppId + "' does not belong to Collection '" + collectionAppId + "'.");
     }
 
-    // Load DataObject appIds from the snapshot entries
-    List<String> dataObjectAppIds = snapshotService.listDataObjectAppIds(snapshot);
+    // Load all DataObject appIds, then slice the requested page window
+    List<String> all = snapshotService.listDataObjectAppIds(snapshot);
+    int from = Math.min(page * pageSize, all.size());
+    int to = Math.min(from + pageSize, all.size());
+    List<String> paged = all.subList(from, to);
 
-    return Response.ok(new SnapshotDataObjectsIO(snapshot, dataObjectAppIds)).build();
+    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, all.size(), page, pageSize)).build();
   }
 
   // ── private helper ────────────────────────────────────────────────────────
@@ -141,17 +167,19 @@ public class SnapshotPinnedReadRest {
    */
   private Response checkAccess(String collectionAppId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
     long ogmId;
     try {
       ogmId = entityIdResolver.resolveLong(collectionAppId);
     } catch (NotFoundException nfe) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
+          "No Collection with appId '" + collectionAppId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+          "Caller lacks Read permission on the Collection.");
     }
     return null;
   }

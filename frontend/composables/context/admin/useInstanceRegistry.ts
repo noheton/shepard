@@ -1,12 +1,12 @@
 /**
- * FE-PROV-INSTANCE-REGISTRY — composable wrapping GET /v2/admin/instances.
+ * APISIMP-INSTANCE-REGISTRY-BESPOKE — composable wrapping GET /v2/instance/registry.
  *
  * Fetches the operator-configured peer Shepard instance registry and exposes
  * a reactive Map keyed by instanceId → RegisteredInstance. Used by any badge
  * that resolves an instance ID to a friendly name (e.g. SourceInstanceBadge
  * hover text showing "DLR BT, Augsburg" instead of "dlr-augsburg").
  *
- * Auth posture: GET /v2/admin/instances is public (no JWT required), so this
+ * Auth posture: GET /v2/instance/registry is public (no JWT required), so this
  * composable intentionally omits the Authorization header to reflect the
  * intended posture and work before the user authenticates.
  *
@@ -41,7 +41,7 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-const INSTANCE_REGISTRY_URL = "/v2/admin/instances";
+const INSTANCE_REGISTRY_URL = "/v2/instance/registry";
 
 export function useInstanceRegistry() {
   /**

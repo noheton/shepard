@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.export.rep;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import io.quarkus.logging.Log;
@@ -35,13 +36,21 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * returning 404 until a persistence layer is wired (TPL14b). Placed here so
  * the path is reserved and clients can adopt it.
  *
- * <p>Requires Read permission on the collection.
+ * <p>Permission gating (MCP-PERMS-AUDIT-2, REST flip 2026-05-31):
+ * <ul>
+ *   <li>POST {@code .../regulatory-evidence} — requires <b>Write</b> on the
+ *       Collection. Builds a REP bag and records a Collection-scoped PROV-O
+ *       Activity ("REP exported by user X"). The MCP {@code rep_export} tool
+ *       already gates Write; this REST flip aligns the two surfaces.</li>
+ *   <li>GET {@code .../regulatory-evidence/latest} — Read suffices (no
+ *       Activity recorded, no state mutated).</li>
+ * </ul>
  */
 @Authenticated
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/collections")
 @RequestScoped
-@Tag(name = "Collections — Regulatory Evidence Pack (TPL14)")
+@Tag(name = "Collections")
 public class RepExportV2Rest {
 
   @Inject
@@ -56,6 +65,7 @@ public class RepExportV2Rest {
   @POST
   @Path("/{appId}/export/regulatory-evidence")
   @Operation(
+    operationId = "buildRepExport",
     summary = "Build a BagIt Regulatory Evidence Pack (REP) for a Collection.",
     description =
       "Builds a BagIt 1.0 (RFC 8493) bag containing:\n" +
@@ -64,7 +74,8 @@ public class RepExportV2Rest {
       "  - bagit.txt, bag-info.txt, manifest-sha256.txt, tagmanifest-sha256.txt\n\n" +
       "Bags ≤ 1 MB are returned inline (Base64 in the 'bagBase64' field). " +
       "Larger bags will return a 'downloadUrl' (not yet implemented — 500 until TPL14b ships). " +
-      "Requires Read permission on the Collection."
+      "Requires Write permission on the Collection (REP build records a Collection-scoped " +
+      "PROV-O Activity; gate matches the MCP rep_export tool per MCP-PERMS-AUDIT-2)."
   )
   @APIResponse(
     responseCode = "200",
@@ -72,7 +83,7 @@ public class RepExportV2Rest {
     content = @Content(schema = @Schema(implementation = RepExportIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the collection.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the collection.")
   @APIResponse(responseCode = "404", description = "No collection with that appId.")
   @APIResponse(responseCode = "500", description = "REP build failed (serialisation or packing error).")
   public Response buildRepExport(
@@ -80,17 +91,17 @@ public class RepExportV2Rest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(Response.Status.UNAUTHORIZED, "/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
     }
     String caller = securityContext.getUserPrincipal().getName();
 
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
     }
 
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Write, caller, 0L)) {
+      return problem(Response.Status.FORBIDDEN, "/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Write permission on collection '" + collectionAppId + "'.");
     }
 
     Log.infof("TPL14 REP export requested: collection=%s caller=%s", collectionAppId, caller);
@@ -101,6 +112,7 @@ public class RepExportV2Rest {
   @GET
   @Path("/{appId}/export/regulatory-evidence/latest")
   @Operation(
+    operationId = "getLatestRepExport",
     summary = "Retrieve the most recent REP export for a Collection.",
     description =
       "Returns the most recently built Regulatory Evidence Pack for the given Collection. " +
@@ -121,17 +133,20 @@ public class RepExportV2Rest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) {
-      return Response.status(Response.Status.UNAUTHORIZED).build();
+      return problem(Response.Status.UNAUTHORIZED, "/problems/rep-export.unauthorized", "Authentication required", "No valid JWT or API key was provided.");
     }
     String caller = securityContext.getUserPrincipal().getName();
 
     Optional<Long> ogmId = collectionPropertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) {
-      return Response.status(Response.Status.NOT_FOUND).build();
+      return problem(Response.Status.NOT_FOUND, "/problems/rep-export.collection.not-found", "Collection not found", "No collection with appId '" + collectionAppId + "'.");
     }
 
+    // GET stays on Read — fetching a previously-built REP is a read operation
+    // (no Activity recorded, no state mutated). Only the POST build flipped
+    // to Write per MCP-PERMS-AUDIT-2.
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN).build();
+      return problem(Response.Status.FORBIDDEN, "/problems/rep-export.permission.denied", "Permission denied", "Caller lacks Read permission on collection '" + collectionAppId + "'.");
     }
 
     // TPL14b: export persistence not yet implemented — return 404 with informative message.
@@ -139,5 +154,10 @@ public class RepExportV2Rest {
       "No prior REP export found for collection " + collectionAppId +
       " (TPL14b persistence not yet implemented)"
     );
+  }
+
+  private static Response problem(Response.Status status, String type, String title, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }

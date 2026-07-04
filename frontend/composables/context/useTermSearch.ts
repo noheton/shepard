@@ -34,7 +34,7 @@ export function useTermSearch() {
     const accessToken = session.value?.accessToken;
     const params = new URLSearchParams({
       q: trimmed,
-      limit: String(Math.min(limit, 50)),
+      pageSize: String(Math.min(limit, 50)),
     });
     const url = `${v2BaseUrl()}/v2/semantic/terms/search?${params}`;
 

@@ -1,13 +1,14 @@
 <script lang="ts" setup>
-import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import PublicationStatusBadge from "~/components/context/publish/PublicationStatusBadge.vue";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import CollectionArchiveControl from "~/components/context/collection/CollectionArchiveControl.vue";
 import { collectionsPath } from "~/utils/constants";
+import { resolveNumericId } from "~/utils/collectionRouteParams";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
-import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useMffdNdtGridProbe } from "~/composables/context/useMffdNdtGridProbe";
+import EntityToolsMenu from "~/components/context/tools/EntityToolsMenu.vue";
+import CollectionSceneGraphHeader from "~/components/context/collection/CollectionSceneGraphHeader.vue";
 
 definePageMeta({ layout: "collection" });
 
@@ -18,12 +19,39 @@ const {
   updateCount: onLabJournalCountChanged,
 } = useCounter();
 
-const collectionId = routeParams.value.collectionId;
-const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
-  useFetchCollection(collectionId);
+// BUG-COLL-APPID-ROUTE-002 / -007 / -007-PAGE: the `[collectionId]` route param
+// is now the v2 appId (UUID). `useFetchCollection` consumes that string against
+// the appId-keyed v2 endpoint. Every other consumer on this page falls into one
+// of two buckets and there is no raw `collectionId` cast any more:
+//   • v2 / appId-keyed callers bind `collectionIdStr` (the route param) or
+//     `collectionAppId` (the loaded collection's appId field).
+//   • v1 `/shepard/api/...` callers (getAllDataObjects, collection roles,
+//     semantic-annotation CRUD, lineage, createDataObject) bind
+//     `collectionNumericId` — the NUMERIC id which only the loaded v2 collection
+//     payload carries, with a numeric-route-param fallback for legacy
+//     /collections/123 deep links. v1 child mounts are gated `v-if` on it so the
+//     UUID can never leak into a numeric-id endpoint.
+const collectionIdStr = routeParams.value.collectionId;
+const {
+  collection,
+  isAllowedToEditCollection,
+  isError: isCollectionError,
+  notFound: isCollectionNotFound,
+} = useFetchCollection(collectionIdStr);
+// V2-SWEEP Wave 3: the remaining `collectionNumericId` consumers are the
+// still-v1-backed child components (CollectionDataObjectsPanel,
+// CreateDataObjectDialog blank form) and the v1 streaming export below —
+// each a documented exception resolved from the loaded v2 entity's `.id`
+// (never the route param). MffdNdtGridCard migrated to v2 (V2UI-MFFD-NDT-ANNO-V2).
+// CollectionLineageGraph + CollectionCrossTrackViewPane migrated (LINEAGE-V2).
+// Backlog: SIDEBAR-V2-CREATE / EXPORT-V2-STREAM in aidocs/16.
+const collectionNumericId = computed<number | undefined>(() =>
+  resolveNumericId(collection.value?.id, routeParams.value.collectionId),
+);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
-const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
-const collectionApi = useShepardApi(CollectionApi);
+// V2-SWEEP Wave 3: the DataObject id→name map loads from the v2 appId-keyed
+// list — the route param goes straight in.
+const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionIdStr);
 
 const showAttributeEditDialog = ref(false);
 const showCreateDataObjectDialog = ref(false);
@@ -49,15 +77,27 @@ async function saveDescEdit() {
   if (!collection.value) return;
   descSaving.value = true;
   try {
-    await collectionApi.value.updateCollection({
-      collectionId,
-      collection: {
-        name: collection.value.name,
-        description: descDraft.value,
-        status: descStatusDraft.value ?? undefined,
-        attributes: collection.value.attributes ?? {},
+    // V2-SWEEP Wave 3: PATCH /v2/collections/{collectionAppId} (RFC 7396
+    // merge-patch) — appId-keyed, sends only the changed fields. Replaces
+    // the v1 full-body updateCollection keyed on the numeric id.
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const resp = await fetch(
+      `${repV2BaseUrl()}/v2/collections/${encodeURIComponent(collectionIdStr)}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/merge-patch+json",
+          Accept: "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          description: descDraft.value,
+          status: descStatusDraft.value ?? null,
+        }),
       },
-    });
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     emitSuccess(`Description updated`);
     handleCollectionUpdate();
     descEditActive.value = false;
@@ -72,13 +112,27 @@ async function downloadRoCrate() {
   if (isExporting.value) return;
   isExporting.value = true;
   try {
-    const blob = await useShepardApi(CollectionApi).value.exportCollection({
-      collectionId,
-    });
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    const resp = await fetch(
+      `${repV2BaseUrl()}/v2/collections/${encodeURIComponent(collectionIdStr)}/export`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/octet-stream",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      },
+    );
+    if (!resp.ok) {
+      handleError(new Error(`HTTP ${resp.status}`), "downloading RO-Crate export");
+      return;
+    }
+    const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${collection.value?.name ?? collectionId}-export.zip`;
+    a.download = `${collection.value?.name ?? collectionIdStr}-export.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -184,14 +238,30 @@ const collectionAccessRights = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// COLL-SCENE-2-UI — appId of the linked :DigitalTwinScene that renders
+// as the Collection's hero scene-graph (MFFD robot cell, LUMEN test
+// bench, …). Defensive-read pattern: the generated `Collection` client
+// model may not expose this field yet, but the wire payload carries it
+// once the backend ships COLL-SCENE-1. Null means "no link" — the
+// header component then renders the writer-only "Link scene-graph"
+// CTA instead of the viewer.
+const collectionSceneGraphAppId = computed<string | null>(() => {
+  if (!collection.value) return null;
+  const raw = (collection.value as unknown as { sceneGraphAppId?: string | null })
+    .sceneGraphAppId;
+  return raw ?? null;
+});
+
 // MFFD-NDT-GRID-1 — cheap probe to decide whether the 14x14 thermography
 // coverage card should mount on this Collection page. Fetches the DO list
 // (cached) + samples the first 5 DOs' annotations for the
 // `urn:shepard:mffd:section` predicate. The widget renders only when the
 // probe flips `hasData` to true, so collections without OTvis data
 // pay only the probe cost (1 list + 5 small annotation fetches).
-const mffdNdtCollectionIdRef = computed<number | null>(() => collectionId);
-const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtCollectionIdRef);
+// V2UI-MFFD-NDT-ANNO-V2: probe and card now keyed by appId (collectionIdStr
+// is the v2 UUID route param); collectionNumericId no longer needed here.
+const mffdNdtAppIdRef = computed<string | null>(() => collectionIdStr ?? null);
+const { hasData: mffdNdtHasData } = useMffdNdtGridProbe(mffdNdtAppIdRef);
 
 // Gate the Publishing panel on whether the Unhide plugin is active on
 // this instance (INST2 — GET /v2/instance/capabilities, fetched in
@@ -218,6 +288,27 @@ useHead({
   <PageShell>
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
+        <!-- COLL-SCENE-2-UI — Hero scene-graph band. Renders at the top
+             of the Collection page when a :DigitalTwinScene is linked
+             (MFFD robot cell, LUMEN test bench, …). Writers see a
+             "Link scene-graph" CTA when no scene is linked yet; readers
+             see nothing in that case. The component itself renders
+             EntityNotFound for the band if the link dangles. -->
+        <v-col
+          v-if="
+            collectionAppId &&
+            (collectionSceneGraphAppId || isAllowedToEditCollection)
+          "
+          cols="12"
+          class="pa-0"
+        >
+          <CollectionSceneGraphHeader
+            :collection-app-id="collectionAppId"
+            :scene-graph-app-id="collectionSceneGraphAppId"
+            :can-link="!!isAllowedToEditCollection"
+            @changed="handleCollectionUpdate"
+          />
+        </v-col>
         <!-- Feature B: Hero banner — only rendered when heroImageUrl is set.
              #metadata-heroimage-edit doubles as the RDM-005 deep-link target;
              when no hero image is set we render a thin placeholder
@@ -313,6 +404,16 @@ useHead({
               no-gutters
               class="justify-end pb-2 ga-2 align-center"
             >
+              <!-- TOOLS-CONTEXT-COLL-* — single in-context Tools menu grouping the
+                   SPARQL query + vocabulary browser entry points so the
+                   header doesn't sprawl. Per the persona-board call
+                   (Reluctant Senior: one collapsed affordance, not four
+                   buttons). -->
+              <EntityToolsMenu
+                v-if="collectionAppId"
+                :app-id="collectionAppId"
+                scope="collection"
+              />
               <!-- CW1: Bell button — subscribe to notifications for new DataObjects. -->
               <CollectionWatchButton
                 v-if="collectionAppId"
@@ -355,6 +456,15 @@ useHead({
                 entity-kind="collections"
                 :entity-app-id="collectionAppId"
                 :entity-name="collection.name"
+              />
+              <!-- #27-ARCHIVED — owner-only Archive/Unarchive control plus
+                   "Archived" chip when status is ARCHIVED. -->
+              <CollectionArchiveControl
+                v-if="collectionAppId"
+                :app-id="collectionAppId"
+                :status="collection.status ?? null"
+                :is-manager="isAllowedToEditCollection ?? false"
+                @changed="handleCollectionUpdate"
               />
             </v-row>
             <!-- Always-visible: Description with inline edit. Lives outside the
@@ -409,6 +519,20 @@ useHead({
                  for the funder-reviewing-the-dataset persona. -->
             <CiteThisCard :collection="collection" />
 
+            <!-- DMP-DOWNLOAD-NAV-01 (FAIR7 UI): "Download DMP" button that
+                 fetches the Markdown DMP block from
+                 GET /v2/collections/{appId}/dmp-snippet. Sits next to the
+                 Cite-this card because the two cover the same funder-facing
+                 corner (citation for papers, DMP for funding forms).
+                 Rendered only when collectionAppId is resolvable — the v2
+                 endpoint is appId-keyed. -->
+            <div v-if="collectionAppId" class="dmp-download-row mb-6">
+              <DownloadDmpButton
+                :collection-app-id="collectionAppId"
+                :collection-name="collection.name"
+              />
+            </div>
+
             <!-- RDM-005: Metadata completeness score widget. 0–100 score
                  with red/amber/green chip + per-check breakdown driving
                  operators to fill the FAIR R1.1 / R1.3 gaps the prior
@@ -425,8 +549,8 @@ useHead({
                  widget's own fetch (full per-DO annotation pull) only
                  fires once it's mounted. -->
             <MffdNdtGridCard
-              v-if="mffdNdtHasData === true"
-              :collection-id="collectionId"
+              v-if="mffdNdtHasData === true && collectionIdStr"
+              :collection-app-id="collectionIdStr"
             />
 
             <!-- Always-visible: Semantic Annotation chips. Out of the
@@ -438,15 +562,25 @@ useHead({
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
-                  v-if="isAllowedToEditCollection"
-                  :annotated="new AnnotatedCollection(collectionId)"
+                  v-if="isAllowedToEditCollection && collection.appId"
+                  :annotated="new AnnotatedCollection(collection.appId)"
                 />
               </div>
               <SemanticAnnotationList
-                :annotated="new AnnotatedCollection(collection.id)"
+                v-if="collection.appId"
+                :annotated="new AnnotatedCollection(collection.appId)"
                 :can-delete="!!isAllowedToEditCollection"
               />
             </section>
+
+            <!-- PROJ-PANEL-1 — Sub-Collections panel.
+                 The panel hides itself entirely when this Collection is not a
+                 Project (or is a Project with no children + no programmes),
+                 so it's free to mount unconditionally here. -->
+            <CollectionSubCollectionsPanel
+              v-if="collectionAppId"
+              :app-id="collectionAppId"
+            />
 
             <!-- Always-visible: flat, searchable DataObjects list. The
                  #24 "Collection-scale navigation" entry point — user
@@ -468,15 +602,19 @@ useHead({
                   New DataObject
                 </v-btn>
               </div>
-              <CollectionDataObjectsPanel :collection-id="collectionId" :collection-app-id="collectionAppId" />
+              <CollectionDataObjectsPanel
+                v-if="collectionNumericId"
+                :collection-id="collectionNumericId"
+                :collection-app-id="collectionAppId"
+              />
               <!-- Re-uses the existing CreateDataObjectDialog which already
                    includes the template picker when allowed templates exist
                    for the Collection — passing `collectionAppId` flips it
                    into picker-first mode (was sidebar-only before). -->
               <CreateDataObjectDialog
-                v-if="showCreateDataObjectDialog && collectionAppId"
+                v-if="showCreateDataObjectDialog && collectionAppId && collectionNumericId"
                 v-model:show-dialog="showCreateDataObjectDialog"
-                :collection-id="collectionId"
+                :collection-id="collectionNumericId"
                 :collection-app-id="collectionAppId"
               />
             </section>
@@ -509,7 +647,8 @@ useHead({
                 >
                   <div id="metadata-labjournal-section" class="pt-4">
                     <CollectionLabJournalEntryList
-                      :collection-id="routeParams.collectionId"
+                      v-if="collectionNumericId"
+                      :collection-id="collectionNumericId"
                       :collection-app-id="collectionAppId"
                       :data-object-map="dataObjectsMap"
                       :fetch-data-object-map="fetchDataObjectMap"
@@ -537,7 +676,30 @@ useHead({
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Dataset Lineage">
                   <div class="pt-2 pb-2">
-                    <CollectionLineageGraph :collection-id="collectionId" />
+                    <CollectionLineageGraph v-if="collectionAppId" :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
+                <!-- TS-CROSS-DO-VIEW-2-FE — cross-DataObject small-multiples view.
+                     Default predicate is `urn:shepard:afp:tcp-temperature-c` per
+                     the V102 VIEW_RECIPE. Empty cells render for DOs that have
+                     no matching channel (e.g. non-AFP DOs in the Collection). -->
+                <ExpansionPanelItem title="Cross-track view">
+                  <div class="pt-2 pb-2">
+                    <CollectionCrossTrackViewPane v-if="collectionAppId && collectionNumericId" :collection-id="collectionNumericId" :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
+                <!-- COLL-TIMELINE-1 — process-chain swimlane chronograph.
+                     Renders bins per day per process-type (derived from
+                     urn:shepard:mffd:process-type annotations) with NCR /
+                     REJECTED colour overlays. Cardinality-friendly answer to
+                     "campaign cadence at MFFD scale" where the Lineage graph
+                     stops scaling (~500 nodes). -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="Timeline"
+                >
+                  <div class="pt-2 pb-2">
+                    <CollectionTimelinePane :collection-app-id="collectionAppId" />
                   </div>
                 </ExpansionPanelItem>
                 <!-- WATCH1 — containers this collection is watching but does
@@ -555,6 +717,18 @@ useHead({
                     />
                   </div>
                 </ExpansionPanelItem>
+                <!-- AAS Identity — shows the IDTA AAS Shell IRI for this Collection.
+                     Visible to all readers when collectionAppId is resolved; the
+                     panel itself handles the 501-disabled / 404-not-found states. -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="AAS Identity"
+                >
+                  <div class="pt-2">
+                    <CollectionAasPane :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
+
                 <!-- Snapshots and Publishing are panels of data, not advanced-mode
                      fields — visible to anyone with edit permission, in both modes
                      (per the refined basic/advanced policy: the toggle gates fields,
@@ -580,6 +754,12 @@ useHead({
           </v-container>
         </v-col>
       </v-row>
+      <EntityNotFound
+        v-else-if="isCollectionNotFound"
+        entity-kind="Collection"
+        :requested-id="collectionIdStr"
+        parent-route="/collections"
+      />
       <NotFoundPanel v-else-if="isCollectionError" />
       <CenteredLoadingSpinner v-else />
     </v-container>

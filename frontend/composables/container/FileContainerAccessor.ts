@@ -4,6 +4,7 @@ import {
   type FileContainer,
   type Permissions,
   type ResponseError,
+  type Roles,
   type ShepardFile,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
@@ -35,10 +36,18 @@ export class FileContainerAccessor extends ContainerAccessor {
   files = ref<ShepardFile[]>([]);
   loading = ref<boolean>(true);
 
+  // Resolve numeric Neo4j id for v1 API calls that still require it.
+  // On numeric routes: this.id IS the numeric string. On UUID routes: derive from loaded container.
+  private get numericId(): number {
+    if (/^\d+$/.test(this.id)) return Number(this.id);
+    return this.fileContainer.value?.id ?? 0;
+  }
+
   async delete() {
     // DI1 — see TimeseriesContainerAccessor.delete for rationale.
     try {
-      const result = await safeDeleteContainer("file", this.id, { force: true });
+      const containerAppId = this.fileContainer.value?.appId ?? this.id;
+      const result = await safeDeleteContainer("file", containerAppId, { force: true });
       if (!result.ok) {
         handleError(
           new Error(
@@ -59,10 +68,20 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async fetchRoles() {
+    // V2-SWEEP-003-1: v2 unified roles (replaces v1 getFileRoles)
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      this.roles.value = await this.api.value.getFileRoles({
-        fileContainerId: this.id,
-      });
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/roles`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.roles.value = (await resp.json()) as Roles;
     } catch (e) {
       handleError(e as ResponseError, "fetching roles");
       throw e;
@@ -70,10 +89,31 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async fetchData() {
+    const idStr = this.id;
+    if (/^\d+$/.test(idStr)) {
+      // V1-EXCEPTION: HeaderBar search still routes numeric ids (SEARCH-V2 will retire).
+      try {
+        this.fileContainer.value = await this.api.value.getFileContainer({
+          fileContainerId: Number(idStr),
+        });
+      } catch (e) {
+        handleError(e as ResponseError, "fetching file container");
+        throw e;
+      }
+      return;
+    }
+    // V2-SWEEP-003-2: appId path — used when navigated from CollectionContainersPanel.
     try {
-      this.fileContainer.value = await this.api.value.getFileContainer({
-        fileContainerId: this.id,
-      });
+      const { data: session } = useAuth();
+      const accessToken = (session.value as unknown as { accessToken?: string } | null)?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(idStr)}`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.fileContainer.value = await resp.json() as FileContainer;
     } catch (e) {
       handleError(e as ResponseError, "fetching file container");
       throw e;
@@ -84,7 +124,7 @@ export class FileContainerAccessor extends ContainerAccessor {
     this.loading.value = true;
     try {
       this.files.value = await this.api.value.getAllFiles({
-        fileContainerId: this.id,
+        fileContainerId: this.numericId,
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching container files");
@@ -98,7 +138,7 @@ export class FileContainerAccessor extends ContainerAccessor {
     if (file.oid && file.filename) {
       this.api.value
         .getFile({
-          fileContainerId: this.id,
+          fileContainerId: this.numericId,
           oid: file.oid,
         })
         .then(response => {
@@ -150,7 +190,7 @@ export class FileContainerAccessor extends ContainerAccessor {
       }
     }
     return this.api.value
-      .createFile({ fileContainerId: this.id, file })
+      .createFile({ fileContainerId: this.numericId, file })
       .then(shepardFile => Promise.resolve(shepardFile))
       .finally(() => this.fetchFiles());
   }
@@ -200,7 +240,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
     // Step 1 — obtain presigned PUT URL.
     const urlResp = await fetch(
-      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url`,
+      `${base}/v2/containers/${encodeURIComponent(containerAppId)}/upload-url`,
       {
         method: "POST",
         headers: authJson,
@@ -227,7 +267,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
     // Step 3 — register the file in shepard.
     const commitResp = await fetch(
-      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url/commit`,
+      `${base}/v2/containers/${encodeURIComponent(containerAppId)}/upload-url/commit`,
       {
         method: "POST",
         headers: authJson,
@@ -249,7 +289,7 @@ export class FileContainerAccessor extends ContainerAccessor {
     if (file.oid) {
       try {
         await this.api.value.deleteFile({
-          fileContainerId: this.id,
+          fileContainerId: this.numericId,
           oid: file.oid,
         });
         emitSuccess(
@@ -263,10 +303,20 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async fetchPermissions() {
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      this.permissions.value = await this.api.value.getFilePermissions({
-        fileContainerId: this.id,
-      });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 getFilePermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = { Accept: "application/json" };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "GET", headers },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.permissions.value = (await resp.json()) as Permissions;
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
       throw e;
@@ -274,11 +324,22 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async updatePermissions(updatedPermissions: Permissions) {
+    const containerAppId = this.fileContainer.value?.appId;
+    if (!containerAppId) throw new Error("Container appId not available — call fetchData() first");
     try {
-      await this.api.value.editFilePermissions({
-        fileContainerId: this.id,
-        permissions: updatedPermissions,
-      });
+      // V2-SWEEP-003-2: v2 unified permissions (replaces v1 editFilePermissions)
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+      const resp = await fetch(
+        `${v2BaseUrl()}/v2/containers/${encodeURIComponent(containerAppId)}/permissions`,
+        { method: "PATCH", headers, body: JSON.stringify(updatedPermissions) },
+      );
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       emitSuccess(
         `Successfully updated permissions for file container ID: ${this.id}`,
       );
