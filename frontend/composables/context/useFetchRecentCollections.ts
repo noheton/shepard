@@ -1,14 +1,14 @@
-import { CollectionApi, DataObjectAttributes, type Collection } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { CollectionsApi, type CollectionV2 } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 const CLOSED_STATUS = "CLOSED";
 const CLEANUP_STATUS = "PENDING_CLEANUP";
 
-export function isClosedCollection(c: Collection): boolean {
+export function isClosedCollection(c: { status?: string | null }): boolean {
   return c.status?.toUpperCase() === CLOSED_STATUS;
 }
 
-export function isCleanupCollection(c: Collection): boolean {
+export function isCleanupCollection(c: { status?: string | null }): boolean {
   return c.status?.toUpperCase() === CLEANUP_STATUS;
 }
 
@@ -18,9 +18,9 @@ export function isCleanupCollection(c: Collection): boolean {
  * include or exclude CLOSED collections in the filtered view.
  */
 export function useFetchRecentCollections() {
-  const collectionApi = useShepardApi(CollectionApi);
+  const v2Api = useV2ShepardApi(CollectionsApi);
 
-  const allCollections = ref<Collection[]>([]);
+  const allCollections = ref<CollectionV2[]>([]);
   const loading = ref(true);
   const error = ref<string | null>(null);
   const showClosed = ref(false);
@@ -32,13 +32,15 @@ export function useFetchRecentCollections() {
     loading.value = true;
     error.value = null;
     try {
-      const results = await collectionApi.value.getAllCollections({
-        page: 0,
-        size: 30,
-        orderBy: DataObjectAttributes.UpdatedAt,
-        orderDesc: true,
+      const result = await v2Api.value.listCollections({ pageSize: 200 });
+      const items = (result.items ?? []) as CollectionV2[];
+      // Server returns unordered page; sort client-side by updatedAt desc.
+      const sorted = items.slice().sort((a, b) => {
+        const ta = a.updatedAt?.getTime() ?? 0;
+        const tb = b.updatedAt?.getTime() ?? 0;
+        return tb - ta;
       });
-      allCollections.value = results;
+      allCollections.value = sorted.slice(0, 30);
     } catch (e) {
       handleError(e, "fetching recent collections");
       error.value = "Could not load collections.";

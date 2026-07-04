@@ -19,25 +19,25 @@ import {
   isClosedCollection,
   isCleanupCollection,
 } from "~/composables/context/useFetchRecentCollections";
-import type { Collection } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import type { CollectionV2 } from "@dlr-shepard/backend-client";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 
 // vi.mock is hoisted by Vitest above the imports at runtime.
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: vi.fn(),
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: vi.fn(),
 }));
 
-const mockGetAllCollections = vi.fn();
+const mockListCollections = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (useShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
-    ref({ getAllCollections: mockGetAllCollections }),
+  (useV2ShepardApi as ReturnType<typeof vi.fn>).mockReturnValue(
+    ref({ listCollections: mockListCollections }),
   );
 });
 
-const coll = (id: number, status?: string): Collection =>
-  ({ id, name: `C${id}`, status }) as unknown as Collection;
+const coll = (id: number, status?: string): CollectionV2 =>
+  ({ id, name: `C${id}`, status }) as unknown as CollectionV2;
 
 describe("useFetchRecentCollections — pure helpers", () => {
   it("isClosedCollection is true only for CLOSED status (case-insensitive)", () => {
