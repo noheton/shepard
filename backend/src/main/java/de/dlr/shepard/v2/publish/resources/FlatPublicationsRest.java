@@ -5,7 +5,6 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.daos.PublicationDAO;
-import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -122,18 +121,17 @@ public class FlatPublicationsRest {
         "Caller '" + caller + "' lacks Read permission on entity '" + entityAppId + "'.");
     }
 
-    List<Publication> rows = publicationDAO.findByEntityAppId(entityAppId);
-    List<PublicationIO> all = rows.stream()
+    long total = publicationDAO.countByEntityAppId(entityAppId);
+    List<PublicationIO> page_ = publicationDAO
+      .findByEntityAppId(entityAppId, page * pageSize, pageSize)
+      .stream()
       .map(p -> {
         String resolverUrl = PublicationsListRest.absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
         return PublicationIO.from(p, resolverUrl);
       })
       .toList();
 
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to   = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize))
       .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .build();
   }

@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.publish.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,7 +20,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,13 +70,19 @@ class FlatPublicationsRestTest {
     return p;
   }
 
+  private void stubPagedDao(String appId, long ogmId, List<Publication> page, long total,
+    int skip, int limit) {
+    when(entityIdResolver.resolveLong(appId)).thenReturn(ogmId);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(ogmId), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    when(publicationDAO.countByEntityAppId(appId)).thenReturn(total);
+    when(publicationDAO.findByEntityAppId(eq(appId), eq(skip), eq(limit))).thenReturn(page);
+  }
+
   @Test
   void happyPathReturns200WithPublicationList() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
+    stubPagedDao("01HF-A", 42L, List.of(pub), 1L, 0, 50);
 
     Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 
@@ -92,11 +98,8 @@ class FlatPublicationsRestTest {
 
   @Test
   void resolverUrlIsBuiltCorrectly() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
+    stubPagedDao("01HF-A", 42L, List.of(pub), 1L, 0, 50);
 
     Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
     @SuppressWarnings("unchecked")
@@ -109,10 +112,7 @@ class FlatPublicationsRestTest {
 
   @Test
   void emptyListWhenNeverPublished() {
-    when(entityIdResolver.resolveLong("01HF-NEW")).thenReturn(99L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(99L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
-    when(publicationDAO.findByEntityAppId("01HF-NEW")).thenReturn(List.of());
+    stubPagedDao("01HF-NEW", 99L, List.of(), 0L, 0, 50);
 
     Response r = rest.list("01HF-NEW", 0, 50, securityContext, uriInfo);
 
@@ -167,7 +167,8 @@ class FlatPublicationsRestTest {
     Publication pub = publication("shepard:dlr.de:collections:01COLL-A:v1");
     pub.setEntityKind("collections");
     pub.setEntityAppId("01COLL-A");
-    when(publicationDAO.findByEntityAppId("01COLL-A")).thenReturn(List.of(pub));
+    when(publicationDAO.countByEntityAppId("01COLL-A")).thenReturn(1L);
+    when(publicationDAO.findByEntityAppId(eq("01COLL-A"), anyInt(), anyInt())).thenReturn(List.of(pub));
 
     Response r = rest.list("01COLL-A", 0, 50, securityContext, uriInfo);
 
@@ -179,12 +180,9 @@ class FlatPublicationsRestTest {
 
   @Test
   void retiredPublicationIncluded() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
     Publication retired = publication("shepard:dlr.de:data-objects:01HF-A:v1");
     retired.setDigitalObjectMutability("retired");
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(retired));
+    stubPagedDao("01HF-A", 42L, List.of(retired), 1L, 0, 50);
 
     Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 
@@ -197,14 +195,9 @@ class FlatPublicationsRestTest {
 
   @Test
   void paginationFirstPageReturnsSlice() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
-    List<Publication> pubs = new ArrayList<>();
-    for (int i = 0; i < 7; i++) {
-      pubs.add(publication("pid-" + i));
-    }
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+    List<Publication> firstPage = List.of(
+      publication("pid-0"), publication("pid-1"), publication("pid-2"));
+    stubPagedDao("01HF-A", 42L, firstPage, 7L, 0, 3);
 
     Response r = rest.list("01HF-A", 0, 3, securityContext, uriInfo);
 
@@ -212,21 +205,16 @@ class FlatPublicationsRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
     assertEquals(3, body.items().size(), "First page should contain 3 items");
-    assertEquals(7L, body.total(), "Total should reflect full count");
+    assertEquals(7L, body.total(), "Total should reflect full count from countByEntityAppId");
     assertEquals(0, body.page());
     assertEquals(3, body.pageSize());
   }
 
   @Test
   void paginationSecondPageReturnsNextSlice() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
-    List<Publication> pubs = new ArrayList<>();
-    for (int i = 0; i < 7; i++) {
-      pubs.add(publication("pid-" + i));
-    }
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+    List<Publication> secondPage = List.of(
+      publication("pid-3"), publication("pid-4"), publication("pid-5"));
+    stubPagedDao("01HF-A", 42L, secondPage, 7L, 3, 3);
 
     Response r = rest.list("01HF-A", 1, 3, securityContext, uriInfo);
 
@@ -240,14 +228,8 @@ class FlatPublicationsRestTest {
 
   @Test
   void paginationBeyondEndReturnsEmptyItems() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
-    List<Publication> pubs = new ArrayList<>();
-    for (int i = 0; i < 3; i++) {
-      pubs.add(publication("pid-" + i));
-    }
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(pubs);
+    // When skip > total, Neo4j returns empty — the DAO mock mirrors that.
+    stubPagedDao("01HF-A", 42L, List.of(), 3L, 50, 10);
 
     Response r = rest.list("01HF-A", 5, 10, securityContext, uriInfo);
 
@@ -260,11 +242,8 @@ class FlatPublicationsRestTest {
 
   @Test
   void xTotalCountHeaderPresent() {
-    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
-      .thenReturn(true);
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
+    stubPagedDao("01HF-A", 42L, List.of(pub), 1L, 0, 50);
 
     Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 

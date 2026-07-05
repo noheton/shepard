@@ -73,13 +73,18 @@ class PublicationsListRestTest {
     return p;
   }
 
+  /** Stub the bounded DAO overload (skip=0, limit=1000) used by PublicationsListRest. */
+  private void stubBoundedDao(String appId, List<Publication> pubs) {
+    when(publicationDAO.findByEntityAppId(eq(appId), eq(0), eq(1000))).thenReturn(pubs);
+  }
+
   @Test
   void happyPathReturns200WithListAndResolverUrls() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
       .thenReturn(true);
     Publication pub = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", 1_747_000_000_000L);
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(pub));
+    stubBoundedDao("01HF-A", List.of(pub));
 
     Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
 
@@ -101,7 +106,7 @@ class PublicationsListRestTest {
     when(entityIdResolver.resolveLong("01HF-NEW")).thenReturn(99L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(99L), eq(AccessType.Read), eq("alice")))
       .thenReturn(true);
-    when(publicationDAO.findByEntityAppId("01HF-NEW")).thenReturn(List.of());
+    stubBoundedDao("01HF-NEW", List.of());
 
     Response r = rest.list("data-objects", "01HF-NEW", securityContext, uriInfo);
 
@@ -120,7 +125,7 @@ class PublicationsListRestTest {
     v2.setVersionNumber(2);
     Publication v1 = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", 1_747_000_000_000L);
     // DAO returns most-recent first (matches PublicationDAO.findByEntityAppId ordering)
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(v2, v1));
+    stubBoundedDao("01HF-A", List.of(v2, v1));
 
     Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
 
@@ -139,7 +144,7 @@ class PublicationsListRestTest {
       .thenReturn(true);
     Publication retired = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", 1_747_000_000_000L);
     retired.setDigitalObjectMutability("retired");
-    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(retired));
+    stubBoundedDao("01HF-A", List.of(retired));
 
     Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
 
@@ -189,7 +194,7 @@ class PublicationsListRestTest {
     Publication pub = publication("shepard:dlr.de/shepard-prod:collections:01COLL-A:v1", 1_747_000_000_000L);
     pub.setEntityKind("collections");
     pub.setEntityAppId("01COLL-A");
-    when(publicationDAO.findByEntityAppId("01COLL-A")).thenReturn(List.of(pub));
+    stubBoundedDao("01COLL-A", List.of(pub));
 
     Response r = rest.list("collections", "01COLL-A", securityContext, uriInfo);
 

@@ -142,7 +142,9 @@ public class PublicationsListRest {
           "Caller '" + caller + "' lacks Read permission on entity '" + appId + "'.");
     }
 
-    List<Publication> rows = publicationDAO.findByEntityAppId(appId);
+    // Bounded fetch: entity publication histories are tiny in practice (1–5 rows),
+    // but SKIP 0 LIMIT 1000 ensures Cypher never issues a fully unbounded scan.
+    List<Publication> rows = publicationDAO.findByEntityAppId(appId, 0, 1000);
 
     // Build resolver URLs for each Publication. Re-use the same
     // absoluteUrl helper as PublishRest (inlined here to avoid
