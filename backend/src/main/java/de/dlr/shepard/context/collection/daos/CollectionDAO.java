@@ -201,6 +201,42 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     return iter.hasNext() ? iter.next() : 0L;
   }
 
+  /**
+   * Returns Collections eligible for the Helmholtz Unhide feed — non-deleted and not
+   * opted-out via {@code publishToHelmholtzKG=false} — ordered by {@code createdAt ASC,
+   * appId ASC} with Cypher-level SKIP/LIMIT pagination. The filter+sort+pagination are
+   * executed entirely in Neo4j; no Java-side filtering or subList() is needed.
+   */
+  public List<Collection> findForUnhideFeed(int skip, int limit) {
+    String query =
+      "MATCH (c:Collection) " +
+      "WHERE c.deleted = false OR c.deleted IS NULL " +
+      "OPTIONAL MATCH (c)-[:HAS_PROPERTIES]->(p:CollectionProperties) " +
+      "WITH c, p " +
+      "WHERE p IS NULL OR p.publishToHelmholtzKG <> false " +
+      "ORDER BY c.createdAt ASC, c.appId ASC " +
+      "SKIP $skip LIMIT $limit " +
+      "RETURN c";
+    var result = new ArrayList<Collection>();
+    for (var col : findByQuery(query, Map.of("skip", skip, "limit", limit))) {
+      result.add(col);
+    }
+    return result;
+  }
+
+  /** Returns the count of Collections eligible for the Helmholtz Unhide feed. */
+  public long countForUnhideFeed() {
+    String query =
+      "MATCH (c:Collection) " +
+      "WHERE c.deleted = false OR c.deleted IS NULL " +
+      "OPTIONAL MATCH (c)-[:HAS_PROPERTIES]->(p:CollectionProperties) " +
+      "WITH c, p " +
+      "WHERE p IS NULL OR p.publishToHelmholtzKG <> false " +
+      "RETURN count(c)";
+    var it = session.query(Long.class, query, Map.of()).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
   private boolean matchName(Collection col, String name) {
     return name == null || col.getName().equalsIgnoreCase(name);
   }

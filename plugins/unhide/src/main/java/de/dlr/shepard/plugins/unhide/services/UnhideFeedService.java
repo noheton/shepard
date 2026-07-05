@@ -2,7 +2,6 @@ package de.dlr.shepard.plugins.unhide.services;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
-import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
@@ -83,9 +82,6 @@ public class UnhideFeedService {
   CollectionDAO collectionDAO;
 
   @Inject
-  CollectionPropertiesDAO collectionPropertiesDAO;
-
-  @Inject
   ActivityDAO activityDAO;
 
   @Inject
@@ -119,38 +115,13 @@ public class UnhideFeedService {
     int clampedSize = clampPageSize(pageSize);
     String rootBase = stripTrailingSlash(baseUrl);
 
-    List<Collection> all = new ArrayList<>(collectionDAO.findAll());
-    all.removeIf(c -> c == null || c.isDeleted());
-    // UH1d — per-Collection opt-out: exclude Collections whose
-    // publishToHelmholtzKG flag is explicitly false. Collections
-    // with no properties node (Optional.empty()) keep the default
-    // "include" behaviour (opt-out model, not opt-in).
-    all.removeIf(c -> {
-      var props = collectionPropertiesDAO.findByCollectionAppId(c.getAppId());
-      return props.isPresent() && !props.get().isPublishToHelmholtzKG();
-    });
-    // Stable sort: oldest createdAt first so pagination is consistent
-    // call-to-call. Falls back to appId for collections with the same
-    // timestamp.
-    all.sort((a, b) -> {
-      Date ad = a.getCreatedAt();
-      Date bd = b.getCreatedAt();
-      int byTime = (ad == null ? 0L : ad.getTime()) < (bd == null ? 0L : bd.getTime())
-        ? -1
-        : (ad == null ? 0L : ad.getTime()) > (bd == null ? 0L : bd.getTime()) ? 1 : 0;
-      if (byTime != 0) return byTime;
-      String aa = a.getAppId();
-      String bb = b.getAppId();
-      if (aa == null && bb == null) return 0;
-      if (aa == null) return -1;
-      if (bb == null) return 1;
-      return aa.compareTo(bb);
-    });
-
-    int total = all.size();
-    int from = Math.min(clampedPage * clampedSize, total);
-    int to = Math.min(from + clampedSize, total);
-    List<Collection> window = all.subList(from, to);
+    // APISIMP-UNHIDE-FEED-IN-MEMORY-PAGING: filter, sort, and paginate
+    // entirely in Neo4j — no in-memory findAll() + subList(). The DAO
+    // query excludes deleted Collections and those opted-out via
+    // publishToHelmholtzKG=false, then returns the page window directly.
+    long total = collectionDAO.countForUnhideFeed();
+    int skip = clampedPage * clampedSize;
+    List<Collection> window = collectionDAO.findForUnhideFeed(skip, clampedSize);
 
     List<FeedEntryIO> entries = new ArrayList<>(window.size());
     for (Collection c : window) {
@@ -161,7 +132,7 @@ public class UnhideFeedService {
     meta.put("page", clampedPage);
     meta.put("pageSize", clampedSize);
     meta.put("totalEntries", total);
-    meta.put("totalPages", (int) Math.ceil((double) total / clampedSize));
+    meta.put("totalPages", (long) Math.ceil((double) total / clampedSize));
     meta.put("generatedAt", new Date());
     if (config.getContactEmail() != null && !config.getContactEmail().isBlank()) {
       meta.put("contactEmail", config.getContactEmail());
