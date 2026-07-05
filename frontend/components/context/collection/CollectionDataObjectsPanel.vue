@@ -70,6 +70,16 @@
         prepend-icon="mdi-filter"
         @click:close="clearProcessTypeLane"
       >{{ activeProcessTypeLane }}</v-chip>
+      <!-- COLL-TIMELINE-DRILLDOWN-FILTER-1: active date chip from timeline drill-down -->
+      <v-chip
+        v-if="activeDateFilter"
+        size="small"
+        color="secondary"
+        variant="tonal"
+        closable
+        prepend-icon="mdi-calendar"
+        @click:close="clearDateFilter"
+      >{{ activeDateFilter }}</v-chip>
     </div>
 
     <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate aria-label="Loading datasets" />
@@ -287,6 +297,26 @@ function clearProcessTypeLane() {
   void router.replace({ query: q });
 }
 
+// COLL-TIMELINE-DRILLDOWN-FILTER-1: derive 24h window from ?date=YYYY-MM-DD
+const activeDateFilter = computed<string | null>(() => {
+  const v = route.query['date'];
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+});
+const createdAfter = computed<string | undefined>(() =>
+  activeDateFilter.value != null ? `${activeDateFilter.value}T00:00:00Z` : undefined
+);
+const createdBefore = computed<string | undefined>(() => {
+  if (activeDateFilter.value == null) return undefined;
+  const d = new Date(`${activeDateFilter.value}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+});
+function clearDateFilter() {
+  const q = { ...route.query };
+  delete q['date'];
+  void router.replace({ query: q });
+}
+
 const STATUSES = [
   "DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED",
   // MFG1 / QM1a — EN 9100 quality-engineering statuses
@@ -339,6 +369,8 @@ function onBulkAnnotated(succeeded: number, failed: number) {
 
 // Reset page on annotation filter change (lane drill-down → page 0)
 watch(annotationFilter, () => { page.value = 0; });
+// Reset page on date filter change
+watch(activeDateFilter, () => { page.value = 0; });
 
 const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   collectionId: props.collectionId,
@@ -346,6 +378,8 @@ const { items: rawItems, loading, hasMore, totalItems } = usePagedDataObjects({
   name: serverName,
   status: statusFilter,
   annotationFilter,
+  createdAfter,
+  createdBefore,
   page,
   pageSize,
   includeTimeBounds: true,

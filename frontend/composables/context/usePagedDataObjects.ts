@@ -36,6 +36,10 @@ export interface PagedDataObjectsOptions {
   includeTimeBounds?: boolean;
   /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation lane filter ("predicateIri=value"). */
   annotationFilter?: Ref<string | undefined>;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-1: inclusive lower bound (ISO-8601 instant). */
+  createdAfter?: Ref<string | undefined>;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-1: exclusive upper bound (ISO-8601 instant). */
+  createdBefore?: Ref<string | undefined>;
 }
 
 export interface PagedDataObjectsResult {
@@ -61,6 +65,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   const { collectionId, collectionAppId, name, page } = opts;
   const status = opts.status;
   const annotationFilter = opts.annotationFilter;
+  const createdAfter = opts.createdAfter;
+  const createdBefore = opts.createdBefore;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
 
@@ -119,6 +125,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         name: nameFilter,
         status: statusFilter,
         annotationFilter: annotationFilter?.value || undefined,
+        createdAfter: createdAfter?.value || undefined,
+        createdBefore: createdBefore?.value || undefined,
         page: currentPage,
         pageSize: pageSize,
         include: includeTimeBounds ? 'time-bounds' : undefined,
@@ -145,6 +153,8 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     page,
     ...(status ? [status] : []),
     ...(annotationFilter ? [annotationFilter] : []),
+    ...(createdAfter ? [createdAfter] : []),
+    ...(createdBefore ? [createdBefore] : []),
   ] as const;
   watch(watchSources, () => {
     void fetch();

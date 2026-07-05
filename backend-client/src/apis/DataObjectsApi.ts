@@ -80,6 +80,8 @@ export interface GetRdfInCollectionRequest {
 export interface ListDataObjectsRequest {
     collectionAppId: string;
     annotationFilter?: string;
+    createdAfter?: string;
+    createdBefore?: string;
     fields?: string;
     include?: string;
     name?: string;
@@ -489,6 +491,14 @@ export class DataObjectsApi extends runtime.BaseAPI {
 
         if (requestParameters['annotationFilter'] != null) {
             queryParameters['annotationFilter'] = requestParameters['annotationFilter'];
+        }
+
+        if (requestParameters['createdAfter'] != null) {
+            queryParameters['createdAfter'] = requestParameters['createdAfter'];
+        }
+
+        if (requestParameters['createdBefore'] != null) {
+            queryParameters['createdBefore'] = requestParameters['createdBefore'];
         }
 
         if (requestParameters['fields'] != null) {

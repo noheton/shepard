@@ -217,6 +217,10 @@ public class DataObjectV2Rest {
     @QueryParam("fields") String fields,
     @Parameter(description = "Annotation filter: `<predicateIri>=<value>`. Restricts results to DataObjects carrying a semantic annotation with exactly that predicate IRI and value. Example: `urn:shepard:quality:rating=PASS`. Malformed values (missing `=` or empty parts) are silently ignored.")
     @QueryParam("annotationFilter") String annotationFilter,
+    @Parameter(description = "COLL-TIMELINE-DRILLDOWN-FILTER-1 — inclusive lower bound (ISO-8601 instant, e.g. `2024-06-02T00:00:00Z`). Restricts results to DataObjects whose `createdAt` is >= this value. Pair with `createdBefore` for a window. Malformed values are silently ignored.")
+    @QueryParam("createdAfter") String createdAfter,
+    @Parameter(description = "COLL-TIMELINE-DRILLDOWN-FILTER-1 — exclusive upper bound (ISO-8601 instant, e.g. `2024-06-03T00:00:00Z`). Restricts results to DataObjects whose `createdAt` is < this value. Pair with `createdAfter` for a window. Malformed values are silently ignored.")
+    @QueryParam("createdBefore") String createdBefore,
     @Parameter(description = "SIDEBAR-LAZY-TREE — restrict to the direct, non-deleted children of the DataObject with this `appId` (within the same Collection). Drives the lazy collection-sidebar tree: fetch one hierarchy level per expand. Composes with `page`/`pageSize`/`fields`/`name`/`status`/`annotationFilter`. Mutually exclusive with `topLevel=true` (when both are given, `topLevel` wins). An unknown `parentAppId` yields an empty page.")
     @QueryParam("parentAppId") String parentAppId,
     @Parameter(description = "SIDEBAR-LAZY-TREE — when `true`, return ONLY root DataObjects (those with no parent DataObject inside the Collection). Drives the lazy collection-sidebar tree's initial load. Composes with the other filters. Overrides `parentAppId` when both are set.")
@@ -249,6 +253,7 @@ public class DataObjectV2Rest {
     if (name != null) params = params.withName(name);
     if (status != null) params = params.withStatus(status);
     if (annotationFilter != null) params = params.withAnnotationFilter(annotationFilter);
+    if (createdAfter != null || createdBefore != null) params = params.withCreatedRange(createdAfter, createdBefore);
 
     // SIDEBAR-LAZY-TREE — root / parent hierarchy filter. `topLevel=true` wins
     // over `parentAppId` when both are supplied. The parentAppId is resolved to

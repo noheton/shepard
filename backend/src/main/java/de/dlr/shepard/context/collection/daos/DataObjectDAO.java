@@ -348,6 +348,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       paramsMap.put("annoVal", paramsWithShepardIds.getAnnotationFilterValue());
       match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
     }
+    if (paramsWithShepardIds.hasCreatedRange()) {
+      paramsMap.put("createdAfterMs", paramsWithShepardIds.getCreatedAfterMs());
+      paramsMap.put("createdBeforeMs", paramsWithShepardIds.getCreatedBeforeMs());
+      where += " AND d.createdAt >= $createdAfterMs AND d.createdAt < $createdBeforeMs";
+    }
 
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {
@@ -451,6 +456,11 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       paramsMap.put("annoIri", params.getAnnotationFilterPredicateIri());
       paramsMap.put("annoVal", params.getAnnotationFilterValue());
       match += " MATCH (d)-[:ANNOTATED_WITH]->(anno:SemanticAnnotation {predicateIri: $annoIri, objectLiteral: $annoVal})";
+    }
+    if (params.hasCreatedRange()) {
+      paramsMap.put("createdAfterMs", params.getCreatedAfterMs());
+      paramsMap.put("createdBeforeMs", params.getCreatedBeforeMs());
+      where += " AND d.createdAt >= $createdAfterMs AND d.createdAt < $createdBeforeMs";
     }
 
     String query = match + where + " RETURN count(d) AS total";
