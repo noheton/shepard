@@ -2,6 +2,11 @@ package de.dlr.shepard.v2.watches.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -18,8 +23,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * APISIMP-WATCHES-LIST-NO-PAGINATION — unit tests for pagination on
- * {@link CollectionWatchesRest#list}.
+ * APISIMP-COLLECTION-WATCHES-IN-MEMORY-PAGING — unit tests for bounded
+ * pagination on {@link CollectionWatchesRest#list}.
  */
 class CollectionWatchesRestTest {
 
@@ -46,54 +51,72 @@ class CollectionWatchesRestTest {
   }
 
   @Test
-  void list_noPagination_returnsAllAndXTotalCount() {
-    when(service.list(COLL_APP_ID))
-      .thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
+  void list_callsCountThenBoundedList() {
+    when(service.count(COLL_APP_ID)).thenReturn(2L);
+    when(service.list(COLL_APP_ID, 0, 50)).thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
+
     Response r = resource.list(COLL_APP_ID, 0, 50);
+
+    assertEquals(200, r.getStatus());
+    verify(service).count(COLL_APP_ID);
+    verify(service).list(COLL_APP_ID, 0, 50);
+    verify(service, never()).list(anyString());
+  }
+
+  @Test
+  void list_page0_returnsItemsAndXTotalCount() {
+    when(service.count(COLL_APP_ID)).thenReturn(2L);
+    when(service.list(COLL_APP_ID, 0, 50)).thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
+
+    Response r = resource.list(COLL_APP_ID, 0, 50);
+
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
     assertEquals(2, body.items().size());
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+    assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
-  void list_pageSize1_returnsFirstItemOnly() {
-    when(service.list(COLL_APP_ID))
-      .thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
-    Response r = resource.list(COLL_APP_ID, 0, 1);
+  void list_page1_computesCorrectSkip() {
+    when(service.count(COLL_APP_ID)).thenReturn(10L);
+    when(service.list(eq(COLL_APP_ID), eq(3), eq(3)))
+      .thenReturn(List.of(watch(W1_APP_ID)));
+
+    Response r = resource.list(COLL_APP_ID, 1, 3);
+
     assertEquals(200, r.getStatus());
+    // page=1, pageSize=3 → skip=3
+    verify(service).list(COLL_APP_ID, 3, 3);
+    assertEquals("10", r.getHeaderString("X-Total-Count"));
+  }
+
+  @Test
+  void list_xTotalCountReflectsCountNotItemsSize() {
+    when(service.count(COLL_APP_ID)).thenReturn(100L);
+    when(service.list(COLL_APP_ID, 0, 50)).thenReturn(List.of(watch(W1_APP_ID)));
+
+    Response r = resource.list(COLL_APP_ID, 0, 50);
+
+    assertEquals("100", r.getHeaderString("X-Total-Count"));
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
     assertEquals(1, body.items().size());
-    assertEquals(W1_APP_ID, body.items().get(0).watchAppId());
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+    assertEquals(100L, body.total());
   }
 
   @Test
-  void list_pageSizeCappedAt200() {
-    List<WatchIO> many = IntStream.range(0, 50)
-      .mapToObj(i -> watch("018f9c5a-7e26-7000-b000-" + String.format("%012d", i)))
-      .collect(Collectors.toList());
-    when(service.list(COLL_APP_ID)).thenReturn(many);
-    Response r = resource.list(COLL_APP_ID, 0, 999);
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
-    assertTrue(body.items().size() <= 200, "pageSize must be capped at 200");
-    assertEquals("50", String.valueOf(r.getHeaderString("X-Total-Count")));
-  }
+  void list_emptyPage_returnsEmptyItemsButCorrectTotal() {
+    when(service.count(COLL_APP_ID)).thenReturn(2L);
+    when(service.list(COLL_APP_ID, 990, 50)).thenReturn(List.of());
 
-  @Test
-  void list_pagePastEnd_returnsEmpty() {
-    when(service.list(COLL_APP_ID))
-      .thenReturn(List.of(watch(W1_APP_ID), watch(W2_APP_ID)));
     Response r = resource.list(COLL_APP_ID, 99, 10);
+
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
-    assertTrue(body.items().isEmpty(), "page past end must return empty list");
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
+    assertTrue(body.items().isEmpty());
+    assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
 
   @Test

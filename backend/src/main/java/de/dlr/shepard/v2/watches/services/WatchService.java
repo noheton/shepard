@@ -74,6 +74,23 @@ public class WatchService {
     return result;
   }
 
+  /** Count watches on a collection — for pagination envelope. */
+  public long count(String collectionAppId) {
+    getCollection(collectionAppId);
+    return watchDAO.countByCollectionAppId(collectionAppId);
+  }
+
+  /** Bounded list — SKIP/LIMIT pushed to Neo4j; resolves only the fetched slice. */
+  public List<WatchIO> list(String collectionAppId, int skip, int limit) {
+    getCollection(collectionAppId);
+    List<Watch> watches = watchDAO.findByCollectionAppId(collectionAppId, skip, limit);
+    List<WatchIO> result = new ArrayList<>(watches.size());
+    for (Watch w : watches) {
+      result.add(resolveContainer(WatchIO.from(w)));
+    }
+    return result;
+  }
+
   /** Create a watch link, idempotent on (collection, container) pair. */
   public WatchIO create(String collectionAppId, Watch.Kind kind, String containerAppId) {
     Collection coll = getCollection(collectionAppId);
