@@ -13,6 +13,7 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
@@ -43,6 +44,9 @@ public class FileGroupServiceTest {
 
   @InjectMock
   FileBundleReferenceDAO fileBundleReferenceDAO;
+
+  @InjectMock
+  ShepardFileDAO shepardFileDAO;
 
   @InjectMock
   UserService userService;
@@ -328,5 +332,24 @@ public class FileGroupServiceTest {
   public void findBundleAppIdForGroup_returnsNullWhenAbsent() {
     when(fileGroupDAO.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(null);
     assertNull(service.findBundleAppIdForGroup(GROUP_APP_ID));
+  }
+
+  // ─── countFiles / listFiles ───────────────────────────────────────────────
+
+  @Test
+  public void countFiles_delegatesToDAO() {
+    when(shepardFileDAO.countByGroupAppId(GROUP_APP_ID)).thenReturn(42L);
+    assertEquals(42L, service.countFiles(GROUP_APP_ID));
+  }
+
+  @Test
+  public void listFiles_delegatesToDAO() {
+    var f1 = new ShepardFile("oid-1", new Date(), "a.png", "md5a");
+    var f2 = new ShepardFile("oid-2", new Date(), "b.png", "md5b");
+    when(shepardFileDAO.findByGroupAppId(GROUP_APP_ID, 0, 50)).thenReturn(List.of(f1, f2));
+    var got = service.listFiles(GROUP_APP_ID, 0, 50);
+    assertEquals(2, got.size());
+    assertEquals("a.png", got.get(0).getFilename());
+    assertEquals("b.png", got.get(1).getFilename());
   }
 }
