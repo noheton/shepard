@@ -164,6 +164,50 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
   }
 
   /**
+   * Returns the count of non-deleted {@link SnapshotEntry} nodes belonging to
+   * the snapshot with the given Neo4j internal id.
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the parent Snapshot.
+   * @return the number of non-deleted entries; 0 when none exist.
+   */
+  public long countEntriesBySnapshot(long snapshotNeo4jId) {
+    String query =
+      "MATCH (e:SnapshotEntry)-[:ENTRY_OF]->(s:Snapshot) " +
+      "WHERE id(s) = $id AND (e.deleted IS NULL OR e.deleted = false) " +
+      "RETURN count(e) AS total";
+    var iter = session.query(query, Map.of("id", snapshotNeo4jId)).iterator();
+    if (!iter.hasNext()) return 0L;
+    Object val = iter.next().get("total");
+    return val instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * Returns a bounded page of non-deleted {@link SnapshotEntry} nodes for the
+   * snapshot identified by {@code snapshotNeo4jId}, ordered by
+   * {@code entityAppId} ASC (same order as the unbounded overload).
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the parent Snapshot.
+   * @param skip the number of rows to skip ({@code page * pageSize}).
+   * @param limit the maximum number of rows to return ({@code pageSize}).
+   * @return the requested page of entries; empty when skip &ge; total.
+   */
+  public List<SnapshotEntry> findEntriesBySnapshot(long snapshotNeo4jId, int skip, int limit) {
+    String query =
+      "MATCH (e:SnapshotEntry)-[:ENTRY_OF]->(s:Snapshot) " +
+      "WHERE id(s) = $id AND (e.deleted IS NULL OR e.deleted = false) " +
+      "RETURN e " +
+      "ORDER BY e.entityAppId ASC " +
+      "SKIP $skip LIMIT $limit";
+    return StreamSupport
+      .stream(
+        session.query(SnapshotEntry.class, query,
+          Map.of("id", snapshotNeo4jId, "skip", (long) skip, "limit", (long) limit)).spliterator(),
+        false
+      )
+      .toList();
+  }
+
+  /**
    * Walks the Collection subtree identified by {@code collectionAppId} up to
    * 15 relationship hops and returns a list of {@code {entityAppId, revision}}
    * maps for every distinct {@code :VersionableEntity} node with a non-null
