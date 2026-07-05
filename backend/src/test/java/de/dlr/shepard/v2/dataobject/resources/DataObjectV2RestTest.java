@@ -802,14 +802,13 @@ class DataObjectV2RestTest {
   @Test
   void predecessorsReturns200WithSummaries() {
     DataObject pred = makeDataObject(11L, "018f-pred-0011", "pred-run");
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    d.getPredecessors().add(pred);
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countPredecessors(DO_APP_ID)).thenReturn(1L);
+    when(dataObjectService.listPredecessors(eq(DO_APP_ID), eq(0), eq(50))).thenReturn(List.of(pred));
 
     Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
@@ -822,17 +821,14 @@ class DataObjectV2RestTest {
 
   @Test
   void predecessorsPaginationSlicesCorrectly() {
-    DataObject p1 = makeDataObject(11L, "018f-pred-0011", "pred-run-1");
     DataObject p2 = makeDataObject(12L, "018f-pred-0012", "pred-run-2");
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    d.getPredecessors().add(p1);
-    d.getPredecessors().add(p2);
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countPredecessors(DO_APP_ID)).thenReturn(2L);
+    when(dataObjectService.listPredecessors(eq(DO_APP_ID), eq(1), eq(1))).thenReturn(List.of(p2));
 
     Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, 1, 1, securityContext);
 
@@ -849,14 +845,13 @@ class DataObjectV2RestTest {
   @Test
   void successorsReturns200WithSummaries() {
     DataObject succ = makeDataObject(22L, "018f-succ-0022", "next-run");
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    d.getSuccessors().add(succ);
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countSuccessors(DO_APP_ID)).thenReturn(1L);
+    when(dataObjectService.listSuccessors(eq(DO_APP_ID), eq(0), eq(50))).thenReturn(List.of(succ));
 
     Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
@@ -869,15 +864,12 @@ class DataObjectV2RestTest {
 
   @Test
   void successorsPaginationReturnsEmptyPageBeyondEnd() {
-    DataObject succ = makeDataObject(22L, "018f-succ-0022", "next-run");
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    d.getSuccessors().add(succ);
-
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countSuccessors(DO_APP_ID)).thenReturn(1L);
+    when(dataObjectService.listSuccessors(eq(DO_APP_ID), eq(50), eq(10))).thenReturn(List.of());
 
     Response r = resource.successors(COLL_APP_ID, DO_APP_ID, 5, 10, securityContext);
 
@@ -891,14 +883,13 @@ class DataObjectV2RestTest {
   @Test
   void childrenReturns200WithSummaries() {
     DataObject child = makeDataObject(33L, "018f-child-0033", "sub-run");
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    d.getChildren().add(child);
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countChildren(DO_APP_ID)).thenReturn(1L);
+    when(dataObjectService.listChildren(eq(DO_APP_ID), eq(0), eq(50))).thenReturn(List.of(child));
 
     Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 50, securityContext);
 
@@ -911,16 +902,17 @@ class DataObjectV2RestTest {
 
   @Test
   void childrenPaginationTotalReflectsFullCount() {
-    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
-    for (int i = 0; i < 5; i++) {
-      d.getChildren().add(makeDataObject(100L + i, "018f-child-00" + i, "child-" + i));
-    }
+    List<DataObject> page0children = List.of(
+      makeDataObject(100L, "018f-child-000", "child-0"),
+      makeDataObject(101L, "018f-child-001", "child-1")
+    );
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.countChildren(DO_APP_ID)).thenReturn(5L);
+    when(dataObjectService.listChildren(eq(DO_APP_ID), eq(0), eq(2))).thenReturn(page0children);
 
     Response r = resource.children(COLL_APP_ID, DO_APP_ID, 0, 2, securityContext);
 

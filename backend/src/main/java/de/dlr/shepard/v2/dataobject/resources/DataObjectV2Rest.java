@@ -667,16 +667,11 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
-    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> all = new ArrayList<>();
-    for (DataObject p : d.getPredecessors()) {
-      if (!p.isDeleted()) all.add(new DataObjectSummaryIO(p));
-    }
-    int total = all.size();
-    long fromLong = (long) page * pageSize;
-    int from = (int) Math.min(fromLong, (long) total);
-    int to = (int) Math.min(fromLong + pageSize, (long) total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    int total = (int) Math.min(dataObjectService.countPredecessors(dataObjectAppId), (long) Integer.MAX_VALUE);
+    int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+    List<DataObjectSummaryIO> items = dataObjectService.listPredecessors(dataObjectAppId, skip, pageSize)
+        .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -781,16 +776,11 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
-    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> all = new ArrayList<>();
-    for (DataObject s : d.getSuccessors()) {
-      if (!s.isDeleted()) all.add(new DataObjectSummaryIO(s));
-    }
-    int total = all.size();
-    long fromLong = (long) page * pageSize;
-    int from = (int) Math.min(fromLong, (long) total);
-    int to = (int) Math.min(fromLong + pageSize, (long) total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
+    int total = (int) Math.min(dataObjectService.countSuccessors(dataObjectAppId), (long) Integer.MAX_VALUE);
+    int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+    List<DataObjectSummaryIO> items = dataObjectService.listSuccessors(dataObjectAppId, skip, pageSize)
+        .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @GET
@@ -830,16 +820,11 @@ public class DataObjectV2Rest {
     Long collectionOgmId = resolveOrNull(collectionAppId);
     if (collectionOgmId == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection found for collectionAppId");
 
-    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    List<DataObjectSummaryIO> all = new ArrayList<>();
-    for (DataObject c : d.getChildren()) {
-      if (!c.isDeleted()) all.add(new DataObjectSummaryIO(c));
-    }
-    int total = all.size();
-    long fromLong = (long) page * pageSize;
-    int from = (int) Math.min(fromLong, (long) total);
-    int to = (int) Math.min(fromLong + pageSize, (long) total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize)).build();
+    int total = (int) Math.min(dataObjectService.countChildren(dataObjectAppId), (long) Integer.MAX_VALUE);
+    int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+    List<DataObjectSummaryIO> items = dataObjectService.listChildren(dataObjectAppId, skip, pageSize)
+        .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 
   @GET
