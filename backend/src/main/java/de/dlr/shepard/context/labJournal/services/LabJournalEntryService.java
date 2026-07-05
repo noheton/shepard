@@ -125,7 +125,7 @@ public class LabJournalEntryService {
     String oldContent = labJournalEntry.getContent();
     if (oldContent != null && !oldContent.equals(content)) {
       User user = userService.getCurrentUser();
-      int nextRevisionNumber = labJournalEntryRevisionDAO.findByEntry(labJournalEntryId).size() + 1;
+      int nextRevisionNumber = (int) labJournalEntryRevisionDAO.countByEntry(labJournalEntryId) + 1;
       LabJournalEntryRevision revision = new LabJournalEntryRevision();
       revision.setContent(oldContent);
       revision.setRevisionNumber(nextRevisionNumber);
