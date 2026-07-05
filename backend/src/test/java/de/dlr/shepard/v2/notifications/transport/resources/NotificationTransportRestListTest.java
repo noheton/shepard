@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportReadIO;
 import de.dlr.shepard.v2.notifications.transport.services.NotificationTransportService;
 import jakarta.annotation.security.RolesAllowed;
@@ -62,19 +61,16 @@ class NotificationTransportRestListTest {
   // ─── GET ───────────────────────────────────────────────────────────────
 
   @Test
-  void list_emptyServiceReturnsEmptyEnvelope() {
+  void list_emptyServiceReturnsEmptyList() {
     when(service.listAll()).thenReturn(List.of());
 
     Response r = rest.list();
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<NotificationTransportReadIO> out = (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
+    List<NotificationTransportReadIO> out = (List<NotificationTransportReadIO>) r.getEntity();
     assertNotNull(out);
-    assertTrue(out.items().isEmpty());
-    assertEquals(0, out.total());
-    assertEquals(0, out.page());
-    assertEquals(0, out.pageSize());
+    assertTrue(out.isEmpty());
   }
 
   @Test
@@ -100,13 +96,10 @@ class NotificationTransportRestListTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<NotificationTransportReadIO> out = (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
-    assertEquals(2, out.items().size());
-    assertEquals(2L, out.total());
-    assertEquals(0, out.page());
-    assertEquals(2, out.pageSize());
-    assertEquals("app-smtp", out.items().get(0).appId());
-    assertEquals("app-matrix", out.items().get(1).appId());
+    List<NotificationTransportReadIO> out = (List<NotificationTransportReadIO>) r.getEntity();
+    assertEquals(2, out.size());
+    assertEquals("app-smtp", out.get(0).appId());
+    assertEquals("app-matrix", out.get(1).appId());
   }
 
   @Test
