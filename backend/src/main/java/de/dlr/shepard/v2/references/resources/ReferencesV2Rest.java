@@ -492,7 +492,7 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks Read access on the parent DataObject");
     }
     try {
-      int skip = page * pageSize;
+      int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
       int total = referencesService.countByDataObject(kind, dataObjectAppId, fileKind);
       List<ReferenceV2IO> pageItems = referencesService.listByDataObject(kind, dataObjectAppId, fileKind, skip, pageSize);
       return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
