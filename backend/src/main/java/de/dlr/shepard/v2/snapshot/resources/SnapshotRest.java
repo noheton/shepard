@@ -161,16 +161,14 @@ public class SnapshotRest {
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
 
-    List<SnapshotEntryIO> allEntries = snapshotService
-      .findEntries(snapshot.getId())
+    long totalLong = snapshotService.countEntries(snapshot.getId());
+    int total = (int) Math.min(totalLong, Integer.MAX_VALUE);
+    int skip = (int) Math.min((long) page * pageSize, (long) total);
+    List<SnapshotEntryIO> pageEntries = snapshotService
+      .findEntriesPage(snapshot.getId(), skip, pageSize)
       .stream()
       .map(SnapshotEntryIO::new)
       .toList();
-
-    int total = allEntries.size();
-    int from = Math.min(page * pageSize, total);
-    int to = Math.min(from + pageSize, total);
-    List<SnapshotEntryIO> pageEntries = allEntries.subList(from, to);
 
     return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize)).build();
   }

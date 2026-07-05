@@ -242,7 +242,7 @@ class SnapshotRestTest {
     assertThat(r.getStatus()).isEqualTo(403);
   }
 
-  // ── SnapshotRest — GET manifest (APISIMP-SNAPSHOT-MANIFEST-FAKE-PAGED) ───
+  // ── SnapshotRest — GET manifest (APISIMP-SNAPSHOT-MANIFEST-IN-MEMORY-PAGING) ─
 
   @Test
   void manifest_returns200_withEntries() {
@@ -252,7 +252,8 @@ class SnapshotRestTest {
     SnapshotEntry e2 = new SnapshotEntry();
     e2.setEntityAppId("entity-app-id-2");
     e2.setRevision(7L);
-    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(List.of(e1, e2));
+    when(snapshotService.countEntries(SNAP_OGM_ID)).thenReturn(2L);
+    when(snapshotService.findEntriesPage(SNAP_OGM_ID, 0, 200)).thenReturn(List.of(e1, e2));
 
     Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -272,7 +273,8 @@ class SnapshotRestTest {
       e.setRevision((long) i);
       entries.add(e);
     }
-    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(entries);
+    when(snapshotService.countEntries(SNAP_OGM_ID)).thenReturn(5L);
+    when(snapshotService.findEntriesPage(SNAP_OGM_ID, 0, 2)).thenReturn(entries.subList(0, 2));
 
     Response r = snapshotRest.manifest(SNAP_APP_ID, 0, 2, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -291,7 +293,8 @@ class SnapshotRestTest {
       e.setRevision((long) i);
       entries.add(e);
     }
-    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(entries);
+    when(snapshotService.countEntries(SNAP_OGM_ID)).thenReturn(5L);
+    when(snapshotService.findEntriesPage(SNAP_OGM_ID, 2, 2)).thenReturn(entries.subList(2, 4));
 
     Response r = snapshotRest.manifest(SNAP_APP_ID, 1, 2, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -303,10 +306,9 @@ class SnapshotRestTest {
 
   @Test
   void manifest_paginatesCorrectly_beyondLastPage_returnsEmpty() {
-    SnapshotEntry e = new SnapshotEntry();
-    e.setEntityAppId("id-0");
-    e.setRevision(0L);
-    when(snapshotService.findEntries(SNAP_OGM_ID)).thenReturn(List.of(e));
+    // page=5, pageSize=200, total=1 → skip = min(5*200, 1) = 1 → DB returns empty
+    when(snapshotService.countEntries(SNAP_OGM_ID)).thenReturn(1L);
+    when(snapshotService.findEntriesPage(SNAP_OGM_ID, 1, 200)).thenReturn(List.of());
 
     Response r = snapshotRest.manifest(SNAP_APP_ID, 5, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);

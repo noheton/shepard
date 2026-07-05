@@ -231,6 +231,30 @@ public class SnapshotService {
   }
 
   /**
+   * Returns the total count of non-deleted manifest entries for the given snapshot.
+   * Used by the paginated manifest endpoint to populate the {@code total} envelope field.
+   *
+   * @param snapshotNeo4jId the OGM-managed Long id.
+   * @return entry count; 0 when the snapshot has no entries.
+   */
+  public long countEntries(long snapshotNeo4jId) {
+    return snapshotDAO.countEntriesBySnapshot(snapshotNeo4jId);
+  }
+
+  /**
+   * Returns a bounded page of manifest entries for the given snapshot.
+   * Pushes SKIP/LIMIT to Cypher so only the requested rows are loaded.
+   *
+   * @param snapshotNeo4jId the OGM-managed Long id.
+   * @param skip            number of rows to skip ({@code page * pageSize}).
+   * @param limit           maximum number of rows to return ({@code pageSize}).
+   * @return the requested page of entries; empty when skip &ge; total.
+   */
+  public List<SnapshotEntry> findEntriesPage(long snapshotNeo4jId, int skip, int limit) {
+    return snapshotDAO.findEntriesBySnapshot(snapshotNeo4jId, skip, limit);
+  }
+
+  /**
    * Returns a map of {@code entityAppId → revision} for all entries of the
    * given snapshot. Used by V2e diff computation.
    *
