@@ -197,6 +197,16 @@ public class ContainersV2Service {
     return requireHandlerForKind(kind).list(nameFilter);
   }
 
+  /** APISIMP-CONTAINERS-LIST-IN-MEMORY-PAGING — count without loading all. */
+  public int count(String kind, String nameFilter) {
+    return requireHandlerForKind(kind).count(nameFilter);
+  }
+
+  /** APISIMP-CONTAINERS-LIST-IN-MEMORY-PAGING — bounded page of containers. */
+  public List<ContainerV2IO> list(String kind, String nameFilter, int skip, int limit) {
+    return requireHandlerForKind(kind).list(nameFilter, skip, limit);
+  }
+
   /**
    * V2CONV-A7-HDF — resolve the single-file download for the container at
    * {@code appId} via the owning kind's handler. Returns empty when no container

@@ -702,10 +702,12 @@ class ContainersV2RestTest {
 
   @Test
   void list_returns200WithNameFilter() {
-    when(containersService.list(eq("file"), eq("sca"))).thenReturn(List.of(new ContainerV2IO()));
+    when(containersService.count(eq("file"), eq("sca"))).thenReturn(1);
+    when(containersService.list(eq("file"), eq("sca"), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO()));
     var r = resource.list("file", "sca", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    verify(containersService).list("file", "sca");
+    verify(containersService).count("file", "sca");
+    verify(containersService).list("file", "sca", 0, 50);
   }
 
   @Test
@@ -723,7 +725,8 @@ class ContainersV2RestTest {
 
   @Test
   void list_xTotalCountHeaderIsPresent() {
-    when(containersService.list(eq("file"), isNull())).thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
+    when(containersService.count(eq("file"), isNull())).thenReturn(2);
+    when(containersService.list(eq("file"), isNull(), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
     var r = resource.list("file", null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("2", r.getHeaderString("X-Total-Count"));
@@ -731,8 +734,9 @@ class ContainersV2RestTest {
 
   @Test
   void list_paginationReturnsSublistWhenPageAndSizeProvided() {
-    when(containersService.list(eq("file"), isNull()))
-        .thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO(), new ContainerV2IO()));
+    when(containersService.count(eq("file"), isNull())).thenReturn(3);
+    when(containersService.list(eq("file"), isNull(), eq(0), eq(2)))
+        .thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
     var r = resource.list("file", null, 0, 2, securityContext);
     assertEquals(200, r.getStatus());
     assertEquals("3", r.getHeaderString("X-Total-Count"));
@@ -743,7 +747,8 @@ class ContainersV2RestTest {
 
   @Test
   void list_paginationPageBeyondRangeReturnsEmptyList() {
-    when(containersService.list(eq("file"), isNull())).thenReturn(List.of(new ContainerV2IO()));
+    when(containersService.count(eq("file"), isNull())).thenReturn(1);
+    when(containersService.list(eq("file"), isNull(), eq(990), eq(10))).thenReturn(List.of());
     var r = resource.list("file", null, 99, 10, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -753,10 +758,11 @@ class ContainersV2RestTest {
 
   @Test
   void list_pageSizeCappedAt200() {
-    var many = java.util.stream.IntStream.range(0, 250)
+    var page0 = java.util.stream.IntStream.range(0, 200)
         .mapToObj(i -> new ContainerV2IO())
         .collect(java.util.stream.Collectors.toList());
-    when(containersService.list(eq("file"), isNull())).thenReturn(many);
+    when(containersService.count(eq("file"), isNull())).thenReturn(250);
+    when(containersService.list(eq("file"), isNull(), eq(0), eq(200))).thenReturn(page0);
     var r = resource.list("file", null, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")

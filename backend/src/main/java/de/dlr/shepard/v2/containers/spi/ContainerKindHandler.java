@@ -144,6 +144,37 @@ public interface ContainerKindHandler {
   List<ContainerV2IO> list(String nameFilter);
 
   /**
+   * APISIMP-CONTAINERS-LIST-IN-MEMORY-PAGING — count containers without loading
+   * all of them. Default delegates to {@link #list(String)} for backward compat;
+   * DB-aware handlers override both methods to push COUNT + SKIP/LIMIT to the
+   * underlying store.
+   *
+   * @param nameFilter optional name substring filter; null = no filter.
+   * @return total count of matching containers.
+   */
+  default int count(String nameFilter) {
+    return list(nameFilter).size();
+  }
+
+  /**
+   * APISIMP-CONTAINERS-LIST-IN-MEMORY-PAGING — bounded page of containers.
+   * Default slices the full list in memory; DB-aware handlers override for
+   * true Cypher/SQL SKIP/LIMIT.
+   *
+   * @param nameFilter optional name substring filter; null = no filter.
+   * @param skip 0-based offset (number of records to skip).
+   * @param limit maximum records to return (must be &gt; 0).
+   * @return the unified IOs for the requested page (possibly empty, never null).
+   */
+  default List<ContainerV2IO> list(String nameFilter, int skip, int limit) {
+    List<ContainerV2IO> all = list(nameFilter);
+    int total = all.size();
+    int from = (int) Math.min((long) skip, (long) total);
+    int to = (int) Math.min((long) skip + limit, (long) total);
+    return all.subList(from, to);
+  }
+
+  /**
    * V2CONV-A7-HDF — optionally resolve a single downloadable file payload for
    * the container at {@code appId}. This is the converged home for kind-specific
    * raw-file downloads (the migrated {@code /v2/hdf-containers/{appId}/file}

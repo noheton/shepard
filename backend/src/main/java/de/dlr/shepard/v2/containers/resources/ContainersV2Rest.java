@@ -465,11 +465,10 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     try {
-      List<ContainerV2IO> all = containersService.list(kind, name);
-      int total = all.size();
-      int from = (int) Math.min((long) page * pageSize, total);
-      int to = (int) Math.min((long) from + pageSize, total);
-      return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+      int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+      int total = containersService.count(kind, name);
+      List<ContainerV2IO> pageItems = containersService.list(kind, name, skip, pageSize);
+      return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
           .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
           .build();
     } catch (BadRequestException bre) {
