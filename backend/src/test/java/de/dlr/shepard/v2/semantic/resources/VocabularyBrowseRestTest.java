@@ -3,6 +3,9 @@ package de.dlr.shepard.v2.semantic.resources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -150,7 +153,8 @@ class VocabularyBrowseRestTest {
     Response response = rest.listPredicatesForVocabulary("missing-vocab-id", 0, 50);
 
     assertEquals(404, response.getStatus());
-    verify(predicateDAO, never()).listByVocabularyPaged("missing-vocab-id", 0, 2000);
+    verify(predicateDAO, never()).countByVocabulary(any());
+    verify(predicateDAO, never()).listByVocabularyPaged(any(), anyLong(), anyInt());
   }
 
   @Test
@@ -158,8 +162,9 @@ class VocabularyBrowseRestTest {
     Response response = rest.listPredicatesForVocabulary("   ", 0, 50);
 
     assertEquals(404, response.getStatus());
-    verify(vocabularyDAO, never()).findByAppId("   ");
-    verify(predicateDAO, never()).listByVocabularyPaged("   ", 0, 2000);
+    verify(vocabularyDAO, never()).findByAppId(any());
+    verify(predicateDAO, never()).countByVocabulary(any());
+    verify(predicateDAO, never()).listByVocabularyPaged(any(), anyLong(), anyInt());
   }
 
   @Test
@@ -167,14 +172,16 @@ class VocabularyBrowseRestTest {
     Response response = rest.listPredicatesForVocabulary(null, 0, 50);
 
     assertEquals(404, response.getStatus());
-    verify(predicateDAO, never()).listByVocabularyPaged(null, 0, 2000);
+    verify(predicateDAO, never()).countByVocabulary(any());
+    verify(predicateDAO, never()).listByVocabularyPaged(any(), anyLong(), anyInt());
   }
 
   @Test
   void listPredicatesReturns200WithEmptyListWhenVocabularyHasNoPredicates() {
     String vid = "v-empty";
     when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://example/", "Empty", true));
-    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(List.of());
+    when(predicateDAO.countByVocabulary(vid)).thenReturn(0L);
+    when(predicateDAO.listByVocabularyPaged(vid, 0L, 50)).thenReturn(List.of());
 
     Response response = rest.listPredicatesForVocabulary(vid, 0, 50);
 
@@ -183,14 +190,15 @@ class VocabularyBrowseRestTest {
     PagedResponseIO<PredicateIO> body = (PagedResponseIO<PredicateIO>) response.getEntity();
     assertNotNull(body);
     assertTrue(body.items().isEmpty());
-    assertEquals(0, body.total());
+    assertEquals(0L, body.total());
   }
 
   @Test
   void listPredicatesReturns200WithPredicatesWhenPresent() {
     String vid = "v-dcterms";
     when(vocabularyDAO.findByAppId(vid)).thenReturn(vocab(vid, "http://purl.org/dc/terms/", "Dublin Core Terms", true));
-    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(List.of(
+    when(predicateDAO.countByVocabulary(vid)).thenReturn(2L);
+    when(predicateDAO.listByVocabularyPaged(vid, 0L, 50)).thenReturn(List.of(
       predicate("p-creator", "http://purl.org/dc/terms/creator", "Creator", vid, true),
       predicate("p-title",   "http://purl.org/dc/terms/title",   "Title",   vid, false)
     ));
@@ -201,7 +209,7 @@ class VocabularyBrowseRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<PredicateIO> body = (PagedResponseIO<PredicateIO>) response.getEntity();
     assertEquals(2, body.items().size());
-    assertEquals(2, body.total());
+    assertEquals(2L, body.total());
 
     PredicateIO first = body.items().get(0);
     assertEquals("p-creator", first.appId());
@@ -225,20 +233,24 @@ class VocabularyBrowseRestTest {
     for (int i = 0; i < 5; i++) {
       allPreds.add(predicate("p-" + i, "http://example/p" + i, "P" + i, vid, false));
     }
-    when(predicateDAO.listByVocabularyPaged(vid, 0, 2000)).thenReturn(allPreds);
+    // page 0, pageSize 2 → skip=0
+    when(predicateDAO.countByVocabulary(vid)).thenReturn(5L);
+    when(predicateDAO.listByVocabularyPaged(vid, 0L, 2)).thenReturn(allPreds.subList(0, 2));
+    // page 2, pageSize 2 → skip=4
+    when(predicateDAO.listByVocabularyPaged(vid, 4L, 2)).thenReturn(allPreds.subList(4, 5));
 
     Response page0 = rest.listPredicatesForVocabulary(vid, 0, 2);
     assertEquals(200, page0.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<PredicateIO> body0 = (PagedResponseIO<PredicateIO>) page0.getEntity();
-    assertEquals(5, body0.total());
+    assertEquals(5L, body0.total());
     assertEquals(2, body0.items().size());
     assertEquals("p-0", body0.items().get(0).appId());
 
     Response page2 = rest.listPredicatesForVocabulary(vid, 2, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<PredicateIO> body2 = (PagedResponseIO<PredicateIO>) page2.getEntity();
-    assertEquals(5, body2.total());
+    assertEquals(5L, body2.total());
     assertEquals(1, body2.items().size()); // only p-4 left
     assertEquals("p-4", body2.items().get(0).appId());
   }
