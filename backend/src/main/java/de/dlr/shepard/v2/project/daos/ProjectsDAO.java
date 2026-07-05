@@ -371,7 +371,25 @@ public class ProjectsDAO {
     return 0L;
   }
 
-  /** Return appIds of every Collection that carries urn:shepard:project = "true". */
+  /** Count of all non-deleted Collections that carry urn:shepard:project = "true". */
+  public long countAllProjectAppIds() {
+    Session session = NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) return 0L;
+    String cypher =
+      "MATCH (proj:SemanticAnnotation { propertyIRI: $predProject }) " +
+      "WHERE proj.valueName = 'true' AND proj.subjectKind IN ['Collection', null] " +
+      "WITH DISTINCT proj.subjectAppId AS appId " +
+      "MATCH (c:Collection {appId: appId}) " +
+      "WHERE (c.deleted IS NULL OR c.deleted = false) " +
+      "RETURN count(c) AS total";
+    var result = session.query(cypher, Map.of("predProject", PRED_PROJECT));
+    for (var row : result) {
+      return asLongOrZero(row.get("total"));
+    }
+    return 0L;
+  }
+
+  /** Return all appIds of Collections that carry urn:shepard:project = "true" (unbounded; for MCP). */
   public List<String> findAllProjectAppIds() {
     Session session = NeoConnector.getInstance().getNeo4jSession();
     if (session == null) return List.of();
@@ -383,6 +401,28 @@ public class ProjectsDAO {
       "WHERE (c.deleted IS NULL OR c.deleted = false) " +
       "RETURN c.appId AS appId " +
       "ORDER BY c.name";
+    var result = session.query(cypher, Map.of("predProject", PRED_PROJECT));
+    List<String> out = new ArrayList<>();
+    for (var row : result) {
+      String appId = (String) row.get("appId");
+      if (appId != null) out.add(appId);
+    }
+    return out;
+  }
+
+  /** Return a page of appIds of Collections that carry urn:shepard:project = "true". */
+  public List<String> findAllProjectAppIds(int skip, int limit) {
+    Session session = NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) return List.of();
+    String cypher =
+      "MATCH (proj:SemanticAnnotation { propertyIRI: $predProject }) " +
+      "WHERE proj.valueName = 'true' AND proj.subjectKind IN ['Collection', null] " +
+      "WITH DISTINCT proj.subjectAppId AS appId " +
+      "MATCH (c:Collection {appId: appId}) " +
+      "WHERE (c.deleted IS NULL OR c.deleted = false) " +
+      "RETURN c.appId AS appId " +
+      "ORDER BY c.name " +
+      "SKIP " + skip + " LIMIT " + limit;
     var result = session.query(cypher, Map.of("predProject", PRED_PROJECT));
     List<String> out = new ArrayList<>();
     for (var row : result) {
