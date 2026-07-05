@@ -67,36 +67,78 @@ class VocabularyBrowseRestTest {
     return p;
   }
 
-  // ─── listVocabularies ────────────────────────────────────────────────────
+  // ─── listVocabularies (APISIMP-VOCAB-LIST-UNBOUNDED) ─────────────────────
 
   @Test
   void listVocabulariesReturnsEmptyWhenNoneSeeded() {
-    when(vocabularyDAO.listAll()).thenReturn(List.of());
+    when(vocabularyDAO.count()).thenReturn(0L);
+    when(vocabularyDAO.listPaged(0L, 50)).thenReturn(List.of());
 
-    Response response = rest.listVocabularies();
+    Response response = rest.listVocabularies(0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertNotNull(out);
-    assertTrue(out.isEmpty());
+    assertTrue(out.items().isEmpty());
+    assertEquals(0L, out.total());
+    assertEquals(0L, Long.parseLong(response.getHeaderString("X-Total-Count")));
   }
 
   @Test
   void listVocabulariesReturnsAllSeededRowsIncludingDisabled() {
-    when(vocabularyDAO.listAll()).thenReturn(List.of(
+    when(vocabularyDAO.count()).thenReturn(2L);
+    when(vocabularyDAO.listPaged(0L, 50)).thenReturn(List.of(
       vocab("v-dcterms", "http://purl.org/dc/terms/", "Dublin Core Terms", true),
       vocab("v-disabled", "http://example.com/disabled#", "Disabled vocab", false)
     ));
 
-    Response response = rest.listVocabularies();
+    Response response = rest.listVocabularies(0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
-    assertEquals(2, out.size());
-    assertTrue(out.stream().anyMatch(v -> "v-dcterms".equals(v.getAppId()) && v.isEnabled()));
-    assertTrue(out.stream().anyMatch(v -> "v-disabled".equals(v.getAppId()) && !v.isEnabled()));
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertEquals(2L, out.total());
+    assertEquals(2, out.items().size());
+    assertTrue(out.items().stream().anyMatch(v -> "v-dcterms".equals(v.getAppId()) && v.isEnabled()));
+    assertTrue(out.items().stream().anyMatch(v -> "v-disabled".equals(v.getAppId()) && !v.isEnabled()));
+  }
+
+  @Test
+  void listVocabulariesPaginatesCorrectly() {
+    when(vocabularyDAO.count()).thenReturn(3L);
+    when(vocabularyDAO.listPaged(0L, 2)).thenReturn(List.of(
+      vocab("v-a", "http://example/a#", "Alpha", true),
+      vocab("v-b", "http://example/b#", "Beta",  true)
+    ));
+    when(vocabularyDAO.listPaged(2L, 2)).thenReturn(List.of(
+      vocab("v-c", "http://example/c#", "Gamma", false)
+    ));
+
+    Response page0 = rest.listVocabularies(0, 2);
+    assertEquals(200, page0.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body0 = (PagedResponseIO<VocabularyIO>) page0.getEntity();
+    assertEquals(3L, body0.total());
+    assertEquals(2, body0.items().size());
+    assertEquals("v-a", body0.items().get(0).getAppId());
+
+    Response page1 = rest.listVocabularies(1, 2);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body1 = (PagedResponseIO<VocabularyIO>) page1.getEntity();
+    assertEquals(3L, body1.total());
+    assertEquals(1, body1.items().size());
+    assertEquals("v-c", body1.items().get(0).getAppId());
+  }
+
+  @Test
+  void listVocabulariesXTotalCountHeader() {
+    when(vocabularyDAO.count()).thenReturn(7L);
+    when(vocabularyDAO.listPaged(0L, 50)).thenReturn(List.of());
+
+    Response response = rest.listVocabularies(0, 50);
+
+    assertEquals(7L, Long.parseLong(response.getHeaderString("X-Total-Count")));
   }
 
   // ─── listPredicatesForVocabulary ─────────────────────────────────────────

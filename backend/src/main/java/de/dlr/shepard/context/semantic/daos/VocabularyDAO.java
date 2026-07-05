@@ -166,6 +166,42 @@ public class VocabularyDAO extends GenericDAO<Vocabulary> {
     return out;
   }
 
+  // ─── APISIMP-VOCAB-LIST-UNBOUNDED ────────────────────────────────────────
+
+  /**
+   * APISIMP-VOCAB-LIST-UNBOUNDED — total count of all {@code :Vocabulary}
+   * nodes. Used by the REST layer to populate the {@code total} field of
+   * the paged envelope without loading entity objects.
+   */
+  public long count() {
+    var result = session.query("MATCH (v:Vocabulary) RETURN count(v) AS c", Map.of());
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * APISIMP-VOCAB-LIST-UNBOUNDED — page of vocabularies ordered by
+   * {@code label} ASC (case-insensitive), with SKIP/LIMIT pushed to the
+   * database.
+   *
+   * @param skip  number of rows to skip (= page × pageSize)
+   * @param limit maximum rows to return (= pageSize)
+   * @return ordered page; empty list when {@code skip} exceeds total
+   */
+  public List<Vocabulary> listPaged(long skip, int limit) {
+    String query =
+      "MATCH (v:Vocabulary) " +
+      "RETURN v ORDER BY toLower(coalesce(v.label, '')) ASC " +
+      "SKIP $skip LIMIT $limit";
+    List<Vocabulary> out = new ArrayList<>();
+    for (Vocabulary v : findByQuery(query, Map.of("skip", skip, "limit", limit))) {
+      out.add(v);
+    }
+    return out;
+  }
+
   @Override
   public Class<Vocabulary> getEntityType() {
     return Vocabulary.class;
