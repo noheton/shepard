@@ -114,6 +114,40 @@ public class QueryParamHelper {
     return this;
   }
 
+  /**
+   * BUG-COLL-APPID-ROUTE-006-V2-LIST — restrict to DataObjects that are direct
+   * successors of the DataObject identified by {@code predecessorShepardId}.
+   * This is the appId-native {@code ?predecessorAppId=} list filter resolved to
+   * its shepardId at the resource boundary; it reuses the existing
+   * {@code predecessorId} DAO Cypher path
+   * ({@code <-[:has_successor]-(predecessor {shepardId})}).
+   *
+   * @param predecessorShepardId the numeric shepardId of the predecessor DataObject
+   *                             (resolved from the wire {@code predecessorAppId})
+   * @return this (fluent)
+   */
+  public QueryParamHelper withPredecessorShepardId(long predecessorShepardId) {
+    this.predecessorId = predecessorShepardId;
+    return this;
+  }
+
+  /**
+   * BUG-COLL-APPID-ROUTE-006-V2-LIST — restrict to DataObjects that are direct
+   * predecessors of the DataObject identified by {@code successorShepardId}.
+   * This is the appId-native {@code ?successorAppId=} list filter resolved to
+   * its shepardId at the resource boundary; it reuses the existing
+   * {@code successorId} DAO Cypher path
+   * ({@code -[:has_successor]->(successor {shepardId})}).
+   *
+   * @param successorShepardId the numeric shepardId of the successor DataObject
+   *                           (resolved from the wire {@code successorAppId})
+   * @return this (fluent)
+   */
+  public QueryParamHelper withSuccessorShepardId(long successorShepardId) {
+    this.successorId = successorShepardId;
+    return this;
+  }
+
   public QueryParamHelper withOrderByAttribute(OrderByAttribute orderBy, Boolean orderDesc) {
     this.orderByAttribute = orderBy;
     this.orderDesc = orderDesc;
