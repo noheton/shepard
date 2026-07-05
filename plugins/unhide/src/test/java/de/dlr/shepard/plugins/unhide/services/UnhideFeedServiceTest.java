@@ -14,9 +14,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
-import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
-import de.dlr.shepard.context.collection.entities.CollectionProperties;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
@@ -29,14 +27,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UnhideFeedServiceTest {
 
   private CollectionDAO collectionDAO;
-  private CollectionPropertiesDAO collectionPropertiesDAO;
   private ActivityDAO activityDAO;
   private PublicationDAO publicationDAO;
   private UnhideFeedService service;
@@ -44,12 +40,10 @@ class UnhideFeedServiceTest {
   @BeforeEach
   void setUp() {
     collectionDAO = mock(CollectionDAO.class);
-    collectionPropertiesDAO = mock(CollectionPropertiesDAO.class);
     activityDAO = mock(ActivityDAO.class);
     publicationDAO = mock(PublicationDAO.class);
     service = new UnhideFeedService();
     service.collectionDAO = collectionDAO;
-    service.collectionPropertiesDAO = collectionPropertiesDAO;
     service.activityDAO = activityDAO;
     service.publicationDAO = publicationDAO;
     // The renderer is pure / @ApplicationScoped — use the real
@@ -58,15 +52,13 @@ class UnhideFeedServiceTest {
     service.provJsonLdRenderer = new ProvJsonLdRenderer();
     service.provenanceWindow = UnhideFeedService.DEFAULT_PROVENANCE_WINDOW;
 
-    // Safe defaults — most tests don't care about activities /
-    // publications and the absence (null returns / empty lists) is
-    // the expected baseline.
+    // Safe defaults — most tests override these per-test; the empty
+    // baseline makes it clear which tests care about the DAO results.
+    when(collectionDAO.countForUnhideFeed()).thenReturn(0L);
+    when(collectionDAO.findForUnhideFeed(anyInt(), anyInt())).thenReturn(List.of());
     when(activityDAO.list(any(), any(), anyString(), any(), any(), anyInt()))
       .thenReturn(List.of());
     when(publicationDAO.findByEntityAppId(anyString())).thenReturn(List.of());
-    // UH1d default: no CollectionProperties node → treat as publishToHelmholtzKG=true.
-    when(collectionPropertiesDAO.findByCollectionAppId(anyString()))
-      .thenReturn(Optional.empty());
   }
 
   // ─── pagination ──────────────────────────────────────────────────────────
@@ -111,7 +103,7 @@ class UnhideFeedServiceTest {
 
   @Test
   void buildFeed_returnsEmptyGraph_whenNoCollections() {
-    when(collectionDAO.findAll()).thenReturn(List.of());
+    // defaults: count=0, find=[]
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
 
@@ -122,14 +114,15 @@ class UnhideFeedServiceTest {
     assertEquals(3, feed.context().size(),
       "context carries schema.org URI, m4i URI, and the inline shepard/dcat/m4i prefix map");
     assertTrue(feed.meta().containsKey("totalEntries"));
-    assertEquals(0, feed.meta().get("totalEntries"));
-    assertEquals(0, feed.meta().get("totalPages"));
+    assertEquals(0L, feed.meta().get("totalEntries"));
+    assertEquals(0L, feed.meta().get("totalPages"));
   }
 
   @Test
   void buildFeed_projectsCollectionsOntoJsonLdEntries() {
     Collection c = newCollection("01HFTEST", "Test campaign", "A test campaign", "alice", "0000-0002-1825-0097");
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
     cfg.setContactEmail("ops@example.dlr.de");
@@ -154,11 +147,12 @@ class UnhideFeedServiceTest {
   }
 
   @Test
-  void buildFeed_skipsDeletedCollections() {
+  void buildFeed_usesOnlyDaoWindow_noAdditionalJavaFiltering() {
+    // Filtering is done entirely in Cypher; the service must pass the DAO's
+    // window straight to toFeedEntry() without further removeIf() calls.
     Collection alive = newCollection("01HFLIVE", "Live", "live", "alice", null);
-    Collection dead = newCollection("01HFDEAD", "Dead", "dead", "alice", null);
-    dead.setDeleted(true);
-    when(collectionDAO.findAll()).thenReturn(List.of(alive, dead));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(alive));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
 
@@ -168,81 +162,57 @@ class UnhideFeedServiceTest {
     assertTrue(feed.graph().get(0).id().endsWith("01HFLIVE"));
   }
 
-  // ─── UH1d — per-Collection publishToHelmholtzKG toggle ───────────────────
+  // ─── UH1d — Cypher-level opt-out delegation ──────────────────────────────
+  // The publishToHelmholtzKG filter is now in Cypher (CollectionDAO.findForUnhideFeed).
+  // These tests verify that buildFeed() correctly delegates to countForUnhideFeed()
+  // and findForUnhideFeed() and uses their results, without any Java-side filtering.
 
   @Test
-  void buildFeed_excludesCollection_whenPublishToHelmholtzKGIsFalse() {
-    Collection included = newCollection("COL-IN",  "Included",  "d", "alice", null);
-    Collection excluded = newCollection("COL-OUT", "Excluded", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(included, excluded));
-
-    // Set the opt-out flag on COL-OUT.
-    var propsOut = new CollectionProperties("props-out");
-    propsOut.setPublishToHelmholtzKG(false);
-    when(collectionPropertiesDAO.findByCollectionAppId("COL-OUT"))
-      .thenReturn(Optional.of(propsOut));
-
+  void buildFeed_delegatesToCountForUnhideFeed_forTotalEntries() {
+    // countForUnhideFeed returns the post-opt-out count; service must use it.
+    Collection included = newCollection("COL-IN", "Included", "d", "alice", null);
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(included));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
+
     FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
 
-    assertEquals(1, feed.graph().size(),
-      "COL-OUT with publishToHelmholtzKG=false must be excluded from the feed");
-    assertTrue(feed.graph().get(0).id().endsWith("COL-IN"),
-      "only the opted-in Collection should appear");
+    assertEquals(1L, feed.meta().get("totalEntries"),
+      "totalEntries must reflect the count returned by countForUnhideFeed()");
+    assertEquals(1, feed.graph().size());
+    assertTrue(feed.graph().get(0).id().endsWith("COL-IN"));
   }
 
   @Test
-  void buildFeed_includesCollection_whenPropertiesNodeAbsent() {
-    // Legacy Collection — no properties node at all.
-    Collection c = newCollection("COL-LEGACY", "Legacy", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
-    // collectionPropertiesDAO returns Optional.empty() by default (setUp stub).
-
+  void buildFeed_totalPages_derivedFromCountForUnhideFeed() {
+    // Two collections over pages of size 1 → 2 total pages.
+    when(collectionDAO.countForUnhideFeed()).thenReturn(2L);
+    when(collectionDAO.findForUnhideFeed(0, 1))
+      .thenReturn(List.of(newCollection("C1", "C1", "d", "alice", null)));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
-    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
 
-    assertEquals(1, feed.graph().size(),
-      "Collection with no properties node must default to included (publishToHelmholtzKG=true)");
+    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 1);
+
+    assertEquals(2L, feed.meta().get("totalEntries"));
+    assertEquals(2L, feed.meta().get("totalPages"),
+      "ceil(2/1) = 2 pages");
   }
 
   @Test
-  void buildFeed_includesCollection_whenPublishToHelmholtzKGIsTrue() {
-    Collection c = newCollection("COL-EXPLICIT-TRUE", "Explicit true", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
-    var props = new CollectionProperties("props-true");
-    props.setPublishToHelmholtzKG(true);
-    when(collectionPropertiesDAO.findByCollectionAppId("COL-EXPLICIT-TRUE"))
-      .thenReturn(Optional.of(props));
-
+  void buildFeed_passesCorrectSkipToFindForUnhideFeed() {
+    // page=2, size=5 → skip must be 10.
+    when(collectionDAO.countForUnhideFeed()).thenReturn(15L);
+    when(collectionDAO.findForUnhideFeed(10, 5))
+      .thenReturn(List.of(newCollection("C10", "C10", "d", "alice", null)));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
-    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
 
-    assertEquals(1, feed.graph().size(),
-      "Collection with publishToHelmholtzKG=true must appear in the feed");
-  }
+    FeedIO feed = service.buildFeed(cfg, "https://e", 2, 5);
 
-  @Test
-  void buildFeed_paginationTotals_reflectFilteredCount() {
-    // Two Collections: one in, one out. totalEntries should count only included ones.
-    Collection included = newCollection("COL-IN2",  "In2",  "d", "alice", null);
-    Collection excluded = newCollection("COL-OUT2", "Out2", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(included, excluded));
-
-    var propsOut = new CollectionProperties("props-out2");
-    propsOut.setPublishToHelmholtzKG(false);
-    when(collectionPropertiesDAO.findByCollectionAppId("COL-OUT2"))
-      .thenReturn(Optional.of(propsOut));
-
-    UnhideConfig cfg = new UnhideConfig();
-    cfg.setEnabled(true);
-    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
-
-    assertEquals(1, feed.meta().get("totalEntries"),
-      "totalEntries must count only feed-eligible Collections");
-    assertEquals(1, feed.meta().get("totalPages"));
+    assertEquals(1, feed.graph().size());
+    verify(collectionDAO).findForUnhideFeed(10, 5);
   }
 
   @Test
@@ -251,10 +221,13 @@ class UnhideFeedServiceTest {
     long t = 1_700_000_000_000L;
     for (int i = 0; i < 7; i++) {
       Collection c = newCollection("appid-" + i, "C" + i, "d" + i, "alice", null);
-      c.setCreatedAt(new Date(t + i)); // stable order
+      c.setCreatedAt(new Date(t + i));
       many.add(c);
     }
-    when(collectionDAO.findAll()).thenReturn(many);
+    when(collectionDAO.countForUnhideFeed()).thenReturn(7L);
+    when(collectionDAO.findForUnhideFeed(0, 3)).thenReturn(many.subList(0, 3));
+    when(collectionDAO.findForUnhideFeed(3, 3)).thenReturn(many.subList(3, 6));
+    when(collectionDAO.findForUnhideFeed(6, 3)).thenReturn(many.subList(6, 7));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
 
@@ -265,8 +238,8 @@ class UnhideFeedServiceTest {
     assertEquals(3, p0.graph().size());
     assertEquals(3, p1.graph().size());
     assertEquals(1, p2.graph().size(), "last page has the remainder");
-    assertEquals(3, p0.meta().get("totalPages"));
-    assertEquals(7, p0.meta().get("totalEntries"));
+    assertEquals(3L, p0.meta().get("totalPages"));
+    assertEquals(7L, p0.meta().get("totalEntries"));
     // Disjoint windows.
     assertTrue(p0.graph().get(0).id().endsWith("appid-0"));
     assertTrue(p1.graph().get(0).id().endsWith("appid-3"));
@@ -275,7 +248,7 @@ class UnhideFeedServiceTest {
 
   @Test
   void buildFeed_negativePage_clampsToZero() {
-    when(collectionDAO.findAll()).thenReturn(List.of());
+    // defaults: count=0, find=[]
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
 
@@ -286,20 +259,21 @@ class UnhideFeedServiceTest {
 
   @Test
   void buildFeed_pageBeyondTotal_returnsEmptyWindow() {
-    Collection c = newCollection("only", "only", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    // count=1 but page=99 → skip=9900 → DAO returns empty (no such rows).
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(9900, 100)).thenReturn(List.of());
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
 
     FeedIO feed = service.buildFeed(cfg, "https://e", 99, 100);
 
     assertEquals(0, feed.graph().size());
-    assertEquals(1, feed.meta().get("totalEntries"));
+    assertEquals(1L, feed.meta().get("totalEntries"));
   }
 
   @Test
   void buildFeed_omitsContactEmail_whenBlank() {
-    when(collectionDAO.findAll()).thenReturn(List.of());
+    // defaults: count=0, find=[]
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
     cfg.setContactEmail("  ");
@@ -314,7 +288,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_emitsHasProcessingStepArray_whenActivitiesExist() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     when(activityDAO.list(any(), any(), eq("01HFTEST"), any(), any(), anyInt()))
       .thenReturn(List.of(
         newActivity("a-1", "CREATE", "alice", "Collection", "01HFTEST", 1L),
@@ -344,7 +319,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_omitsHasProcessingStep_whenNoActivities() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     // activityDAO.list default-stub returns empty list
 
     UnhideConfig cfg = new UnhideConfig();
@@ -359,7 +335,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_respectsProvenanceWindow_size() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     // Eight activities exist but only 5 should be returned given window=5.
     List<Activity> eight = new ArrayList<>();
     for (int i = 0; i < 8; i++) eight.add(newActivity("a-" + i, "CREATE", "alice", "Collection", "01HFTEST", (long) i));
@@ -382,7 +359,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_provenanceFetchFailure_omitsField() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     when(activityDAO.list(any(), any(), eq("01HFTEST"), any(), any(), anyInt()))
       .thenThrow(new RuntimeException("simulated DB hiccup"));
     UnhideConfig cfg = new UnhideConfig();
@@ -400,7 +378,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_emitsKipCitation_whenPublicationExists() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     Publication pub = newPublication("mock:shepard:collections:01HFTEST:1700000000", 1_700_000_000_000L);
     when(publicationDAO.findByEntityAppId("01HFTEST")).thenReturn(List.of(pub));
     UnhideConfig cfg = new UnhideConfig();
@@ -426,7 +405,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_kipCitation_picksMostRecentPublication() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     Publication stale1  = newPublication("pid-stale-1",  1_700_000_000_000L);
     Publication stale2  = newPublication("pid-stale-2",  1_700_000_001_000L);
     Publication current = newPublication("pid-current",  1_700_000_002_000L);
@@ -449,7 +429,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_omitsKipCitation_whenNoPublication() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     // publicationDAO.findByEntityAppId default-stub returns empty.
 
     UnhideConfig cfg = new UnhideConfig();
@@ -468,7 +449,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_kipFetchFailure_omitsFields() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     when(publicationDAO.findByEntityAppId("01HFTEST")).thenThrow(new RuntimeException("simulated DB hiccup"));
     UnhideConfig cfg = new UnhideConfig();
     cfg.setEnabled(true);
@@ -484,7 +466,8 @@ class UnhideFeedServiceTest {
   @Test
   void buildFeed_skipsPublicationWithBlankPid() {
     Collection c = newCollection("01HFTEST", "Test", "d", "alice", null);
-    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    when(collectionDAO.countForUnhideFeed()).thenReturn(1L);
+    when(collectionDAO.findForUnhideFeed(0, 100)).thenReturn(List.of(c));
     Publication blank = new Publication();
     blank.setMintedAt(1L);
     blank.setPid("   ");
