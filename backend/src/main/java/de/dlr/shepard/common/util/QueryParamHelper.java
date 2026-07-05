@@ -1,6 +1,8 @@
 package de.dlr.shepard.common.util;
 
 import de.dlr.shepard.common.neo4j.endpoints.OrderByAttribute;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +26,10 @@ public class QueryParamHelper {
   private String annotationFilterPredicateIri;
   /** COLL-TIMELINE-DRILLDOWN-FILTER-2: annotation literal value for lane filter. */
   private String annotationFilterValue;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-1: inclusive lower bound (epoch-millis, Neo4j @DateLong). */
+  private Long createdAfterMs;
+  /** COLL-TIMELINE-DRILLDOWN-FILTER-1: exclusive upper bound (epoch-millis, Neo4j @DateLong). */
+  private Long createdBeforeMs;
 
   public QueryParamHelper withName(String name) {
     this.name = name;
@@ -142,5 +148,28 @@ public class QueryParamHelper {
 
   public String getAnnotationFilterValue() {
     return annotationFilterValue;
+  }
+
+  /**
+   * COLL-TIMELINE-DRILLDOWN-FILTER-1: sets the inclusive lower and exclusive
+   * upper bounds for the {@code createdAt} window filter.
+   * Both parameters are ISO-8601 instant strings (e.g. {@code 2024-06-02T00:00:00Z}).
+   * Silently ignores malformed or null inputs — a half-parsed range is not
+   * stored (caller must supply both valid instants for the filter to activate).
+   */
+  public QueryParamHelper withCreatedRange(String afterIso, String beforeIso) {
+    if (afterIso == null || beforeIso == null) return this;
+    try {
+      this.createdAfterMs = Instant.parse(afterIso).toEpochMilli();
+      this.createdBeforeMs = Instant.parse(beforeIso).toEpochMilli();
+    } catch (DateTimeParseException e) {
+      this.createdAfterMs = null;
+      this.createdBeforeMs = null;
+    }
+    return this;
+  }
+
+  public boolean hasCreatedRange() {
+    return createdAfterMs != null && createdBeforeMs != null;
   }
 }
