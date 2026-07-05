@@ -4,7 +4,9 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import jakarta.enterprise.context.RequestScoped;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 @RequestScoped
 public class ShepardFileDAO extends GenericDAO<ShepardFile> {
@@ -26,6 +28,40 @@ public class ShepardFileDAO extends GenericDAO<ShepardFile> {
         );
     var results = findByQuery(query, Map.of("oid", oid, "containerAppId", resolveAppIdOrEmpty(containerId)));
     return results.iterator().hasNext() ? results.iterator().next() : null;
+  }
+
+  /**
+   * Count all {@link ShepardFile} nodes attached to the given {@link de.dlr.shepard.context.references.file.entities.FileGroup}.
+   * Pushes counting to Cypher — no OGM entity hydration.
+   *
+   * @param groupAppId the group's appId
+   * @return total number of files in that group
+   */
+  public long countByGroupAppId(String groupAppId) {
+    String query = "MATCH (:FileGroup {appId: $gid})-[:has_payload]->(f:ShepardFile) " +
+        "RETURN count(f) AS total";
+    var result = session.query(query, Map.of("gid", groupAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object v = iter.next().get("total");
+    return v instanceof Number ? ((Number) v).longValue() : 0L;
+  }
+
+  /**
+   * Return one page of {@link ShepardFile} nodes attached to the given group,
+   * ordered by filename ascending. Pagination is pushed to Cypher (SKIP/LIMIT).
+   *
+   * @param groupAppId the group's appId
+   * @param skip       0-based offset (pre-clamped by caller)
+   * @param limit      maximum rows to return (pre-clamped by caller)
+   * @return the requested page slice, possibly empty
+   */
+  public List<ShepardFile> findByGroupAppId(String groupAppId, int skip, int limit) {
+    String query = "MATCH (:FileGroup {appId: $gid})-[:has_payload]->(f:ShepardFile) " +
+        "WITH f ORDER BY f.filename ASC SKIP $skip LIMIT $limit " +
+        CypherQueryHelper.getReturnPart("f");
+    var result = findByQuery(query, Map.of("gid", groupAppId, "skip", (long) skip, "limit", (long) limit));
+    return StreamSupport.stream(result.spliterator(), false).toList();
   }
 
   @Override

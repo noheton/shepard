@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -459,9 +458,9 @@ public class FileBundleReferenceRest {
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
-    FileGroup group = fileGroupService.getByAppId(groupAppId);
-    if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
+    // Existence + membership check — single Cypher round-trip; avoids loading all file nodes.
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
+    if (parent == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
     // Clamp page + pageSize to sensible defaults. Out-of-range hints are
@@ -471,14 +470,12 @@ public class FileBundleReferenceRest {
     int pageIdx = (page == null || page < 0) ? 0 : page;
     int effectiveSize = (pageSize == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, pageSize));
 
-    List<ShepardFile> all = group.getFiles() != null ? group.getFiles() : List.of();
-    long total = all.size();
+    long total = fileGroupService.countFiles(groupAppId);
     int totalPages = effectiveSize == 0 ? 0 : (int) ((total + effectiveSize - 1) / effectiveSize);
-    int from = Math.min((int) total, pageIdx * effectiveSize);
-    int to = Math.min((int) total, from + effectiveSize);
-    List<ShepardFile> slice = from >= to ? List.of() : new ArrayList<>(all.subList(from, to));
+    int skip = pageIdx * effectiveSize;
+    List<ShepardFile> items = skip < total ? fileGroupService.listFiles(groupAppId, skip, effectiveSize) : List.of();
 
-    PagedFilesIO envelope = new PagedFilesIO(slice, pageIdx, effectiveSize, total, totalPages);
+    PagedFilesIO envelope = new PagedFilesIO(items, pageIdx, effectiveSize, total, totalPages);
     return Response.ok(envelope).build();
   }
 

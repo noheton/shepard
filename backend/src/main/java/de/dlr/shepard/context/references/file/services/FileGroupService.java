@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
 import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.CreateFileGroupIO;
@@ -34,6 +35,9 @@ public class FileGroupService {
 
   @Inject
   FileBundleReferenceDAO fileBundleReferenceDAO;
+
+  @Inject
+  ShepardFileDAO shepardFileDAO;
 
   @Inject
   UserService userService;
@@ -73,6 +77,30 @@ public class FileGroupService {
    */
   public FileGroup getByAppId(String appId) {
     return fileGroupDAO.findByAppId(appId);
+  }
+
+  /**
+   * Count files attached to the given group. Delegates to {@link ShepardFileDAO}
+   * so counting is pushed to Cypher — no full file hydration.
+   *
+   * @param groupAppId the group's appId.
+   * @return total number of files.
+   */
+  public long countFiles(String groupAppId) {
+    return shepardFileDAO.countByGroupAppId(groupAppId);
+  }
+
+  /**
+   * Return one page of files attached to the given group, ordered by filename
+   * ascending. Pagination is pushed to Cypher (SKIP/LIMIT).
+   *
+   * @param groupAppId the group's appId.
+   * @param skip       0-based offset (pre-clamped by caller).
+   * @param limit      maximum items to return (pre-clamped by caller).
+   * @return the requested page slice, possibly empty.
+   */
+  public List<ShepardFile> listFiles(String groupAppId, int skip, int limit) {
+    return shepardFileDAO.findByGroupAppId(groupAppId, skip, limit);
   }
 
   /**
