@@ -100,17 +100,17 @@ public class ShapesPredicatesRest {
     @Parameter(description = "Zero-based page index. Default 0.", required = false)
     @QueryParam("page") @DefaultValue("0") @Min(0) int page
   ) {
-    List<PredicateVocabularyEntryIO> all;
+    int skip = page * pageSize;
+    long total;
+    List<PredicateVocabularyEntryIO> items;
     if (substrate != null && !substrate.isBlank()) {
-      all = repository.findBySubstrate(substrate.trim());
+      String sub = substrate.trim();
+      total = repository.countBySubstrate(sub);
+      items = skip >= total ? List.of() : repository.findBySubstrate(sub, skip, pageSize);
     } else {
-      all = repository.findAll();
+      total = repository.count();
+      items = skip >= total ? List.of() : repository.findAll(skip, pageSize);
     }
-    int total = all.size();
-    int from = page * pageSize;
-    List<PredicateVocabularyEntryIO> items = from >= total
-      ? List.of()
-      : all.subList(from, Math.min(from + pageSize, total));
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
   }
 }

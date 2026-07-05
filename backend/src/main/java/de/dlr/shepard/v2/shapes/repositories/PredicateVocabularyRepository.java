@@ -35,6 +35,10 @@ public class PredicateVocabularyRepository {
     "SELECT predicate_uri, substrate, cardinality, writable, description, shape_file, added_at " +
     "FROM predicate_vocabulary ORDER BY predicate_uri";
 
+  private static final String SELECT_ALL_PAGED =
+    "SELECT predicate_uri, substrate, cardinality, writable, description, shape_file, added_at " +
+    "FROM predicate_vocabulary ORDER BY predicate_uri LIMIT ? OFFSET ?";
+
   private static final String SELECT_BY_URI =
     "SELECT predicate_uri, substrate, cardinality, writable, description, shape_file, added_at " +
     "FROM predicate_vocabulary WHERE predicate_uri = ?";
@@ -42,6 +46,16 @@ public class PredicateVocabularyRepository {
   private static final String SELECT_BY_SUBSTRATE =
     "SELECT predicate_uri, substrate, cardinality, writable, description, shape_file, added_at " +
     "FROM predicate_vocabulary WHERE substrate = ? ORDER BY predicate_uri";
+
+  private static final String SELECT_BY_SUBSTRATE_PAGED =
+    "SELECT predicate_uri, substrate, cardinality, writable, description, shape_file, added_at " +
+    "FROM predicate_vocabulary WHERE substrate = ? ORDER BY predicate_uri LIMIT ? OFFSET ?";
+
+  private static final String COUNT_ALL =
+    "SELECT count(*) FROM predicate_vocabulary";
+
+  private static final String COUNT_BY_SUBSTRATE =
+    "SELECT count(*) FROM predicate_vocabulary WHERE substrate = ?";
 
   @Inject
   AgroalDataSource defaultDataSource;
@@ -106,6 +120,92 @@ public class PredicateVocabularyRepository {
     } catch (Exception e) {
       Log.warnf(e, "predicate_vocabulary: findBySubstrate(%s) failed", substrate);
       return Collections.emptyList();
+    }
+  }
+
+  /**
+   * Returns a page of vocabulary entries ordered by {@code predicate_uri}.
+   *
+   * @param skip number of rows to skip (OFFSET)
+   * @param limit max rows to return (LIMIT)
+   * @return matching rows; empty list on error
+   */
+  public List<PredicateVocabularyEntryIO> findAll(int skip, int limit) {
+    try (Connection conn = defaultDataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(SELECT_ALL_PAGED)) {
+      ps.setInt(1, limit);
+      ps.setInt(2, skip);
+      try (ResultSet rs = ps.executeQuery()) {
+        return mapRows(rs);
+      }
+    } catch (Exception e) {
+      Log.warnf(e, "predicate_vocabulary: findAll(skip=%d, limit=%d) failed; returning empty list", skip, limit);
+      return Collections.emptyList();
+    }
+  }
+
+  /**
+   * Returns a page of predicates routed to a given substrate.
+   *
+   * @param substrate one of {@code neo4j}, {@code timescaledb},
+   *   {@code postgres}, {@code garage}
+   * @param skip number of rows to skip (OFFSET)
+   * @param limit max rows to return (LIMIT)
+   * @return matching rows; empty list on error or unknown substrate
+   */
+  public List<PredicateVocabularyEntryIO> findBySubstrate(String substrate, int skip, int limit) {
+    if (substrate == null || substrate.isBlank()) {
+      return Collections.emptyList();
+    }
+    try (Connection conn = defaultDataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(SELECT_BY_SUBSTRATE_PAGED)) {
+      ps.setString(1, substrate.trim());
+      ps.setInt(2, limit);
+      ps.setInt(3, skip);
+      try (ResultSet rs = ps.executeQuery()) {
+        return mapRows(rs);
+      }
+    } catch (Exception e) {
+      Log.warnf(e, "predicate_vocabulary: findBySubstrate(%s, skip=%d, limit=%d) failed", substrate, skip, limit);
+      return Collections.emptyList();
+    }
+  }
+
+  /**
+   * Returns the total number of vocabulary entries.
+   *
+   * @return row count; 0 on error
+   */
+  public long count() {
+    try (Connection conn = defaultDataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(COUNT_ALL);
+         ResultSet rs = ps.executeQuery()) {
+      return rs.next() ? rs.getLong(1) : 0L;
+    } catch (Exception e) {
+      Log.warnf(e, "predicate_vocabulary: count() failed; returning 0");
+      return 0L;
+    }
+  }
+
+  /**
+   * Returns the number of vocabulary entries for a given substrate.
+   *
+   * @param substrate substrate name
+   * @return row count; 0 on error or blank input
+   */
+  public long countBySubstrate(String substrate) {
+    if (substrate == null || substrate.isBlank()) {
+      return 0L;
+    }
+    try (Connection conn = defaultDataSource.getConnection();
+         PreparedStatement ps = conn.prepareStatement(COUNT_BY_SUBSTRATE)) {
+      ps.setString(1, substrate.trim());
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? rs.getLong(1) : 0L;
+      }
+    } catch (Exception e) {
+      Log.warnf(e, "predicate_vocabulary: countBySubstrate(%s) failed; returning 0", substrate);
+      return 0L;
     }
   }
 
