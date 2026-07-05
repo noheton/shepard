@@ -55,7 +55,7 @@ public class CollectionWatcherService {
   // ─── Public API ───────────────────────────────────────────────────────────
 
   /**
-   * List all watchers for a collection.
+   * List all watchers for a collection (unbounded — retained for internal/notification use).
    *
    * @param collectionAppId the collection's appId
    * @param caller          authenticated username
@@ -63,6 +63,33 @@ public class CollectionWatcherService {
   public List<CollectionWatcherIO> list(String collectionAppId, String caller) {
     assertCollectionReadable(collectionAppId, caller);
     return dao.findByCollectionAppId(collectionAppId)
+      .stream()
+      .map(CollectionWatcherIO::from)
+      .toList();
+  }
+
+  /**
+   * Count watchers for a collection (for pagination envelope).
+   *
+   * @param collectionAppId the collection's appId
+   * @param caller          authenticated username
+   */
+  public long count(String collectionAppId, String caller) {
+    assertCollectionReadable(collectionAppId, caller);
+    return dao.countByCollectionAppId(collectionAppId);
+  }
+
+  /**
+   * Bounded page of watchers — SKIP/LIMIT pushed to Neo4j.
+   *
+   * @param collectionAppId the collection's appId
+   * @param caller          authenticated username
+   * @param skip            number of rows to skip
+   * @param limit           max rows to return
+   */
+  public List<CollectionWatcherIO> list(String collectionAppId, String caller, int skip, int limit) {
+    assertCollectionReadable(collectionAppId, caller);
+    return dao.findByCollectionAppId(collectionAppId, skip, limit)
       .stream()
       .map(CollectionWatcherIO::from)
       .toList();

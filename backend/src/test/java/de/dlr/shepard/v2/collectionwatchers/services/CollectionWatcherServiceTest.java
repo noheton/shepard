@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -173,7 +173,7 @@ class CollectionWatcherServiceTest {
     assertFalse(result.isPresent());
   }
 
-  // ─── list() ──────────────────────────────────────────────────────────────
+  // ─── list() (unbounded) ───────────────────────────────────────────────────
 
   @Test
   void listReturnsMappedWatchers() {
@@ -197,6 +197,50 @@ class CollectionWatcherServiceTest {
 
     assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE));
     verify(dao, never()).findByCollectionAppId(anyString());
+  }
+
+  // ─── count() ─────────────────────────────────────────────────────────────
+
+  @Test
+  void countReturnsDaoResult() {
+    when(dao.countByCollectionAppId(COLLECTION_APP_ID)).thenReturn(7L);
+
+    long result = service.count(COLLECTION_APP_ID, ALICE);
+
+    assertEquals(7L, result);
+    verify(dao).countByCollectionAppId(COLLECTION_APP_ID);
+  }
+
+  @Test
+  void countThrowsForbiddenWhenNoReadPermission() {
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLLECTION_OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()))
+      .thenReturn(false);
+
+    assertThrows(ForbiddenException.class, () -> service.count(COLLECTION_APP_ID, ALICE));
+    verify(dao, never()).countByCollectionAppId(anyString());
+  }
+
+  // ─── list() (bounded) ─────────────────────────────────────────────────────
+
+  @Test
+  void boundedListCallsDaoWithSkipAndLimit() {
+    List<CollectionWatcher> watchers = List.of(makeWatcher(BOB, COLLECTION_APP_ID, "app-b"));
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 10, 5)).thenReturn(watchers);
+
+    List<CollectionWatcherIO> result = service.list(COLLECTION_APP_ID, ALICE, 10, 5);
+
+    assertEquals(1, result.size());
+    assertEquals("app-b", result.get(0).watcherAppId());
+    verify(dao).findByCollectionAppId(COLLECTION_APP_ID, 10, 5);
+  }
+
+  @Test
+  void boundedListThrowsForbiddenWhenNoReadPermission() {
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLLECTION_OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()))
+      .thenReturn(false);
+
+    assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE, 0, 50));
+    verify(dao, never()).findByCollectionAppId(anyString(), anyInt(), anyInt());
   }
 
   // ─── notifyWatchersOfNewDataObject() ─────────────────────────────────────

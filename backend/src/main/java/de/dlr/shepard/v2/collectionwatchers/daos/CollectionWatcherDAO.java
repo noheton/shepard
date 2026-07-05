@@ -31,6 +31,33 @@ public class CollectionWatcherDAO extends GenericDAO<CollectionWatcher> {
     return result;
   }
 
+  /** Bounded page of watcher records — SKIP/LIMIT pushed to Neo4j. */
+  public List<CollectionWatcher> findByCollectionAppId(String collectionAppId, int skip, int limit) {
+    String query =
+      "MATCH (w:CollectionWatcher) " +
+      "WHERE w.collectionAppId = $collectionAppId " +
+      "RETURN w ORDER BY w.since ASC " +
+      "SKIP $skip LIMIT $limit";
+    List<CollectionWatcher> result = new ArrayList<>();
+    for (var w : findByQuery(query, Map.of("collectionAppId", collectionAppId, "skip", skip, "limit", limit))) {
+      result.add(w);
+    }
+    return result;
+  }
+
+  /** Total watcher count for a collection — used for pagination envelope. */
+  public long countByCollectionAppId(String collectionAppId) {
+    String query =
+      "MATCH (w:CollectionWatcher) " +
+      "WHERE w.collectionAppId = $collectionAppId " +
+      "RETURN count(w) AS cnt";
+    var result = session.query(query, Map.of("collectionAppId", collectionAppId));
+    var row = result.iterator();
+    if (!row.hasNext()) return 0L;
+    Object cnt = row.next().get("cnt");
+    return cnt instanceof Number n ? n.longValue() : 0L;
+  }
+
   /** Find the watcher record for a specific (username, collectionAppId) pair. */
   public CollectionWatcher findByUsernameAndCollection(String username, String collectionAppId) {
     String query =

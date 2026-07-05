@@ -25,7 +25,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -88,11 +87,10 @@ public class CollectionWatchersRest {
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    List<CollectionWatcherIO> all = service.list(collectionAppId, caller);
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    long total = service.count(collectionAppId, caller);
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<CollectionWatcherIO> items = service.list(collectionAppId, caller, skip, pageSize);
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
