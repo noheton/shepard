@@ -119,6 +119,51 @@ public class VocabularyDAO extends GenericDAO<Vocabulary> {
     return out;
   }
 
+  // ─── APISIMP: DB-side pagination for PersonalVocabularyRest.list() ──────────
+
+  /** Count query for personal vocabularies owned by a given user. */
+  static final String COUNT_PERSONAL_CYPHER =
+    "MATCH (v:Vocabulary {ownedByUserAppId: $ownerAppId}) RETURN count(v)";
+
+  /** Bounded list query for personal vocabularies, ordered by label ASC. */
+  static final String LIST_PERSONAL_BOUNDED_CYPHER =
+    "MATCH (v:Vocabulary {ownedByUserAppId: $ownerAppId}) " +
+    "RETURN v " +
+    "ORDER BY toLower(coalesce(v.label, '')) ASC " +
+    "SKIP $skip LIMIT $limit";
+
+  /**
+   * Returns the total count of personal vocabularies owned by {@code userAppId}.
+   *
+   * @param userAppId the caller's UUID v7 application-level identifier
+   * @return count of personal vocabularies; 0 when none exist or input is blank
+   */
+  public long countPersonalByOwner(String userAppId) {
+    if (userAppId == null || userAppId.isBlank()) return 0L;
+    var it = session.query(Long.class, COUNT_PERSONAL_CYPHER, Map.of("ownerAppId", userAppId)).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
+  /**
+   * Returns a bounded, label-ASC page of personal vocabularies owned by {@code userAppId}.
+   * DB-side SKIP/LIMIT replaces the in-memory {@code subList} previously applied in
+   * {@link de.dlr.shepard.v2.vocabularies.resources.PersonalVocabularyRest#list}.
+   *
+   * @param userAppId the caller's UUID v7 application-level identifier
+   * @param skip      rows to skip (0-based; caller ensures ≥ 0)
+   * @param limit     maximum rows to return (caller ensures &gt; 0)
+   * @return page of personal vocabularies, ordered by label ASC; empty list when none exist
+   */
+  public List<Vocabulary> listPersonalByOwner(String userAppId, int skip, int limit) {
+    if (userAppId == null || userAppId.isBlank()) return java.util.Collections.emptyList();
+    List<Vocabulary> out = new ArrayList<>();
+    for (Vocabulary v : findByQuery(LIST_PERSONAL_BOUNDED_CYPHER,
+        Map.of("ownerAppId", userAppId, "skip", skip, "limit", limit))) {
+      out.add(v);
+    }
+    return out;
+  }
+
   // ─── TOOLS-CONTEXT-VOCAB-BACKEND-1 ───────────────────────────────────────
 
   /**

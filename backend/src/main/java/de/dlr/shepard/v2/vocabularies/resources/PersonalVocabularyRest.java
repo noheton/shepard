@@ -197,13 +197,11 @@ public class PersonalVocabularyRest {
         .header("X-Total-Count", 0L)
         .build();
     }
-    List<Vocabulary> vocabs = vocabDAO.listPersonalByOwner(user.getAppId());
-    List<VocabularyIO> all = vocabs.stream().map(VocabularyIO::from).toList();
-
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to   = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    long total = vocabDAO.countPersonalByOwner(user.getAppId());
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<Vocabulary> vocabs = vocabDAO.listPersonalByOwner(user.getAppId(), skip, pageSize);
+    List<VocabularyIO> items = vocabs.stream().map(VocabularyIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("X-Total-Count", total)
       .build();
   }
