@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 117 |
+| `deployed` | 118 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **528** |
+| **total docs** | **529** |
 | **UNTAGGED** | **0** |
 
 ## fragment (83)
@@ -440,14 +440,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-07-04 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-07-04 |
 
-## deployed (117)
+## deployed (118)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-07-04 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-07-04 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-07-04 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-05 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-06 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-07-04 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-07-04 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-07-04 |
@@ -496,7 +496,8 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire422-2026-07-05.md`](agent-findings/apisimp-sweep-fire422-2026-07-05.md) | APISIMP Sweep — fire-422 (2026-07-05) | 2026-07-05 | 2026-07-05 |
 | [`aidocs/agent-findings/apisimp-sweep-fire428-2026-07-05.md`](agent-findings/apisimp-sweep-fire428-2026-07-05.md) | APISIMP Sweep — fire-428 (2026-07-05) | 2026-07-05 | 2026-07-05 |
 | [`aidocs/agent-findings/apisimp-sweep-fire429-2026-07-05.md`](agent-findings/apisimp-sweep-fire429-2026-07-05.md) | APISIMP Sweep — fire-429 (2026-07-05) | 2026-07-05 | 2026-07-05 |
-| [`aidocs/agent-findings/apisimp-sweep-fire430-2026-07-05.md`](agent-findings/apisimp-sweep-fire430-2026-07-05.md) | APISIMP Sweep — fire-430 (2026-07-05) | 2026-07-05 | — |
+| [`aidocs/agent-findings/apisimp-sweep-fire430-2026-07-05.md`](agent-findings/apisimp-sweep-fire430-2026-07-05.md) | APISIMP Sweep — fire-430 (2026-07-05) | 2026-07-05 | 2026-07-05 |
+| [`aidocs/agent-findings/apisimp-sweep-fire432-2026-07-05.md`](agent-findings/apisimp-sweep-fire432-2026-07-05.md) | APISIMP Sweep — fire-432 (2026-07-05) | 2026-07-05 | — |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-07-04 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-07-04 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-07-04 |
