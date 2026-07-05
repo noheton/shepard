@@ -24,12 +24,14 @@ import org.mockito.MockitoAnnotations;
  *
  * <p>Verifies:
  * <ol>
- *   <li>No substrate filter → {@link PredicateVocabularyRepository#findAll()} called</li>
- *   <li>Substrate filter → {@link PredicateVocabularyRepository#findBySubstrate(String)} called</li>
- *   <li>Blank substrate filter treated as absent (calls findAll)</li>
+ *   <li>No substrate filter → {@link PredicateVocabularyRepository#count()} +
+ *       {@link PredicateVocabularyRepository#findAll(int, int)} called</li>
+ *   <li>Substrate filter → {@link PredicateVocabularyRepository#countBySubstrate(String)} +
+ *       {@link PredicateVocabularyRepository#findBySubstrate(String, int, int)} called</li>
+ *   <li>Blank substrate filter treated as absent (calls count/findAll)</li>
  *   <li>Empty result set → 200 with empty items list</li>
  *   <li>Endpoint is @RolesAllowed("authenticated")</li>
- *   <li>limit param caps the returned items list</li>
+ *   <li>limit param caps the returned items list (DB-side slicing)</li>
  *   <li>PagedResponseIO envelope is returned with correct total</li>
  * </ol>
  */
@@ -61,7 +63,8 @@ class ShapesPredicatesRestTest {
   @Test
   void noSubstrateFilter_callsFindAll() {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
-    when(repository.findAll()).thenReturn(List.of(entry));
+    when(repository.count()).thenReturn(1L);
+    when(repository.findAll(0, 200)).thenReturn(List.of(entry));
 
     Response r = rest.predicates(null, 200, 0);
 
@@ -71,17 +74,20 @@ class ShapesPredicatesRestTest {
     assertEquals(1, body.items().size());
     assertEquals(1L, body.total());
     assertEquals("neo4j", body.items().get(0).substrate());
-    verify(repository).findAll();
+    verify(repository).count();
+    verify(repository).findAll(0, 200);
   }
 
   @Test
   void blankSubstrateFilter_callsFindAll() {
-    when(repository.findAll()).thenReturn(List.of());
+    when(repository.count()).thenReturn(1L);
+    when(repository.findAll(0, 200)).thenReturn(List.of());
 
     Response r = rest.predicates("  ", 200, 0);
 
     assertEquals(200, r.getStatus());
-    verify(repository).findAll();
+    verify(repository).count();
+    verify(repository).findAll(0, 200);
   }
 
   // ─── substrate filter ──────────────────────────────────────────────────────
@@ -89,7 +95,8 @@ class ShapesPredicatesRestTest {
   @Test
   void substrateFilter_neo4j_callsFindBySubstrate() {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
-    when(repository.findBySubstrate("neo4j")).thenReturn(List.of(entry));
+    when(repository.countBySubstrate("neo4j")).thenReturn(1L);
+    when(repository.findBySubstrate("neo4j", 0, 200)).thenReturn(List.of(entry));
 
     Response r = rest.predicates("neo4j", 200, 0);
 
@@ -99,13 +106,15 @@ class ShapesPredicatesRestTest {
     assertEquals(1, body.items().size());
     assertEquals(1L, body.total());
     assertEquals("neo4j", body.items().get(0).substrate());
-    verify(repository).findBySubstrate("neo4j");
+    verify(repository).countBySubstrate("neo4j");
+    verify(repository).findBySubstrate("neo4j", 0, 200);
   }
 
   @Test
   void substrateFilter_garage_callsFindBySubstrate() {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#approvalDocument", "garage");
-    when(repository.findBySubstrate("garage")).thenReturn(List.of(entry));
+    when(repository.countBySubstrate("garage")).thenReturn(1L);
+    when(repository.findBySubstrate("garage", 0, 200)).thenReturn(List.of(entry));
 
     Response r = rest.predicates("garage", 200, 0);
 
@@ -114,14 +123,15 @@ class ShapesPredicatesRestTest {
     PagedResponseIO<PredicateVocabularyEntryIO> body = (PagedResponseIO<PredicateVocabularyEntryIO>) r.getEntity();
     assertEquals(1, body.items().size());
     assertEquals("garage", body.items().get(0).substrate());
-    verify(repository).findBySubstrate("garage");
+    verify(repository).countBySubstrate("garage");
+    verify(repository).findBySubstrate("garage", 0, 200);
   }
 
   // ─── empty result ──────────────────────────────────────────────────────────
 
   @Test
   void emptyRepository_returns200WithEmptyItemsList() {
-    when(repository.findAll()).thenReturn(List.of());
+    when(repository.count()).thenReturn(0L);
 
     Response r = rest.predicates(null, 200, 0);
 
@@ -133,7 +143,7 @@ class ShapesPredicatesRestTest {
     assertEquals(0L, body.total());
   }
 
-  // ─── pageSize capping ──────────────────────────────────────────────────────
+  // ─── pageSize capping (DB-side slicing) ───────────────────────────────────
 
   @Test
   void pageSizeParam_capsReturnedItems() {
@@ -141,7 +151,8 @@ class ShapesPredicatesRestTest {
     for (int i = 0; i < 10; i++) {
       all.add(makeEntry("http://example.org/p" + i, "neo4j"));
     }
-    when(repository.findAll()).thenReturn(all);
+    when(repository.count()).thenReturn(10L);
+    when(repository.findAll(0, 3)).thenReturn(all.subList(0, 3));
 
     Response r = rest.predicates(null, 3, 0);
 
@@ -157,7 +168,8 @@ class ShapesPredicatesRestTest {
   @Test
   void pageSizeGreaterThanTotal_returnsAllItems() {
     var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
-    when(repository.findAll()).thenReturn(List.of(entry));
+    when(repository.count()).thenReturn(1L);
+    when(repository.findAll(0, 500)).thenReturn(List.of(entry));
 
     Response r = rest.predicates(null, 500, 0);
 
@@ -174,7 +186,9 @@ class ShapesPredicatesRestTest {
     for (int i = 0; i < 10; i++) {
       all.add(makeEntry("http://example.org/p" + i, "neo4j"));
     }
-    when(repository.findAll()).thenReturn(all);
+    when(repository.count()).thenReturn(10L);
+    // page=1, pageSize=3 → skip=3, limit=3 → items[3..5]
+    when(repository.findAll(3, 3)).thenReturn(all.subList(3, 6));
 
     Response r = rest.predicates(null, 3, 1);
 
@@ -192,8 +206,8 @@ class ShapesPredicatesRestTest {
 
   @Test
   void pageParam_beyondTotal_returnsEmptyItems() {
-    var entry = makeEntry("http://semantics.dlr.de/shepard-upper#status", "neo4j");
-    when(repository.findAll()).thenReturn(List.of(entry));
+    // skip = 5 * 200 = 1000 > total(1) → short-circuit, no findAll call
+    when(repository.count()).thenReturn(1L);
 
     Response r = rest.predicates(null, 200, 5);
 
