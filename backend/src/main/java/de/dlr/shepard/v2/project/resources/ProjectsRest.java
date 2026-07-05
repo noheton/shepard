@@ -93,11 +93,10 @@ public class ProjectsRest {
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(description = "Page size, 1–200 (default 50).")
       @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
-    List<String> all = projectsService.listProjectAppIds();
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    long total = projectsService.countProjectAppIds();
+    int skip = page * pageSize;
+    List<String> items = projectsService.listProjectAppIds(skip, pageSize);
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }

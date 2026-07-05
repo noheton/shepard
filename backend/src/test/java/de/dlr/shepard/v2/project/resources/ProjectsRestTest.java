@@ -49,7 +49,8 @@ class ProjectsRestTest {
 
   @Test
   void list_returns200WithAppIds() {
-    when(projectsService.listProjectAppIds())
+    when(projectsService.countProjectAppIds()).thenReturn(2L);
+    when(projectsService.listProjectAppIds(0, 50))
       .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
     Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
@@ -60,7 +61,8 @@ class ProjectsRestTest {
 
   @Test
   void list_xTotalCountHeader_reflectsUnpagedTotal() {
-    when(projectsService.listProjectAppIds())
+    when(projectsService.countProjectAppIds()).thenReturn(2L);
+    when(projectsService.listProjectAppIds(0, 50))
       .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
     Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
@@ -69,8 +71,9 @@ class ProjectsRestTest {
 
   @Test
   void list_pageSize1_returnsFirstItemOnly() {
-    when(projectsService.listProjectAppIds())
-      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    when(projectsService.countProjectAppIds()).thenReturn(2L);
+    when(projectsService.listProjectAppIds(0, 1))
+      .thenReturn(List.of(PROJECT_APP_ID));
     Response r = resource.list(0, 1);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -85,7 +88,8 @@ class ProjectsRestTest {
     List<String> manyIds = java.util.stream.IntStream.range(0, 50)
       .mapToObj(i -> "018f9c5a-7e26-7000-a000-" + String.format("%012d", i))
       .collect(java.util.stream.Collectors.toList());
-    when(projectsService.listProjectAppIds()).thenReturn(manyIds);
+    when(projectsService.countProjectAppIds()).thenReturn(50L);
+    when(projectsService.listProjectAppIds(0, 999)).thenReturn(manyIds);
     Response r = resource.list(0, 999);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -96,8 +100,8 @@ class ProjectsRestTest {
 
   @Test
   void list_pagePastEnd_returnsEmpty() {
-    when(projectsService.listProjectAppIds())
-      .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
+    when(projectsService.countProjectAppIds()).thenReturn(2L);
+    when(projectsService.listProjectAppIds(990, 10)).thenReturn(List.of());
     Response r = resource.list(99, 10);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")

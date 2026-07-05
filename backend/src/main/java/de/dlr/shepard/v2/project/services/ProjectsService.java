@@ -89,7 +89,17 @@ public class ProjectsService {
     return io;
   }
 
-  /** List of every Collection appId that carries urn:shepard:project = "true". */
+  /** Count of Collections that carry urn:shepard:project = "true". */
+  public long countProjectAppIds() {
+    return projectsDAO.countAllProjectAppIds();
+  }
+
+  /** Bounded page of Collection appIds that carry urn:shepard:project = "true". */
+  public List<String> listProjectAppIds(int skip, int limit) {
+    return projectsDAO.findAllProjectAppIds(skip, limit);
+  }
+
+  /** All Collection appIds that carry urn:shepard:project = "true" (unbounded; for MCP tools). */
   public List<String> listProjectAppIds() {
     return projectsDAO.findAllProjectAppIds();
   }
