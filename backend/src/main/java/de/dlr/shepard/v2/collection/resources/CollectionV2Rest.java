@@ -169,21 +169,15 @@ public class CollectionV2Rest {
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
 
-    // Load all user-visible collections without DB-side pagination so we can
-    // compute the true filtered total, then paginate in memory (same pattern
-    // as ContainersV2Rest, APISIMP-PAGINATION-ENVELOPE-1).
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
 
-    var all = collectionService.getAllCollections(params).stream()
+    long total = collectionService.countAllCollections(params);
+    var items = collectionService.getAllCollections(params.withPageAndSize(page, pageSize)).stream()
         .map(CollectionV2IO::new)
         .toList();
 
-    int total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
