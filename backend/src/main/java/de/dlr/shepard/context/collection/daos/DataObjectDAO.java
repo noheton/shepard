@@ -168,6 +168,72 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     return it.hasNext() ? it.next() : 0L;
   }
 
+  /** Count non-deleted direct predecessors of a DataObject (via has_successor edge, incoming). */
+  public long countPredecessors(String dataObjectAppId) {
+    var it = session.query(Long.class,
+        "MATCH (p:DataObject {deleted: FALSE})-[:has_successor]->(d:DataObject {appId: $appId, deleted: FALSE})" +
+        " RETURN COUNT(p)",
+        Map.of("appId", dataObjectAppId)
+    ).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
+  /** Return a bounded page of non-deleted direct predecessors of a DataObject. */
+  public List<DataObject> listPredecessors(String dataObjectAppId, int skip, int limit) {
+    List<DataObject> result = new ArrayList<>();
+    findByQuery(
+      "MATCH (p:DataObject {deleted: FALSE})-[:has_successor]->(d:DataObject {appId: $appId, deleted: FALSE})" +
+      " WITH p ORDER BY p.appId SKIP $skip LIMIT $limit " +
+      CypherQueryHelper.getReturnPart("p"),
+      Map.of("appId", dataObjectAppId, "skip", (long) skip, "limit", (long) limit)
+    ).forEach(result::add);
+    return result;
+  }
+
+  /** Count non-deleted direct successors of a DataObject (via has_successor edge, outgoing). */
+  public long countSuccessors(String dataObjectAppId) {
+    var it = session.query(Long.class,
+        "MATCH (d:DataObject {appId: $appId, deleted: FALSE})-[:has_successor]->(s:DataObject {deleted: FALSE})" +
+        " RETURN COUNT(s)",
+        Map.of("appId", dataObjectAppId)
+    ).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
+  /** Return a bounded page of non-deleted direct successors of a DataObject. */
+  public List<DataObject> listSuccessors(String dataObjectAppId, int skip, int limit) {
+    List<DataObject> result = new ArrayList<>();
+    findByQuery(
+      "MATCH (d:DataObject {appId: $appId, deleted: FALSE})-[:has_successor]->(s:DataObject {deleted: FALSE})" +
+      " WITH s ORDER BY s.appId SKIP $skip LIMIT $limit " +
+      CypherQueryHelper.getReturnPart("s"),
+      Map.of("appId", dataObjectAppId, "skip", (long) skip, "limit", (long) limit)
+    ).forEach(result::add);
+    return result;
+  }
+
+  /** Count non-deleted direct children of a DataObject (via has_child edge, outgoing). */
+  public long countChildren(String dataObjectAppId) {
+    var it = session.query(Long.class,
+        "MATCH (d:DataObject {appId: $appId, deleted: FALSE})-[:has_child]->(c:DataObject {deleted: FALSE})" +
+        " RETURN COUNT(c)",
+        Map.of("appId", dataObjectAppId)
+    ).iterator();
+    return it.hasNext() ? it.next() : 0L;
+  }
+
+  /** Return a bounded page of non-deleted direct children of a DataObject. */
+  public List<DataObject> listChildren(String dataObjectAppId, int skip, int limit) {
+    List<DataObject> result = new ArrayList<>();
+    findByQuery(
+      "MATCH (d:DataObject {appId: $appId, deleted: FALSE})-[:has_child]->(c:DataObject {deleted: FALSE})" +
+      " WITH c ORDER BY c.appId SKIP $skip LIMIT $limit " +
+      CypherQueryHelper.getReturnPart("c"),
+      Map.of("appId", dataObjectAppId, "skip", (long) skip, "limit", (long) limit)
+    ).forEach(result::add);
+    return result;
+  }
+
   /**
    * Deletes the has_successor relation between the predecessor and the successor dataobjects in neo4j
    */

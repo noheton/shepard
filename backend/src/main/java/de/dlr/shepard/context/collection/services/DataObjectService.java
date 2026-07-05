@@ -847,4 +847,30 @@ public class DataObjectService {
   public void clearSession() {
     dataObjectDAO.clearSession();
   }
+
+  // ── Bounded predecessor / successor / child queries (APISIMP-DATAOBJECT-PREDECESSORS-IN-MEMORY-PAGING) ──
+
+  public long countPredecessors(String dataObjectAppId) {
+    return dataObjectDAO.countPredecessors(dataObjectAppId);
+  }
+
+  public List<DataObject> listPredecessors(String dataObjectAppId, int skip, int limit) {
+    return dataObjectDAO.listPredecessors(dataObjectAppId, skip, limit);
+  }
+
+  public long countSuccessors(String dataObjectAppId) {
+    return dataObjectDAO.countSuccessors(dataObjectAppId);
+  }
+
+  public List<DataObject> listSuccessors(String dataObjectAppId, int skip, int limit) {
+    return dataObjectDAO.listSuccessors(dataObjectAppId, skip, limit);
+  }
+
+  public long countChildren(String dataObjectAppId) {
+    return dataObjectDAO.countChildren(dataObjectAppId);
+  }
+
+  public List<DataObject> listChildren(String dataObjectAppId, int skip, int limit) {
+    return dataObjectDAO.listChildren(dataObjectAppId, skip, limit);
+  }
 }
