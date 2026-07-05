@@ -29,6 +29,34 @@ public class WatchDAO extends GenericDAO<Watch> {
     return result;
   }
 
+  /** Bounded list: push SKIP/LIMIT to Neo4j instead of slicing in Java. */
+  public List<Watch> findByCollectionAppId(String collectionAppId, int skip, int limit) {
+    String query =
+      "MATCH (w:Watch) " +
+      "WHERE w.collectionAppId = $collectionAppId " +
+      "RETURN w " +
+      "ORDER BY w.since ASC " +
+      "SKIP $skip LIMIT $limit";
+    List<Watch> result = new ArrayList<>();
+    for (var w : findByQuery(query, Map.of("collectionAppId", collectionAppId, "skip", skip, "limit", limit))) {
+      result.add(w);
+    }
+    return result;
+  }
+
+  /** Count all :Watch nodes attached to a given Collection (by appId). */
+  public long countByCollectionAppId(String collectionAppId) {
+    String query =
+      "MATCH (w:Watch) " +
+      "WHERE w.collectionAppId = $collectionAppId " +
+      "RETURN count(w) AS cnt";
+    var result = session.query(query, Map.of("collectionAppId", collectionAppId));
+    var row = result.iterator();
+    if (!row.hasNext()) return 0L;
+    Object cnt = row.next().get("cnt");
+    return cnt instanceof Number n ? n.longValue() : 0L;
+  }
+
   /** Look up a single :Watch by its own appId. */
   public Watch findByAppId(String appId) {
     String query =
