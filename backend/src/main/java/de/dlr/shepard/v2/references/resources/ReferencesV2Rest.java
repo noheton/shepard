@@ -492,12 +492,9 @@ public class ReferencesV2Rest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "caller lacks Read access on the parent DataObject");
     }
     try {
-      List<ReferenceV2IO> all = referencesService.listByDataObject(kind, dataObjectAppId, fileKind);
-      int total = all.size();
-      long fromLong = (long) page * pageSize;
-      int from = (int) Math.min(fromLong, (long) total);
-      int to = (int) Math.min(fromLong + pageSize, (long) total);
-      List<ReferenceV2IO> pageItems = all.subList(from, to);
+      int skip = page * pageSize;
+      int total = referencesService.countByDataObject(kind, dataObjectAppId, fileKind);
+      List<ReferenceV2IO> pageItems = referencesService.listByDataObject(kind, dataObjectAppId, fileKind, skip, pageSize);
       return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());

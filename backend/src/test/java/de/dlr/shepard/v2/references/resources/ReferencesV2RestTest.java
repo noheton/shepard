@@ -182,7 +182,8 @@ class ReferencesV2RestTest {
   void list_returnsPagedEnvelope() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(referencesService.listByDataObject(eq("file"), eq(DO_APP_ID), eq("urdf")))
+    when(referencesService.countByDataObject(eq("file"), eq(DO_APP_ID), eq("urdf"))).thenReturn(2);
+    when(referencesService.listByDataObject(eq("file"), eq(DO_APP_ID), eq("urdf"), eq(0), eq(50)))
       .thenReturn(List.of(new ReferenceV2IO(), new ReferenceV2IO()));
 
     var r = resource.list("file", DO_APP_ID, "urdf", 0, 50, securityContext);
@@ -192,7 +193,8 @@ class ReferencesV2RestTest {
     assertEquals(2, paged.total());
     assertEquals(0, paged.page());
     assertEquals(2, paged.items().size());
-    verify(referencesService).listByDataObject("file", DO_APP_ID, "urdf");
+    verify(referencesService).countByDataObject("file", DO_APP_ID, "urdf");
+    verify(referencesService).listByDataObject("file", DO_APP_ID, "urdf", 0, 50);
   }
 
   @Test
@@ -206,9 +208,9 @@ class ReferencesV2RestTest {
   void list_paginationSlicesCorrectly() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    var items = List.of(new ReferenceV2IO(), new ReferenceV2IO(), new ReferenceV2IO(),
-      new ReferenceV2IO(), new ReferenceV2IO());
-    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(items);
+    when(referencesService.countByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(5);
+    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null), eq(2), eq(2)))
+      .thenReturn(List.of(new ReferenceV2IO(), new ReferenceV2IO()));
 
     var r = resource.list("uri", DO_APP_ID, null, 1, 2, securityContext);
     assertEquals(200, r.getStatus());
@@ -224,8 +226,9 @@ class ReferencesV2RestTest {
   void list_pageOutOfBoundsReturnsEmpty() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    var items = List.of(new ReferenceV2IO(), new ReferenceV2IO());
-    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(items);
+    when(referencesService.countByDataObject(eq("uri"), eq(DO_APP_ID), eq(null))).thenReturn(2);
+    when(referencesService.listByDataObject(eq("uri"), eq(DO_APP_ID), eq(null), eq(50), eq(10)))
+      .thenReturn(List.of());
 
     var r = resource.list("uri", DO_APP_ID, null, 5, 10, securityContext);
     assertEquals(200, r.getStatus());
