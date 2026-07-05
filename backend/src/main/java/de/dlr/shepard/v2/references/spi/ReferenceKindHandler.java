@@ -129,6 +129,39 @@ public interface ReferenceKindHandler {
   List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind);
 
   /**
+   * APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING — count references without loading
+   * all of them. Default delegates to {@link #listByDataObject(String, String)}
+   * for backward compat; DB-aware handlers override both methods to push
+   * COUNT + SKIP/LIMIT to the underlying store.
+   *
+   * @param dataObjectAppId UUID v7 of the parent DataObject.
+   * @param subKind optional sub-discriminator; null = no filter.
+   * @return total count of matching references.
+   */
+  default int countByDataObject(String dataObjectAppId, String subKind) {
+    return listByDataObject(dataObjectAppId, subKind).size();
+  }
+
+  /**
+   * APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING — bounded page of references.
+   * Default slices the full list in memory; DB-aware handlers override for
+   * true Cypher/SQL SKIP/LIMIT.
+   *
+   * @param dataObjectAppId UUID v7 of the parent DataObject.
+   * @param subKind optional sub-discriminator; null = no filter.
+   * @param skip 0-based offset (number of records to skip).
+   * @param limit maximum records to return (must be &gt; 0).
+   * @return the unified IOs for the requested page (possibly empty, never null).
+   */
+  default List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    List<ReferenceV2IO> all = listByDataObject(dataObjectAppId, subKind);
+    int total = all.size();
+    int from = (int) Math.min((long) skip, (long) total);
+    int to = (int) Math.min((long) skip + limit, (long) total);
+    return all.subList(from, to);
+  }
+
+  /**
    * P21-V2-METADATA-EDIT — full-replace of all mutable reference metadata.
    * {@code name} is required in {@code body}; absent kind-specific mutable
    * fields are passed through to the underlying patch as-is (handlers that

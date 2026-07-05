@@ -188,6 +188,23 @@ public class ReferencesV2Service {
     return requireHandlerForKind(kind).listByDataObject(dataObjectAppId, subKind);
   }
 
+  /**
+   * APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING — count without loading all.
+   * Delegates to the owning handler's {@link ReferenceKindHandler#countByDataObject}.
+   */
+  public int countByDataObject(String kind, String dataObjectAppId, String subKind) {
+    return requireHandlerForKind(kind).countByDataObject(dataObjectAppId, subKind);
+  }
+
+  /**
+   * APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING — bounded page of references.
+   * Delegates to the owning handler's bounded
+   * {@link ReferenceKindHandler#listByDataObject(String, String, int, int)}.
+   */
+  public List<ReferenceV2IO> listByDataObject(String kind, String dataObjectAppId, String subKind, int skip, int limit) {
+    return requireHandlerForKind(kind).listByDataObject(dataObjectAppId, subKind, skip, limit);
+  }
+
   /** The (handler, entity) pair an appId resolves to. */
   public record ResolvedReference(ReferenceKindHandler handler, BasicReference reference) {}
 }
