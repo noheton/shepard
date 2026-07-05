@@ -16,7 +16,7 @@ export function useFetchCollectionContainers(collectionAppId: Ref<string | null>
     isLoading.value = true;
     try {
       const page = await api.value.listReferencedContainers({ collectionAppId: appId });
-      containers.value = (page.items ?? []) as ContainerV2[];
+      containers.value = (page ?? []) as ContainerV2[];
     } catch (e) {
       handleError(e, "listReferencedContainers");
     } finally {
