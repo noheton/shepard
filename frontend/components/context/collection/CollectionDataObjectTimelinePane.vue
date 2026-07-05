@@ -1,20 +1,24 @@
 <script lang="ts" setup>
 /**
- * COLL-TIMELINE-ANNOTATE-1 — Collection timeline swimlane pane.
+ * COLL-TIMELINE-ANNOTATE-1 — Per-DataObject swimlane timeline pane.
  *
- * Renders a Gantt-style swimlane timeline for all DataObjects in a Collection,
- * bucketed by a configurable bin size. Each swimlane row represents one
- * DataObject; clicking a bin navigates to that DataObject.
+ * Renders one swimlane row per DataObject that has timeseries data
+ * (timeBoundsStart / timeBoundsEnd populated). Each row shows the
+ * DataObject's active time range divided into hour / day / week bins.
+ * Clicking an active bin navigates to that DataObject's detail page.
  *
  * Annotation affordance: the toolbar-level "Annotate" button opens
  * AnnotationDialog in v2 mode (subjectAppId + subjectKind="Collection"),
- * targeting the Collection itself rather than individual bins — there is
- * only one Collection appId available in this pane. The v2 path is used
- * (rather than the legacy AnnotatedCollection numeric-ID path) because
- * Collection.id is an internal Neo4j ID that may be unavailable in future
- * L2-native deployments.
+ * targeting the Collection itself.
  */
 import AnnotationDialog from "~/components/semantic/AnnotationDialog.vue";
+import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
+import {
+  BIN_SIZE_MS,
+  computeGlobalMinMs,
+  computeGlobalMaxMs,
+  computeBinStarts,
+} from "~/utils/collectionDataObjectTimeline";
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -35,62 +39,80 @@ const BIN_OPTIONS: { title: string; value: BinSize }[] = [
   { title: "Week", value: "week" },
 ];
 
-// ── Swimlane data ──────────────────────────────────────────────────────────────
+// ── Data loading ──────────────────────────────────────────────────────────────
 
-interface Bin {
-  /** Start of the bin interval as Unix ms. */
-  startMs: number;
-  /** Whether this bin has any data for this lane. */
-  active: boolean;
-}
+const name = ref("");
+const page = ref(0);
+const collectionAppIdRef = computed(() => props.collectionAppId);
+
+// collectionId: 0 is a safe dummy — usePagedDataObjects uses collectionAppId
+// (the v2 appId) when non-null, ignoring the numeric id entirely.
+const { items, loading } = usePagedDataObjects({
+  collectionId: 0,
+  collectionAppId: collectionAppIdRef,
+  name,
+  page,
+  pageSize: 50,
+  includeTimeBounds: true,
+});
+
+// ── Swimlane computation ───────────────────────────────────────────────────────
 
 interface Lane {
   dataObjectId: number;
+  dataObjectAppId: string | null;
   name: string;
-  bins: Bin[];
+  bins: { startMs: number; active: boolean }[];
 }
 
-// Placeholder lanes — a real implementation would derive these from
-// usePagedDataObjects + per-object timeBoundsStart/End. This is a stub that
-// renders correctly so the Annotate affordance is reachable.
-const lanes = ref<Lane[]>([]);
-const loading = ref(false);
+const doWithBounds = computed(() =>
+  items.value.filter(d => d.timeBoundsStart != null && d.timeBoundsEnd != null),
+);
+
+const globalMinMs = computed(() => computeGlobalMinMs(doWithBounds.value));
+const globalMaxMs = computed(() => computeGlobalMaxMs(doWithBounds.value));
+const activeBinSizeMs = computed(() => BIN_SIZE_MS[binSize.value]);
+const binStarts = computed(() =>
+  computeBinStarts(globalMinMs.value, globalMaxMs.value, activeBinSizeMs.value),
+);
+
+const lanes = computed<Lane[]>(() => {
+  const starts = binStarts.value;
+  const bms = activeBinSizeMs.value;
+  return doWithBounds.value.map(d => ({
+    dataObjectId: d.id,
+    dataObjectAppId: d.appId ?? null,
+    name: d.name,
+    bins: starts.map(start => ({
+      startMs: start,
+      // A bin is active when the DataObject's time range overlaps it.
+      active:
+        d.timeBoundsStart! / 1_000_000 < start + bms &&
+        d.timeBoundsEnd! / 1_000_000 >= start,
+    })),
+  }));
+});
+
 const renderable = computed(() => lanes.value.length > 0);
 
 // ── Annotation dialog ─────────────────────────────────────────────────────────
 
 const showAnnotateDialog = ref(false);
 
-// ── Bin click handler factory ─────────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────────────────────
 
-function makeBinClickHandler(laneIndex: number) {
-  return (binIndex: number) => {
-    const lane = lanes.value[laneIndex];
-    if (!lane) return;
-    const bin = lane.bins[binIndex];
-    if (!bin?.active) return;
-    // Navigate to the DataObject. In a full implementation this would use
-    // the collection route from the parent. The handler signature mirrors
-    // what a real implementation would need; the router call is intentionally
-    // left as a log for the stub.
-    console.debug(
-      `[CollectionTimelinePane] bin click: lane=${laneIndex} bin=${binIndex} dataObjectId=${lane.dataObjectId}`,
-    );
-  };
-}
+const router = useRouter();
 
-// ── Reload ────────────────────────────────────────────────────────────────────
-
-function reload() {
-  // Stub — a full implementation triggers a refetch via usePagedDataObjects.
-  loading.value = false;
+function navigateToDo(lane: Lane) {
+  const doSegment = lane.dataObjectAppId ?? String(lane.dataObjectId);
+  void router.push(`/collections/${props.collectionAppId}/dataobjects/${doSegment}`);
 }
 </script>
 
 <template>
-  <div class="timeline-pane">
+  <div class="do-timeline-pane">
     <!-- ── Toolbar ──────────────────────────────────────────────────────────── -->
-    <div class="timeline-header d-flex align-center ga-2 pb-3">
+    <div class="do-timeline-header d-flex align-center ga-2 pb-3">
       <!-- Bin-size toggle -->
       <v-btn-toggle
         v-model="binSize"
@@ -114,44 +136,38 @@ function reload() {
 
       <!-- COLL-TIMELINE-ANNOTATE-1: Annotate collection button.
            Opens AnnotationDialog in v2 mode so it targets the Collection
-           by its appId rather than by the internal numeric id.
-           Placed in the toolbar (not inside each swimlane row) because
-           this pane only has access to the Collection appId, not
-           individual DataObject appIds. -->
+           by its appId. Toolbar-level (not per-row) because this pane
+           annotates the Collection itself, not individual DataObjects. -->
       <v-btn
         size="x-small"
         variant="text"
         prepend-icon="mdi-tag-outline"
         :disabled="!props.collectionAppId"
+        data-test="do-timeline-annotate-btn"
         @click="showAnnotateDialog = true"
       >
         Annotate
-      </v-btn>
-
-      <!-- Reload -->
-      <v-btn
-        icon
-        size="x-small"
-        variant="text"
-        title="Reload timeline"
-        :loading="loading"
-        @click="reload"
-      >
-        <v-icon>mdi-refresh</v-icon>
       </v-btn>
     </div>
 
     <!-- ── Swimlane grid ────────────────────────────────────────────────────── -->
     <v-progress-linear v-if="loading" indeterminate aria-label="Loading timeline" />
 
-    <div v-else-if="renderable" class="swimlanes">
+    <div v-else-if="renderable" class="swimlanes" data-test="do-timeline-grid">
       <div
-        v-for="(lane, index) in lanes"
+        v-for="lane in lanes"
         :key="lane.dataObjectId"
         class="swimlane-row"
       >
-        <!-- Swimlane label -->
-        <div class="swimlane-label text-body-2 text-no-wrap text-truncate">
+        <!-- Swimlane label — click navigates to the DataObject detail page -->
+        <div
+          class="swimlane-label text-body-2 text-no-wrap text-truncate"
+          role="button"
+          tabindex="0"
+          :title="lane.name"
+          @click="navigateToDo(lane)"
+          @keydown.enter="navigateToDo(lane)"
+        >
           {{ lane.name }}
         </div>
 
@@ -162,26 +178,28 @@ function reload() {
             :key="binIndex"
             class="swimlane-bin"
             :class="{ 'swimlane-bin--active': bin.active }"
-            :title="new Date(bin.startMs).toLocaleString()"
+            :title="new Date(bin.startMs).toLocaleDateString()"
             :tabindex="bin.active ? 0 : -1"
             :role="bin.active ? 'button' : undefined"
-            @click="bin.active && makeBinClickHandler(index)(binIndex)"
-            @keydown.enter="bin.active && makeBinClickHandler(index)(binIndex)"
+            :aria-label="bin.active ? `${lane.name} — ${new Date(bin.startMs).toLocaleDateString()}` : undefined"
+            @click="bin.active && navigateToDo(lane)"
+            @keydown.enter="bin.active && navigateToDo(lane)"
           />
         </div>
       </div>
     </div>
 
-    <div v-else class="text-medium-emphasis text-body-2 pa-4">
-      No DataObjects with time-bounds data in this collection.
+    <div
+      v-else-if="!loading"
+      class="text-medium-emphasis text-body-2 pa-4"
+      data-test="do-timeline-empty"
+    >
+      No DataObjects with timeseries data in this collection.
     </div>
 
     <!-- ── Annotation dialog ─────────────────────────────────────────────────
-         One instance outside the v-for — it annotates the Collection, not
-         individual bins. The v2 subjectAppId mode is used (not the legacy
-         AnnotatedCollection numeric-ID path) because Collection.id may be
-         unavailable in future L2-native deployments and because the
-         AnnotationDialog v2 path is the preferred path per SEMA-V6-004.
+         Annotates the Collection (not a specific DataObject) so one instance
+         outside the v-for is correct. Uses v2 subjectAppId path (SEMA-V6-004).
     ──────────────────────────────────────────────────────────────────────── -->
     <AnnotationDialog
       v-model:show-dialog="showAnnotateDialog"
@@ -192,10 +210,10 @@ function reload() {
 </template>
 
 <style scoped>
-.timeline-pane {
+.do-timeline-pane {
   width: 100%;
 }
-.timeline-header {
+.do-timeline-header {
   flex-wrap: wrap;
 }
 .swimlanes {
@@ -213,10 +231,17 @@ function reload() {
   min-width: 160px;
   max-width: 200px;
   font-size: 13px;
+  cursor: pointer;
+}
+.swimlane-label:hover,
+.swimlane-label:focus-visible {
+  text-decoration: underline;
+  outline: none;
 }
 .swimlane-bins {
   flex: 1;
   gap: 2px;
+  overflow-x: auto;
 }
 .swimlane-bin {
   width: 20px;
