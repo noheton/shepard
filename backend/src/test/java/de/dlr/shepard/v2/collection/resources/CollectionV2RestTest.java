@@ -93,6 +93,7 @@ class CollectionV2RestTest {
     c.setShepardId(COLL_OGM_ID);
     c.setAppId(COLL_APP_ID);
     c.setName("demo");
+    when(collectionService.countAllCollections(any())).thenReturn(1L);
     when(collectionService.getAllCollections(any())).thenReturn(List.of(c));
 
     Response r = resource.list(null, 0, 50);
@@ -111,6 +112,7 @@ class CollectionV2RestTest {
 
   @Test
   void listReturnsEmptyPagedEnvelopeWhenNoCollections() {
+    when(collectionService.countAllCollections(any())).thenReturn(0L);
     when(collectionService.getAllCollections(any())).thenReturn(List.of());
 
     Response r = resource.list(null, 0, 50);

@@ -126,6 +126,11 @@ public class CollectionService {
     return collections;
   }
 
+  /** Returns the count of Collections visible to the current user, optionally filtered by name. */
+  public long countAllCollections(QueryParamHelper params) {
+    return collectionDAO.countAllCollectionsByShepardId(params, authenticationContext.getCurrentUserName());
+  }
+
   /**
    * Retrieves a collection by shepardId.
    * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
