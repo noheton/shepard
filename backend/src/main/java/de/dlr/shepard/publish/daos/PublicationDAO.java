@@ -110,6 +110,43 @@ public class PublicationDAO extends GenericDAO<Publication> {
   }
 
   /**
+   * Count Publications attached to a given entity. Used by paginated callers
+   * to obtain the total without fetching all rows.
+   */
+  public long countByEntityAppId(String entityAppId) {
+    if (entityAppId == null || entityAppId.isBlank()) return 0L;
+    if (session == null) return 0L;
+    String query =
+      "MATCH (p:Publication) WHERE p.entityAppId = $entityAppId RETURN count(p) AS n";
+    var result = session.query(query, Map.of("entityAppId", entityAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object raw = iter.next().get("n");
+    if (raw instanceof Number n) return n.longValue();
+    return 0L;
+  }
+
+  /**
+   * Bounded page of Publications attached to a given entity, ordered by
+   * {@code mintedAt} descending. Issues {@code SKIP $skip LIMIT $limit} to
+   * Neo4j so the caller never fetches more rows than the page window.
+   *
+   * @param skip  zero-based row offset (typically {@code page * pageSize})
+   * @param limit maximum rows to return
+   */
+  public List<Publication> findByEntityAppId(String entityAppId, int skip, int limit) {
+    if (entityAppId == null || entityAppId.isBlank()) return List.of();
+    String query =
+      "MATCH (p:Publication) WHERE p.entityAppId = $entityAppId " +
+      "RETURN p ORDER BY p.mintedAt DESC SKIP $skip LIMIT $limit";
+    Iterable<Publication> result = findByQuery(
+      query, Map.of("entityAppId", entityAppId, "skip", skip, "limit", limit));
+    List<Publication> out = new ArrayList<>();
+    result.forEach(out::add);
+    return out;
+  }
+
+  /**
    * KIP1f — set {@code digitalObjectMutability = 'retired'} on the
    * most-recent {@code :Publication} row for the given entity (by
    * {@code mintedAt DESC LIMIT 1}).

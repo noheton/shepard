@@ -275,4 +275,77 @@ class PublicationDAOTest extends BaseTestCase {
     assertTrue(dao.retireMostRecent("01HF-A"));
     verify(session, times(2)).query(any(String.class), anyMap());
   }
+
+  // ---------- APISIMP-PUBLICATIONS-IN-MEMORY-PAGING: countByEntityAppId ----------
+
+  @Test
+  void countByEntityAppIdRejectsBlank() {
+    assertEquals(0L, dao.countByEntityAppId(null));
+    assertEquals(0L, dao.countByEntityAppId(""));
+    assertEquals(0L, dao.countByEntityAppId("   "));
+    verify(session, never()).query(any(String.class), anyMap());
+  }
+
+  @Test
+  void countByEntityAppIdReturnsZeroWhenNoPublications() {
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 0L)).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+    assertEquals(0L, dao.countByEntityAppId("01HF-FRESH"));
+  }
+
+  @Test
+  void countByEntityAppIdReturnsCount() {
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 3L)).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+    assertEquals(3L, dao.countByEntityAppId("01HF-A"));
+  }
+
+  @Test
+  void countByEntityAppIdHandlesEmptyIterator() {
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(Collections.<Map<String, Object>>emptyList().iterator());
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+    assertEquals(0L, dao.countByEntityAppId("01HF-A"));
+  }
+
+  // ---------- APISIMP-PUBLICATIONS-IN-MEMORY-PAGING: bounded findByEntityAppId ----------
+
+  @Test
+  void boundedFindByEntityAppIdRejectsBlank() {
+    assertTrue(dao.findByEntityAppId(null, 0, 10).isEmpty());
+    assertTrue(dao.findByEntityAppId("", 0, 10).isEmpty());
+    verify(session, never()).query(eq(Publication.class), any(String.class), anyMap());
+  }
+
+  @Test
+  void boundedFindByEntityAppIdReturnsList() {
+    Publication a = publication();
+    Publication b = publication();
+    b.setAppId("pub-2");
+    b.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v2");
+    b.setVersionNumber(2);
+    when(session.query(eq(Publication.class), any(String.class), anyMap())).thenReturn(List.of(a, b));
+    var out = dao.findByEntityAppId("01HF-A", 0, 10);
+    assertEquals(2, out.size());
+    assertSame(a, out.get(0));
+    assertSame(b, out.get(1));
+  }
+
+  @Test
+  void boundedFindByEntityAppIdPassesSkipAndLimitParams() {
+    when(session.query(eq(Publication.class), any(String.class), anyMap())).thenReturn(List.of());
+    dao.findByEntityAppId("01HF-A", 5, 3);
+    // Verify Cypher was invoked with a map containing skip=5 and limit=3.
+    verify(session, times(1)).query(
+      eq(Publication.class),
+      any(String.class),
+      eq(Map.of("entityAppId", "01HF-A", "skip", 5, "limit", 3))
+    );
+  }
 }
