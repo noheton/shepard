@@ -228,8 +228,9 @@ class FlatPublicationsRestTest {
 
   @Test
   void paginationBeyondEndReturnsEmptyItems() {
-    // When skip > total, Neo4j returns empty — the DAO mock mirrors that.
-    stubPagedDao("01HF-A", 42L, List.of(), 3L, 50, 10);
+    // page=5 * pageSize=10 = 50 > total=3; clamped to total (3) to prevent CWE-190 overflow.
+    // Neo4j SKIP 3 LIMIT 10 on a 3-record set returns empty — same observable result.
+    stubPagedDao("01HF-A", 42L, List.of(), 3L, 3, 10);
 
     Response r = rest.list("01HF-A", 5, 10, securityContext, uriInfo);
 

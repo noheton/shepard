@@ -122,8 +122,11 @@ public class FlatPublicationsRest {
     }
 
     long total = publicationDAO.countByEntityAppId(entityAppId);
+    // Widen to long before multiplying to prevent CWE-190 integer overflow;
+    // clamp to total so skip never exceeds the actual result-set size.
+    int skip = (int) Math.min((long) page * pageSize, total);
     List<PublicationIO> page_ = publicationDAO
-      .findByEntityAppId(entityAppId, page * pageSize, pageSize)
+      .findByEntityAppId(entityAppId, skip, pageSize)
       .stream()
       .map(p -> {
         String resolverUrl = PublicationsListRest.absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
