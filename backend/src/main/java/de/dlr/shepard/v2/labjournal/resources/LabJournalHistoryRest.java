@@ -125,17 +125,15 @@ public class LabJournalHistoryRest {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject.");
     }
 
-    // Fetch all revisions (newest first, already ordered by DAO query) then slice
-    List<LabJournalRevisionIO> all = labJournalEntryRevisionDAO
-      .findByEntry(entry.getId())
+    // Count first, then fetch only the requested page (SKIP/LIMIT in DB)
+    long total = labJournalEntryRevisionDAO.countByEntry(entry.getId());
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<LabJournalRevisionIO> items = labJournalEntryRevisionDAO
+      .findByEntry(entry.getId(), skip, pageSize)
       .stream()
       .map(LabJournalRevisionIO::new)
       .toList();
-
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)
         .build();
   }

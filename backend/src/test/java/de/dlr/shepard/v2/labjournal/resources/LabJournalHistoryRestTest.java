@@ -79,7 +79,9 @@ class LabJournalHistoryRestTest {
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(ENTRY_APP_ID)).thenReturn(entry);
     when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of());
+    // Default: entry has no revisions
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(0L);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 0, 50)).thenReturn(List.of());
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -108,7 +110,8 @@ class LabJournalHistoryRestTest {
   void history_returns200WithRevisions_whenSeveralEditsExist() {
     var rev2 = makeRevision("rev-app-id-2", "version 2 content", 2);
     var rev1 = makeRevision("rev-app-id-1", "original content", 1);
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev2, rev1));
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(2L);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 0, 50)).thenReturn(List.of(rev2, rev1));
 
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
@@ -175,7 +178,8 @@ class LabJournalHistoryRestTest {
   @Test
   void history_revisionIO_mapsFieldsCorrectly() {
     var rev = makeRevision("rev-app-42", "old text", 1);
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev));
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(1L);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 0, 50)).thenReturn(List.of(rev));
 
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
     var b = body(r);
@@ -193,11 +197,14 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_pagination_secondPageReturnsSlice() {
-    // 5 revisions total, page=1, pageSize=2 → items [2,3] (0-indexed)
+    // 5 revisions total, page=1, pageSize=2 → DB gets skip=2, limit=2 → returns revs[2..3]
     var revs = IntStream.rangeClosed(1, 5)
         .mapToObj(i -> makeRevision("rev-" + i, "content-" + i, i))
         .toList();
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(revs);
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(5L);
+    // DB is asked for skip=2, limit=2 and returns revisions 3 and 4 (what the DB would give)
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 2, 2))
+        .thenReturn(List.of(revs.get(2), revs.get(3)));
 
     Response r = resource.history(ENTRY_APP_ID, 1, 2, sc);
 
@@ -213,8 +220,9 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_pagination_beyondEndReturnsEmptyItems() {
-    var rev1 = makeRevision("rev-1", "content-1", 1);
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev1));
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(1L);
+    // skip=min(5*50, 1)=1 → beyond end → DB returns empty
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 1, 50)).thenReturn(List.of());
 
     Response r = resource.history(ENTRY_APP_ID, 5, 50, sc);
 
@@ -226,9 +234,11 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_pagination_xTotalCountHeaderPresent() {
-    var rev1 = makeRevision("rev-1", "content-1", 1);
-    var rev2 = makeRevision("rev-2", "content-2", 2);
-    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID)).thenReturn(List.of(rev1, rev2));
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(2L);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 0, 50))
+        .thenReturn(List.of(
+            makeRevision("rev-1", "content-1", 1),
+            makeRevision("rev-2", "content-2", 2)));
 
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
@@ -238,10 +248,28 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_pagination_emptyHistoryXTotalCountIsZero() {
-    // DAO returns empty list from setUp
+    // Default setUp: countByEntry=0, findByEntry(0, 50)=[]
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("0");
+  }
+
+  @Test
+  void history_pagination_usesDbSkipLimit_notInMemorySlice() {
+    // Verify that the REST layer passes skip=page*pageSize to the DAO, not loading all
+    when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(100L);
+    when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 20, 10))
+        .thenReturn(List.of(makeRevision("rev-x", "x", 80)));
+
+    Response r = resource.history(ENTRY_APP_ID, 2, 10, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    var b = body(r);
+    assertThat(b.total()).isEqualTo(100);
+    assertThat(b.page()).isEqualTo(2);
+    assertThat(b.pageSize()).isEqualTo(10);
+    assertThat(b.items()).hasSize(1);
+    assertThat(b.items().get(0).getRevisionNumber()).isEqualTo(80);
   }
 }

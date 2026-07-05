@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
  * J1d — unit tests for {@link LabJournalEntryRevisionDAO}.
  *
  * <p>These tests exercise the entity and IO construction in isolation —
- * no live Neo4j session is required. The DAO's {@link #findByEntry(long)}
- * query is an integration concern and is covered by the end-to-end test
- * plan referenced in {@code aidocs/34} (migration test, deferred).
+ * no live Neo4j session is required. The DAO's Cypher queries
+ * ({@code countByEntry}/{@code findByEntry} with SKIP/LIMIT) are
+ * integration concerns covered by the end-to-end test plan in {@code aidocs/34}.
  */
 class LabJournalEntryRevisionDAOTest {
 
