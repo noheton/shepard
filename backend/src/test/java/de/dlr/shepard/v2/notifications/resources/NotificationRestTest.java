@@ -1,6 +1,9 @@
 package de.dlr.shepard.v2.notifications.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +14,7 @@ import de.dlr.shepard.v2.notifications.services.NotificationService;
 import jakarta.ws.rs.QueryParam;
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -19,12 +23,13 @@ import org.mockito.MockitoAnnotations;
 import jakarta.ws.rs.core.SecurityContext;
 
 /**
- * APISIMP-NOTIFICATIONS-LIST-NO-PAGINATION — Mockito unit tests for
+ * APISIMP-PAGE-PARAM-ANNOTATION-INCONSISTENCY — Mockito unit tests for
  * {@link NotificationRest#list}.
  *
- * <p>Verifies the pagination contract: 401 unauthenticated → 200 with all when
- * no pagination params → 200 with sublist + X-Total-Count when page/pageSize
- * provided → empty list when page beyond range → page-size cap at 200.
+ * <p>Verifies the bounded-DAO contract: the handler calls
+ * {@code service.countForUser} + {@code service.listForUser(skip, limit)} and
+ * delegates all paging arithmetic to the service rather than loading all rows
+ * then Java-subListing.
  */
 class NotificationRestTest {
 
@@ -50,7 +55,12 @@ class NotificationRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(sc.isUserInRole("instance-admin")).thenReturn(false);
-    when(service.listForUser(eq(CALLER), eq(false))).thenReturn(List.of(
+
+    // Default: countForUser → 3; fallback listForUser → empty.
+    when(service.countForUser(eq(CALLER), eq(false))).thenReturn(3L);
+    when(service.listForUser(anyString(), anyBoolean(), anyInt(), anyInt())).thenReturn(List.of());
+    // Default page (0) + default pageSize (50) returns the three items.
+    when(service.listForUser(eq(CALLER), eq(false), eq(0), eq(50))).thenReturn(List.of(
       notif("n1"), notif("n2"), notif("n3")
     ));
   }
@@ -62,7 +72,7 @@ class NotificationRestTest {
   }
 
   @Test
-  void list_returns200WithAllEntriesWhenNoPagination() {
+  void list_returns200WithAllEntriesWhenDefaultParams() {
     var r = resource.list(0, 50, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -78,6 +88,9 @@ class NotificationRestTest {
 
   @Test
   void list_paginationReturnsSublist() {
+    when(service.listForUser(eq(CALLER), eq(false), eq(0), eq(2))).thenReturn(List.of(
+      notif("n1"), notif("n2")
+    ));
     var r = resource.list(0, 2, sc);
     assertEquals(200, r.getStatus());
     assertEquals("3", r.getHeaderString("X-Total-Count"));
@@ -88,6 +101,7 @@ class NotificationRestTest {
 
   @Test
   void list_paginationPageBeyondRangeReturnsEmptyList() {
+    // skip = 99 * 10 = 990; fallback listForUser mock returns List.of()
     var r = resource.list(99, 10, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -97,10 +111,11 @@ class NotificationRestTest {
 
   @Test
   void list_pageSizeCappedAt200() {
-    var many = java.util.stream.IntStream.range(0, 250)
+    when(service.countForUser(eq(CALLER), eq(false))).thenReturn(250L);
+    var twoHundred = IntStream.range(0, 200)
         .mapToObj(i -> notif("n" + i))
-        .collect(java.util.stream.Collectors.toList());
-    when(service.listForUser(eq(CALLER), eq(false))).thenReturn(many);
+        .toList();
+    when(service.listForUser(eq(CALLER), eq(false), eq(0), eq(200))).thenReturn(twoHundred);
     var r = resource.list(0, 200, sc);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")

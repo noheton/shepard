@@ -9,20 +9,16 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * DAO for {@link Notification} nodes. All list queries are ordered most-recent-first
- * and cap at 200 rows per caller to keep the UI snappy.
+ * DAO for {@link Notification} nodes. All list queries are ordered most-recent-first.
  */
 @RequestScoped
 public class NotificationDAO extends GenericDAO<Notification> {
 
-  private static final int LIST_LIMIT = 200;
-
   /**
-   * Returns unread + recent read notifications visible to {@code username}.
-   * Includes USER-audience rows addressed to that user, plus INSTANCE_ADMIN rows
-   * (when {@code isAdmin} is true), plus ALL-audience rows. Expired nodes are filtered out.
+   * Returns all non-expired notifications visible to {@code username}, ordered
+   * most-recent-first. Bounded by {@code skip}/{@code limit} pushed to Cypher.
    */
-  public List<Notification> listForUser(String username, boolean isAdmin) {
+  public List<Notification> listForUser(String username, boolean isAdmin, int skip, int limit) {
     long now = System.currentTimeMillis();
     String cypher =
       "MATCH (n:Notification) WHERE (" +
@@ -30,16 +26,39 @@ public class NotificationDAO extends GenericDAO<Notification> {
       "  (n.audience = 'ALL') OR" +
       "  (n.audience = 'INSTANCE_ADMIN' AND $isAdmin)" +
       ") AND (n.expiresAtMillis IS NULL OR n.expiresAtMillis > $now)" +
-      " RETURN n ORDER BY n.createdAtMillis DESC LIMIT $limit";
+      " RETURN n ORDER BY n.createdAtMillis DESC SKIP $skip LIMIT $limit";
     Map<String, Object> params = Map.of(
       "username", username,
       "isAdmin", isAdmin,
       "now", now,
-      "limit", LIST_LIMIT
+      "skip", (long) skip,
+      "limit", (long) limit
     );
     List<Notification> out = new ArrayList<>();
     findByQuery(cypher, params).forEach(out::add);
     return out;
+  }
+
+  /** Count all non-expired notifications visible to {@code username}. */
+  public long countForUser(String username, boolean isAdmin) {
+    long now = System.currentTimeMillis();
+    String cypher =
+      "MATCH (n:Notification) WHERE (" +
+      "  (n.audience = 'USER' AND n.targetUsername = $username) OR" +
+      "  (n.audience = 'ALL') OR" +
+      "  (n.audience = 'INSTANCE_ADMIN' AND $isAdmin)" +
+      ") AND (n.expiresAtMillis IS NULL OR n.expiresAtMillis > $now)" +
+      " RETURN count(n) AS c";
+    Map<String, Object> params = Map.of(
+      "username", username,
+      "isAdmin", isAdmin,
+      "now", now
+    );
+    var result = session.query(cypher, params);
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
   }
 
   /**

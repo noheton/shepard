@@ -90,12 +90,18 @@ class NotificationServiceTest {
   @Test
   void listForUserDelegatesToDAO() {
     Notification n = makeNotification("app-1", "alice");
-    when(dao.listForUser("alice", false)).thenReturn(List.of(n));
+    when(dao.listForUser("alice", false, 0, 50)).thenReturn(List.of(n));
 
-    List<Notification> result = service.listForUser("alice", false);
+    List<Notification> result = service.listForUser("alice", false, 0, 50);
 
     assertEquals(1, result.size());
     assertEquals("app-1", result.get(0).getAppId());
+  }
+
+  @Test
+  void countForUserDelegatesToDAO() {
+    when(dao.countForUser("alice", false)).thenReturn(7L);
+    assertEquals(7L, service.countForUser("alice", false));
   }
 
   @Test

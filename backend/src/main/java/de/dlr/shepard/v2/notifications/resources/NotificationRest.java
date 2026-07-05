@@ -52,9 +52,8 @@ public class NotificationRest {
     summary = "List in-app notifications for the authenticated user.",
     description = "Returns all non-expired notifications visible to the caller, ordered most-recent-first. " +
     "Includes notifications addressed to the caller's username, ALL-audience broadcasts, and (when the " +
-    "caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts. Service cap: 200 rows.\n\n" +
-    "Pagination (APISIMP-NOTIFICATIONS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
-    "(1–200) to slice the result. Omitting either returns all notifications. " +
+    "caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts.\n\n" +
+    "Pagination: supply `page` (0-based) and `pageSize` (1–200, default 50). " +
     "`X-Total-Count` header carries the total before paging."
   )
   @APIResponse(
@@ -74,14 +73,13 @@ public class NotificationRest {
     if (username == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required",
         Response.Status.UNAUTHORIZED, "authentication required");
     boolean isAdmin = sc.isUserInRole("instance-admin");
-    List<NotificationIO> all = service.listForUser(username, isAdmin)
+    long total = service.countForUser(username, isAdmin);
+    int skip = page * pageSize;
+    List<NotificationIO> items = service.listForUser(username, isAdmin, skip, pageSize)
       .stream()
       .map(NotificationIO::from)
       .toList();
-    int total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
