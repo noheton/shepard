@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,7 +23,6 @@ import de.dlr.shepard.v2.vocabularies.io.PersonalVocabularyRequestIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -174,7 +174,8 @@ class PersonalVocabularyRestTest {
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
-    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(List.of());
+    when(vocabDAO.countPersonalByOwner(userAppId)).thenReturn(0L);
+    when(vocabDAO.listPersonalByOwner(userAppId, 0, 50)).thenReturn(List.of());
 
     Response response = rest.list(0, 50);
 
@@ -201,7 +202,8 @@ class PersonalVocabularyRestTest {
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
-    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
+    when(vocabDAO.countPersonalByOwner(userAppId)).thenReturn(2L);
+    when(vocabDAO.listPersonalByOwner(userAppId, 0, 50)).thenReturn(owned);
 
     Response response = rest.list(0, 50);
 
@@ -233,23 +235,25 @@ class PersonalVocabularyRestTest {
     PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertTrue(body.items().isEmpty());
     assertEquals(0L, body.total());
-    verify(vocabDAO, never()).listPersonalByOwner(any());
+    verify(vocabDAO, never()).countPersonalByOwner(any());
+    verify(vocabDAO, never()).listPersonalByOwner(any(), anyInt(), anyInt());
   }
 
   @Test
   void listPaginatesCorrectlySecondPage() {
     String userAppId = "user-app-id-alice";
-    List<Vocabulary> owned = IntStream.range(0, 7)
-      .mapToObj(i -> savedVocab("appid-" + i,
-        "urn:shepard:personal:" + userAppId + ":vocab-" + i,
-        "vocab-" + i, userAppId))
-      .toList();
+    // page=1, pageSize=5 → skip = min(1*5, 7) = 5 → DB returns items[5..6] (2 items)
+    List<Vocabulary> page2Items = List.of(
+      savedVocab("appid-5", "urn:shepard:personal:" + userAppId + ":vocab-5", "vocab-5", userAppId),
+      savedVocab("appid-6", "urn:shepard:personal:" + userAppId + ":vocab-6", "vocab-6", userAppId)
+    );
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
-    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
+    when(vocabDAO.countPersonalByOwner(userAppId)).thenReturn(7L);
+    when(vocabDAO.listPersonalByOwner(userAppId, 5, 5)).thenReturn(page2Items);
 
-    Response response = rest.list(1, 5);  // page 1, size 5 → items 5-6
+    Response response = rest.list(1, 5);  // page 1, size 5 → skip 5
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
@@ -264,14 +268,14 @@ class PersonalVocabularyRestTest {
   @Test
   void listReturnsBeyondEndAsEmptyItems() {
     String userAppId = "user-app-id-alice";
-    String uri1 = "urn:shepard:personal:" + userAppId + ":vocab-a";
-    List<Vocabulary> owned = List.of(savedVocab("appid-1", uri1, "vocab-a", userAppId));
+    // page=5, pageSize=50 → skip = min(5*50=250, 1) = 1 → DB returns nothing (past end)
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
-    when(vocabDAO.listPersonalByOwner(userAppId)).thenReturn(owned);
+    when(vocabDAO.countPersonalByOwner(userAppId)).thenReturn(1L);
+    when(vocabDAO.listPersonalByOwner(userAppId, 1, 50)).thenReturn(List.of());
 
-    Response response = rest.list(5, 50);  // page 5, size 50 — beyond the single item
+    Response response = rest.list(5, 50);  // page 5, size 50 — skip lands at 1 (beyond the only item)
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
@@ -288,7 +292,8 @@ class PersonalVocabularyRestTest {
 
     when(authCtx.getCurrentUserName()).thenReturn("alice");
     when(userDAO.find("alice")).thenReturn(userWith("alice", userAppId));
-    when(vocabDAO.listPersonalByOwner(userAppId))
+    when(vocabDAO.countPersonalByOwner(userAppId)).thenReturn(1L);
+    when(vocabDAO.listPersonalByOwner(userAppId, 0, 50))
       .thenReturn(List.of(savedVocab("appid-1", uri1, "vocab-a", userAppId)));
 
     Response response = rest.list(0, 50);
