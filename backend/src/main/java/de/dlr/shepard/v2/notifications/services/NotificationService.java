@@ -61,9 +61,14 @@ public class NotificationService {
     return n;
   }
 
-  /** List all notifications visible to the given user. */
-  public List<Notification> listForUser(String username, boolean isAdmin) {
-    return dao.listForUser(username, isAdmin);
+  /** Count all non-expired notifications visible to the given user. */
+  public long countForUser(String username, boolean isAdmin) {
+    return dao.countForUser(username, isAdmin);
+  }
+
+  /** Return a bounded page of notifications visible to the given user, ordered most-recent-first. */
+  public List<Notification> listForUser(String username, boolean isAdmin, int skip, int limit) {
+    return dao.listForUser(username, isAdmin, skip, limit);
   }
 
   /** Count unread notifications visible to the given user. */

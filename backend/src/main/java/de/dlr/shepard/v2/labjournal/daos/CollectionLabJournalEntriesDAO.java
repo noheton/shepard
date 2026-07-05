@@ -33,32 +33,54 @@ public class CollectionLabJournalEntriesDAO extends GenericDAO<LabJournalEntry> 
     return LabJournalEntry.class;
   }
 
+  /** Count distinct non-deleted lab journal entries attached to the collection. */
+  public long countByCollectionAppId(String collectionAppId) {
+    if (collectionAppId == null || collectionAppId.isBlank()) return 0L;
+    String query =
+      "MATCH (coll:Collection {appId: $appId})" +
+      "-[:" + Constants.HAS_DATAOBJECT + "]->(do:DataObject)" +
+      "-[:" + Constants.HAS_LABJOURNAL_ENTRY + "]->(lje:LabJournalEntry) " +
+      "WHERE (do.deleted IS NULL OR do.deleted = false) " +
+      "  AND (lje.deleted IS NULL OR lje.deleted = false) " +
+      "RETURN count(DISTINCT lje) AS c";
+    var result = session.query(query, Map.of("appId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
   /**
-   * Single-query bulk fetch of every non-deleted lab journal entry attached to
-   * any non-deleted DataObject in the given collection.
-   *
-   * <p><b>Hydration note (BUG-LJ-V1-COLL-ID, 2026-05-24).</b> The first cut of
-   * this DAO returned {@code DISTINCT lje} only, on the assumption that the
-   * OGM's depth-1 hydration would fill the incoming {@code has_labjournalentry}
-   * edge back to the owning {@link DataObject}. It does not — when {@code
-   * session.query(EntityType, ...)} is given a projection that returns just the
-   * leaf node, the OGM hydrates the OUTGOING relationships ({@code createdBy},
-   * {@code updatedBy}) but not the INCOMING reverse-relationship. So {@link
-   * LabJournalEntry#getDataObject()} came back {@code null} for every entry on
-   * the real LUMEN data, and {@link LabJournalEntryIO}'s constructor NPEd on
-   * {@code labJournalEntry.getDataObject().getShepardId()}. The endpoint
-   * returned HTTP 500 for any collection that actually has lab journal entries
-   * (empty collections like MFFD-Dropbox returned 200 [] and hid the bug).
-   *
-   * <p>The fix is the canonical {@link
-   * de.dlr.shepard.common.util.CypherQueryHelper#getReturnPart} pattern:
-   * project a depth-1 neighbourhood path alongside the entity so the OGM
-   * hydrates every direction. The {@code DISTINCT lje} stays in the WITH-clause
-   * so the same LJE isn't returned twice when its neighbourhood path branches.
-   *
-   * @param collectionAppId application-level UUID-v7 of the Collection.
-   * @return a list of entries sorted by {@code createdAt} descending (newest first).
+   * Bounded fetch: returns up to {@code limit} non-deleted entries starting at {@code skip},
+   * ordered by createdAt DESC then by Neo4j node id DESC for determinism.
+   * Sort and SKIP/LIMIT are pushed to Cypher before the path-expansion step.
    */
+  public List<LabJournalEntry> findByCollectionAppId(String collectionAppId, int skip, int limit) {
+    if (collectionAppId == null || collectionAppId.isBlank()) return List.of();
+    String query =
+      "MATCH (coll:Collection {appId: $appId})" +
+      "-[:" + Constants.HAS_DATAOBJECT + "]->(do:DataObject)" +
+      "-[:" + Constants.HAS_LABJOURNAL_ENTRY + "]->(lje:LabJournalEntry) " +
+      "WHERE (do.deleted IS NULL OR do.deleted = false) " +
+      "  AND (lje.deleted IS NULL OR lje.deleted = false) " +
+      "WITH DISTINCT lje " +
+      "ORDER BY lje.createdAt DESC, id(lje) DESC " +
+      "SKIP $skip LIMIT $limit " +
+      "MATCH path=(lje)-[*0..1]-(n) " +
+      "WHERE n.deleted = false OR n.deleted IS NULL " +
+      "RETURN lje, nodes(path), relationships(path)";
+    List<LabJournalEntry> result = new ArrayList<>();
+    for (var lje : findByQuery(query, Map.of("appId", collectionAppId, "skip", (long) skip, "limit", (long) limit))) {
+      if (lje != null && !lje.isDeleted()) result.add(lje);
+    }
+    return result;
+  }
+
+  /**
+   * @deprecated Use {@link #findByCollectionAppId(String, int, int)} with explicit bounds.
+   *     Kept for backwards compatibility; loads all entries.
+   */
+  @Deprecated
   public List<LabJournalEntry> findByCollectionAppId(String collectionAppId) {
     if (collectionAppId == null || collectionAppId.isBlank()) return List.of();
 

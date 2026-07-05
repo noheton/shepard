@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.labjournal.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -70,11 +72,15 @@ class CollectionLabJournalEntriesRestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(entriesDAO.findByCollectionAppId(COLL_APP_ID))
-      .thenReturn(List.of(
+    List<de.dlr.shepard.context.labJournal.entities.LabJournalEntry> twoEntries = List.of(
         buildEntry(11L, 101L, DO_APP_ID_1, "newer", new Date(2_000_000L)),
         buildEntry(12L, 102L, DO_APP_ID_2, "older", new Date(1_000_000L))
-      ));
+    );
+    when(entriesDAO.countByCollectionAppId(COLL_APP_ID)).thenReturn(2L);
+    // Fallback for unmatched skip/limit combinations
+    when(entriesDAO.findByCollectionAppId(anyString(), anyInt(), anyInt())).thenReturn(List.of());
+    // Default: page=0, pageSize=50
+    when(entriesDAO.findByCollectionAppId(eq(COLL_APP_ID), eq(0), eq(50))).thenReturn(twoEntries);
   }
 
   @Test
@@ -128,7 +134,8 @@ class CollectionLabJournalEntriesRestTest {
     orphan.setContent("orphan");
     // Intentionally do NOT call setDataObject — simulates the pre-fix
     // hydration miss.
-    when(entriesDAO.findByCollectionAppId(COLL_APP_ID))
+    when(entriesDAO.countByCollectionAppId(COLL_APP_ID)).thenReturn(2L);
+    when(entriesDAO.findByCollectionAppId(eq(COLL_APP_ID), eq(0), eq(50)))
       .thenReturn(List.of(
         buildEntry(11L, 101L, DO_APP_ID_1, "hydrated", new Date(2_000_000L)),
         orphan
@@ -145,7 +152,8 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_returns200WithEmptyListWhenNoEntries() {
-    when(entriesDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of());
+    when(entriesDAO.countByCollectionAppId(COLL_APP_ID)).thenReturn(0L);
+    when(entriesDAO.findByCollectionAppId(eq(COLL_APP_ID), anyInt(), anyInt())).thenReturn(List.of());
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -161,6 +169,8 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_paginationReturnsSublistWhenPageAndSizeProvided() {
+    when(entriesDAO.findByCollectionAppId(eq(COLL_APP_ID), eq(0), eq(1)))
+      .thenReturn(List.of(buildEntry(11L, 101L, DO_APP_ID_1, "newer", new Date(2_000_000L))));
     var r = resource.list(COLL_APP_ID, 0, 1, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -171,6 +181,7 @@ class CollectionLabJournalEntriesRestTest {
 
   @Test
   void list_paginationPageBeyondRangeReturnsEmptyList() {
+    // skip = 99 * 10 = 990; fallback mock returns List.of()
     var r = resource.list(COLL_APP_ID, 99, 10, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -179,7 +190,7 @@ class CollectionLabJournalEntriesRestTest {
   }
 
   @Test
-  void list_nullPageAndSizeReturnsAllEntries() {
+  void list_defaultParamsReturnAllEntries() {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")

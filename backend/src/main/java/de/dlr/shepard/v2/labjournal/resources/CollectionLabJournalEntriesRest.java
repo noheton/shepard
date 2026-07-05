@@ -124,15 +124,16 @@ public class CollectionLabJournalEntriesRest {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the Collection.");
     }
 
-    List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId);
-    List<LabJournalEntryIO> ios = new ArrayList<>(entries.size());
+    long total = entriesDAO.countByCollectionAppId(collectionAppId);
+    int skip = page * pageSize;
+    List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId, skip, pageSize);
+    List<LabJournalEntryIO> ios = new ArrayList<>();
     for (LabJournalEntry e : entries) {
       // Defensive: skip orphan entries whose owning DataObject didn't hydrate.
-      // The DAO Cypher now projects a depth-1 neighbourhood so the incoming
+      // The DAO Cypher projects a depth-1 neighbourhood so the incoming
       // has_labjournalentry edge from DataObject populates the back-reference;
-      // if a row somehow still lacks it (orphan node from a partial migration,
-      // OGM hydration drift), skipping is correct — closes BUG-LJ-V1-COLL-ID
-      // belt-and-braces. The DAO fix is the primary defence.
+      // this guard handles any residual orphan from a partial migration or OGM
+      // hydration drift — closes BUG-LJ-V1-COLL-ID belt-and-braces.
       if (e.getDataObject() == null) {
         Log.warnf(
           "Skipping orphan LabJournalEntry (appId=%s) with null DataObject in collection %s",
@@ -143,10 +144,7 @@ public class CollectionLabJournalEntriesRest {
       }
       ios.add(new LabJournalEntryIO(e));
     }
-    long total = ios.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(ios.subList(from, to), total, page, pageSize))
+    return Response.ok(new PagedResponseIO<>(ios, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
