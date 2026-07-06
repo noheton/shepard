@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -288,20 +287,30 @@ public class ShepardTemplateRest {
     operationId = "tags",
     summary = "Distinct list of tags across all non-retired templates.",
     description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind. " +
-    "Server-side cap: at most 500 distinct tags are returned (alphabetically first 500)."
+    "Server-side cap: at most 500 distinct tags are returned (alphabetically first 500). " +
+    "Pagination: `page` (0-based, default 0) and `pageSize` (1–500, default 50). " +
+    "`X-Total-Count` header carries the total before paging."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Distinct tag list, sorted ascending. Capped at 500 entries.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = String.class))
+    description = "Paged tag list, sorted ascending. X-Total-Count = total before paging.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response tags(
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
+    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @Min(0) int page,
+    @Parameter(description = "Page size (1–500). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(500) int pageSize,
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
-    return Response.ok(dao.listDistinctTags(kind)).build();
+    List<String> all = dao.listDistinctTags(kind);
+    long total = all.size();
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<String> slice = all.subList(skip, (int) Math.min((long) skip + pageSize, total));
+    return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────────

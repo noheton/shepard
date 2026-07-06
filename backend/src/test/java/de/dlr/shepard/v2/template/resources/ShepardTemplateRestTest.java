@@ -242,7 +242,7 @@ class ShepardTemplateRestTest {
   @Test
   void tagsReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.tags(null, securityContext);
+    Response r = resource.tags(null, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
     verify(dao, never()).listDistinctTags(any());
   }
@@ -250,20 +250,44 @@ class ShepardTemplateRestTest {
   @Test
   void tagsReturnsDistinctList() {
     when(dao.listDistinctTags(null)).thenReturn(List.of("calibration", "hot-fire", "lumen"));
-    Response r = resource.tags(null, securityContext);
+    Response r = resource.tags(null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<String> tags = (List<String>) r.getEntity();
-    assertEquals(3, tags.size());
-    assertEquals("calibration", tags.get(0));
+    de.dlr.shepard.v2.common.io.PagedResponseIO<String> paged =
+        (de.dlr.shepard.v2.common.io.PagedResponseIO<String>) r.getEntity();
+    assertEquals(3L, paged.total());
+    assertEquals(3, paged.items().size());
+    assertEquals("calibration", paged.items().get(0));
+    assertEquals("3", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
   void tagsHonoursKindFilter() {
     when(dao.listDistinctTags("EXPERIMENT_RECIPE")).thenReturn(List.of("hot-fire"));
-    Response r = resource.tags("EXPERIMENT_RECIPE", securityContext);
+    Response r = resource.tags("EXPERIMENT_RECIPE", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     verify(dao).listDistinctTags("EXPERIMENT_RECIPE");
+  }
+
+  @Test
+  void tagsPaginatesInMemory() {
+    when(dao.listDistinctTags(null)).thenReturn(List.of("a", "b", "c"));
+    Response page0 = resource.tags(null, 0, 2, securityContext);
+    assertEquals(200, page0.getStatus());
+    @SuppressWarnings("unchecked")
+    de.dlr.shepard.v2.common.io.PagedResponseIO<String> p0 =
+        (de.dlr.shepard.v2.common.io.PagedResponseIO<String>) page0.getEntity();
+    assertEquals(3L, p0.total());
+    assertEquals(2, p0.items().size());
+    assertEquals("a", p0.items().get(0));
+
+    when(dao.listDistinctTags(null)).thenReturn(List.of("a", "b", "c"));
+    Response page1 = resource.tags(null, 1, 2, securityContext);
+    @SuppressWarnings("unchecked")
+    de.dlr.shepard.v2.common.io.PagedResponseIO<String> p1 =
+        (de.dlr.shepard.v2.common.io.PagedResponseIO<String>) page1.getEntity();
+    assertEquals(1, p1.items().size());
+    assertEquals("c", p1.items().get(0));
   }
 
   @Test
