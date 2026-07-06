@@ -14,6 +14,7 @@ import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
 import { channelMatchesSearch, filterChannelsBySelection } from "~/utils/timeseriesChannelFilter";
+import { MAX_CHANNEL_PAGE_SIZE } from "~/utils/channelConstants";
 
 definePageMeta({ layout: "collection" });
 
@@ -362,8 +363,7 @@ watch(
       const [channels, container] = await Promise.all([
         channelListingApi.value.listContainerChannels({
           appId,
-          // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
-          pageSize: 500,
+          pageSize: MAX_CHANNEL_PAGE_SIZE,
         }),
         channelListingApi.value.getContainer({ appId }).catch(() => undefined),
       ]);

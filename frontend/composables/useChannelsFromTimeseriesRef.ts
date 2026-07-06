@@ -10,6 +10,7 @@
  * Backlog: SCENEGRAPH-CANVAS-ANIM-1.
  */
 import { ref } from "vue";
+import { MAX_CHANNEL_PAGE_SIZE } from "~/utils/channelConstants";
 import type { UrdfPickerChannel } from "~/utils/urdfChannelPicker";
 
 function v2BaseUrl(): string {
@@ -60,11 +61,10 @@ export function useChannelsFromTimeseriesRef() {
       }
 
       // List channels — endpoint returns a flat array; paginate until exhausted
-      const PAGE_SIZE = 500;
       const MAX_PAGES = 4;
       const all: UrdfPickerChannel[] = [];
       for (let page = 0; page < MAX_PAGES; page++) {
-        const qs = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
+        const qs = new URLSearchParams({ page: String(page), pageSize: String(MAX_CHANNEL_PAGE_SIZE) });
         const chRes = await fetch(
           `${base}/v2/containers/${containerAppId}/channels?${qs}`,
           { headers },
@@ -91,7 +91,7 @@ export function useChannelsFromTimeseriesRef() {
             field: ch.field,
           });
         }
-        if (rows.length < PAGE_SIZE) break;
+        if (rows.length < MAX_CHANNEL_PAGE_SIZE) break;
       }
       channels.value = all;
     } catch (e) {

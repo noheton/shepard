@@ -4258,10 +4258,11 @@ picks these up. Terse by design.
 - **First refs:** `aidocs/agent-findings/mffd-showcase-verification-2026-07-02.md`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:644` (the `@Max(500)`).
 
 ## TRACE3D-E2E-SMOKE-2026-07-02 — e2e smoke for the Trace3D render happy path + shared channel pageSize constant (size: S)
-- **Status:** queued.
+- **Status:** 🔄 PR open (fire-449, PR #TBD).
 - **Why:** the `@Max(500)` cap silently broke three presentation-deck surfaces for ~1 day because no e2e covers `/shapes/render?renderer=trace-3d` end-to-end and the channels listing is consumed in four places with three different hand-rolled page sizes. A backend param-contract change had no failing signal anywhere.
 - **Fix shape:** (a) one Playwright smoke that loads the C-shot URL and asserts a canvas + no `.v-alert.error` (data-independent variant: any seeded container); (b) extract `MAX_CHANNEL_PAGE_SIZE = 500` into a shared frontend constant (or read the generated client's documented cap) and use it at all four call sites.
 - **First refs:** `CHANNELS-PAGESIZE-500-FIX-2026-07-02`; `e2e/tests/screenshots-320.spec.ts` (the C/G URLs); `frontend/utils/shapesRenderChannels.ts`.
+- **Shipped:** `frontend/utils/channelConstants.ts` (new shared constant `MAX_CHANNEL_PAGE_SIZE = 500`); updated 5 call sites (`shapesRenderChannels.ts`, `TimeseriesContainerAccessor.ts`, `useFetchV2Channels.ts`, `useChannelsFromTimeseriesRef.ts`, `timeseriesereferences/[id]/index.vue`); `e2e/tests/uiverify-trace3d-smoke.spec.ts` (two tests: live data-gated happy-path + structural data-independent).
 
 ## VIDEO-EMPTY-UPLOAD-ROWS-2026-07-02 — 3 live `:VideoStreamReference` rows with no bytes (no storageLocator, no probe metadata) (size: XS, data triage)
 - **Status:** queued.

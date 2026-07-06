@@ -7,6 +7,7 @@ import {
   type TimeseriesContainer,
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
+import { MAX_CHANNEL_PAGE_SIZE } from "~/utils/channelConstants";
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 import { safeDeleteContainer } from "./safeDeleteContainer";
@@ -94,9 +95,7 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   // can't resolve (→ "Container with id 0"). Per-track access goes through each
   // DataObject's TimeseriesReference (~190 channels); this flat view is a bounded
   // sample. Full server-side-paginated browse is a follow-up (TS-CONTAINER-CHANNEL-PAGE).
-  // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX);
-  // larger values 400 with a constraint violation and the channel table reads empty.
-  private static readonly CHANNEL_PAGE_SIZE = 500;
+  private static readonly CHANNEL_PAGE_SIZE = MAX_CHANNEL_PAGE_SIZE;
 
   async fetchMeasurements() {
     try {

@@ -11,6 +11,7 @@
  * user-visible fetch.
  */
 import { ref } from "vue";
+import { MAX_CHANNEL_PAGE_SIZE } from "~/utils/channelConstants";
 
 interface ChannelV2 {
   shepardId: string;
@@ -59,8 +60,7 @@ export function useFetchV2Channels(containerAppId: string) {
     loading.value = true;
     try {
       const res = await fetch(
-        // 500 = server-side @Max on listChannels pageSize (APISIMP-CHANNEL-PAGESZ-MAX)
-        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=500`,
+        `${v2Base()}/v2/containers/${containerAppId}/channels?pageSize=${MAX_CHANNEL_PAGE_SIZE}`,
         { headers: authHeaders() },
       );
       if (!res.ok) return;
