@@ -83,6 +83,20 @@ public class SearchDAO {
     return ret;
   }
 
+  public long getUserTotalCount(Neo4jQuery selectionQuery, String userVariable) {
+    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery.cypher(), userVariable);
+    Iterable<Long> result = session.query(Long.class, query, selectionQuery.params());
+    return result.iterator().next();
+  }
+
+  public List<User> findUsersPaged(Neo4jQuery selectionQuery, String userVariable, PaginationHelper pagination) {
+    String query = selectionQuery.cypher() + emitBoundedUserReturnPart(userVariable, pagination);
+    Iterable<User> users = session.query(User.class, query, selectionQuery.params());
+    List<User> ret = new ArrayList<>();
+    users.forEach(ret::add);
+    return ret;
+  }
+
   public List<UserGroup> findUserGroups(Neo4jQuery selectionQuery, String userGroupVariable) {
     String query = selectionQuery.cypher() + emitUserGroupReturnPart(userGroupVariable);
     Iterable<UserGroup> userGroups = session.query(UserGroup.class, query, selectionQuery.params());
@@ -154,6 +168,17 @@ public class SearchDAO {
 
   private String emitUserReturnPart(String userVariable) {
     return " WITH %s MATCH path=(%s:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)".formatted(
+        userVariable,
+        userVariable,
+        userVariable
+      );
+  }
+
+  private String emitBoundedUserReturnPart(String userVariable, PaginationHelper pagination) {
+    return " ORDER BY %s.username ASC SKIP %d LIMIT %d WITH %s MATCH path=(%s:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)".formatted(
+        userVariable,
+        pagination.getOffset(),
+        pagination.getSize(),
         userVariable,
         userVariable,
         userVariable
