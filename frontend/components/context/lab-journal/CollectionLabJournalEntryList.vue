@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import {
-  CollectionApi,
+  CollectionPermissionsApi,
   type LabJournalEntry,
   type Roles,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchCollectionLabJournalEntries } from "~/composables/context/useFetchCollectionLabJournalEntries";
 import LabJournalExistingEntry from "~/components/context/lab-journal/LabJournalExistingEntry.vue";
 
@@ -44,8 +44,10 @@ watch(fetched, value => {
 });
 
 async function fetchRoles() {
-  useShepardApi(CollectionApi)
-    .value.getCollectionRoles({ collectionId: props.collectionId })
+  if (!props.collectionAppId) return;
+  // BUG-COLL-APPID-ROUTE-PERMS-1: migrated to v2 roles endpoint
+  useV2ShepardApi(CollectionPermissionsApi)
+    .value.getCollectionRoles({ appId: props.collectionAppId })
     .then(response => {
       userRoles.value = response;
     })

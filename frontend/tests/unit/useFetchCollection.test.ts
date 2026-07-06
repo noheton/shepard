@@ -1,10 +1,12 @@
 /**
  * BUG-COLL-APPID-ROUTE-002 — proves useFetchCollection hits the v2 appId-keyed
  * endpoint with the route param as-is (no `parseInt` truncation, no v1 path).
+ * BUG-COLL-APPID-ROUTE-PERMS-1 — proves Roles are looked up via the v2
+ * `CollectionPermissionsApi.getCollectionRoles({appId})` endpoint, not v1.
  * Coverage:
  *   - calls GET /v2/collections/{appId} on construction
  *   - parses the JSON response into `collection.value`
- *   - looks up Roles via the v1 client using the numeric `id` field
+ *   - looks up Roles via v2 using the appId field (not numeric id)
  *   - handles HTTP errors (404 / 500) cleanly, isError=true
  *   - handles missing accessToken (unauthenticated) without throwing
  *   - useFetchCollectionOfRouteParams re-fetches when the route param flips
@@ -17,7 +19,7 @@ const ACCESS_TOKEN = "test-token";
 
 // Auto-imports the composable consumes — set up before importing the module.
 const mockGetCollectionRoles = vi.fn();
-const mockUseShepardApi = vi.fn(() => ref({ getCollectionRoles: mockGetCollectionRoles }));
+const mockUseV2ShepardApi = vi.fn(() => ref({ getCollectionRoles: mockGetCollectionRoles }));
 const collectionUpdatedListeners: Array<() => void> = [];
 
 beforeEach(() => {
@@ -40,8 +42,8 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn());
 });
 
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: () => mockUseShepardApi(),
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: () => mockUseV2ShepardApi(),
 }));
 
 const flush = () => new Promise<void>(r => setTimeout(r, 0));
@@ -132,7 +134,7 @@ describe("useFetchCollection — BUG-COLL-APPID-ROUTE-002", () => {
     expect(isError.value).toBe(false);
   });
 
-  it("looks up Roles via v1 client with the numeric id from the v2 payload", async () => {
+  it("looks up Roles via v2 CollectionPermissionsApi using the appId (not numeric id)", async () => {
     mockFetchOk(collectionBody);
     const { useFetchCollection } = await import(
       "~/composables/context/useFetchCollection"
@@ -141,7 +143,7 @@ describe("useFetchCollection — BUG-COLL-APPID-ROUTE-002", () => {
     await flush();
     await flush();
 
-    expect(mockGetCollectionRoles).toHaveBeenCalledWith({ collectionId: 42 });
+    expect(mockGetCollectionRoles).toHaveBeenCalledWith({ appId: APP_ID });
     expect(isAllowedToEditCollection.value).toBe(true);
   });
 

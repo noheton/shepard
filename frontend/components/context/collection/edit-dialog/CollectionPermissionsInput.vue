@@ -2,7 +2,7 @@
 import type { UpdatedPermissions } from "./collectionEditTypes";
 
 interface CollectionPermissionsInputProps {
-  collectionId: number;
+  collectionAppId: string;
 }
 
 const props = defineProps<CollectionPermissionsInputProps>();
@@ -12,7 +12,7 @@ const updatedPermissions = defineModel<UpdatedPermissions>("permissions", {
 });
 
 const { collectionPermissions } = useFetchCollectionPermissions(
-  props.collectionId,
+  props.collectionAppId,
 );
 
 watch(collectionPermissions, () => {

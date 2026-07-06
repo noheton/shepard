@@ -1,9 +1,9 @@
 import {
-  CollectionApi,
+  CollectionPermissionsApi,
   type Collection,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type {
   UpdatedCollection,
   UpdatedPermissions,
@@ -16,10 +16,10 @@ import type {
  * Neo4j long; post-Neo4j-reset Collections carry UUID v7 only so the edit
  * dialog "Save" silently 404'd.
  *
- * `editCollectionPermissions` stays on v1 — permissions still live on the
- * v1 shelf (BUG-COLL-APPID-ROUTE-PERMS-1 hold-back per
- * `CollectionV2Rest §68-70`). Prefers the `appId` when present, falls back
- * to the numeric `id` for legacy callers (v2 EntityIdResolver accepts both).
+ * `editCollectionPermissions` now uses the v2 endpoint
+ * `PUT /v2/collections/{appId}/permissions` (BUG-COLL-APPID-ROUTE-PERMS-1).
+ * Falls back to `String(collection.id)` when `appId` is absent (legacy
+ * Collections; v2 EntityIdResolver accepts numeric strings too).
  */
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
@@ -50,8 +50,6 @@ export function useEditCollection(
     promptLogMode: collection.promptLogMode ?? null,
   });
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
-
-  const collectionApi = useShepardApi(CollectionApi);
 
   async function saveChanges() {
     if (isValid.value === false) return;
@@ -91,14 +89,13 @@ export function useEditCollection(
     if (!collectionUpdateSuccess) return;
 
     if (isAllowedToEditPermissions && updatedPermissions.value) {
-      const permissionsUpdateSuccess = await collectionApi.value
-        .editCollectionPermissions({
-          collectionId: collection.id,
+      const appId = collection.appId ?? String(collection.id);
+      const permissionsUpdateSuccess = await useV2ShepardApi(CollectionPermissionsApi)
+        .value.editCollectionPermissions({
+          appId,
           permissions: updatedPermissions.value,
         })
-        .then(_ => {
-          return true;
-        })
+        .then(_ => true)
         .catch(error => {
           handleError(error, "updatePermissions");
           return false;

@@ -3,9 +3,9 @@ import type {
   ResponseError,
   Roles,
 } from "@dlr-shepard/backend-client";
-import { CollectionApi } from "@dlr-shepard/backend-client";
+import { CollectionPermissionsApi } from "@dlr-shepard/backend-client";
 import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
  * BUG-COLL-APPID-ROUTE-002 (2026-05-31): the Collection fetch must use the
@@ -16,11 +16,9 @@ import { useShepardApi } from "../common/api/useShepardApi";
  * and the Collection page showed a red "Collection could not be fetched"
  * toast despite the URL being valid.
  *
- * The Roles endpoint still lives on the v1 shelf (no v2 equivalent yet — see
- * `CollectionV2Rest` Phase B deferred work). We satisfy it by reading the
- * numeric `id` off the v2 response and calling `getCollectionRoles` with
- * that. Numeric route ids continue to work — the v2 GET routes via the same
- * backing `EntityIdResolver` which accepts either shape.
+ * BUG-COLL-APPID-ROUTE-PERMS-1: The Roles endpoint is now served by
+ * GET /v2/collections/{appId}/roles (no longer v1). The `appId` from the v2
+ * Collection response is used directly — no numeric id extraction needed.
  *
  * Raw `fetch` (no generated client) mirrors `useNotificationTransports`,
  * `useFetchPayloadVersions`, and the `downloadRepExport()` helper inside
@@ -101,13 +99,12 @@ export function useFetchCollection(collectionId: string) {
     fetchCollectionV2(nextId, accessToken)
       .then(response => {
         collection.value = response;
-        // Roles live on v1 only (Phase B deferred). Use the numeric `id`
-        // returned in the v2 payload for the role lookup.
-        const numericId = response.id;
-        if (numericId != null) {
-          const collectionApi = useShepardApi(CollectionApi);
-          collectionApi.value
-            .getCollectionRoles({ collectionId: numericId })
+        // BUG-COLL-APPID-ROUTE-PERMS-1: roles now served by
+        // GET /v2/collections/{appId}/roles — no numeric id needed.
+        const appId = response.appId;
+        if (appId) {
+          useV2ShepardApi(CollectionPermissionsApi).value
+            .getCollectionRoles({ appId })
             .then(roles => {
               collectionRoles.value = roles;
             })
