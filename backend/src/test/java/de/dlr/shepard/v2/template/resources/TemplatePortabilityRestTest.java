@@ -15,6 +15,7 @@ import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
+import de.dlr.shepard.v2.template.io.TemplateImportResultIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -205,23 +206,25 @@ class TemplatePortabilityRestTest {
   }
 
   @Test
-  void importReturns200WithEmptyListForNullInput() {
-    // null body is treated as empty document — returns 200 with empty list.
+  void importReturns200WithEmptyResultForNullInput() {
     Response r = resource.importTemplates(null, securityContext);
     assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    List<?> result = (List<?>) r.getEntity();
-    assertTrue(result.isEmpty(), "Expected empty list for null input");
+    TemplateImportResultIO result = (TemplateImportResultIO) r.getEntity();
+    assertTrue(result.items().isEmpty(), "Expected empty items for null input");
+    assertEquals(0, result.created());
+    assertEquals(0, result.updated());
+    assertEquals(0, result.skipped());
   }
 
   @Test
-  void importReturns200WithEmptyListForEmptyYaml() {
-    // Explicitly empty YAML "[]" is valid — returns 200 with empty list.
+  void importReturns200WithEmptyResultForEmptyYaml() {
     Response r = resource.importTemplates("[]", securityContext);
     assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    List<?> result = (List<?>) r.getEntity();
-    assertTrue(result.isEmpty(), "Expected empty list for empty YAML input");
+    TemplateImportResultIO result = (TemplateImportResultIO) r.getEntity();
+    assertTrue(result.items().isEmpty(), "Expected empty items for empty YAML input");
+    assertEquals(0, result.created());
+    assertEquals(0, result.updated());
+    assertEquals(0, result.skipped());
   }
 
   // -----------------------------------------------------------------------
@@ -249,13 +252,15 @@ class TemplatePortabilityRestTest {
     Response r = resource.importTemplates(yaml, securityContext);
 
     assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> result = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, result.size());
-    assertEquals("Hot fire", result.get(0).getName());
-    assertEquals("EXPERIMENT_RECIPE", result.get(0).getTemplateKind());
-    assertEquals(ADMIN, result.get(0).getCreatedBy());
-    assertEquals(1, result.get(0).getVersion());
+    TemplateImportResultIO result = (TemplateImportResultIO) r.getEntity();
+    assertEquals(1, result.items().size());
+    assertEquals(1, result.created());
+    assertEquals(0, result.updated());
+    assertEquals(0, result.skipped());
+    assertEquals("Hot fire", result.items().get(0).getName());
+    assertEquals("EXPERIMENT_RECIPE", result.items().get(0).getTemplateKind());
+    assertEquals(ADMIN, result.items().get(0).getCreatedBy());
+    assertEquals(1, result.items().get(0).getVersion());
 
     verify(dao, times(1)).createOrUpdate(any(ShepardTemplate.class));
   }
@@ -324,10 +329,12 @@ class TemplatePortabilityRestTest {
     assertEquals(2, nextVersion.getVersion());
     assertFalse(nextVersion.isRetired());
 
-    @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> result = (List<ShepardTemplateIO>) r.getEntity();
-    assertEquals(1, result.size());
-    assertEquals(2, result.get(0).getVersion());
+    TemplateImportResultIO result = (TemplateImportResultIO) r.getEntity();
+    assertEquals(1, result.items().size());
+    assertEquals(0, result.created());
+    assertEquals(1, result.updated());
+    assertEquals(0, result.skipped());
+    assertEquals(2, result.items().get(0).getVersion());
   }
 
   // -----------------------------------------------------------------------
@@ -362,11 +369,13 @@ class TemplatePortabilityRestTest {
     Response importResponse = resource.importTemplates(yaml, securityContext);
     assertEquals(200, importResponse.getStatus());
 
-    @SuppressWarnings("unchecked")
-    List<ShepardTemplateIO> imported = (List<ShepardTemplateIO>) importResponse.getEntity();
-    assertEquals(1, imported.size());
+    TemplateImportResultIO imported = (TemplateImportResultIO) importResponse.getEntity();
+    assertEquals(1, imported.items().size());
+    assertEquals(1, imported.created());
+    assertEquals(0, imported.updated());
+    assertEquals(0, imported.skipped());
 
-    ShepardTemplateIO io = imported.get(0);
+    ShepardTemplateIO io = imported.items().get(0);
     assertEquals("Round trip", io.getName());
     assertEquals("EXPERIMENT_RECIPE", io.getTemplateKind());
     assertEquals("Round-trip description", io.getDescription());
