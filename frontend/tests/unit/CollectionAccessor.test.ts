@@ -2,30 +2,37 @@
  * BUG-COLL-APPID-ROUTE-003 (2026-06-02) — proves `CollectionAccessor` routes
  * GET / DELETE / PATCH through the v2 appId-keyed endpoint
  * `/v2/collections/{collectionAppId}` rather than the generated v1 client.
+ * BUG-COLL-APPID-ROUTE-PERMS-1 (2026-07-06) — proves permissions / roles now
+ * use the v2 `CollectionPermissionsApi` keyed by appId, not v1 numeric id.
  * Coverage:
  *   - fetchData() GETs via v2 (no `getCollection` on v1)
  *   - delete() DELETEs via v2 (no `deleteCollection` on v1)
  *   - updateCollection() PATCHes via v2 with merge-patch headers
- *   - fetchPermissions() / fetchRoles() still use v1 (the documented hold-back)
- *     and look up by the numeric `id` carried in the v2 GET response
- *   - fetchPermissions() / fetchRoles() short-circuit fail-soft when the
- *     Collection has no numeric id (post-Neo4j-reset case)
+ *   - fetchPermissions() uses v2 CollectionPermissionsApi.getCollectionPermissions({appId})
+ *   - fetchRoles() uses v2 CollectionPermissionsApi.getCollectionRoles({appId})
+ *   - fetchPermissions() / fetchRoles() short-circuit fail-soft when appId is absent
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref } from "vue";
 
 const ACCESS_TOKEN = "test-token";
 
-const v1GetCollectionSentinel = vi.fn();
-const v1DeleteCollectionSentinel = vi.fn();
-const v1UpdateCollectionSentinel = vi.fn();
-const v1GetCollectionPermissions = vi.fn();
-const v1GetCollectionRoles = vi.fn();
-const v1EditCollectionPermissions = vi.fn();
+const v2GetCollectionPermissions = vi.fn();
+const v2GetCollectionRoles = vi.fn();
+const v2EditCollectionPermissions = vi.fn();
+const mockUseV2ShepardApi = vi.fn(() =>
+  ref({
+    getCollectionPermissions: v2GetCollectionPermissions,
+    getCollectionRoles: v2GetCollectionRoles,
+    editCollectionPermissions: v2EditCollectionPermissions,
+  }),
+);
 const routerPush = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  v2GetCollectionPermissions.mockResolvedValue({ permissionType: "PRIVATE" });
+  v2GetCollectionRoles.mockResolvedValue({ owner: true, writer: false, reader: true, manager: false });
   Object.assign(globalThis, {
     useAuth: () => ({
       data: ref<{ accessToken: string }>({ accessToken: ACCESS_TOKEN }),
@@ -46,18 +53,11 @@ vi.mock("#imports", () => ({
 }));
 vi.mock("@dlr-shepard/backend-client", () => ({
   CollectionApi: function CollectionApi() {},
+  CollectionPermissionsApi: function CollectionPermissionsApi() {},
   UserApi: function UserApi() {},
 }));
-vi.mock("~/composables/common/api/useShepardApi", () => ({
-  useShepardApi: () =>
-    ref({
-      getCollection: v1GetCollectionSentinel,
-      deleteCollection: v1DeleteCollectionSentinel,
-      updateCollection: v1UpdateCollectionSentinel,
-      getCollectionPermissions: v1GetCollectionPermissions,
-      getCollectionRoles: v1GetCollectionRoles,
-      editCollectionPermissions: v1EditCollectionPermissions,
-    }),
+vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
+  useV2ShepardApi: () => mockUseV2ShepardApi(),
 }));
 
 const flush = () => new Promise<void>(r => setTimeout(r, 0));
@@ -69,10 +69,11 @@ const collectionBody = {
   name: "LUMEN Showcase",
   description: "synthetic",
 };
-const collectionBodyNoNumericId = {
-  id: null,
-  appId: APP_ID,
-  name: "Post-reset Collection",
+// Missing appId — permissions/roles must short-circuit without calling the API.
+const collectionBodyNoAppId = {
+  id: 42,
+  appId: null as string | null,
+  name: "Legacy Collection",
 };
 
 describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
@@ -98,7 +99,6 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
       `http://localhost:8080/v2/collections/${encodeURIComponent(APP_ID)}`,
     );
     expect(acc.collection.value?.name).toBe("LUMEN Showcase");
-    expect(v1GetCollectionSentinel).not.toHaveBeenCalled();
   });
 
   it("delete() DELETEs via the v2 path", async () => {
@@ -127,7 +127,6 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     expect(deleteCall?.[0]).toBe(
       `http://localhost:8080/v2/collections/${encodeURIComponent(APP_ID)}`,
     );
-    expect(v1DeleteCollectionSentinel).not.toHaveBeenCalled();
     expect(routerPush).toHaveBeenCalledWith("/collections");
   });
 
@@ -154,10 +153,9 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     expect((calls[0]?.[1] as RequestInit).method).toBe("PATCH");
     const headers = (calls[0]?.[1] as RequestInit).headers as Record<string, string>;
     expect(headers["Content-Type"]).toBe("application/merge-patch+json");
-    expect(v1UpdateCollectionSentinel).not.toHaveBeenCalled();
   });
 
-  it("fetchPermissions uses v1 with the numeric id read off the v2 response", async () => {
+  it("fetchPermissions uses v2 CollectionPermissionsApi keyed by appId", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -166,7 +164,6 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
         json: () => Promise.resolve(collectionBody),
       }),
     );
-    v1GetCollectionPermissions.mockResolvedValue({ owner: "alice" });
     const { CollectionAccessor } = await import(
       "~/composables/context/CollectionAccessor"
     );
@@ -174,17 +171,17 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     await acc.fetchPermissions();
     await flush();
 
-    expect(v1GetCollectionPermissions).toHaveBeenCalledWith({ collectionId: 42 });
-    expect(acc.permissions.value).toEqual({ owner: "alice" });
+    expect(v2GetCollectionPermissions).toHaveBeenCalledWith({ appId: APP_ID });
+    expect(acc.permissions.value).toEqual({ permissionType: "PRIVATE" });
   });
 
-  it("fetchPermissions fails-soft when v2 response has no numeric id", async () => {
+  it("fetchPermissions fails-soft when Collection has no appId", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve(collectionBodyNoNumericId),
+        json: () => Promise.resolve(collectionBodyNoAppId),
       }),
     );
     const { CollectionAccessor } = await import(
@@ -194,17 +191,17 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     await acc.fetchPermissions();
     await flush();
 
-    expect(v1GetCollectionPermissions).not.toHaveBeenCalled();
+    expect(v2GetCollectionPermissions).not.toHaveBeenCalled();
     expect(acc.permissions.value).toBeUndefined();
   });
 
-  it("fetchRoles fails-soft when v2 response has no numeric id", async () => {
+  it("fetchRoles uses v2 CollectionPermissionsApi keyed by appId", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve(collectionBodyNoNumericId),
+        json: () => Promise.resolve(collectionBody),
       }),
     );
     const { CollectionAccessor } = await import(
@@ -214,7 +211,27 @@ describe("CollectionAccessor — BUG-COLL-APPID-ROUTE-003", () => {
     await acc.fetchRoles();
     await flush();
 
-    expect(v1GetCollectionRoles).not.toHaveBeenCalled();
+    expect(v2GetCollectionRoles).toHaveBeenCalledWith({ appId: APP_ID });
+    expect(acc.roles.value).toEqual({ owner: true, writer: false, reader: true, manager: false });
+  });
+
+  it("fetchRoles fails-soft when Collection has no appId", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(collectionBodyNoAppId),
+      }),
+    );
+    const { CollectionAccessor } = await import(
+      "~/composables/context/CollectionAccessor"
+    );
+    const acc = new CollectionAccessor(APP_ID);
+    await acc.fetchRoles();
+    await flush();
+
+    expect(v2GetCollectionRoles).not.toHaveBeenCalled();
     expect(acc.roles.value).toBeUndefined();
   });
 });

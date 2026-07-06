@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  CollectionApi,
+  CollectionPermissionsApi,
   CollectionTemplatesApi,
   PermissionType,
   TemplatesApi,
@@ -8,7 +8,6 @@ import {
   type ResponseError,
   type ShepardTemplate,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { CollectionToCreate } from "./collectionToCreate";
 
@@ -87,10 +86,9 @@ watch(collectionToCreate, () => form.value?.validate(), { deep: true });
 
 async function saveChanges() {
   if (isValid.value === false) return;
-  const collectionApi = useShepardApi(CollectionApi);
 
-  // BUG-COLL-APPID-ROUTE-005: CREATE via v2. Permissions edit + lookup
-  // below stay on v1 (PERMS-1 hold-back).
+  // BUG-COLL-APPID-ROUTE-005: CREATE via v2.
+  // BUG-COLL-APPID-ROUTE-PERMS-1: Permissions lookup + edit now use v2 too.
   const { data: session } = useAuth();
   const accessToken = session.value?.accessToken;
   const headers: Record<string, string> = {
@@ -119,19 +117,19 @@ async function saveChanges() {
     });
   if (!created) return;
 
-  const collectionId = created.id;
+  const createdAppId = created.appId ?? String(created.id);
 
-  const currentPermissions = await collectionApi.value
-    .getCollectionPermissions({ collectionId })
+  const currentPermissions = await useV2ShepardApi(CollectionPermissionsApi)
+    .value.getCollectionPermissions({ appId: createdAppId })
     .catch(error => {
       handleError(error, "getPermissions");
       return undefined;
     });
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await collectionApi.value
-    .editCollectionPermissions({
-      collectionId,
+  const permissionsUpdateSuccess = await useV2ShepardApi(CollectionPermissionsApi)
+    .value.editCollectionPermissions({
+      appId: createdAppId,
       permissions: { ...currentPermissions, permissionType: permissionType.value },
     })
     .then(() => true)
@@ -141,26 +139,22 @@ async function saveChanges() {
     });
   if (!permissionsUpdateSuccess) return;
 
-  if (selectedTemplate.value) {
-    const collectionAppId = (created as unknown as { appId?: string | null }).appId;
-    if (collectionAppId) {
-      // V2-SWEEP-001-CLIENT-REGEN: recordTemplateUsage was folded into the
-      // unified `instantiate` op (POST /v2/collections/{appId}/templates/from/
-      // {templateAppId}); the path param is now `appId` (was collectionAppId).
-      await useV2ShepardApi(CollectionTemplatesApi)
-        .value.instantiate({
-          appId: collectionAppId,
-          templateAppId: selectedTemplate.value.appId,
-        })
-        .catch(() => {
-          /* non-critical — don't block navigation */
-        });
-    }
+  if (selectedTemplate.value && created.appId) {
+    // V2-SWEEP-001-CLIENT-REGEN: recordTemplateUsage was folded into the
+    // unified `instantiate` op (POST /v2/collections/{appId}/templates/from/
+    // {templateAppId}); the path param is now `appId` (was collectionAppId).
+    await useV2ShepardApi(CollectionTemplatesApi)
+      .value.instantiate({
+        appId: created.appId,
+        templateAppId: selectedTemplate.value.appId,
+      })
+      .catch(() => {
+        /* non-critical — don't block navigation */
+      });
   }
 
   emitSuccess(`Successfully created collection "${collectionToCreate.value.name}"`);
-  const createdAppId = (created as unknown as { appId?: string | null }).appId;
-  emit("collection-created", createdAppId ?? String(collectionId));
+  emit("collection-created", createdAppId);
   showDialog.value = false;
 }
 </script>

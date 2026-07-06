@@ -1,11 +1,11 @@
 import { collectionsPath } from "#imports";
 import {
-  CollectionApi,
+  CollectionPermissionsApi,
   type Collection,
   type Permissions,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 import { ShepardObjectAccessor } from "../shepardObjectAccessor";
 
 /**
@@ -16,12 +16,11 @@ import { ShepardObjectAccessor } from "../shepardObjectAccessor";
  * (`EntityIdResolver`) accepts UUID-v7 or numeric stringified id, so legacy
  * numeric handles keep working.
  *
- * Permissions / roles still live on the v1 shelf — `CollectionV2Rest`
- * explicitly defers them to a future `/v2/permissions/{collectionAppId}`
- * resource. The accessor calls v1 with the numeric `id` read off the v2
- * response, mirroring `useFetchCollection.ts` line 106. If the numeric id is
- * absent (post-reset Collection), the permissions / roles call fails-soft —
- * the page renders without those slices rather than redirecting on error.
+ * BUG-COLL-APPID-ROUTE-PERMS-1 (2026-07-06): Permissions / roles now use the
+ * v2 endpoints `GET/PUT /v2/collections/{appId}/permissions` and
+ * `GET /v2/collections/{appId}/roles`. The `appId` is taken from the loaded
+ * Collection entity; if absent (should not happen post-L2d), the call
+ * fails-soft as before.
  */
 
 function v2BaseUrl(): string {
@@ -55,7 +54,6 @@ async function v2Fetch(
 }
 
 export class CollectionAccessor extends ShepardObjectAccessor<string> {
-  api = useShepardApi(CollectionApi);
   collection = ref<Collection>();
 
   /**
@@ -93,23 +91,12 @@ export class CollectionAccessor extends ShepardObjectAccessor<string> {
   }
 
   async fetchPermissions() {
-    // Permissions live on the v1 shelf only — see CollectionV2Rest §68-70.
-    // We need a numeric `id` to call the v1 endpoint; if the Collection
-    // has none (post-reset), make sure we've loaded it via v2 first to
-    // pick up `id` from the response. If still null afterwards, skip
-    // fail-soft rather than 400 on the v1 call.
     try {
       if (!this.collection.value) await this.fetchData();
-      const numericId = this.collection.value?.id;
-      if (numericId == null) {
-        // Post-reset Collection — no numeric id, no v1 permissions surface.
-        // Leave `this.permissions` undefined; the page is responsible for
-        // rendering a degraded view.
-        return;
-      }
-      this.permissions.value = await this.api.value.getCollectionPermissions({
-        collectionId: numericId,
-      });
+      const appId = this.collection.value?.appId;
+      if (!appId) return;
+      this.permissions.value = await useV2ShepardApi(CollectionPermissionsApi)
+        .value.getCollectionPermissions({ appId });
     } catch (error) {
       handleError(error as ResponseError, "fetching permissions");
       throw error;
@@ -117,39 +104,30 @@ export class CollectionAccessor extends ShepardObjectAccessor<string> {
   }
 
   async fetchRoles() {
-    // Roles live on the v1 shelf only — see CollectionV2Rest §68-70. Same
-    // numeric-id fallback as `fetchPermissions()`.
     try {
       if (!this.collection.value) await this.fetchData();
-      const numericId = this.collection.value?.id;
-      if (numericId == null) {
-        return;
-      }
-      this.roles.value = await this.api.value.getCollectionRoles({
-        collectionId: numericId,
-      });
+      const appId = this.collection.value?.appId;
+      if (!appId) return;
+      this.roles.value = await useV2ShepardApi(CollectionPermissionsApi)
+        .value.getCollectionRoles({ appId });
     } catch (error) {
       handleError(error as ResponseError, "fetching roles");
     }
   }
 
   async updatePermissions(updatedPermissions: Permissions) {
-    // editCollectionPermissions is v1-only (per the same hold-back as
-    // permissions reads). Numeric id required.
     try {
       if (!this.collection.value) await this.fetchData();
-      const numericId = this.collection.value?.id;
-      if (numericId == null) {
+      const appId = this.collection.value?.appId;
+      if (!appId) {
         handleError(
-          new Error(
-            "Cannot update permissions: Collection has no numeric id (post-reset).",
-          ),
+          new Error("Cannot update permissions: Collection has no appId."),
           "updating permissions",
         );
         return;
       }
-      await this.api.value.editCollectionPermissions({
-        collectionId: numericId,
+      await useV2ShepardApi(CollectionPermissionsApi).value.editCollectionPermissions({
+        appId,
         permissions: updatedPermissions,
       });
       emitSuccess(

@@ -95,9 +95,9 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
         <v-row>
           <v-col class="pt-2">
             <CollectionPermissionsInput
-              v-if="isAllowedToEditPermissions"
+              v-if="isAllowedToEditPermissions && collection.appId"
               v-model:permissions="updatedPermissions"
-              :collection-id="collection.id"
+              :collection-app-id="collection.appId"
             />
           </v-col>
         </v-row>

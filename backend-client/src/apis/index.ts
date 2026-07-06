@@ -14,6 +14,7 @@ export * from './CollectionExportURLApi';
 export * from './CollectionHeroViewApi';
 export * from './CollectionLabJournalEntriesApi';
 export * from './CollectionLifecycleApi';
+export * from './CollectionPermissionsApi';
 export * from './CollectionPropertiesApi';
 export * from './CollectionReferenceApi';
 export * from './CollectionReferencedContainersApi';
