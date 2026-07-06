@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -153,8 +154,8 @@ public class ReferenceAnnotationRest {
   @APIResponse(responseCode = "404", description = "No reference with that appId, or kind does not support annotations.")
   public Response list(
     @PathParam("appId") String appId,
-    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+    @Parameter(description = "Zero-based page index (default 0).") @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @Parameter(description = "Items per page (1–1000). Default 200.") @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
     @Context SecurityContext sc
   ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
