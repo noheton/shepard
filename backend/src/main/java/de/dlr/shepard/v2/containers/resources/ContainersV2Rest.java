@@ -999,7 +999,8 @@ public class ContainersV2Rest {
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "Paged list of channel annotations with X-Total-Count header (may be empty).")
+    description = "Paged list of channel annotations with X-Total-Count header (may be empty).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1007,9 +1008,11 @@ public class ContainersV2Rest {
   public Response listChannelAnnotations(
       @PathParam("appId") String appId,
       @PathParam("channelShepardId") String channelShepardId,
-      @Parameter(description = "Zero-based page index (default 0).")
+      @Parameter(description = "Zero-based page index (default 0).",
+        schema = @Schema(minimum = "0", defaultValue = "0"))
         @QueryParam("page") @DefaultValue("0") @Min(0) int page,
-      @Parameter(description = "Items per page, capped at 500 (default 200).")
+      @Parameter(description = "Items per page, capped at 500 (default 200).",
+        schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
         @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
       @Context SecurityContext sc
   ) {
@@ -1113,16 +1116,19 @@ public class ContainersV2Rest {
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "Paged list of temporal annotations with X-Total-Count header (may be empty).")
+    description = "Paged list of temporal annotations with X-Total-Count header (may be empty).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   @APIResponse(responseCode = "415", description = "This container kind has no temporal-annotation concept.")
   public Response listTemporalAnnotations(
       @PathParam("appId") String appId,
-      @Parameter(description = "Zero-based page index (default 0).")
+      @Parameter(description = "Zero-based page index (default 0).",
+        schema = @Schema(minimum = "0", defaultValue = "0"))
         @QueryParam("page") @DefaultValue("0") @Min(0) int page,
-      @Parameter(description = "Items per page, capped at 500 (default 200).")
+      @Parameter(description = "Items per page, capped at 500 (default 200).",
+        schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
         @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
       @Context SecurityContext sc
   ) {

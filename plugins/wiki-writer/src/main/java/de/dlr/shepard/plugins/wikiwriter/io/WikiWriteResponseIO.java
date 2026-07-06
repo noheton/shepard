@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.wikiwriter.io;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class WikiWriteResponseIO {
    *             This field will be removed in the L2e deprecation window.
    */
   @Deprecated
+  @JsonIgnore
   private long labJournalEntryId;
 
   /**
