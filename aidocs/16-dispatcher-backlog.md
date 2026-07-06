@@ -4277,7 +4277,7 @@ picks these up. Terse by design.
 - **First refs:** `frontend/pages/collections/[collectionId]/dataobjects/[dataObjectId]/timeseriesereferences/[timeseriesReferenceId]/index.vue`.
 
 ## SEMANN-CONTAINER-PERM-2026-07-02 — container Semantic Annotations panel toasts "Caller 'bob' lacks Read permission on the subject entity" (size: S)
-- **Status:** queued.
+- **Status:** 🔄 PR open (SEMANN-CONTAINER-PERM-2026-07-02-1).
 - **Why:** surfaced by the 2026-07-02 MFFD verification recheck on `/containers/timeseries/019ede2a-60ec-7ac1-899d-3fe4c6263cbb` as user bob (Reader on the collection). The page itself gates fine (listChannels 200, header + channel table render), but the Semantic Annotations panel's fetch 403s and surfaces an error toast. Either (a) the annotations endpoint checks Read on a different subject entity than the container the page already gated (e.g. per-channel `AnnotatableTimeseries` subjects owned by Demo Admin), or (b) the container's `:Permissions` node lacks bob while the collection grants Reader. Toast on a read-only panel for a Reader persona is a demo-visible wart.
 - **Fix shape:** align the annotations-read gate with the container Read gate (if the caller can read the container, they can read its annotations), or degrade silently to an empty panel on 403 (WARN, no toast) per the fail-soft rule.
 - **First refs:** `/tmp scratchpad mffd-verify/F-recheck.png` (the toast); `aidocs/agent-findings/mffd-showcase-verification-2026-07-02.md §Broken/degraded`; the container page's semantic-annotations composable in `frontend/pages/containers/timeseries/[containerId]/index.vue`.
