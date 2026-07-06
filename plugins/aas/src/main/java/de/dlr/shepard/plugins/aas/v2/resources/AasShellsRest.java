@@ -154,9 +154,12 @@ public class AasShellsRest {
     if (collection == null) {
       return problem(Response.Status.NOT_FOUND, "AAS Shell not found");
     }
-    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
-    boolean truncated = dataObjects.size() > SHELL_MAX_SUBMODELS;
-    List<DataObject> capped = truncated ? dataObjects.subList(0, SHELL_MAX_SUBMODELS) : dataObjects;
+    // Load at most SHELL_MAX_SUBMODELS+1 rows from the DB so the JVM heap
+    // is bounded regardless of Collection size (APISIMP-AAS-SHELL-DO-LOAD-CAP).
+    List<DataObject> probe = dataObjectDAO.findTopLevelByCollectionAppId(
+        appId, 0, SHELL_MAX_SUBMODELS + 1);
+    boolean truncated = probe.size() > SHELL_MAX_SUBMODELS;
+    List<DataObject> capped = truncated ? probe.subList(0, SHELL_MAX_SUBMODELS) : probe;
     Response.ResponseBuilder rb = Response.ok(mappingService.toShell(collection, capped));
     if (truncated) {
       rb.header("X-Shepard-Truncated", "true")
