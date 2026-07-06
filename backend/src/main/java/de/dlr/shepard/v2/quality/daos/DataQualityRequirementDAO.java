@@ -49,13 +49,13 @@ public class DataQualityRequirementDAO extends GenericDAO<DataQualityRequirement
    * @param limit           maximum rows to return
    * @return ordered slice (by appId ascending); empty list when none in range
    */
-  public List<DataQualityRequirement> findByCollectionAppId(String collectionAppId, int skip, int limit) {
+  public List<DataQualityRequirement> findByCollectionAppId(String collectionAppId, long skip, int limit) {
     String query =
       "MATCH (d:DataQualityRequirement)-[:APPLIES_TO]->(c:Collection {appId: $collectionAppId}) " +
       "RETURN d ORDER BY d.appId ASC SKIP $skip LIMIT $limit";
     Map<String, Object> params = new HashMap<>();
     params.put("collectionAppId", collectionAppId);
-    params.put("skip", (long) skip);
+    params.put("skip", skip);
     params.put("limit", (long) limit);
     List<DataQualityRequirement> result = new ArrayList<>();
     for (var d : findByQuery(query, params)) {

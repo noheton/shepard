@@ -55,14 +55,14 @@ public class DataQualityRequirementService {
    * @param limit           max rows to return
    * @return paginated envelope; {@code total} reflects the full unfiltered count
    */
-  public PagedResponseIO<DQRIO> list(String collectionAppId, String caller, int skip, int limit) {
+  public PagedResponseIO<DQRIO> list(String collectionAppId, String caller, long skip, int limit) {
     assertCollectionReadable(collectionAppId, caller);
     long total = dao.countByCollectionAppId(collectionAppId);
     List<DQRIO> items = dao.findByCollectionAppId(collectionAppId, skip, limit)
       .stream()
       .map(DQRIO::from)
       .toList();
-    return new PagedResponseIO<>(items, total, limit > 0 ? skip / limit : 0, limit);
+    return new PagedResponseIO<>(items, total, limit > 0 ? (int) (skip / limit) : 0, limit);
   }
 
   /**

@@ -148,9 +148,9 @@ class DataQualityRequirementServiceTest {
   void listReturnsMappedDQRs() {
     DataQualityRequirement d1 = makeDQR(DQR_APP_ID, "status check", "ANNOTATION_REQUIRED", "status");
     when(dao.countByCollectionAppId(COLLECTION_APP_ID)).thenReturn(1L);
-    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0, 50)).thenReturn(List.of(d1));
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0L, 50)).thenReturn(List.of(d1));
 
-    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0, 50);
+    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0L, 50);
 
     assertEquals(1, result.items().size());
     assertEquals(1L, result.total());
@@ -161,9 +161,9 @@ class DataQualityRequirementServiceTest {
   @Test
   void listReturnsEmptyWhenNoneAssigned() {
     when(dao.countByCollectionAppId(COLLECTION_APP_ID)).thenReturn(0L);
-    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0, 50)).thenReturn(List.of());
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0L, 50)).thenReturn(List.of());
 
-    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0, 50);
+    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0L, 50);
 
     assertTrue(result.items().isEmpty());
     assertEquals(0L, result.total());
@@ -174,8 +174,8 @@ class DataQualityRequirementServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLLECTION_OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()))
       .thenReturn(false);
 
-    assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE, 0, 50));
-    verify(dao, never()).findByCollectionAppId(anyString(), anyInt(), anyInt());
+    assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE, 0L, 50));
+    verify(dao, never()).findByCollectionAppId(anyString(), anyLong(), anyInt());
     verify(dao, never()).countByCollectionAppId(anyString());
   }
 

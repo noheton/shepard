@@ -95,7 +95,7 @@ public class CollectionDQRRest {
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     PagedResponseIO<DQRIO> result = service.list(collectionAppId, caller, skip, pageSize);
     return Response.ok(result)
         .header("X-Total-Count", result.total())  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)

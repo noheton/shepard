@@ -57,13 +57,13 @@ class CollectionDQRRestTest {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
-    verify(service, never()).list(anyString(), anyString(), anyInt(), anyInt());
+    verify(service, never()).list(anyString(), anyString(), anyLong(), anyInt());
   }
 
   @Test
   void listReturns200WithXTotalCount() {
     DQRIO dqr = makeDQRIO("dqr-1", "Must have name");
-    when(service.list(COLL_APP_ID, ALICE, 0, 50))
+    when(service.list(COLL_APP_ID, ALICE, 0L, 50))
         .thenReturn(new PagedResponseIO<>(List.of(dqr), 1L, 0, 50));
 
     Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
@@ -77,7 +77,7 @@ class CollectionDQRRestTest {
 
   @Test
   void listPropagates403FromService() {
-    when(service.list(eq(COLL_APP_ID), eq(ALICE), anyInt(), anyInt())).thenThrow(new ForbiddenException());
+    when(service.list(eq(COLL_APP_ID), eq(ALICE), anyLong(), anyInt())).thenThrow(new ForbiddenException());
     org.junit.jupiter.api.Assertions.assertThrows(ForbiddenException.class,
       () -> resource.list(COLL_APP_ID, 0, 50, securityContext));
   }
@@ -86,13 +86,13 @@ class CollectionDQRRestTest {
   void listDelegatesToServiceWithCorrectSkipAndLimit() {
     // page=0, pageSize=2 → service called with (COLL_APP_ID, ALICE, 0, 2)
     List<DQRIO> slice = List.of(makeDQRIO("dqr-1", "Rule A"), makeDQRIO("dqr-2", "Rule B"));
-    when(service.list(COLL_APP_ID, ALICE, 0, 2))
+    when(service.list(COLL_APP_ID, ALICE, 0L, 2))
         .thenReturn(new PagedResponseIO<>(slice, 3L, 0, 2));
 
     Response r = resource.list(COLL_APP_ID, 0, 2, securityContext);
 
     assertEquals(200, r.getStatus());
-    verify(service).list(COLL_APP_ID, ALICE, 0, 2);
+    verify(service).list(COLL_APP_ID, ALICE, 0L, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(2, body.items().size());
@@ -102,13 +102,13 @@ class CollectionDQRRestTest {
   @Test
   void listComputesCorrectSkipForPageTwo() {
     // page=1, pageSize=2 → skip=2; service returns 1 remaining item
-    when(service.list(COLL_APP_ID, ALICE, 2, 2))
+    when(service.list(COLL_APP_ID, ALICE, 2L, 2))
         .thenReturn(new PagedResponseIO<>(List.of(makeDQRIO("dqr-3", "Rule C")), 3L, 1, 2));
 
     Response r = resource.list(COLL_APP_ID, 1, 2, securityContext);
 
     assertEquals(200, r.getStatus());
-    verify(service).list(COLL_APP_ID, ALICE, 2, 2);
+    verify(service).list(COLL_APP_ID, ALICE, 2L, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(1, body.items().size());
