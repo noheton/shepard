@@ -9,19 +9,21 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.search.io.UserSearchBody;
 import de.dlr.shepard.common.search.io.UserSearchParams;
 import de.dlr.shepard.common.search.services.UserSearchService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -54,17 +56,23 @@ public class UserSearchV2Rest {
   @Operation(
     operationId = "searchUsersV2",
     summary = "Search users by text (v2)",
-    description = "Searches users by username, firstName, lastName and email with a case-insensitive OR-contains query. Returns a flat list of matching users. No numeric Neo4j id is exposed. Requires authentication."
+    description = "Searches users by username, firstName, lastName and email with a case-insensitive OR-contains query. Returns a paginated envelope. No numeric Neo4j id is exposed. Requires authentication."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of matching users.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserIO.class))
+    description = "Paginated list of matching users.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter 'q' is blank or missing.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = "q", description = "Search string (required). OR-matched across username, firstName, lastName, email.", required = true)
-  public Response searchUsers(@QueryParam("q") String q) {
+  @Parameter(name = "page", description = "Zero-based page index (default 0).")
+  @Parameter(name = "pageSize", description = "Items per page, 1–100 (default 20).")
+  public Response searchUsers(
+    @QueryParam("q") String q,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("20") @Min(1) @Max(100) int pageSize
+  ) {
     if (q == null || q.isBlank()) {
       return problem(
         "/problems/users.bad-request",
@@ -74,9 +82,9 @@ public class UserSearchV2Rest {
       );
     }
     String jsonQuery = buildOrContainsQuery(q, "username", "firstName", "lastName", "email");
-    var result = userSearchService.search(new UserSearchBody(new UserSearchParams(jsonQuery)));
-    List<UserIO> users = Arrays.asList(result.getResults());
-    return Response.ok(users).build();
+    var body = new UserSearchBody(new UserSearchParams(jsonQuery));
+    PagedResponseIO<UserIO> paged = userSearchService.searchPaged(body, page, pageSize);
+    return Response.ok(paged).build();
   }
 
   /**

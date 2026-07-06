@@ -86,7 +86,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire376-2026-07-03.md`](agent-findings/apisimp-sweep-fire376-2026-07-03.md) | APISIMP Sweep — fire-376 (2026-07-03) | 2026-07-03 | 2026-07-04 |
 | [`aidocs/agent-findings/apisimp-sweep-fire379-2026-07-03.md`](agent-findings/apisimp-sweep-fire379-2026-07-03.md) | APISIMP sweep — fire-379 (2026-07-03) | — | 2026-07-04 |
 | [`aidocs/agent-findings/apisimp-sweep-fire413-2026-07-05.md`](agent-findings/apisimp-sweep-fire413-2026-07-05.md) | APISIMP sweep — fire-413 / 2026-07-05 | 2026-07-05 | 2026-07-05 |
-| [`aidocs/agent-findings/apisimp-sweep-fire435-2026-07-06.md`](agent-findings/apisimp-sweep-fire435-2026-07-06.md) | APISIMP Sweep — fire-435 (2026-07-06) | 2026-07-06 | — |
+| [`aidocs/agent-findings/apisimp-sweep-fire435-2026-07-06.md`](agent-findings/apisimp-sweep-fire435-2026-07-06.md) | APISIMP Sweep — fire-435 (2026-07-06) | 2026-07-06 | 2026-07-06 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-07-04 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-07-04 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-07-04 |
