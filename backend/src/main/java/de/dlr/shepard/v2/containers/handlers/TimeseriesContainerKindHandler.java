@@ -516,14 +516,13 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
   public Optional<Response> listChannelAnnotations(
       String appId, String channelShepardId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(appId).getId();
-    List<SemanticAnnotationIO> all =
-        annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerId, channelShepardId)
-            .stream()
-            .map(SemanticAnnotationIO::new)
-            .collect(Collectors.toList());
-    int total = all.size();
-    int from = (int) Math.min((long) page * pageSize, (long) total);
-    List<SemanticAnnotationIO> slice = all.subList(from, (int) Math.min((long) from + pageSize, (long) total));
+    long skip = (long) page * pageSize;
+    long total = annotatableTimeseriesService.countAnnotationsByChannelShepardId(containerId, channelShepardId);
+    List<SemanticAnnotationIO> slice = annotatableTimeseriesService
+        .getAnnotationsByChannelShepardId(containerId, channelShepardId, skip, pageSize)
+        .stream()
+        .map(SemanticAnnotationIO::new)
+        .collect(Collectors.toList());
     return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
         .header("X-Total-Count", total)
         .build());
@@ -554,14 +553,13 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
   @Override
   public Optional<Response> listTemporalAnnotations(String appId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(appId).getId();
-    List<TimeseriesAnnotationIO> all = annotationDAO
-        .findByContainerId(containerId)
+    long skip = (long) page * pageSize;
+    long total = annotationDAO.countByContainerId(containerId);
+    List<TimeseriesAnnotationIO> slice = annotationDAO
+        .findByContainerId(containerId, skip, pageSize)
         .stream()
         .map(TimeseriesAnnotationIO::new)
         .collect(Collectors.toList());
-    int total = all.size();
-    int from = (int) Math.min((long) page * pageSize, (long) total);
-    List<TimeseriesAnnotationIO> slice = all.subList(from, (int) Math.min((long) from + pageSize, (long) total));
     return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
         .header("X-Total-Count", total)
         .build());

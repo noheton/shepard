@@ -72,7 +72,8 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
 
   @Test
   void list_returnsPresent200_withEmptyArray() {
-    when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of());
+    when(annotationDAO.countByContainerId(CONTAINER_ID)).thenReturn(0L);
+    when(annotationDAO.findByContainerId(eq(CONTAINER_ID), eq(0L), eq(200))).thenReturn(List.of());
     var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 200);
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
@@ -84,7 +85,8 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
 
   @Test
   void list_returnsPresent200_withAnnotations() {
-    when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of(annotation));
+    when(annotationDAO.countByContainerId(CONTAINER_ID)).thenReturn(1L);
+    when(annotationDAO.findByContainerId(eq(CONTAINER_ID), eq(0L), eq(200))).thenReturn(List.of(annotation));
     var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 200);
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
@@ -97,17 +99,28 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
   }
 
   @Test
-  void list_paginationSlicesCorrectly() {
+  void list_skipPassthroughToDao() {
     var a1 = makeAnnotation(1L, "event-a", 1_000L, 2_000L);
     var a2 = makeAnnotation(2L, "event-b", 2_000L, 3_000L);
-    var a3 = makeAnnotation(3L, "event-c", 3_000L, 4_000L);
-    when(annotationDAO.findByContainerId(CONTAINER_ID)).thenReturn(List.of(a1, a2, a3));
+    when(annotationDAO.countByContainerId(CONTAINER_ID)).thenReturn(3L);
+    // page=0, pageSize=2 → skip=0
+    when(annotationDAO.findByContainerId(eq(CONTAINER_ID), eq(0L), eq(2))).thenReturn(List.of(a1, a2));
     var result = handler.listTemporalAnnotations(CONTAINER_APP_ID, 0, 2);
     assertThat(result).isPresent();
     @SuppressWarnings("unchecked")
     var body = (PagedResponseIO<TimeseriesAnnotationIO>) result.get().getEntity();
     assertThat(body.items()).hasSize(2);
     assertThat(body.total()).isEqualTo(3);
+  }
+
+  @Test
+  void list_page1_passesCorrectSkip() {
+    when(annotationDAO.countByContainerId(CONTAINER_ID)).thenReturn(5L);
+    // page=1, pageSize=2 → skip=2
+    when(annotationDAO.findByContainerId(eq(CONTAINER_ID), eq(2L), eq(2))).thenReturn(List.of());
+    handler.listTemporalAnnotations(CONTAINER_APP_ID, 1, 2);
+    org.mockito.Mockito.verify(annotationDAO).findByContainerId(eq(CONTAINER_ID), eq(2L), eq(2));
+    org.mockito.Mockito.verify(annotationDAO).countByContainerId(CONTAINER_ID);
   }
 
   // ── create ────────────────────────────────────────────────────────────────

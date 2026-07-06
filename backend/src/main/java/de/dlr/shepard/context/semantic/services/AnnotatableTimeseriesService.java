@@ -93,7 +93,13 @@ public class AnnotatableTimeseriesService {
    * List semantic annotations for a channel identified by its UUID v7 shepardId.
    * Returns an empty list when the channel exists in Postgres but has no
    * AnnotatableTimeseries node yet (created only after the first dual-write).
+   *
+   * @deprecated Use {@link #countAnnotationsByChannelShepardId} +
+   *             {@link #getAnnotationsByChannelShepardId(long, String, long, int)}
+   *             for DB-side paging. This unbounded form is kept for MCP tools
+   *             that need the full annotation set for AI context.
    */
+  @Deprecated
   public List<SemanticAnnotation> getAnnotationsByChannelShepardId(long containerId, String channelShepardId) {
     if (channelShepardId == null || channelShepardId.isBlank()) {
       throw new BadRequestException("channelShepardId must not be blank");
@@ -102,6 +108,23 @@ public class AnnotatableTimeseriesService {
     return dao.findByAppId(channelShepardId)
       .map(AnnotatableTimeseries::getAnnotations)
       .orElse(Collections.emptyList());
+  }
+
+  public long countAnnotationsByChannelShepardId(long containerId, String channelShepardId) {
+    if (channelShepardId == null || channelShepardId.isBlank()) {
+      throw new BadRequestException("channelShepardId must not be blank");
+    }
+    timeseriesContainerService.getContainer(containerId); // 404 if missing
+    return dao.countAnnotationsByAppId(channelShepardId);
+  }
+
+  public List<SemanticAnnotation> getAnnotationsByChannelShepardId(
+      long containerId, String channelShepardId, long skip, int limit) {
+    if (channelShepardId == null || channelShepardId.isBlank()) {
+      throw new BadRequestException("channelShepardId must not be blank");
+    }
+    timeseriesContainerService.getContainer(containerId); // 404 if missing
+    return dao.findAnnotationsByAppId(channelShepardId, skip, limit);
   }
 
   /**

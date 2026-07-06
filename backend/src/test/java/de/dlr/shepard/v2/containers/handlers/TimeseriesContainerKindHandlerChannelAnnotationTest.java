@@ -63,8 +63,11 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
 
   @Test
   void listAnnotations_returnsPresent200_withEmptyList() {
-    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+    when(annotatableTimeseriesService.countAnnotationsByChannelShepardId(
             eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
+        .thenReturn(0L);
+    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(0L), eq(200)))
         .thenReturn(Collections.emptyList());
 
     var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 200);
@@ -81,8 +84,11 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
   void listAnnotations_returnsPresent200_withAnnotations() {
     var ann = makeAnnotation(99L, "http://example.org/prop", "Prop",
         "http://example.org/val", "Val");
-    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+    when(annotatableTimeseriesService.countAnnotationsByChannelShepardId(
             eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
+        .thenReturn(1L);
+    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(0L), eq(200)))
         .thenReturn(List.of(ann));
 
     var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 200);
@@ -98,13 +104,16 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
   }
 
   @Test
-  void listAnnotations_paginationSlicesCorrectly() {
+  void listAnnotations_skipPassthroughToService() {
     var ann1 = makeAnnotation(1L, "http://p.org/a", "a", "http://v.org/a", "a");
     var ann2 = makeAnnotation(2L, "http://p.org/b", "b", "http://v.org/b", "b");
-    var ann3 = makeAnnotation(3L, "http://p.org/c", "c", "http://v.org/c", "c");
-    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+    when(annotatableTimeseriesService.countAnnotationsByChannelShepardId(
             eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
-        .thenReturn(List.of(ann1, ann2, ann3));
+        .thenReturn(3L);
+    // page=0, pageSize=2 → skip=0
+    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(0L), eq(2)))
+        .thenReturn(List.of(ann1, ann2));
 
     var result = handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 0, 2);
 
@@ -113,6 +122,22 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
     var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
     assertThat(body.items()).hasSize(2);
     assertThat(body.total()).isEqualTo(3);
+  }
+
+  @Test
+  void listAnnotations_page1_passesCorrectSkip() {
+    when(annotatableTimeseriesService.countAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID)))
+        .thenReturn(5L);
+    // page=1, pageSize=2 → skip=2
+    when(annotatableTimeseriesService.getAnnotationsByChannelShepardId(
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(2L), eq(2)))
+        .thenReturn(Collections.emptyList());
+
+    handler.listChannelAnnotations(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, 1, 2);
+
+    org.mockito.Mockito.verify(annotatableTimeseriesService)
+        .getAnnotationsByChannelShepardId(eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), eq(2L), eq(2));
   }
 
   // ── create annotation ────────────────────────────────────────────────────

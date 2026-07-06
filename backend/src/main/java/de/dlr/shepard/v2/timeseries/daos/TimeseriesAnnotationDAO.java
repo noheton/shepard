@@ -81,6 +81,8 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
 
   // ── container-level temporal annotations (TS-ANNOT-B) ────────────────────
 
+  /** @deprecated Use {@link #findByContainerId(long, long, int)} for DB-side paging. */
+  @Deprecated
   public List<TimeseriesAnnotation> findByContainerId(long containerId) {
     String query =
       "MATCH (c:TimeseriesContainer) WHERE id(c) = $cid " +
@@ -91,6 +93,33 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
     return StreamSupport
       .stream(findByQuery(query, Map.of("cid", containerId)).spliterator(), false)
       .toList();
+  }
+
+  public List<TimeseriesAnnotation> findByContainerId(long containerId, long skip, int limit) {
+    String query =
+      "MATCH (c:TimeseriesContainer) WHERE id(c) = $cid " +
+      "MATCH (c)-[:has_temporal_annotation]->" +
+      CypherQueryHelper.getObjectPart("a", "TimeseriesAnnotation", false) +
+      " RETURN a ORDER BY a.appId SKIP $skip LIMIT $limit";
+    Map<String, Object> params = new HashMap<>();
+    params.put("cid", containerId);
+    params.put("skip", skip);
+    params.put("limit", (long) limit);
+    return StreamSupport
+      .stream(findByQuery(query, params).spliterator(), false)
+      .toList();
+  }
+
+  public long countByContainerId(long containerId) {
+    String query =
+      "MATCH (c:TimeseriesContainer) WHERE id(c) = $cid " +
+      "MATCH (c)-[:has_temporal_annotation]->(a:TimeseriesAnnotation) " +
+      "RETURN count(a) AS total";
+    for (var row : session.query(query, Map.of("cid", containerId)).queryResults()) {
+      Object val = row.get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
   public void linkToContainer(long containerId, String annotationAppId) {
