@@ -81,14 +81,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * specific {@code Collection}, so list / create are keyed by
  * {@code collectionAppId}.
  *
- * <p><b>Scope (Phase A.2).</b> Core CRUD only: list / get / create /
- * RFC-7396 merge-patch / delete. Deferred to Phase B:
+ * <p><b>Scope (Phase A.2 + BUG-COLL-APPID-ROUTE-006-V2-LIST).</b> Core CRUD
+ * plus appId-native list filters: list / get / create / RFC-7396 merge-patch /
+ * delete. Deferred:
  * <ul>
- *   <li>{@code parentId} / {@code predecessorId} / {@code successorId}
- *       filters — they exist on v1 as long-id query params; the v2
- *       shape will take appIds and translate, but the structural
- *       traversal endpoints (e.g. children, predecessors) are the
- *       natural home for those lookups and ship together.</li>
  *   <li>{@code versionUID} query parameter — versioned reads land with
  *       the v2 snapshot work.</li>
  *   <li>Permissions / roles — covered by a dedicated
@@ -225,6 +221,10 @@ public class DataObjectV2Rest {
     @QueryParam("parentAppId") String parentAppId,
     @Parameter(description = "SIDEBAR-LAZY-TREE — when `true`, return ONLY root DataObjects (those with no parent DataObject inside the Collection). Drives the lazy collection-sidebar tree's initial load. Composes with the other filters. Overrides `parentAppId` when both are set.")
     @QueryParam("topLevel") Boolean topLevel,
+    @Parameter(description = "BUG-COLL-APPID-ROUTE-006-V2-LIST — restrict to DataObjects that are direct successors of the DataObject with this `appId` (within the same Collection). Drives successor navigation: `?predecessorAppId=X` returns all DataObjects for which X is a predecessor. Composes with `page`/`pageSize`/`name`/`status`/`annotationFilter`. An unknown `predecessorAppId` yields an empty page.")
+    @QueryParam("predecessorAppId") String predecessorAppId,
+    @Parameter(description = "BUG-COLL-APPID-ROUTE-006-V2-LIST — restrict to DataObjects that are direct predecessors of the DataObject with this `appId` (within the same Collection). Drives predecessor navigation: `?successorAppId=Y` returns all DataObjects for which Y is a successor. Composes with `page`/`pageSize`/`name`/`status`/`annotationFilter`. An unknown `successorAppId` yields an empty page.")
+    @QueryParam("successorAppId") String successorAppId,
     @Context SecurityContext sc
   ) {
     // DB-OPT5: validate ?fields= early so a bad query returns 400 before any DB hit.
@@ -271,6 +271,28 @@ public class DataObjectV2Rest {
           .build();
       }
       params = params.withParentShepardId(parent.getShepardId());
+    }
+
+    // BUG-COLL-APPID-ROUTE-006-V2-LIST — predecessor / successor appId filters.
+    if (predecessorAppId != null && !predecessorAppId.isBlank()) {
+      DataObject predecessor = dataObjectDAO.findByAppId(predecessorAppId);
+      if (predecessor == null || predecessor.isDeleted() || predecessor.getShepardId() == null) {
+        return Response.ok("[]", MediaType.APPLICATION_JSON)
+          .header("Content-Range", "dataobjects */0")
+          .header("X-Total-Count", 0)
+          .build();
+      }
+      params = params.withPredecessorShepardId(predecessor.getShepardId());
+    }
+    if (successorAppId != null && !successorAppId.isBlank()) {
+      DataObject successor = dataObjectDAO.findByAppId(successorAppId);
+      if (successor == null || successor.isDeleted() || successor.getShepardId() == null) {
+        return Response.ok("[]", MediaType.APPLICATION_JSON)
+          .header("Content-Range", "dataobjects */0")
+          .header("X-Total-Count", 0)
+          .build();
+      }
+      params = params.withSuccessorShepardId(successor.getShepardId());
     }
 
     params = params.withPageAndSize(page, pageSize);
