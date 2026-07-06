@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.neo4j.ogm.session.Session;
 
 /**
  * Single-purpose DAO: walks the
@@ -15,6 +16,8 @@ import java.util.Map;
  */
 @ApplicationScoped
 public class CollectionContainersDAO {
+
+  private final Session session = NeoConnector.getInstance().getNeo4jSession();
 
   private static final String BASE_MATCH =
     "MATCH (coll:Collection {appId: $appId})" +
@@ -39,17 +42,13 @@ public class CollectionContainersDAO {
     "RETURN count(DISTINCT cont) AS total";
 
   public long countByCollectionAppId(String appId) {
-    if (appId == null || appId.isBlank()) return 0L;
-    var session = NeoConnector.getInstance().getNeo4jSession();
-    if (session == null) return 0L;
+    if (appId == null || appId.isBlank() || session == null) return 0L;
     var result = session.queryForObject(Long.class, CYPHER_COUNT, Map.of("appId", appId));
     return result != null ? result : 0L;
   }
 
   public List<ContainerSummaryIO> findByCollectionAppId(String appId, int skip, int limit) {
-    if (appId == null || appId.isBlank()) return List.of();
-    var session = NeoConnector.getInstance().getNeo4jSession();
-    if (session == null) return List.of();
+    if (appId == null || appId.isBlank() || session == null) return List.of();
 
     var result = session.query(CYPHER_PAGED, Map.of("appId", appId, "skip", skip, "limit", limit));
     var items = new ArrayList<ContainerSummaryIO>();
