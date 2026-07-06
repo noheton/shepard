@@ -702,6 +702,19 @@ useHead({
                     <CollectionTimelinePane :collection-app-id="collectionAppId" />
                   </div>
                 </ExpansionPanelItem>
+                <!-- COLL-TIMELINE-ANNOTATE-1 — per-DataObject swimlane view.
+                     Shows one row per DataObject that has timeseries data, with
+                     hour/day/week bins. Clicking a row label or active bin
+                     navigates to that DataObject's detail page.
+                     Annotation button annotates the Collection itself (v2 path). -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="DataObject timeline"
+                >
+                  <div class="pt-2 pb-2">
+                    <CollectionDataObjectTimelinePane :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
                 <!-- WATCH1 — containers this collection is watching but does
                      not own via DataObject references. Useful for live-data
                      collections (home-showcase) that don't structure their
