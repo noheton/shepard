@@ -6,7 +6,11 @@ import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.NotFoundException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
@@ -32,6 +36,32 @@ public class AnnotatableTimeseriesDAO extends GenericDAO<AnnotatableTimeseries> 
     return this.session.loadAll(AnnotatableTimeseries.class, filter, 2)
       .stream()
       .findFirst();
+  }
+
+  public long countAnnotationsByAppId(String channelShepardId) {
+    if (channelShepardId == null || channelShepardId.isBlank()) return 0L;
+    String query =
+      "MATCH (at:AnnotatableTimeseries {appId: $channelShepardId})-[:has_annotation]->(a:SemanticAnnotation) " +
+      "RETURN count(a) AS total";
+    for (var row : session.query(query, Map.of("channelShepardId", channelShepardId)).queryResults()) {
+      Object val = row.get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
+  public List<SemanticAnnotation> findAnnotationsByAppId(String channelShepardId, long skip, int limit) {
+    if (channelShepardId == null || channelShepardId.isBlank()) return List.of();
+    String query =
+      "MATCH (at:AnnotatableTimeseries {appId: $channelShepardId})-[:has_annotation]->(a:SemanticAnnotation) " +
+      "RETURN a ORDER BY a.appId SKIP $skip LIMIT $limit";
+    Map<String, Object> params = new HashMap<>();
+    params.put("channelShepardId", channelShepardId);
+    params.put("skip", skip);
+    params.put("limit", (long) limit);
+    return StreamSupport
+      .stream(session.query(SemanticAnnotation.class, query, params).spliterator(), false)
+      .toList();
   }
 
   public SemanticAnnotation getAnnotationById(long annotationId) {
