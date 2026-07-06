@@ -195,11 +195,13 @@ public class VocabularyBrowseRest {
       "Returns the subset of :Vocabulary nodes whose terms are referenced by at " +
       "least one :SemanticAnnotation on the given entity. When `scope=collection` " +
       "the walk includes descendants reachable via [:HAS_DATAOBJECT*0..]. " +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "`X-Total-Count` header carries the total before paging. " +
       "Auth: any authenticated user. Empty list (200) when no annotations match."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Vocabularies referenced by the entity (may be empty).",
+    description = "Paged vocabularies referenced by the entity (may be empty). Header X-Total-Count = total before paging.",
     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -211,14 +213,25 @@ public class VocabularyBrowseRest {
         "annotations. 'collection': walks [:HAS_DATAOBJECT*0..] descendants too. " +
         "Any other value is treated as 'data-object'."
     )
-    @QueryParam("scope") @DefaultValue("data-object") String scope
+    @QueryParam("scope") @DefaultValue("data-object") String scope,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     if (entityAppId == null || entityAppId.isBlank()) {
-      return Response.ok(List.<VocabularyIO>of()).build();
+      return Response.ok(new PagedResponseIO<>(List.<VocabularyIO>of(), 0L, page, pageSize))
+          .header("X-Total-Count", 0L)
+          .build();
     }
     List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
-    List<VocabularyIO> out = used.stream().map(VocabularyIO::from).toList();
-    return Response.ok(out).build();
+    long total = used.size();
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<Vocabulary> slice = used.subList(skip, (int) Math.min(skip + pageSize, total));
+    List<VocabularyIO> out = slice.stream().map(VocabularyIO::from).toList();
+    return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
