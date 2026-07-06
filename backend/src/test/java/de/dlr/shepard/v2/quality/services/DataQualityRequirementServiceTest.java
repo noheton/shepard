@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,6 +18,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.v2.quality.daos.DataQualityRequirementDAO;
 import de.dlr.shepard.v2.quality.entities.DataQualityRequirement;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.quality.io.CreateDQRIO;
 import de.dlr.shepard.v2.quality.io.DQRIO;
 import de.dlr.shepard.v2.quality.io.DQRResultIO;
@@ -145,22 +147,26 @@ class DataQualityRequirementServiceTest {
   @Test
   void listReturnsMappedDQRs() {
     DataQualityRequirement d1 = makeDQR(DQR_APP_ID, "status check", "ANNOTATION_REQUIRED", "status");
-    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of(d1));
+    when(dao.countByCollectionAppId(COLLECTION_APP_ID)).thenReturn(1L);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0L, 50)).thenReturn(List.of(d1));
 
-    List<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE);
+    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0L, 50);
 
-    assertEquals(1, result.size());
-    assertEquals(DQR_APP_ID, result.get(0).dqrAppId());
-    assertEquals("status check", result.get(0).name());
+    assertEquals(1, result.items().size());
+    assertEquals(1L, result.total());
+    assertEquals(DQR_APP_ID, result.items().get(0).dqrAppId());
+    assertEquals("status check", result.items().get(0).name());
   }
 
   @Test
   void listReturnsEmptyWhenNoneAssigned() {
-    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of());
+    when(dao.countByCollectionAppId(COLLECTION_APP_ID)).thenReturn(0L);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID, 0L, 50)).thenReturn(List.of());
 
-    List<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE);
+    PagedResponseIO<DQRIO> result = service.list(COLLECTION_APP_ID, ALICE, 0L, 50);
 
-    assertTrue(result.isEmpty());
+    assertTrue(result.items().isEmpty());
+    assertEquals(0L, result.total());
   }
 
   @Test
@@ -168,8 +174,9 @@ class DataQualityRequirementServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLLECTION_OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()))
       .thenReturn(false);
 
-    assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE));
-    verify(dao, never()).findByCollectionAppId(anyString());
+    assertThrows(ForbiddenException.class, () -> service.list(COLLECTION_APP_ID, ALICE, 0L, 50));
+    verify(dao, never()).findByCollectionAppId(anyString(), anyLong(), anyInt());
+    verify(dao, never()).countByCollectionAppId(anyString());
   }
 
   // ─── remove() ────────────────────────────────────────────────────────────

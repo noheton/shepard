@@ -4,6 +4,7 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.v2.quality.entities.DataQualityRequirement;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,9 +24,10 @@ public class DataQualityRequirementDAO extends GenericDAO<DataQualityRequirement
 
   /**
    * List all {@link DataQualityRequirement} nodes assigned to a given Collection.
+   * Used by {@code evaluate()} which always needs the full set.
    *
    * @param collectionAppId the Collection's appId
-   * @return ordered list (by creation order, appId ascending); empty list when none
+   * @return ordered list (by appId ascending); empty list when none
    */
   public List<DataQualityRequirement> findByCollectionAppId(String collectionAppId) {
     String query =
@@ -36,6 +38,49 @@ public class DataQualityRequirementDAO extends GenericDAO<DataQualityRequirement
       result.add(d);
     }
     return result;
+  }
+
+  /**
+   * Paginated variant of {@link #findByCollectionAppId(String)}.
+   * Pushes SKIP/LIMIT to Cypher so only the requested slice is hydrated.
+   *
+   * @param collectionAppId the Collection's appId
+   * @param skip            number of rows to skip (0-based)
+   * @param limit           maximum rows to return
+   * @return ordered slice (by appId ascending); empty list when none in range
+   */
+  public List<DataQualityRequirement> findByCollectionAppId(String collectionAppId, long skip, int limit) {
+    String query =
+      "MATCH (d:DataQualityRequirement)-[:APPLIES_TO]->(c:Collection {appId: $collectionAppId}) " +
+      "RETURN d ORDER BY d.appId ASC SKIP $skip LIMIT $limit";
+    Map<String, Object> params = new HashMap<>();
+    params.put("collectionAppId", collectionAppId);
+    params.put("skip", skip);
+    params.put("limit", (long) limit);
+    List<DataQualityRequirement> result = new ArrayList<>();
+    for (var d : findByQuery(query, params)) {
+      result.add(d);
+    }
+    return result;
+  }
+
+  /**
+   * Return the total number of {@link DataQualityRequirement} nodes assigned to a
+   * Collection. Used alongside {@link #findByCollectionAppId(String, int, int)} to
+   * populate the {@code total} field of the paginated response envelope.
+   *
+   * @param collectionAppId the Collection's appId
+   * @return total count (0 when none assigned)
+   */
+  public long countByCollectionAppId(String collectionAppId) {
+    String query =
+      "MATCH (d:DataQualityRequirement)-[:APPLIES_TO]->(c:Collection {appId: $collectionAppId}) " +
+      "RETURN count(d) AS total";
+    for (var row : session.query(query, Map.of("collectionAppId", collectionAppId)).queryResults()) {
+      Object val = row.get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
   /**

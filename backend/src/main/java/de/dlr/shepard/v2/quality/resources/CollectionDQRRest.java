@@ -95,12 +95,10 @@ public class CollectionDQRRest {
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    List<DQRIO> all = service.list(collectionAppId, caller);
-    long total = all.size();
-    int from = (int) Math.min((long) page * pageSize, total);
-    int to = (int) Math.min((long) from + pageSize, total);
-    return Response.ok(new PagedResponseIO<>(all.subList(from, to), total, page, pageSize))
-        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+    long skip = (long) page * pageSize;
+    PagedResponseIO<DQRIO> result = service.list(collectionAppId, caller, skip, pageSize);
+    return Response.ok(result)
+        .header("X-Total-Count", result.total())  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
 

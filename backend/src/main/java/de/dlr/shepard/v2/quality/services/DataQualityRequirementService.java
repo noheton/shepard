@@ -5,6 +5,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.v2.quality.daos.DataQualityRequirementDAO;
 import de.dlr.shepard.v2.quality.entities.DataQualityRequirement;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.quality.io.CreateDQRIO;
 import de.dlr.shepard.v2.quality.io.DQRIO;
 import de.dlr.shepard.v2.quality.io.DQRResultIO;
@@ -44,18 +45,24 @@ public class DataQualityRequirementService {
   // ─── Public API ───────────────────────────────────────────────────────────
 
   /**
-   * List all DQRs assigned to a Collection.
+   * List DQRs assigned to a Collection, paginated.
+   *
+   * <p>Delegates SKIP/LIMIT to the DAO so only the requested slice is hydrated.
    *
    * @param collectionAppId the Collection's appId
    * @param caller          authenticated username
-   * @return list of DQRIO; empty when none are assigned
+   * @param skip            number of rows to skip (caller computes page * pageSize)
+   * @param limit           max rows to return
+   * @return paginated envelope; {@code total} reflects the full unfiltered count
    */
-  public List<DQRIO> list(String collectionAppId, String caller) {
+  public PagedResponseIO<DQRIO> list(String collectionAppId, String caller, long skip, int limit) {
     assertCollectionReadable(collectionAppId, caller);
-    return dao.findByCollectionAppId(collectionAppId)
+    long total = dao.countByCollectionAppId(collectionAppId);
+    List<DQRIO> items = dao.findByCollectionAppId(collectionAppId, skip, limit)
       .stream()
       .map(DQRIO::from)
       .toList();
+    return new PagedResponseIO<>(items, total, limit > 0 ? (int) (skip / limit) : 0, limit);
   }
 
   /**
