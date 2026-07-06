@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -97,8 +98,8 @@ public class CollectionTemplatesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response listAllowed(
     @PathParam("appId") String collectionAppId,
-    @DefaultValue("0") @Min(0) @QueryParam("page") int page,
-    @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
+    @Parameter(description = "Zero-based page index (default 0).") @DefaultValue("0") @Min(0) @QueryParam("page") int page,
+    @Parameter(description = "Items per page (1–200). Default 50.") @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
     @Context SecurityContext securityContext
   ) {
     Optional<Long> ogmId = resolveAndGate(collectionAppId, AccessType.Read, securityContext);
@@ -122,8 +123,8 @@ public class CollectionTemplatesRest {
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response listUsed(
     @PathParam("appId") String collectionAppId,
-    @DefaultValue("0") @Min(0) @QueryParam("page") int page,
-    @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
+    @Parameter(description = "Zero-based page index (default 0).") @DefaultValue("0") @Min(0) @QueryParam("page") int page,
+    @Parameter(description = "Items per page (1–200). Default 50.") @DefaultValue("50") @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
     @Context SecurityContext securityContext
   ) {
     Optional<Long> ogmId = resolveAndGate(collectionAppId, AccessType.Read, securityContext);
