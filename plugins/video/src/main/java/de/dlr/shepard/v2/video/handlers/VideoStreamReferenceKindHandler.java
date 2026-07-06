@@ -157,6 +157,18 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
   }
 
   @Override
+  public long countAnnotations(String refAppId) {
+    return videoAnnotationDAO.countByVideoReferenceAppId(refAppId);
+  }
+
+  @Override
+  public List<Map<String, Object>> listAnnotations(String refAppId, int skip, int limit) {
+    return videoAnnotationDAO.findByVideoReferenceAppId(refAppId, skip, limit).stream()
+      .map(VideoStreamReferenceKindHandler::annotationToMap)
+      .toList();
+  }
+
+  @Override
   public Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
     if (body == null || !body.containsKey("startSeconds") || body.get("startSeconds") == null) {
       throw new BadRequestException("startSeconds is required for video annotations");

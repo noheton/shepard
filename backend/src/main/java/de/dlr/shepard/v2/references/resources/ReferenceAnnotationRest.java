@@ -158,10 +158,9 @@ public class ReferenceAnnotationRest {
     @Context SecurityContext sc
   ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
-      List<Map<String, Object>> rows = r.handler().listAnnotations(appId);
-      int total = rows.size();
-      int from = (int) Math.min((long) page * pageSize, (long) total);
-      List<Map<String, Object>> slice = rows.subList(from, (int) Math.min((long) from + pageSize, (long) total));
+      long total = r.handler().countAnnotations(appId);
+      int skip = page * pageSize;
+      List<Map<String, Object>> slice = r.handler().listAnnotations(appId, skip, pageSize);
       return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
           .header("X-Total-Count", total)
           .build();

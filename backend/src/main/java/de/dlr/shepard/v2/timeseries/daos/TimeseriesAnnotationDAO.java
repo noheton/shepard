@@ -4,6 +4,7 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import jakarta.enterprise.context.RequestScoped;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
@@ -20,6 +21,32 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
     return StreamSupport
       .stream(findByQuery(query, Map.of("refAppId", refAppId)).spliterator(), false)
       .toList();
+  }
+
+  public List<TimeseriesAnnotation> findByTimeseriesReferenceAppId(String refAppId, int skip, int limit) {
+    String query =
+      "MATCH (r:TimeseriesReference {appId: $refAppId})-[:has_timeseries_annotation]->" +
+      CypherQueryHelper.getObjectPart("a", "TimeseriesAnnotation", false) +
+      " RETURN a ORDER BY a.appId SKIP $skip LIMIT $limit";
+    Map<String, Object> params = new HashMap<>();
+    params.put("refAppId", refAppId);
+    params.put("skip", (long) skip);
+    params.put("limit", (long) limit);
+    return StreamSupport
+      .stream(findByQuery(query, params).spliterator(), false)
+      .toList();
+  }
+
+  public long countByTimeseriesReferenceAppId(String refAppId) {
+    String query =
+      "MATCH (r:TimeseriesReference {appId: $refAppId})-[:has_timeseries_annotation]->" +
+      CypherQueryHelper.getObjectPart("a", "TimeseriesAnnotation", false) +
+      " RETURN count(a) AS total";
+    for (var row : session.query(query, Map.of("refAppId", refAppId)).queryResults()) {
+      Object val = row.get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
   public TimeseriesAnnotation findByAppId(String appId) {

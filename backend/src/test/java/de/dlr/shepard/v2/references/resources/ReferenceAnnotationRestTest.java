@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -104,65 +105,53 @@ class ReferenceAnnotationRestTest {
   @Test
   void list_returns200WithAnnotations() {
     Map<String, Object> ann = Map.of("appId", ANN_ID, "label", "spike");
-    when(handler.listAnnotations(REF_ID)).thenReturn(List.of(ann));
+    when(handler.countAnnotations(REF_ID)).thenReturn(1L);
+    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of(ann));
 
     var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
     assertThat(page.items()).hasSize(1);
-    assertThat(page.total()).isEqualTo(1);
+    assertThat(page.total()).isEqualTo(1L);
     assertThat(page.page()).isEqualTo(0);
     assertThat(page.items().get(0).get("label")).isEqualTo("spike");
-    assertThat(r.getHeaders().getFirst("X-Total-Count")).isEqualTo(1);
+    assertThat(r.getHeaders().getFirst("X-Total-Count")).isEqualTo(1L);
   }
 
   @Test
   void list_returns200WithEmptyList() {
-    when(handler.listAnnotations(REF_ID)).thenReturn(Collections.emptyList());
+    when(handler.countAnnotations(REF_ID)).thenReturn(0L);
+    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(Collections.emptyList());
     var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
     var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
     assertThat(page.items()).isEmpty();
-    assertThat(page.total()).isEqualTo(0);
+    assertThat(page.total()).isEqualTo(0L);
   }
 
   @Test
-  void list_paginationSlicesCorrectly() {
-    List<Map<String, Object>> allAnns = List.of(
-      Map.of("appId", "a1", "label", "first"),
-      Map.of("appId", "a2", "label", "second"),
-      Map.of("appId", "a3", "label", "third")
-    );
-    when(handler.listAnnotations(REF_ID)).thenReturn(allAnns);
+  void list_passesCorrectSkipAndLimitToHandler() {
+    when(handler.countAnnotations(REF_ID)).thenReturn(10L);
+    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of());
 
-    // page=0, pageSize=2 → first two items, total=3
-    var r0 = resource.list(REF_ID, 0, 2, sc);
-    assertThat(r0.getStatus()).isEqualTo(200);
-    assertThat(r0.getHeaders().getFirst("X-Total-Count")).isEqualTo(3);
-    @SuppressWarnings("unchecked")
-    var p0 = (PagedResponseIO<Map<String, Object>>) r0.getEntity();
-    assertThat(p0.total()).isEqualTo(3);
-    assertThat(p0.items()).hasSize(2);
-    assertThat(p0.items().get(0).get("label")).isEqualTo("first");
+    resource.list(REF_ID, 2, 3, sc);
+    // page=2, pageSize=3 → skip=6, limit=3
+    verify(handler).listAnnotations(REF_ID, 6, 3);
+    verify(handler).countAnnotations(REF_ID);
+  }
 
-    // page=1, pageSize=2 → third item only
-    var r1 = resource.list(REF_ID, 1, 2, sc);
-    assertThat(r1.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked")
-    var p1 = (PagedResponseIO<Map<String, Object>>) r1.getEntity();
-    assertThat(p1.total()).isEqualTo(3);
-    assertThat(p1.items()).hasSize(1);
-    assertThat(p1.items().get(0).get("label")).isEqualTo("third");
+  @Test
+  void list_xTotalCountHeaderMatchesTotalField() {
+    when(handler.countAnnotations(REF_ID)).thenReturn(7L);
+    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of());
 
-    // page=5, limit=2 → beyond end → empty items, total still 3
-    var r2 = resource.list(REF_ID, 5, 2, sc);
-    assertThat(r2.getStatus()).isEqualTo(200);
+    var r = resource.list(REF_ID, 0, 200, sc);
     @SuppressWarnings("unchecked")
-    var p2 = (PagedResponseIO<Map<String, Object>>) r2.getEntity();
-    assertThat(p2.total()).isEqualTo(3);
-    assertThat(p2.items()).isEmpty();
+    var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
+    assertThat(r.getHeaders().getFirst("X-Total-Count")).isEqualTo(7L);
+    assertThat(page.total()).isEqualTo(7L);
   }
 
   // ── create ──────────────────────────────────────────────────────────────
