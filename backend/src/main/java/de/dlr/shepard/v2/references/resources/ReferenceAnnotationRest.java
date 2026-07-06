@@ -159,7 +159,7 @@ public class ReferenceAnnotationRest {
   ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
       long total = r.handler().countAnnotations(appId);
-      int skip = page * pageSize;
+      long skip = (long) page * pageSize;
       List<Map<String, Object>> slice = r.handler().listAnnotations(appId, skip, pageSize);
       return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
           .header("X-Total-Count", total)

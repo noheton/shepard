@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.references.resources;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -106,7 +107,7 @@ class ReferenceAnnotationRestTest {
   void list_returns200WithAnnotations() {
     Map<String, Object> ann = Map.of("appId", ANN_ID, "label", "spike");
     when(handler.countAnnotations(REF_ID)).thenReturn(1L);
-    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of(ann));
+    when(handler.listAnnotations(eq(REF_ID), anyLong(), anyInt())).thenReturn(List.of(ann));
 
     var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -122,7 +123,7 @@ class ReferenceAnnotationRestTest {
   @Test
   void list_returns200WithEmptyList() {
     when(handler.countAnnotations(REF_ID)).thenReturn(0L);
-    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(Collections.emptyList());
+    when(handler.listAnnotations(eq(REF_ID), anyLong(), anyInt())).thenReturn(Collections.emptyList());
     var r = resource.list(REF_ID, 0, 200, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
@@ -134,18 +135,18 @@ class ReferenceAnnotationRestTest {
   @Test
   void list_passesCorrectSkipAndLimitToHandler() {
     when(handler.countAnnotations(REF_ID)).thenReturn(10L);
-    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of());
+    when(handler.listAnnotations(eq(REF_ID), anyLong(), anyInt())).thenReturn(List.of());
 
     resource.list(REF_ID, 2, 3, sc);
     // page=2, pageSize=3 → skip=6, limit=3
-    verify(handler).listAnnotations(REF_ID, 6, 3);
+    verify(handler).listAnnotations(REF_ID, 6L, 3);
     verify(handler).countAnnotations(REF_ID);
   }
 
   @Test
   void list_xTotalCountHeaderMatchesTotalField() {
     when(handler.countAnnotations(REF_ID)).thenReturn(7L);
-    when(handler.listAnnotations(eq(REF_ID), anyInt(), anyInt())).thenReturn(List.of());
+    when(handler.listAnnotations(eq(REF_ID), anyLong(), anyInt())).thenReturn(List.of());
 
     var r = resource.list(REF_ID, 0, 200, sc);
     @SuppressWarnings("unchecked")

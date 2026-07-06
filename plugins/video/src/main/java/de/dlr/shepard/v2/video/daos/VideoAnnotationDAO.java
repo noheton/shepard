@@ -23,14 +23,14 @@ public class VideoAnnotationDAO extends GenericDAO<VideoAnnotation> {
       .toList();
   }
 
-  public List<VideoAnnotation> findByVideoReferenceAppId(String refAppId, int skip, int limit) {
+  public List<VideoAnnotation> findByVideoReferenceAppId(String refAppId, long skip, int limit) {
     String query =
       "MATCH (r:VideoStreamReference {appId: $refAppId})-[:has_video_annotation]->" +
       CypherQueryHelper.getObjectPart("a", "VideoAnnotation", false) +
       " RETURN a ORDER BY a.appId SKIP $skip LIMIT $limit";
     Map<String, Object> params = new HashMap<>();
     params.put("refAppId", refAppId);
-    params.put("skip", (long) skip);
+    params.put("skip", skip);
     params.put("limit", (long) limit);
     return StreamSupport
       .stream(findByQuery(query, params).spliterator(), false)

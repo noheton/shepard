@@ -219,7 +219,7 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
   }
 
   @Override
-  public List<Map<String, Object>> listAnnotations(String refAppId, int skip, int limit) {
+  public List<Map<String, Object>> listAnnotations(String refAppId, long skip, int limit) {
     return tsAnnotationDAO.findByTimeseriesReferenceAppId(refAppId, skip, limit).stream()
       .map(TimeseriesReferenceKindHandler::annotationToMap)
       .toList();

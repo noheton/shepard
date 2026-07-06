@@ -266,9 +266,9 @@ public interface ReferenceKindHandler {
    * Default: in-memory subList of {@link #listAnnotations(String)} for handlers that have
    * not yet overridden with a DB-side implementation.
    */
-  default List<Map<String, Object>> listAnnotations(String refAppId, int skip, int limit) {
+  default List<Map<String, Object>> listAnnotations(String refAppId, long skip, int limit) {
     List<Map<String, Object>> all = listAnnotations(refAppId);
-    int from = (int) Math.min((long) skip, (long) all.size());
+    int from = (int) Math.min(skip, (long) all.size());
     int to = (int) Math.min((long) from + limit, (long) all.size());
     return all.subList(from, to);
   }

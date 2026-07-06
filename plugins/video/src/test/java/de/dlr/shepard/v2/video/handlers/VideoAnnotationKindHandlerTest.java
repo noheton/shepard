@@ -72,13 +72,13 @@ class VideoAnnotationKindHandlerTest {
   @Test
   void listAnnotationsPaged_delegatesToDao() {
     var a = annotation(ANN_ID, 0.0, 5.0, "ignition");
-    when(dao.findByVideoReferenceAppId(REF_ID, 6, 3)).thenReturn(List.of(a));
+    when(dao.findByVideoReferenceAppId(REF_ID, 6L, 3)).thenReturn(List.of(a));
 
-    List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6, 3);
+    List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6L, 3);
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0)).containsEntry("startSeconds", 0.0);
-    verify(dao).findByVideoReferenceAppId(REF_ID, 6, 3);
+    verify(dao).findByVideoReferenceAppId(REF_ID, 6L, 3);
   }
 
   // ── create ──────────────────────────────────────────────────────────────

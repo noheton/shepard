@@ -162,7 +162,7 @@ public class VideoStreamReferenceKindHandler implements ReferenceKindHandler {
   }
 
   @Override
-  public List<Map<String, Object>> listAnnotations(String refAppId, int skip, int limit) {
+  public List<Map<String, Object>> listAnnotations(String refAppId, long skip, int limit) {
     return videoAnnotationDAO.findByVideoReferenceAppId(refAppId, skip, limit).stream()
       .map(VideoStreamReferenceKindHandler::annotationToMap)
       .toList();

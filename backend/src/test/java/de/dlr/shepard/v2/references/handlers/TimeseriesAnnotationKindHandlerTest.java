@@ -71,13 +71,13 @@ class TimeseriesAnnotationKindHandlerTest {
   @Test
   void listAnnotationsPaged_delegatesToDao() {
     var a = annotation(ANN_ID, 1_000L, null, "spike");
-    when(dao.findByTimeseriesReferenceAppId(REF_ID, 6, 3)).thenReturn(List.of(a));
+    when(dao.findByTimeseriesReferenceAppId(REF_ID, 6L, 3)).thenReturn(List.of(a));
 
-    List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6, 3);
+    List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6L, 3);
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0)).containsEntry("startNs", 1_000L);
-    verify(dao).findByTimeseriesReferenceAppId(REF_ID, 6, 3);
+    verify(dao).findByTimeseriesReferenceAppId(REF_ID, 6L, 3);
   }
 
   // ── create ──────────────────────────────────────────────────────────────

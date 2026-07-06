@@ -23,14 +23,14 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
       .toList();
   }
 
-  public List<TimeseriesAnnotation> findByTimeseriesReferenceAppId(String refAppId, int skip, int limit) {
+  public List<TimeseriesAnnotation> findByTimeseriesReferenceAppId(String refAppId, long skip, int limit) {
     String query =
       "MATCH (r:TimeseriesReference {appId: $refAppId})-[:has_timeseries_annotation]->" +
       CypherQueryHelper.getObjectPart("a", "TimeseriesAnnotation", false) +
       " RETURN a ORDER BY a.appId SKIP $skip LIMIT $limit";
     Map<String, Object> params = new HashMap<>();
     params.put("refAppId", refAppId);
-    params.put("skip", (long) skip);
+    params.put("skip", skip);
     params.put("limit", (long) limit);
     return StreamSupport
       .stream(findByQuery(query, params).spliterator(), false)
