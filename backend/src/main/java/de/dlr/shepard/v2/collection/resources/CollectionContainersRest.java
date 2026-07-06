@@ -105,7 +105,7 @@ public class CollectionContainersRest {
     }
 
     long total = containersDAO.countByCollectionAppId(collectionAppId);
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     var items = containersDAO.findByCollectionAppId(collectionAppId, skip, pageSize);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("X-Total-Count", total)

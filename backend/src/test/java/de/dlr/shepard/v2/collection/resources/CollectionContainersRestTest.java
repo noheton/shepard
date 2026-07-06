@@ -53,7 +53,7 @@ class CollectionContainersRestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(containersDAO.countByCollectionAppId(COLL_APP_ID)).thenReturn(2L);
-    when(containersDAO.findByCollectionAppId(eq(COLL_APP_ID), anyInt(), anyInt()))
+    when(containersDAO.findByCollectionAppId(eq(COLL_APP_ID), anyLong(), anyInt()))
       .thenReturn(List.of(
         new ContainerSummaryIO("ts-app-1", "HotfireTS", "TIMESERIES"),
         new ContainerSummaryIO("fb-app-1", "HotfireFiles", "FILE")
@@ -105,7 +105,7 @@ class CollectionContainersRestTest {
   @SuppressWarnings("unchecked")
   void list_returns200WithEmptyItemsWhenNoContainers() {
     when(containersDAO.countByCollectionAppId(COLL_APP_ID)).thenReturn(0L);
-    when(containersDAO.findByCollectionAppId(eq(COLL_APP_ID), anyInt(), anyInt())).thenReturn(List.of());
+    when(containersDAO.findByCollectionAppId(eq(COLL_APP_ID), anyLong(), anyInt())).thenReturn(List.of());
     var r = resource.list(COLL_APP_ID, PAGE, PAGE_SIZE, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     var body = (PagedResponseIO<ContainerSummaryIO>) r.getEntity();
@@ -118,7 +118,7 @@ class CollectionContainersRestTest {
     int p = 2;
     int ps = 10;
     resource.list(COLL_APP_ID, p, ps, sc);
-    verify(containersDAO).findByCollectionAppId(eq(COLL_APP_ID), eq(p * ps), eq(ps));
+    verify(containersDAO).findByCollectionAppId(eq(COLL_APP_ID), eq((long) p * ps), eq(ps));
   }
 
   @Test

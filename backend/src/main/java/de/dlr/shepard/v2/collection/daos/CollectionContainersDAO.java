@@ -47,7 +47,7 @@ public class CollectionContainersDAO {
     return result != null ? result : 0L;
   }
 
-  public List<ContainerSummaryIO> findByCollectionAppId(String appId, int skip, int limit) {
+  public List<ContainerSummaryIO> findByCollectionAppId(String appId, long skip, int limit) {
     if (appId == null || appId.isBlank() || session == null) return List.of();
 
     var result = session.query(CYPHER_PAGED, Map.of("appId", appId, "skip", skip, "limit", limit));
