@@ -447,10 +447,16 @@ public class FileBundleReferenceRest {
   public Response listGroupFiles(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
-    @Parameter(description = "0-based page index. Default 0. Values past the last page return an empty items[] with the correct totalElements/totalPages.")
-    @QueryParam("page") Integer page,
-    @Parameter(description = "Page size. Default 200; clamped server-side to [1, 1000]. Out-of-range hints are clamped, never rejected.")
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(
+      description = "0-based page index. Default 0. Values past the last page return an empty items[] with the correct totalElements/totalPages.",
+      schema = @Schema(minimum = "0", defaultValue = "0")
+    )
+    @QueryParam("page") @DefaultValue("0") Integer page,
+    @Parameter(
+      description = "Page size, capped at 1000 (default 200). Out-of-range values are clamped server-side, never rejected.",
+      schema = @Schema(minimum = "1", maximum = "1000", defaultValue = "200")
+    )
+    @QueryParam("pageSize") @DefaultValue("200") Integer pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);

@@ -28,6 +28,7 @@ import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -121,7 +122,11 @@ public class SnapshotPinnedReadRest {
   public Response getDataObjects(
     @PathParam("collectionAppId") String collectionAppId,
     @PathParam("snapshotAppId") String snapshotAppId,
+    @Parameter(description = "Zero-based page index (default 0).",
+      schema = @Schema(minimum = "0", defaultValue = "0"))
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Items per page, capped at 2000 (default 500).",
+      schema = @Schema(minimum = "1", maximum = "2000", defaultValue = "500"))
     @QueryParam("pageSize") @DefaultValue("500") @Min(1) @Max(2000) int pageSize,
     @Context SecurityContext sc
   ) {
