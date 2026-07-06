@@ -255,25 +255,28 @@ class VocabularyBrowseRestTest {
     assertEquals("p-4", body2.items().get(0).appId());
   }
 
-  // ─── listVocabulariesUsedBy (TOOLS-CONTEXT-VOCAB-BACKEND-1) ──────────────
+  // ─── listVocabulariesUsedBy (TOOLS-CONTEXT-VOCAB-BACKEND-1 + APISIMP-VOCAB-USED-BY-BARE-LIST) ──
 
   @Test
   void listVocabulariesUsedByReturnsEmptyWhenAppIdBlank() {
-    Response response = rest.listVocabulariesUsedBy("  ", "collection");
+    Response response = rest.listVocabulariesUsedBy("  ", "collection", 0, 50);
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
-    assertTrue(out.isEmpty());
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(out.items().isEmpty());
+    assertEquals(0L, out.total());
+    assertEquals(0L, Long.parseLong(response.getHeaderString("X-Total-Count")));
     verify(vocabularyDAO, never()).findVocabulariesUsedByEntity("  ", "collection");
   }
 
   @Test
   void listVocabulariesUsedByReturnsEmptyWhenAppIdNull() {
-    Response response = rest.listVocabulariesUsedBy(null, "data-object");
+    Response response = rest.listVocabulariesUsedBy(null, "data-object", 0, 50);
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
-    assertTrue(out.isEmpty());
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(out.items().isEmpty());
+    assertEquals(0L, out.total());
   }
 
   @Test
@@ -283,13 +286,15 @@ class VocabularyBrowseRestTest {
       vocab("v-dcterms", "http://purl.org/dc/terms/", "Dublin Core Terms", true)
     ));
 
-    Response response = rest.listVocabulariesUsedBy(appId, "collection");
+    Response response = rest.listVocabulariesUsedBy(appId, "collection", 0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
-    assertEquals(1, out.size());
-    assertEquals("v-dcterms", out.get(0).getAppId());
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertEquals(1, out.items().size());
+    assertEquals(1L, out.total());
+    assertEquals("v-dcterms", out.items().get(0).getAppId());
+    assertEquals(1L, Long.parseLong(response.getHeaderString("X-Total-Count")));
     verify(vocabularyDAO).findVocabulariesUsedByEntity(appId, "collection");
   }
 
@@ -298,12 +303,43 @@ class VocabularyBrowseRestTest {
     String appId = "d-no-annotations";
     when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "data-object")).thenReturn(List.of());
 
-    Response response = rest.listVocabulariesUsedBy(appId, "data-object");
+    Response response = rest.listVocabulariesUsedBy(appId, "data-object", 0, 50);
 
     assertEquals(200, response.getStatus());
     @SuppressWarnings("unchecked")
-    List<VocabularyIO> out = (List<VocabularyIO>) response.getEntity();
-    assertTrue(out.isEmpty());
+    PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
+    assertTrue(out.items().isEmpty());
+    assertEquals(0L, out.total());
+  }
+
+  @Test
+  void listVocabulariesUsedByPaginatesInMemory() {
+    String appId = "c-many-annots";
+    List<Vocabulary> all = List.of(
+      vocab("v-a", "http://ex/a#", "Alpha",   true),
+      vocab("v-b", "http://ex/b#", "Beta",    true),
+      vocab("v-c", "http://ex/c#", "Gamma",   true)
+    );
+    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "data-object")).thenReturn(all);
+
+    // page 0, pageSize 2 → items v-a, v-b
+    Response p0 = rest.listVocabulariesUsedBy(appId, "data-object", 0, 2);
+    assertEquals(200, p0.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body0 = (PagedResponseIO<VocabularyIO>) p0.getEntity();
+    assertEquals(3L, body0.total());
+    assertEquals(2, body0.items().size());
+    assertEquals("v-a", body0.items().get(0).getAppId());
+    assertEquals("v-b", body0.items().get(1).getAppId());
+    assertEquals(3L, Long.parseLong(p0.getHeaderString("X-Total-Count")));
+
+    // page 1, pageSize 2 → item v-c only
+    Response p1 = rest.listVocabulariesUsedBy(appId, "data-object", 1, 2);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<VocabularyIO> body1 = (PagedResponseIO<VocabularyIO>) p1.getEntity();
+    assertEquals(3L, body1.total());
+    assertEquals(1, body1.items().size());
+    assertEquals("v-c", body1.items().get(0).getAppId());
   }
 
   // ─── APISIMP-VOCAB-BROWSE-SCOPE-UNDOCUMENTED: @Parameter regression ───────
@@ -311,7 +347,7 @@ class VocabularyBrowseRestTest {
   @Test
   void listVocabulariesUsedBy_scopeParamIsDocumented() throws NoSuchMethodException {
     java.lang.reflect.Method method = VocabularyBrowseRest.class.getMethod(
-        "listVocabulariesUsedBy", String.class, String.class);
+        "listVocabulariesUsedBy", String.class, String.class, int.class, int.class);
     java.lang.reflect.Parameter param = Arrays.stream(method.getParameters())
         .filter(p -> {
           var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
