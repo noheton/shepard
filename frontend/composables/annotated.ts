@@ -75,16 +75,25 @@ abstract class SubjectAnnotated implements Annotated {
 
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     if (!this.subjectAppId) return [];
-    const page = await this.annotationsApi.value.listAnnotations({
-      subjectAppId: this.subjectAppId,
-      subjectKind: this.subjectKind,
-      pageSize: 200,
-    });
-    this._appIdMap.clear();
-    return (page.items ?? []).map((item, idx) => {
-      this._appIdMap.set(idx, item.appId);
-      return mapAnnotationV2ToLegacy(item, idx);
-    });
+    try {
+      const page = await this.annotationsApi.value.listAnnotations({
+        subjectAppId: this.subjectAppId,
+        subjectKind: this.subjectKind,
+        pageSize: 200,
+      });
+      this._appIdMap.clear();
+      return (page.items ?? []).map((item, idx) => {
+        this._appIdMap.set(idx, item.appId);
+        return mapAnnotationV2ToLegacy(item, idx);
+      });
+    } catch (err: unknown) {
+      // 403: caller has no direct permission on this entity's annotations node
+      // (e.g. a Collection Reader whose access is inherited, not direct).
+      // Degrade silently to empty list — the panel is informational, not gated.
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 403) return [];
+      throw err;
+    }
   }
 
   async deleteAnnotation(annotationId: number): Promise<void> {
