@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.quality.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -56,13 +57,14 @@ class CollectionDQRRestTest {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
-    verify(service, never()).list(anyString(), anyString());
+    verify(service, never()).list(anyString(), anyString(), anyInt(), anyInt());
   }
 
   @Test
   void listReturns200WithXTotalCount() {
     DQRIO dqr = makeDQRIO("dqr-1", "Must have name");
-    when(service.list(COLL_APP_ID, ALICE)).thenReturn(List.of(dqr));
+    when(service.list(COLL_APP_ID, ALICE, 0, 50))
+        .thenReturn(new PagedResponseIO<>(List.of(dqr), 1L, 0, 50));
 
     Response r = resource.list(COLL_APP_ID, 0, 50, securityContext);
 
@@ -75,23 +77,22 @@ class CollectionDQRRestTest {
 
   @Test
   void listPropagates403FromService() {
-    when(service.list(eq(COLL_APP_ID), eq(ALICE))).thenThrow(new ForbiddenException());
+    when(service.list(eq(COLL_APP_ID), eq(ALICE), anyInt(), anyInt())).thenThrow(new ForbiddenException());
     org.junit.jupiter.api.Assertions.assertThrows(ForbiddenException.class,
       () -> resource.list(COLL_APP_ID, 0, 50, securityContext));
   }
 
   @Test
-  void listPaginatesResultsWhenPageSizeProvided() {
-    List<DQRIO> all = List.of(
-      makeDQRIO("dqr-1", "Rule A"),
-      makeDQRIO("dqr-2", "Rule B"),
-      makeDQRIO("dqr-3", "Rule C")
-    );
-    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
+  void listDelegatesToServiceWithCorrectSkipAndLimit() {
+    // page=0, pageSize=2 → service called with (COLL_APP_ID, ALICE, 0, 2)
+    List<DQRIO> slice = List.of(makeDQRIO("dqr-1", "Rule A"), makeDQRIO("dqr-2", "Rule B"));
+    when(service.list(COLL_APP_ID, ALICE, 0, 2))
+        .thenReturn(new PagedResponseIO<>(slice, 3L, 0, 2));
 
     Response r = resource.list(COLL_APP_ID, 0, 2, securityContext);
 
     assertEquals(200, r.getStatus());
+    verify(service).list(COLL_APP_ID, ALICE, 0, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(2, body.items().size());
@@ -99,20 +100,20 @@ class CollectionDQRRestTest {
   }
 
   @Test
-  void listMaxPageSizeReturnsFirstTwoHundred() {
-    List<DQRIO> all = new ArrayList<>();
-    for (int i = 0; i < 250; i++) {
-      all.add(makeDQRIO("dqr-" + i, "Rule " + i));
-    }
-    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
+  void listComputesCorrectSkipForPageTwo() {
+    // page=1, pageSize=2 → skip=2; service returns 1 remaining item
+    when(service.list(COLL_APP_ID, ALICE, 2, 2))
+        .thenReturn(new PagedResponseIO<>(List.of(makeDQRIO("dqr-3", "Rule C")), 3L, 1, 2));
 
-    Response r = resource.list(COLL_APP_ID, 0, 200, securityContext);
+    Response r = resource.list(COLL_APP_ID, 1, 2, securityContext);
 
     assertEquals(200, r.getStatus());
+    verify(service).list(COLL_APP_ID, ALICE, 2, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
-    assertEquals(200, body.items().size());
-    assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
+    assertEquals(1, body.items().size());
+    assertEquals("dqr-3", body.items().get(0).dqrAppId());
+    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -124,24 +125,6 @@ class CollectionDQRRestTest {
     assertNotNull(page.getAnnotation(jakarta.validation.constraints.PositiveOrZero.class), "page: @PositiveOrZero");
     assertNotNull(size.getAnnotation(jakarta.validation.constraints.Min.class), "pageSize: @Min");
     assertNotNull(size.getAnnotation(jakarta.validation.constraints.Max.class), "pageSize: @Max");
-  }
-
-  @Test
-  void listReturnsSecondPageCorrectly() {
-    List<DQRIO> all = List.of(
-      makeDQRIO("dqr-1", "Rule A"),
-      makeDQRIO("dqr-2", "Rule B"),
-      makeDQRIO("dqr-3", "Rule C")
-    );
-    when(service.list(COLL_APP_ID, ALICE)).thenReturn(all);
-
-    Response r = resource.list(COLL_APP_ID, 1, 2, securityContext);
-
-    assertEquals(200, r.getStatus());
-    @SuppressWarnings("unchecked")
-    PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
-    assertEquals(1, body.items().size());
-    assertEquals("dqr-3", body.items().get(0).dqrAppId());
   }
 
   // ─── POST /dqr/evaluate (APISIMP-DQR-EVALUATE-BARE-LIST) ─────────────────
