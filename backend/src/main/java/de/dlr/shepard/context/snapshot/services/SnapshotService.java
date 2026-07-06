@@ -287,6 +287,31 @@ public class SnapshotService {
   }
 
   /**
+   * Returns the total count of live {@code :DataObject} entries captured in
+   * the given snapshot. Delegates to a single Cypher COUNT query — no
+   * client-side loading.
+   *
+   * @param snapshot the snapshot to count DataObject entries for.
+   * @return count of DataObject-typed entries; 0 when the snapshot is empty.
+   */
+  public long countDataObjectAppIds(Snapshot snapshot) {
+    return snapshotDAO.countDataObjectAppIds(snapshot.getId());
+  }
+
+  /**
+   * Returns one page of {@code :DataObject} {@code appId} strings captured
+   * in the snapshot. DB-side SKIP/LIMIT; no in-memory slicing.
+   *
+   * @param snapshot the snapshot to read from.
+   * @param skip     number of rows to skip ({@code page * pageSize}).
+   * @param limit    maximum rows to return ({@code pageSize}).
+   * @return paged list of DataObject appId strings.
+   */
+  public List<String> listDataObjectAppIdsPage(Snapshot snapshot, int skip, int limit) {
+    return snapshotDAO.findDataObjectAppIds(snapshot.getId(), skip, limit);
+  }
+
+  /**
    * Soft-deletes the {@link Snapshot} identified by {@code snapshotAppId}.
    * The associated {@link SnapshotEntry} rows are also soft-deleted.
    *

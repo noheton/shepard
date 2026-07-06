@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.snapshot.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -100,7 +101,9 @@ class SnapshotPinnedReadRestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), any(AccessType.class), eq(CALLER), eq(0L)))
       .thenReturn(true);
     when(snapshotService.findByAppId(SNAP_APP_ID)).thenReturn(snapshot);
-    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
+    when(snapshotService.countDataObjectAppIds(snapshot)).thenReturn(2L);
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), anyInt(), anyInt()))
+      .thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
   }
 
   // ── 401 — unauthenticated ─────────────────────────────────────────────────
@@ -164,7 +167,8 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void returns200_withEmptyList_whenNoDataObjectsInSnapshot() {
-    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(List.of());
+    when(snapshotService.countDataObjectAppIds(snapshot)).thenReturn(0L);
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), anyInt(), anyInt())).thenReturn(List.of());
     Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 500, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
@@ -200,12 +204,12 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void paginates_firstPage_returnsCorrectSlice() {
-    // 5 items, pageSize=2, page=0 → first 2 items
+    // 5 items total, pageSize=2, page=0 → first 2 items (DB supplies them)
     String id3 = "01900000-0000-7000-8000-000000000050";
     String id4 = "01900000-0000-7000-8000-000000000060";
-    String id5 = "01900000-0000-7000-8000-000000000070";
-    List<String> all = List.of(DO_APP_ID_1, DO_APP_ID_2, id3, id4, id5);
-    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(all);
+    when(snapshotService.countDataObjectAppIds(snapshot)).thenReturn(5L);
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), eq(0), eq(2)))
+      .thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
 
     Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 0, 2, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -218,12 +222,12 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void paginates_secondPage_returnsCorrectSlice() {
-    // 5 items, pageSize=2, page=1 → items at index 2 and 3
+    // 5 items total, pageSize=2, page=1 → skip=2, items at index 2 and 3
     String id3 = "01900000-0000-7000-8000-000000000050";
     String id4 = "01900000-0000-7000-8000-000000000060";
-    String id5 = "01900000-0000-7000-8000-000000000070";
-    List<String> all = List.of(DO_APP_ID_1, DO_APP_ID_2, id3, id4, id5);
-    when(snapshotService.listDataObjectAppIds(snapshot)).thenReturn(all);
+    when(snapshotService.countDataObjectAppIds(snapshot)).thenReturn(5L);
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), eq(2), eq(2)))
+      .thenReturn(List.of(id3, id4));
 
     Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 1, 2, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -235,7 +239,9 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void paginates_beyondLastPage_returnsEmptyList() {
-    // page=10 with only 2 items total → empty list, total still 2
+    // page=10, pageSize=500 → skip=5000; DB returns empty list, total still 2
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), eq(5000), eq(500)))
+      .thenReturn(List.of());
     Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 10, 500, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
