@@ -214,6 +214,18 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
   }
 
   @Override
+  public long countAnnotations(String refAppId) {
+    return tsAnnotationDAO.countByTimeseriesReferenceAppId(refAppId);
+  }
+
+  @Override
+  public List<Map<String, Object>> listAnnotations(String refAppId, long skip, int limit) {
+    return tsAnnotationDAO.findByTimeseriesReferenceAppId(refAppId, skip, limit).stream()
+      .map(TimeseriesReferenceKindHandler::annotationToMap)
+      .toList();
+  }
+
+  @Override
   public Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
     if (body == null || !body.containsKey("startNs") || body.get("startNs") == null) {
       throw new BadRequestException("startNs is required for timeseries annotations");

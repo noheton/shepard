@@ -61,6 +61,25 @@ class TimeseriesAnnotationKindHandlerTest {
       .containsKey("endNs");
   }
 
+  @Test
+  void countAnnotations_delegatesToDao() {
+    when(dao.countByTimeseriesReferenceAppId(REF_ID)).thenReturn(7L);
+    assertThat(handler.countAnnotations(REF_ID)).isEqualTo(7L);
+    verify(dao).countByTimeseriesReferenceAppId(REF_ID);
+  }
+
+  @Test
+  void listAnnotationsPaged_delegatesToDao() {
+    var a = annotation(ANN_ID, 1_000L, null, "spike");
+    when(dao.findByTimeseriesReferenceAppId(REF_ID, 6L, 3)).thenReturn(List.of(a));
+
+    List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6L, 3);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).containsEntry("startNs", 1_000L);
+    verify(dao).findByTimeseriesReferenceAppId(REF_ID, 6L, 3);
+  }
+
   // ── create ──────────────────────────────────────────────────────────────
 
   @Test

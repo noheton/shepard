@@ -252,6 +252,28 @@ public interface ReferenceKindHandler {
   }
 
   /**
+   * Count annotations on the reference identified by {@code refAppId}.
+   * Handlers that override {@link #listAnnotations(String, int, int)} should also override
+   * this to push the count to the DB rather than loading all rows.
+   * Default: falls back to {@link #listAnnotations(String)}.size() (in-memory).
+   */
+  default long countAnnotations(String refAppId) {
+    return listAnnotations(refAppId).size();
+  }
+
+  /**
+   * List annotations on the reference, paginated. Handlers push SKIP+LIMIT to the store.
+   * Default: in-memory subList of {@link #listAnnotations(String)} for handlers that have
+   * not yet overridden with a DB-side implementation.
+   */
+  default List<Map<String, Object>> listAnnotations(String refAppId, long skip, int limit) {
+    List<Map<String, Object>> all = listAnnotations(refAppId);
+    int from = (int) Math.min(skip, (long) all.size());
+    int to = (int) Math.min((long) from + limit, (long) all.size());
+    return all.subList(from, to);
+  }
+
+  /**
    * Create an annotation on the reference {@code refAppId} from {@code body}.
    * The handler validates required fields (e.g. {@code startNs} for timeseries,
    * {@code startSeconds} for video) and throws {@link jakarta.ws.rs.BadRequestException}
