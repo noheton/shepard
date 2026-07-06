@@ -76,11 +76,11 @@ public class DataQualityRequirementDAO extends GenericDAO<DataQualityRequirement
     String query =
       "MATCH (d:DataQualityRequirement)-[:APPLIES_TO]->(c:Collection {appId: $collectionAppId}) " +
       "RETURN count(d) AS total";
-    var result = session.query(query, Map.of("collectionAppId", collectionAppId));
-    var it = result.queryResults().iterator();
-    if (!it.hasNext()) return 0L;
-    Object val = it.next().get("total");
-    return val instanceof Number n ? n.longValue() : 0L;
+    for (var row : session.query(query, Map.of("collectionAppId", collectionAppId)).queryResults()) {
+      Object val = row.get("total");
+      if (val instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
   /**
