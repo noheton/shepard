@@ -15,23 +15,14 @@ public class SearchV2ResultIO {
   @Schema(readOnly = true, required = true)
   private List<SearchV2ItemIO> items;
 
-  @Schema(readOnly = true, required = true, description = "Total matched entities across all kinds.")
+  @Schema(readOnly = true, required = true, description = "Total matched entities across all kinds (collections + dataobjects).")
   private long total;
 
-  @Schema(readOnly = true, required = true, description = "Zero-based page index for collection results.")
+  @Schema(readOnly = true, required = true, description = "Zero-based page index applied to the combined result set.")
   private int page;
 
-  @Schema(readOnly = true, required = true, description = "Page size for collection results.")
+  @Schema(readOnly = true, required = true, description = "Page size applied to the combined result set.")
   private int pageSize;
-
-  @Schema(readOnly = true, required = true, description = "Total DataObject matches (before doPage/doPageSize slicing).")
-  private long doTotal;
-
-  @Schema(readOnly = true, required = true, description = "Zero-based page index for DataObject results.")
-  private int doPage;
-
-  @Schema(readOnly = true, required = true, description = "Page size for DataObject results.")
-  private int doPageSize;
 
   @Schema(readOnly = true, required = true)
   private String query;

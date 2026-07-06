@@ -30,7 +30,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +49,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * only the stable {@code appId} (UUID v7), which the frontend and MCP tools use
  * for navigation.
  *
- * <p>Collection results are paginated via {@code page} / {@code pageSize}.
- * DataObject results are returned inline (no per-kind secondary pagination in
- * this slice; the underlying Neo4j query naturally caps the result set).
+ * <p>Results are interleaved (collections first, then DataObjects) and paged
+ * via a single {@code page} / {@code pageSize} window on the combined set —
+ * no per-kind secondary pagination axes.
  */
 @Path("/v2/search")
 @RequestScoped
@@ -78,10 +77,11 @@ public class SearchV2Rest {
       "Searches Collections and DataObjects by name / description and returns a unified " +
       "list where every item carries its stable `appId` (UUID v7). Unlike the legacy " +
       "`POST /shepard/api/search` endpoint, no internal Neo4j node id is exposed. " +
-      "Collection results are paginated via `page` / `pageSize`; DataObject results are " +
-      "paginated independently via `doPage` / `doPageSize`. When `collectionAppId` is " +
-      "supplied, DataObject results are narrowed to that collection and no collection " +
-      "items are returned (scoped DO search). Requires authentication."
+      "Results are interleaved (collections first, then DataObjects) and paged via a " +
+      "single `page` / `pageSize` window on the combined set — no per-kind secondary " +
+      "pagination. When `collectionAppId` is supplied, DataObject results are narrowed " +
+      "to that collection and no collection items are returned (scoped DO search). " +
+      "Requires authentication."
   )
   @APIResponse(
     responseCode = "200",
@@ -97,25 +97,15 @@ public class SearchV2Rest {
     @Parameter(description = "Full-text search query (required).", required = true)
     @QueryParam("q") String q,
     @Parameter(
-      description = "Zero-based page index for collection results.",
+      description = "Zero-based page index for the combined result set.",
       schema = @Schema(minimum = "0", defaultValue = "0")
     )
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(
-      description = "Page size for collection results (1–200).",
+      description = "Page size for the combined result set (1–200).",
       schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50")
     )
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
-    @Parameter(
-      description = "Zero-based page index for DataObject results.",
-      schema = @Schema(minimum = "0", defaultValue = "0")
-    )
-    @QueryParam("doPage") @DefaultValue("0") @PositiveOrZero int doPage,
-    @Parameter(
-      description = "Page size for DataObject results (1–200).",
-      schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50")
-    )
-    @QueryParam("doPageSize") @DefaultValue("50") @Min(1) @Max(200) int doPageSize,
     @Parameter(
       description =
         "Optional collection appId (UUID v7) to scope DataObject results to a single " +
@@ -143,22 +133,21 @@ public class SearchV2Rest {
 
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
-    int safeDoPage = Math.max(doPage, 0);
-    int safeDoSize = Math.min(Math.max(doPageSize, 1), 200);
 
-    List<SearchV2ItemIO> items = new ArrayList<>();
+    // Build combined list: all collections first, then all DataObjects.
+    List<SearchV2ItemIO> combined = new ArrayList<>();
     long total = 0;
 
-    // Collections — paginated; skipped when a collection scope is active.
+    // Collections — all matching results; skipped when a collection scope is active.
     if (scopeCollectionId == null) {
       PaginatedCollectionList colPage = collectionSearchService.search(
         q,
-        Optional.of(safePage),
-        Optional.of(safeSize),
+        Optional.empty(),
+        Optional.empty(),
         BasicCollectionAttributes.createdAt,
         true
       );
-      colPage.getResults().forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
+      colPage.getResults().forEach(c -> combined.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
       total += colPage.getTotalResults() != null ? colPage.getTotalResults() : 0L;
     }
 
@@ -169,14 +158,10 @@ public class SearchV2Rest {
     );
     ResponseBody doResult = dataObjectSearchService.search(body);
     var allDos = doResult.getResults();
-    int doTotal = allDos.length;
-    // Overflow-safe slice: doPage * doPageSize cannot exceed Integer.MAX_VALUE.
-    int doFrom = (int) Math.min((long) safeDoPage * safeDoSize, doTotal);
-    int doTo = Math.min(doFrom + safeDoSize, doTotal);
     ResultTriple[] triples = doResult.getResultSet();
-    // Cache collection appId lookups so N+1 cost stays bounded per page.
+    // Cache collection appId lookups so N+1 cost stays bounded.
     Map<Long, String> collectionAppIdCache = new HashMap<>();
-    for (int i = doFrom; i < doTo; i++) {
+    for (int i = 0; i < allDos.length; i++) {
       var r = allDos[i];
       Long colId = (triples != null && i < triples.length) ? triples[i].getCollectionId() : null;
       String colAppId = null;
@@ -186,11 +171,16 @@ public class SearchV2Rest {
           return col != null ? col.getAppId() : null;
         });
       }
-      items.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject", colAppId));
+      combined.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject", colAppId));
     }
-    total += doTotal;
+    total += allDos.length;
 
-    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, doTotal, safeDoPage, safeDoSize, q))
+    // Apply single page/pageSize window to the combined set.
+    int from = (int) Math.min((long) safePage * safeSize, combined.size());
+    int to = Math.min(from + safeSize, combined.size());
+    List<SearchV2ItemIO> paged = combined.subList(from, to);
+
+    return Response.ok(new SearchV2ResultIO(paged, total, safePage, safeSize, q))
         .header("X-Total-Count", total)
         .build();
   }

@@ -90,7 +90,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50, 0, 50, null);
+    Response resp = resource.search("LUMEN", 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -124,7 +124,7 @@ class SearchV2RestTest {
     owningCollection.setAppId(COLL_APP_ID);
     when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(owningCollection);
 
-    Response resp = resource.search("TR-004", 0, 50, 0, 50, null);
+    Response resp = resource.search("TR-004", 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -141,20 +141,20 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryReturnsBadRequest() {
-    Response resp = resource.search("  ", 0, 50, 0, 50, null);
+    Response resp = resource.search("  ", 0, 50, null);
     assertEquals(400, resp.getStatus());
   }
 
   @Test
   void nullQueryReturnsBadRequest() {
-    Response resp = resource.search(null, 0, 50, 0, 50, null);
+    Response resp = resource.search(null, 0, 50, null);
     assertEquals(400, resp.getStatus());
   }
 
   /** APISIMP-SEARCH-BAD-REQUEST-PLAIN-STRING — 400 must use problem+json, not plain text. */
   @Test
   void badRequestReturnsProblemJson() {
-    Response resp = resource.search(null, 0, 50, 0, 50, null);
+    Response resp = resource.search(null, 0, 50, null);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json",
         resp.getMediaType().toString(),
@@ -163,7 +163,7 @@ class SearchV2RestTest {
 
   @Test
   void blankQueryAlsoReturnsProblemJson() {
-    Response resp = resource.search("   ", 0, 50, 0, 50, null);
+    Response resp = resource.search("   ", 0, 50, null);
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json", resp.getMediaType().toString());
   }
@@ -179,10 +179,10 @@ class SearchV2RestTest {
       BasicCollectionAttributes.createdAt,
       true
     );
-    when(collectionSearchService.search(eq("x"), any(), eq(Optional.of(200)), any(), anyBoolean())).thenReturn(page);
+    when(collectionSearchService.search(eq("x"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("x");
 
-    Response resp = resource.search("x", 0, 9999, 0, 50, null);
+    Response resp = resource.search("x", 0, 9999, null);
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
     assertEquals(200, result.getPageSize());
@@ -205,7 +205,7 @@ class SearchV2RestTest {
       .filter(f -> f.getType() == long.class || f.getType() == Long.class)
       .map(Field::getName)
       .collect(Collectors.toList());
-    assertTrue(longFields.stream().allMatch(n -> n.equals("total") || n.equals("doTotal")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
+    assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
   }
 
   /** Regression: successful search response must carry X-Total-Count header matching body total. */
@@ -226,7 +226,7 @@ class SearchV2RestTest {
     when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
     stubEmptyDataObjects("LUMEN");
 
-    Response resp = resource.search("LUMEN", 0, 50, 0, 50, null);
+    Response resp = resource.search("LUMEN", 0, 50, null);
 
     assertEquals(200, resp.getStatus());
     Object header = resp.getHeaders().getFirst("X-Total-Count");
@@ -237,7 +237,7 @@ class SearchV2RestTest {
   @Test
   void pageSizeAnnotationHasMinOneAndMax200() throws NoSuchMethodException {
     Method searchMethod = SearchV2Rest.class.getMethod(
-        "search", String.class, int.class, int.class, int.class, int.class, String.class);
+        "search", String.class, int.class, int.class, String.class);
     Parameter pageSizeParam = searchMethod.getParameters()[2];
     List<Class<? extends Annotation>> annotationTypes = Arrays.stream(pageSizeParam.getAnnotations())
       .map(Annotation::annotationType)
@@ -254,7 +254,7 @@ class SearchV2RestTest {
   void unknownCollectionAppIdReturnsBadRequest() {
     when(collectionDAO.findByAppId("bad-appid")).thenReturn(null);
 
-    Response resp = resource.search("TR-004", 0, 50, 0, 50, "bad-appid");
+    Response resp = resource.search("TR-004", 0, 50, "bad-appid");
 
     assertEquals(400, resp.getStatus());
     assertEquals("application/problem+json", resp.getMediaType().toString());
@@ -267,7 +267,7 @@ class SearchV2RestTest {
     when(collectionDAO.findByAppId(COLL_APP_ID)).thenReturn(scopeCol);
     stubEmptyDataObjects("TR-004");
 
-    Response resp = resource.search("TR-004", 0, 50, 0, 50, COLL_APP_ID);
+    Response resp = resource.search("TR-004", 0, 50, COLL_APP_ID);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
@@ -295,7 +295,7 @@ class SearchV2RestTest {
     when(dataObjectSearchService.search(any())).thenReturn(doResponse);
     when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(scopeCol);
 
-    Response resp = resource.search("TR-004", 0, 50, 0, 50, COLL_APP_ID);
+    Response resp = resource.search("TR-004", 0, 50, COLL_APP_ID);
 
     assertEquals(200, resp.getStatus());
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
