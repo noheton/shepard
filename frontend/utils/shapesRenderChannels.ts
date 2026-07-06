@@ -15,6 +15,7 @@ import type {
   TimeseriesChannelV2,
   TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
+import { MAX_CHANNEL_PAGE_SIZE } from "~/utils/channelConstants";
 
 export interface ChannelTuple5 {
   measurement: string;
@@ -78,10 +79,7 @@ export async function fetchChannelListByAppId(
   const appId = containerAppId.trim();
   if (!appId) return [];
   try {
-    // 500 is the server-side @Max on listChannels pageSize
-    // (APISIMP-CHANNEL-PAGESZ-MAX); larger values 400 with a constraint
-    // violation and the Trace3D render sees an empty channel list.
-    return await api.listContainerChannels({ appId, pageSize: 500 });
+    return await api.listContainerChannels({ appId, pageSize: MAX_CHANNEL_PAGE_SIZE });
   } catch {
     return [];
   }
