@@ -11,6 +11,7 @@ import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.template.services.TemplateBodyValidator;
 import de.dlr.shepard.template.services.TemplateBodyValidator.InvalidTemplateBodyException;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
+import de.dlr.shepard.v2.template.io.TemplateImportResultIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -161,8 +162,8 @@ public class TemplatePortabilityRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "JSON array of the created ShepardTemplateIO objects.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardTemplateIO.class))
+    description = "Import result with per-operation counts and the full list of written templates.",
+    content = @Content(schema = @Schema(implementation = TemplateImportResultIO.class))
   )
   @APIResponse(responseCode = "400", description = "Parse error or body-validation failure.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -172,9 +173,9 @@ public class TemplatePortabilityRest {
       return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
     }
 
-    // Treat null or blank body as an empty document → return 200 with empty list.
+    // Treat null or blank body as an empty document → return 200 with empty result.
     if (yamlBody == null || yamlBody.isBlank()) {
-      return Response.ok(List.of()).build();
+      return Response.ok(new TemplateImportResultIO(List.of(), 0, 0, 0)).build();
     }
 
     // Parse the YAML payload.
@@ -195,12 +196,14 @@ public class TemplatePortabilityRest {
     }
 
     if (entries == null || entries.isEmpty()) {
-      return Response.ok(List.of()).build();
+      return Response.ok(new TemplateImportResultIO(List.of(), 0, 0, 0)).build();
     }
 
     String caller = securityContext.getUserPrincipal().getName();
     long now = System.currentTimeMillis();
-    List<ShepardTemplateIO> created = new ArrayList<>();
+    List<ShepardTemplateIO> items = new ArrayList<>();
+    int createdCount = 0;
+    int updatedCount = 0;
 
     for (int i = 0; i < entries.size(); i++) {
       TemplateExportEntry entry = entries.get(i);
@@ -241,8 +244,10 @@ public class TemplatePortabilityRest {
 
         // Mint the next version.
         toSave = dao.nextVersionOf(prior);
+        updatedCount++;
       } else {
         toSave = new ShepardTemplate(entry.getName(), entry.getTemplateKind(), entry.getBody());
+        createdCount++;
       }
 
       // Populate from the import entry (caller/timestamps are always the importer + now).
@@ -254,10 +259,10 @@ public class TemplatePortabilityRest {
       toSave.setUpdatedAt(now);
 
       ShepardTemplate saved = dao.createOrUpdate(toSave);
-      created.add(ShepardTemplateIO.from(saved));
+      items.add(ShepardTemplateIO.from(saved));
     }
 
-    return Response.ok(created).build();
+    return Response.ok(new TemplateImportResultIO(items, createdCount, updatedCount, 0)).build();
   }
 
   // -----------------------------------------------------------------------
