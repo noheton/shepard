@@ -90,11 +90,12 @@ public class UserGroupV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged list of user groups.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    description = "Without `q`: paged list of user groups (`PagedResponseIO<UserGroupV2IO>`). " +
+      "With `q`: plain JSON array of matching groups.",
+    content = @Content(schema = @Schema(implementation = UserGroupV2IO.class, type = SchemaType.ARRAY))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @Parameter(name = "q", description = "Optional name search (case-insensitive contains). When set, ordering params are ignored.")
+  @Parameter(name = "q", description = "Optional name search (case-insensitive contains). When set, returns a plain array; ordering and pagination params are ignored.")
   @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
   @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
@@ -110,8 +111,7 @@ public class UserGroupV2Rest {
       List<UserGroupV2IO> items = searchService.searchByText(q).stream()
         .map(UserGroupV2IO::new)
         .toList();
-      long count = items.size();
-      return Response.ok(new PagedResponseIO<>(items, count, 0, count == 0 ? 1 : (int) count)).build();
+      return Response.ok(items).build();
     }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
