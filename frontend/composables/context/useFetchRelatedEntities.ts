@@ -2,8 +2,7 @@ import {
   type Collection,
   type CollectionReference,
   CollectionReferenceApi,
-  type DataObject,
-  DataObjectApi,
+  DataObjectsApi,
   type DataObjectReference,
   DataObjectReferenceApi,
   instanceOfCollection,
@@ -18,14 +17,13 @@ import type {
   DataObjectReferencePayload,
   DataObjectReferenceV2,
   DataObjectReferenceWithPayload,
-  Predecessor,
   PredecessorV2,
   RelatedEntity,
-  Successor,
   SuccessorV2,
   URIReferenceV2,
 } from "~/components/context/display-components/relationships/relatedEntity";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
  * BUG-COLL-APPID-ROUTE-003 (2026-06-02): raw `fetch` against the v2 Collection
@@ -289,117 +287,64 @@ export function useRelatedEntities(
     return { ...dataObject, collection };
   }
 
-  // REFS-V2-PANELS-3: v2 predecessor fetch — uses the v2 endpoint which now
-  // returns DataObjectSummaryIO (appId, id, name, status, createdAt, createdBy)
-  // after PRED-V2-SHAPE (PR #1987). Falls back to v1 when appIds are unavailable.
+  // BUG-COLL-APPID-ROUTE-006-V2-LIST slice 2: v2-only predecessor fetch via
+  // GET /v2/collections/{colAppId}/data-objects?successorAppId={doAppId}.
+  // Returns empty when appIds are unavailable (pre-L2d legacy rows).
   async function fetchPredecessors(
-    collectionId: number,
-    dataObjectId: number,
-  ): Promise<(Predecessor | PredecessorV2)[]> {
+    _collectionId: number,
+    _dataObjectId: number,
+  ): Promise<PredecessorV2[]> {
     const doAppId = toValue(dataObjectAppIdInput);
     const colAppId = toValue(collectionAppIdInput);
-    if (doAppId?.includes("-") && colAppId?.includes("-")) {
-      return fetchPredecessorsV2(colAppId, doAppId);
-    }
-    const predecessors: DataObject[] = await useShepardApi(DataObjectApi)
-      .value.getAllDataObjects({
-        collectionId,
-        successorId: dataObjectId,
+    if (!doAppId || !colAppId) return [];
+    const items = await useV2ShepardApi(DataObjectsApi)
+      .value.listDataObjects({
+        collectionAppId: colAppId,
+        successorAppId: doAppId,
+        pageSize: 200,
       })
       .catch(error => {
         handleError(error, "fetchPredecessors");
         return [];
       });
-    return predecessors.map(pred => ({ ...pred, type: "Predecessor" as const }));
+    return items.map(item => ({
+      appId: item.appId ?? "",
+      name: item.name,
+      status: item.status ?? "",
+      createdAt: item.createdAt,
+      createdBy: item.createdBy ?? "",
+      type: "Predecessor" as const,
+    }));
   }
 
-  async function fetchPredecessorsV2(
-    collectionAppId: string,
-    dataObjectAppId: string,
-  ): Promise<PredecessorV2[]> {
-    const { data: session } = useAuth();
-    const accessToken = session.value?.accessToken;
-    const url =
-      `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}` +
-      `/data-objects/${encodeURIComponent(dataObjectAppId)}/predecessors?pageSize=200`;
-    try {
-      const resp = await fetch(url, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          Accept: "application/json",
-        },
-      });
-      if (!resp.ok) return [];
-      const data: unknown = await resp.json();
-      const items = (data as { items?: unknown[] })?.items;
-      if (!Array.isArray(items)) return [];
-      return (items as Record<string, unknown>[]).map(item => ({
-        appId: item.appId as string,
-        name: item.name as string,
-        status: (item.status as string) ?? "",
-        createdAt: item.createdAt ? new Date(item.createdAt as string) : new Date(0),
-        createdBy: (item.createdBy as string) ?? "",
-        type: "Predecessor" as const,
-      }));
-    } catch (e) {
-      handleError(e, "fetchPredecessorsV2");
-      return [];
-    }
-  }
-
+  // BUG-COLL-APPID-ROUTE-006-V2-LIST slice 2: v2-only successor fetch via
+  // GET /v2/collections/{colAppId}/data-objects?predecessorAppId={doAppId}.
+  // Returns empty when appIds are unavailable (pre-L2d legacy rows).
   async function fetchSuccessors(
-    collectionId: number,
-    dataObjectId: number,
-  ): Promise<(Successor | SuccessorV2)[]> {
+    _collectionId: number,
+    _dataObjectId: number,
+  ): Promise<SuccessorV2[]> {
     const doAppId = toValue(dataObjectAppIdInput);
     const colAppId = toValue(collectionAppIdInput);
-    if (doAppId?.includes("-") && colAppId?.includes("-")) {
-      return fetchSuccessorsV2(colAppId, doAppId);
-    }
-    const successors: DataObject[] = await useShepardApi(DataObjectApi)
-      .value.getAllDataObjects({
-        collectionId,
-        predecessorId: dataObjectId,
+    if (!doAppId || !colAppId) return [];
+    const items = await useV2ShepardApi(DataObjectsApi)
+      .value.listDataObjects({
+        collectionAppId: colAppId,
+        predecessorAppId: doAppId,
+        pageSize: 200,
       })
       .catch(error => {
         handleError(error, "fetchSuccessors");
         return [];
       });
-    return successors.map(succ => ({ ...succ, type: "Successor" as const }));
-  }
-
-  async function fetchSuccessorsV2(
-    collectionAppId: string,
-    dataObjectAppId: string,
-  ): Promise<SuccessorV2[]> {
-    const { data: session } = useAuth();
-    const accessToken = session.value?.accessToken;
-    const url =
-      `${v2BaseUrl()}/v2/collections/${encodeURIComponent(collectionAppId)}` +
-      `/data-objects/${encodeURIComponent(dataObjectAppId)}/successors?pageSize=200`;
-    try {
-      const resp = await fetch(url, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          Accept: "application/json",
-        },
-      });
-      if (!resp.ok) return [];
-      const data: unknown = await resp.json();
-      const items = (data as { items?: unknown[] })?.items;
-      if (!Array.isArray(items)) return [];
-      return (items as Record<string, unknown>[]).map(item => ({
-        appId: item.appId as string,
-        name: item.name as string,
-        status: (item.status as string) ?? "",
-        createdAt: item.createdAt ? new Date(item.createdAt as string) : new Date(0),
-        createdBy: (item.createdBy as string) ?? "",
-        type: "Successor" as const,
-      }));
-    } catch (e) {
-      handleError(e, "fetchSuccessorsV2");
-      return [];
-    }
+    return items.map(item => ({
+      appId: item.appId ?? "",
+      name: item.name,
+      status: item.status ?? "",
+      createdAt: item.createdAt,
+      createdBy: item.createdBy ?? "",
+      type: "Successor" as const,
+    }));
   }
 
   async function fetchAndMergeRelatedEntities() {

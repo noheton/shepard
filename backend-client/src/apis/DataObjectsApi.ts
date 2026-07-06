@@ -88,7 +88,9 @@ export interface ListDataObjectsRequest {
     page?: number;
     pageSize?: number;
     parentAppId?: string;
+    predecessorAppId?: string;
     status?: string;
+    successorAppId?: string;
     topLevel?: boolean;
 }
 
@@ -525,8 +527,16 @@ export class DataObjectsApi extends runtime.BaseAPI {
             queryParameters['parentAppId'] = requestParameters['parentAppId'];
         }
 
+        if (requestParameters['predecessorAppId'] != null) {
+            queryParameters['predecessorAppId'] = requestParameters['predecessorAppId'];
+        }
+
         if (requestParameters['status'] != null) {
             queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['successorAppId'] != null) {
+            queryParameters['successorAppId'] = requestParameters['successorAppId'];
         }
 
         if (requestParameters['topLevel'] != null) {
