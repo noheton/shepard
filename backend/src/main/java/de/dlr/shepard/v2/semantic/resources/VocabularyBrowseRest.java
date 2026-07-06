@@ -227,7 +227,7 @@ public class VocabularyBrowseRest {
     List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
     long total = used.size();
     int skip = (int) Math.min((long) page * pageSize, total);
-    List<Vocabulary> slice = used.subList(skip, (int) Math.min(skip + pageSize, total));
+    List<Vocabulary> slice = used.subList(skip, (int) Math.min((long) skip + pageSize, total));
     List<VocabularyIO> out = slice.stream().map(VocabularyIO::from).toList();
     return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
         .header("X-Total-Count", total)
