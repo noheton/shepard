@@ -11,21 +11,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * V2CONV-A7 — {@link ConfigDescriptor} for the ePIC handle service minter,
- * exposed as {@code GET|PATCH /v2/admin/config/minter-epic}. Replaces the
- * bespoke {@code GET|PATCH /v2/admin/minters/epic/config} methods that were
- * deleted from
- * {@link de.dlr.shepard.plugins.minter.epic.resources.EpicAdminRest}.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY / V2CONV-A7 — {@link ConfigDescriptor} for the
+ * ePIC handle service minter, exposed as {@code GET|PATCH /v2/admin/config/minter-epic}.
  *
- * <p>The credential sister endpoints remain at
- * {@code /v2/admin/minters/epic/credential} — those are credential
- * operations (set + rotate), not config-field mutations.
- *
- * <p>Patchable fields: {@code enabled} (Boolean), {@code apiBaseUrl}
- * (String or explicit null to clear), {@code handlePrefix} (String or
- * explicit null to clear). Attempting to patch {@code credentialHash} or
- * {@code credentialKey} throws a 400 {@link ConfigPatchException} — use
- * {@code POST /v2/admin/minters/epic/credential} to set the credential.
+ * <p>Patchable fields: {@code enabled} (Boolean), {@code apiBaseUrl} (String or explicit
+ * null to clear), {@code handlePrefix} (String or explicit null to clear). The
+ * {@code credential} field is a write-only credential field: a non-blank string sets the
+ * credential, explicit {@code null} clears it, absent means no credential change.
+ * Attempting to patch {@code credentialHash} or {@code credentialKey} directly throws
+ * a 400 {@link ConfigPatchException}.
  *
  * @see EpicMinterConfigService
  */
@@ -33,6 +27,7 @@ import jakarta.inject.Inject;
 public class EpicConfigDescriptor implements ConfigDescriptor<EpicMinterConfigIO> {
 
   static final String PROBLEM_TYPE_READ_ONLY_FIELD = "/problems/minters.epic.config.read-only-field";
+  static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/minters.epic.config.bad-request";
 
   @Inject
   EpicMinterConfigService service;
@@ -61,8 +56,27 @@ public class EpicConfigDescriptor implements ConfigDescriptor<EpicMinterConfigIO
         PROBLEM_TYPE_READ_ONLY_FIELD,
         "Field is read-only via PATCH",
         "Field '" + field + "' cannot be set via PATCH. " +
-        "Use POST /v2/admin/minters/epic/credential to set the credential."
+        "Use the 'credential' field in this PATCH body to update the credential."
       );
+    }
+
+    // credential — write-only credential field; delegates directly to the credential service.
+    if (patch.has("credential")) {
+      JsonNode credNode = patch.get("credential");
+      if (credNode == null || credNode.isNull()) {
+        service.clearCredential("admin-config-patch");
+      } else {
+        String cred = credNode.asText();
+        if (cred.isBlank()) {
+          throw ConfigPatchException.badRequest(
+            PROBLEM_TYPE_BAD_REQUEST,
+            "Empty credential",
+            "Field 'credential' must not be blank. Omit it to leave the credential unchanged; " +
+            "set it to null to clear the credential."
+          );
+        }
+        service.setCredential(cred, "admin-config-patch");
+      }
     }
 
     EpicPatch svcPatch = new EpicPatch();

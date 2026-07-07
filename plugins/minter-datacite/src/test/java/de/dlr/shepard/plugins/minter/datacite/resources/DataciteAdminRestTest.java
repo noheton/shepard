@@ -6,14 +6,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.datacite.daos.DataciteHttpClient;
 import de.dlr.shepard.plugins.minter.datacite.daos.DataciteHttpClient.DataciteHttpResponse;
 import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialIO;
-import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialSetIO;
-import de.dlr.shepard.plugins.minter.datacite.io.DataciteMinterConfigIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteTestConnectionIO;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,9 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * KIP1d — unit tests for the admin REST surface. No Quarkus boot —
- * the {@link DataciteMinterConfigService} and {@link DataciteHttpClient}
- * are mocked.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY — unit tests for the admin REST surface.
+ * No Quarkus boot — the {@link DataciteMinterConfigService} and
+ * {@link DataciteHttpClient} are mocked.
  */
 class DataciteAdminRestTest {
 
@@ -65,53 +62,26 @@ class DataciteAdminRestTest {
     assertThat(p.value()).isEqualTo("/v2/admin/minters/datacite");
   }
 
-  // ─── POST /credential ───────────────────────────────────────────────────
+  // ─── POST /credential (tombstoned) ──────────────────────────────────────
 
   @Test
-  void setCredential_returnsFingerprint() {
-    DataciteMinterConfig saved = new DataciteMinterConfig();
-    saved.setPasswordHash("deadbeef".repeat(8));
-    when(service.setCredential(anyString(), anyString())).thenReturn(saved);
-
-    DataciteCredentialIO body = new DataciteCredentialIO("the-password");
-
-    Response r = rest.setCredential(body, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    DataciteCredentialSetIO out = (DataciteCredentialSetIO) r.getEntity();
-    assertThat(out.passwordSet()).isTrue();
-    assertThat(out.fingerprint()).isEqualTo("deadbeef");
+  void setCredential_returnsGone() {
+    Response r = rest.setCredential(new DataciteCredentialIO("the-password"), security);
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
   @Test
-  void setCredential_rejectsEmptyBodyWithProblemJson() {
-    DataciteCredentialIO body = new DataciteCredentialIO("");
-
-    Response r = rest.setCredential(body, security);
-
-    assertThat(r.getStatus()).isEqualTo(400);
-    ProblemJson problem = (ProblemJson) r.getEntity();
-    assertThat(problem.title()).contains("Empty");
-  }
-
-  @Test
-  void setCredential_rejectsNullBody() {
+  void setCredential_nullBodyAlsoReturnsGone() {
     Response r = rest.setCredential(null, security);
-    assertThat(r.getStatus()).isEqualTo(400);
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
-  // ─── DELETE /credential ─────────────────────────────────────────────────
+  // ─── DELETE /credential (tombstoned) ────────────────────────────────────
 
   @Test
-  void clearCredential_resetsToMaskedShape() {
-    DataciteMinterConfig saved = new DataciteMinterConfig();
-    when(service.clearCredential(anyString())).thenReturn(saved);
-
+  void clearCredential_returnsGone() {
     Response r = rest.clearCredential(security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    DataciteMinterConfigIO body = (DataciteMinterConfigIO) r.getEntity();
-    assertThat(body.passwordSet()).isFalse();
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
   // ─── POST /test-connection ──────────────────────────────────────────────

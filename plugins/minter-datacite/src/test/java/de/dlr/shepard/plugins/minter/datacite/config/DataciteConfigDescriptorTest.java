@@ -2,8 +2,10 @@ package de.dlr.shepard.plugins.minter.datacite.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,8 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /**
- * V2CONV-A7 — unit tests for {@link DataciteConfigDescriptor}.
- * No Quarkus boot — the {@link DataciteMinterConfigService} is mocked.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY / V2CONV-A7 — unit tests for
+ * {@link DataciteConfigDescriptor}. No Quarkus boot — the
+ * {@link DataciteMinterConfigService} is mocked.
  */
 class DataciteConfigDescriptorTest {
 
@@ -132,6 +135,38 @@ class DataciteConfigDescriptorTest {
     )
       .isInstanceOf(ConfigPatchException.class)
       .hasMessageContaining("passwordCipher");
+  }
+
+  // ─── password write-only field ──────────────────────────────────────────
+
+  @Test
+  void password_setsCredential() throws Exception {
+    DataciteMinterConfig saved = new DataciteMinterConfig();
+    when(service.setCredential(anyString(), anyString())).thenReturn(saved);
+    when(service.patch(any(), anyString())).thenReturn(saved);
+
+    descriptor.applyMergePatch(mapper.readTree("{\"password\": \"the-secret\"}"));
+
+    verify(service).setCredential("the-secret", "admin-config-patch");
+  }
+
+  @Test
+  void password_nullClearsCredential() throws Exception {
+    DataciteMinterConfig saved = new DataciteMinterConfig();
+    when(service.clearCredential(anyString())).thenReturn(saved);
+    when(service.patch(any(), anyString())).thenReturn(saved);
+
+    descriptor.applyMergePatch(mapper.readTree("{\"password\": null}"));
+
+    verify(service).clearCredential("admin-config-patch");
+  }
+
+  @Test
+  void password_blankThrowsConfigPatchException() {
+    assertThatThrownBy(() ->
+      descriptor.applyMergePatch(mapper.readTree("{\"password\": \"\"}"))
+    )
+      .isInstanceOf(ConfigPatchException.class);
   }
 
   @Test

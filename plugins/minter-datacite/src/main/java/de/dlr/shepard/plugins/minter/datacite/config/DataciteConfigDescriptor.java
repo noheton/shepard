@@ -11,22 +11,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 /**
- * V2CONV-A7 — {@link ConfigDescriptor} for the DataCite Fabrica minter,
- * exposed as {@code GET|PATCH /v2/admin/config/minter-datacite}. Replaces
- * the bespoke {@code GET|PATCH /v2/admin/minters/datacite/config} methods
- * that were deleted from
- * {@link de.dlr.shepard.plugins.minter.datacite.resources.DataciteAdminRest}.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY / V2CONV-A7 — {@link ConfigDescriptor} for the
+ * DataCite Fabrica minter, exposed as {@code GET|PATCH /v2/admin/config/minter-datacite}.
  *
- * <p>The credential sister endpoints remain at
- * {@code /v2/admin/minters/datacite/credential} — those are credential
- * operations (set + rotate), not config-field mutations.
- *
- * <p>Patchable fields: {@code enabled}, {@code apiBaseUrl},
- * {@code handlePrefix}, {@code repositoryId}, {@code publisher},
- * {@code landingPageBase}, {@code defaultState} (all nullable). Attempting
- * to patch {@code passwordHash} or {@code passwordCipher} throws a 400
- * {@link ConfigPatchException} — use
- * {@code POST /v2/admin/minters/datacite/credential} to set the password.
+ * <p>Patchable fields: {@code enabled}, {@code apiBaseUrl}, {@code handlePrefix},
+ * {@code repositoryId}, {@code publisher}, {@code landingPageBase}, {@code defaultState}
+ * (all nullable). The {@code password} field is a write-only credential field:
+ * a non-blank string sets the credential, explicit {@code null} clears it, absent means
+ * no credential change. Attempting to patch {@code passwordHash} or {@code passwordCipher}
+ * directly throws a 400 {@link ConfigPatchException}.
  *
  * @see DataciteMinterConfigService
  */
@@ -34,6 +27,7 @@ import jakarta.inject.Inject;
 public class DataciteConfigDescriptor implements ConfigDescriptor<DataciteMinterConfigIO> {
 
   static final String PROBLEM_TYPE_READ_ONLY_FIELD = "/problems/minters.datacite.config.read-only-field";
+  static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/minters.datacite.config.bad-request";
 
   @Inject
   DataciteMinterConfigService service;
@@ -63,8 +57,27 @@ public class DataciteConfigDescriptor implements ConfigDescriptor<DataciteMinter
         PROBLEM_TYPE_READ_ONLY_FIELD,
         "Field is read-only via PATCH",
         "Field '" + field + "' cannot be set via PATCH. " +
-        "Use POST /v2/admin/minters/datacite/credential to set the password."
+        "Use the 'password' field in this PATCH body to update the credential."
       );
+    }
+
+    // password — write-only credential field; delegates directly to the credential service.
+    if (patch.has("password")) {
+      JsonNode pwNode = patch.get("password");
+      if (pwNode == null || pwNode.isNull()) {
+        service.clearCredential("admin-config-patch");
+      } else {
+        String pw = pwNode.asText();
+        if (pw.isBlank()) {
+          throw ConfigPatchException.badRequest(
+            PROBLEM_TYPE_BAD_REQUEST,
+            "Empty password",
+            "Field 'password' must not be blank. Omit it to leave the credential unchanged; " +
+            "set it to null to clear the credential."
+          );
+        }
+        service.setCredential(pw, "admin-config-patch");
+      }
     }
 
     DatacitePatch svcPatch = new DatacitePatch();

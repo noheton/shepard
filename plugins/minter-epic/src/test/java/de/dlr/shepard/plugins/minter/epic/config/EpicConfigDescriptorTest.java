@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,8 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /**
- * V2CONV-A7 — unit tests for {@link EpicConfigDescriptor}.
- * No Quarkus boot — the {@link EpicMinterConfigService} is mocked.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY / V2CONV-A7 — unit tests for
+ * {@link EpicConfigDescriptor}. No Quarkus boot — the
+ * {@link EpicMinterConfigService} is mocked.
  */
 class EpicConfigDescriptorTest {
 
@@ -139,5 +141,37 @@ class EpicConfigDescriptorTest {
     )
       .isInstanceOf(ConfigPatchException.class)
       .hasMessageContaining("credentialKey");
+  }
+
+  // ─── credential write-only field ────────────────────────────────────────
+
+  @Test
+  void credential_setsCredential() throws Exception {
+    EpicMinterConfig saved = new EpicMinterConfig();
+    when(service.setCredential(anyString(), anyString())).thenReturn(saved);
+    when(service.patch(any(), anyString())).thenReturn(saved);
+
+    descriptor.applyMergePatch(mapper.readTree("{\"credential\": \"user:the-secret\"}"));
+
+    verify(service).setCredential("user:the-secret", "admin-config-patch");
+  }
+
+  @Test
+  void credential_nullClearsCredential() throws Exception {
+    EpicMinterConfig saved = new EpicMinterConfig();
+    when(service.clearCredential(anyString())).thenReturn(saved);
+    when(service.patch(any(), anyString())).thenReturn(saved);
+
+    descriptor.applyMergePatch(mapper.readTree("{\"credential\": null}"));
+
+    verify(service).clearCredential("admin-config-patch");
+  }
+
+  @Test
+  void credential_blankThrowsConfigPatchException() {
+    assertThatThrownBy(() ->
+      descriptor.applyMergePatch(mapper.readTree("{\"credential\": \"\"}"))
+    )
+      .isInstanceOf(ConfigPatchException.class);
   }
 }

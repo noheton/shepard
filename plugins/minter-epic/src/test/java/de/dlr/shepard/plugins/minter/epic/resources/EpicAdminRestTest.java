@@ -6,14 +6,11 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient.EpicHttpResponse;
 import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialSetIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicTestConnectionIO;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,9 +22,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * KIP1c — unit tests for the admin REST surface. No Quarkus boot —
- * the {@link EpicMinterConfigService} and {@link EpicHttpClient}
- * are mocked.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY — unit tests for the admin REST surface.
+ * No Quarkus boot — the {@link EpicMinterConfigService} and
+ * {@link EpicHttpClient} are mocked.
  */
 class EpicAdminRestTest {
 
@@ -65,53 +62,26 @@ class EpicAdminRestTest {
     assertThat(p.value()).isEqualTo("/v2/admin/minters/epic");
   }
 
-  // ─── POST /credential ───────────────────────────────────────────────────
+  // ─── POST /credential (tombstoned) ──────────────────────────────────────
 
   @Test
-  void setCredential_returnsFingerprint() {
-    EpicMinterConfig saved = new EpicMinterConfig();
-    saved.setCredentialHash("deadbeef".repeat(8));
-    when(service.setCredential(anyString(), anyString())).thenReturn(saved);
-
-    EpicCredentialIO body = new EpicCredentialIO("user:the-credential");
-
-    Response r = rest.setCredential(body, security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    EpicCredentialSetIO out = (EpicCredentialSetIO) r.getEntity();
-    assertThat(out.credentialSet()).isTrue();
-    assertThat(out.fingerprint()).isEqualTo("deadbeef");
+  void setCredential_returnsGone() {
+    Response r = rest.setCredential(new EpicCredentialIO("user:the-credential"), security);
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
   @Test
-  void setCredential_rejectsEmptyBodyWithProblemJson() {
-    EpicCredentialIO body = new EpicCredentialIO("");
-
-    Response r = rest.setCredential(body, security);
-
-    assertThat(r.getStatus()).isEqualTo(400);
-    ProblemJson problem = (ProblemJson) r.getEntity();
-    assertThat(problem.title()).contains("Empty");
-  }
-
-  @Test
-  void setCredential_rejectsNullBody() {
+  void setCredential_nullBodyAlsoReturnsGone() {
     Response r = rest.setCredential(null, security);
-    assertThat(r.getStatus()).isEqualTo(400);
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
-  // ─── DELETE /credential ─────────────────────────────────────────────────
+  // ─── DELETE /credential (tombstoned) ────────────────────────────────────
 
   @Test
-  void clearCredential_resetsToMaskedShape() {
-    EpicMinterConfig saved = new EpicMinterConfig();
-    when(service.clearCredential(anyString())).thenReturn(saved);
-
+  void clearCredential_returnsGone() {
     Response r = rest.clearCredential(security);
-
-    assertThat(r.getStatus()).isEqualTo(200);
-    EpicMinterConfigIO body = (EpicMinterConfigIO) r.getEntity();
-    assertThat(body.credentialSet()).isFalse();
+    assertThat(r.getStatus()).isEqualTo(410);
   }
 
   // ─── POST /test-connection ──────────────────────────────────────────────
