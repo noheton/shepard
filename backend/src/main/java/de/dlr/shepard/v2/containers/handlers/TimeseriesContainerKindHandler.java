@@ -219,7 +219,9 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
       channelCount,
       pointCount * BYTES_PER_POINT,
       recentPoints,
-      recentPoints * BYTES_PER_POINT / 10
+      recentPoints * BYTES_PER_POINT / 10,
+      null,
+      null
     ));
   }
 

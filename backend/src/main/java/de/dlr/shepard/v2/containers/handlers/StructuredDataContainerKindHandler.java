@@ -11,6 +11,7 @@ import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
+import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
@@ -126,6 +127,14 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
     return Optional.of(
       service.findLinkedDataObjectsByAppId(appId).stream().map(DataObjectIO::new).toList()
     );
+  }
+
+  @Override
+  public Optional<ContainerStatsIO> getStats(String appId) {
+    StructuredDataContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
+    if (c == null) return Optional.empty();
+    long count = c.getStructuredDatas() != null ? c.getStructuredDatas().size() : 0L;
+    return Optional.of(new ContainerStatsIO(null, null, null, null, null, null, count));
   }
 
   @Override

@@ -18,6 +18,7 @@ import de.dlr.shepard.data.file.thumbnail.ThumbnailService;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.PresignTtlValidator;
 import de.dlr.shepard.storage.StorageException;
+import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
@@ -257,6 +258,14 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     return Optional.of(Response.ok(
       new PresignedDownloadUrlIO(downloadUrl.toString(), java.time.Instant.now().plus(ttlValidator.effectiveDownloadTtl()))
     ).build());
+  }
+
+  @Override
+  public Optional<ContainerStatsIO> getStats(String appId) {
+    FileContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
+    if (c == null) return Optional.empty();
+    long count = c.getFiles() != null ? c.getFiles().size() : 0L;
+    return Optional.of(new ContainerStatsIO(null, null, null, null, null, count, null));
   }
 
   @Override
