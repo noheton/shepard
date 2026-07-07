@@ -4,18 +4,23 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
-import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -52,9 +57,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * should be able to see whether something is published without being
  * a writer.
  *
- * <p>Pagination is intentionally absent: entities rarely accumulate
- * more than a handful of Publication rows (one per forced re-mint), so
- * a plain list is appropriate and keeps the consumer side simple.
+ * <p>Pagination: optional {@code page}/{@code pageSize} params (default 0/50, max 500).
+ * The response envelope is {@link PagedResponseIO} matching the canonical flat alias
+ * {@code GET /v2/publications?entityAppId=…}.
  *
  * <p>No sorting or filter query params are exposed — clients that want
  * only active rows filter on {@code digitalObjectMutability} client-side.
@@ -88,12 +93,12 @@ public class PublicationsListRest {
   @Operation(
     operationId = "listPublications",
     summary = "List Publications attached to an entity (most-recent first).",
-    description = "Returns every :Publication row attached to the entity ordered by mintedAt DESC. " +
+    description = "Returns :Publication rows attached to the entity ordered by mintedAt DESC. " +
     "Includes retired rows (digitalObjectMutability = 'retired') so callers can render the full " +
     "publication history. Clients wanting only active Publications should filter " +
     "digitalObjectMutability != 'retired' client-side. " +
-    "Auth: Read permission on the entity. No pagination — entities rarely have more than a " +
-    "handful of Publication rows.\n\n" +
+    "Auth: Read permission on the entity. Optional page/pageSize params (default 0/50, max 500); " +
+    "response is a PagedResponseIO envelope matching GET /v2/publications.\n\n" +
     "DEPRECATED (APISIMP-PUBLICATIONS-KIND-PATH-SEGMENT): use the kind-agnostic alias " +
     "GET /v2/publications?entityAppId={appId} instead — it does not require the caller to " +
     "know the entity-kind URL segment. This path is kept for backward compatibility.",
@@ -101,8 +106,8 @@ public class PublicationsListRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of Publications, most-recent first. Empty array when entity has never been published.",
-    content = @Content(schema = @Schema(implementation = PublicationIO[].class))
+    description = "Paged list of Publications, most-recent first.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the entity.")
@@ -112,6 +117,10 @@ public class PublicationsListRest {
     @PathParam("kind") String kind,
     @Parameter(description = "AppId of the entity whose Publications to list.", required = true)
     @PathParam("appId") String appId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–500 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize,
     @Context SecurityContext securityContext,
     @Context UriInfo uriInfo
   ) {
@@ -142,15 +151,11 @@ public class PublicationsListRest {
           "Caller '" + caller + "' lacks Read permission on entity '" + appId + "'.");
     }
 
-    // Bounded fetch: entity publication histories are tiny in practice (1–5 rows),
-    // but SKIP 0 LIMIT 1000 ensures Cypher never issues a fully unbounded scan.
-    List<Publication> rows = publicationDAO.findByEntityAppId(appId, 0, 1000);
-
-    // Build resolver URLs for each Publication. Re-use the same
-    // absoluteUrl helper as PublishRest (inlined here to avoid
-    // cross-class package-private dependency — the pattern is
-    // established in KipResolverRest as well).
-    List<PublicationIO> body = rows
+    long total = publicationDAO.countByEntityAppId(appId);
+    // Widen to long before multiplying to prevent integer overflow;
+    // clamp to total so skip never exceeds the actual result-set size.
+    int skip = (int) Math.min((long) page * pageSize, total);
+    List<PublicationIO> items = publicationDAO.findByEntityAppId(appId, skip, pageSize)
       .stream()
       .map(p -> {
         String resolverUrl = absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
@@ -158,7 +163,9 @@ public class PublicationsListRest {
       })
       .toList();
 
-    return Response.ok(body).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   /**
