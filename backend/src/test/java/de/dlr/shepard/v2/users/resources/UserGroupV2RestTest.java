@@ -92,7 +92,7 @@ class UserGroupV2RestTest {
   void listUserGroups_returnsEmptyList() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
     when(service.countAllUserGroups()).thenReturn(0L);
-    Response r = resource.listUserGroups(0, 50, null, null);
+    Response r = resource.listUserGroups(0, 50, null, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
@@ -106,7 +106,7 @@ class UserGroupV2RestTest {
     when(service.getAllUserGroups(any(QueryParamHelper.class)))
       .thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
     when(service.countAllUserGroups()).thenReturn(1L);
-    Response r = resource.listUserGroups(0, 50, null, null);
+    Response r = resource.listUserGroups(0, 50, null, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
@@ -120,13 +120,39 @@ class UserGroupV2RestTest {
   void listUserGroups_envelopeContainsPageAndPageSize() {
     when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
     when(service.countAllUserGroups()).thenReturn(42L);
-    Response r = resource.listUserGroups(2, 10, null, null);
+    Response r = resource.listUserGroups(2, 10, null, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
     assertEquals(42L, body.total());
     assertEquals(2, body.page());
     assertEquals(10, body.pageSize());
+  }
+
+  @Test
+  void listUserGroups_withQ_returnsPagedEnvelope() {
+    when(service.getAllUserGroups(any(QueryParamHelper.class)))
+      .thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
+    Response r = resource.listUserGroups(0, 50, null, null, "lumen");
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(1, body.pageSize());
+    assertEquals(GROUP_NAME, body.items().get(0).getName());
+  }
+
+  @Test
+  void listUserGroups_withQ_noMatches_returnsEmptyPagedEnvelope() {
+    when(service.getAllUserGroups(any(QueryParamHelper.class))).thenReturn(List.of());
+    Response r = resource.listUserGroups(0, 50, null, null, "nomatch");
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
   }
 
   // ── GET /v2/user-groups/{appId} ──────────────────────────────────────
@@ -325,7 +351,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_orderByParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class, String.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderBy".equals(p.name()))
         .findFirst();
@@ -336,7 +362,7 @@ class UserGroupV2RestTest {
   @Test
   void listUserGroups_orderDescParam_hasDescriptionAnnotation() throws NoSuchMethodException {
     Method m = UserGroupV2Rest.class.getDeclaredMethod(
-        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class);
+        "listUserGroups", int.class, int.class, UserGroupAttributes.class, Boolean.class, String.class);
     var ann = Arrays.stream(m.getAnnotationsByType(Parameter.class))
         .filter(p -> "orderDesc".equals(p.name()))
         .findFirst();

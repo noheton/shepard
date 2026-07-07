@@ -87,12 +87,23 @@ public class UserGroupV2Rest {
   @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
   @Parameter(name = Constants.QP_ORDER_DESC, description = "When true, sort descending. Default false (ascending).")
+  @Parameter(name = "q", description = "Optional name filter. When set, groups whose name contains the value (case-insensitive) are returned in a single page; ordering and pagination are ignored.")
   public Response listUserGroups(
     @QueryParam(Constants.QP_PAGE) @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
-    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc,
+    @QueryParam("q") String q
   ) {
+    if (q != null && !q.isBlank()) {
+      String qLower = q.trim().toLowerCase();
+      List<UserGroupV2IO> items = service.getAllUserGroups(new QueryParamHelper())
+        .stream()
+        .filter(g -> g.getName() != null && g.getName().toLowerCase().contains(qLower))
+        .map(UserGroupV2IO::new)
+        .toList();
+      return Response.ok(new PagedResponseIO<>(items, (long) items.size(), 0, items.size())).build();
+    }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
     long total = service.countAllUserGroups();
