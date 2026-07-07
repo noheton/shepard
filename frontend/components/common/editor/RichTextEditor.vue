@@ -15,7 +15,7 @@ import type { Editor } from "@tiptap/vue-3";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import "assets/styles/highlightjs.scss";
 import { all, createLowlight } from "lowlight";
-import { defineProps, type ShallowRef } from "vue";
+import type { ShallowRef } from "vue";
 import { useTheme } from "vuetify";
 import type { CodeType } from "./editorTypes";
 

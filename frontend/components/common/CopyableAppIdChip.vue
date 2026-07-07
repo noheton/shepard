@@ -16,18 +16,15 @@
  */
 import { truncateAppId, copyAppIdToClipboard } from "~/utils/appId";
 
-const { appId, testid } = withDefaults(
-  defineProps<{
-    appId: string;
-    /**
-     * Optional data-testid override for downstream tests. When omitted
-     * we ship `copyable-appid-chip` so callers can target the chip by a
-     * stable hook.
-     */
-    testid?: string;
-  }>(),
-  { testid: "copyable-appid-chip" },
-);
+const { appId, testid = "copyable-appid-chip" } = defineProps<{
+  appId: string;
+  /**
+   * Optional data-testid override for downstream tests. When omitted
+   * we ship `copyable-appid-chip` so callers can target the chip by a
+   * stable hook.
+   */
+  testid?: string;
+}>();
 
 const display = computed(() => truncateAppId(appId));
 

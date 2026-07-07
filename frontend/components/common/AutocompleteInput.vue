@@ -6,19 +6,14 @@ export interface AutoCompleteItem {
 }
 
 defineSlots();
-const { startSearch } = withDefaults(
-  defineProps<{
-    isDisabled?: boolean;
-    isLoading?: boolean;
-    density?: "default" | "comfortable" | "compact";
-    label: string;
-    itemList: AutoCompleteItem[];
-    startSearch: () => void;
-  }>(),
-  {
-    density: "default",
-  },
-);
+const { startSearch, density = "default" } = defineProps<{
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  density?: "default" | "comfortable" | "compact";
+  label: string;
+  itemList: AutoCompleteItem[];
+  startSearch: () => void;
+}>();
 
 const emit = defineEmits<{
   (e: "searchEnded", value: object | null): void;

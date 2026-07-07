@@ -19,13 +19,10 @@ const emit = defineEmits<{
 const model = defineModel<Member>();
 defineSlots();
 
-const { searchType } = withDefaults(
-  defineProps<{
-    label: string;
-    searchType?: SearchType;
-  }>(),
-  { searchType: SearchType.MEMBER },
-);
+const { searchType = SearchType.MEMBER } = defineProps<{
+  label: string;
+  searchType?: SearchType;
+}>();
 const searchString = ref<string | undefined>(undefined);
 const searchDone = ref<boolean>(false);
 

@@ -21,34 +21,32 @@ import {
   type CitationInput,
 } from "~/utils/citation";
 
-const { input, label, testidPrefix } = withDefaults(
-  defineProps<{
-    /**
-     * Fully-resolved citation shape. The wrapper handles the entity →
-     * field mapping; this component just renders. Keeping the contract
-     * to a pure `CitationInput` means the same component serves
-     * Collection + DataObject + future entities without coupling to any
-     * wire shape.
-     */
-    input: CitationInput;
-    /**
-     * Card title — e.g. "Cite this dataset" (Collection) or "Cite this
-     * DataObject" (DataObject). Defaults to "Cite this dataset" so the
-     * Collection wrapper stays a zero-prop call.
-     */
-    label?: string;
-    /**
-     * Optional prefix for test IDs to keep selectors stable per entity
-     * surface. Defaults match the Collection variant for backward
-     * compatibility with existing Playwright suites.
-     */
-    testidPrefix?: string;
-  }>(),
-  {
-    label: "Cite this dataset",
-    testidPrefix: "cite-this",
-  },
-);
+const {
+  input,
+  label = "Cite this dataset",
+  testidPrefix = "cite-this",
+} = defineProps<{
+  /**
+   * Fully-resolved citation shape. The wrapper handles the entity →
+   * field mapping; this component just renders. Keeping the contract
+   * to a pure `CitationInput` means the same component serves
+   * Collection + DataObject + future entities without coupling to any
+   * wire shape.
+   */
+  input: CitationInput;
+  /**
+   * Card title — e.g. "Cite this dataset" (Collection) or "Cite this
+   * DataObject" (DataObject). Defaults to "Cite this dataset" so the
+   * Collection wrapper stays a zero-prop call.
+   */
+  label?: string;
+  /**
+   * Optional prefix for test IDs to keep selectors stable per entity
+   * surface. Defaults match the Collection variant for backward
+   * compatibility with existing Playwright suites.
+   */
+  testidPrefix?: string;
+}>();
 
 const { copy } = useClipboard();
 
