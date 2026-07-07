@@ -95,40 +95,40 @@ class ProvenanceRestTimestampTest {
   @Test
   void listActivities_iso8601SinceParam_returns200() {
     when(provenance.list(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
-    Response r = resource.listActivities(null, null, null, "2026-01-01T00:00:00Z", null, null, securityContext);
+    Response r = resource.listActivities(null, null, null, "2026-01-01T00:00:00Z", null, 100, securityContext);
     assertEquals(200, r.getStatus());
   }
 
   @Test
   void listActivities_epochMsSinceParam_returns200() {
     when(provenance.list(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
-    Response r = resource.listActivities(null, null, null, "1767225600000", null, null, securityContext);
+    Response r = resource.listActivities(null, null, null, "1767225600000", null, 100, securityContext);
     assertEquals(200, r.getStatus());
   }
 
   @Test
   void listActivities_invalidSinceParam_returns400() {
-    Response r = resource.listActivities(null, null, null, "not-a-timestamp", null, null, securityContext);
+    Response r = resource.listActivities(null, null, null, "not-a-timestamp", null, 100, securityContext);
     assertEquals(400, r.getStatus());
   }
 
   @Test
   void listActivities_iso8601UntilParam_returns200() {
     when(provenance.list(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
-    Response r = resource.listActivities(null, null, null, null, "2026-12-31T23:59:59Z", null, securityContext);
+    Response r = resource.listActivities(null, null, null, null, "2026-12-31T23:59:59Z", 100, securityContext);
     assertEquals(200, r.getStatus());
   }
 
   @Test
   void listActivities_epochMsUntilParam_returns200() {
     when(provenance.list(any(), any(), any(), any(), any(), anyInt())).thenReturn(List.of());
-    Response r = resource.listActivities(null, null, null, null, "1767225599000", null, securityContext);
+    Response r = resource.listActivities(null, null, null, null, "1767225599000", 100, securityContext);
     assertEquals(200, r.getStatus());
   }
 
   @Test
   void listActivities_invalidUntilParam_returns400() {
-    Response r = resource.listActivities(null, null, null, null, "bad-until", null, securityContext);
+    Response r = resource.listActivities(null, null, null, null, "bad-until", 100, securityContext);
     assertEquals(400, r.getStatus());
   }
 }

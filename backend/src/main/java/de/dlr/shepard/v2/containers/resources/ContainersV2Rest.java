@@ -768,7 +768,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Raw data for all resolved channels.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesWithDataPoints.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -793,7 +793,8 @@ public class ContainersV2Rest {
           Response.Status.UNSUPPORTED_MEDIA_TYPE,
           "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
     }
-    return Response.ok(result.get()).build();
+    var out = result.get();
+    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
   }
 
   @POST
@@ -1446,11 +1447,12 @@ public class ContainersV2Rest {
     summary = "Get a PNG thumbnail for a file payload.",
     description =
       "Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. " +
-      "Valid sizes: 64, 200, 400; any other value is normalised to 400. " +
+      "Valid sizes: 64, 200, 400; values in range 64–2048 that are not a standard size are normalised to 400. " +
       "Returns 415 when the container kind does not support thumbnails.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200", description = "PNG thumbnail.",
     content = @Content(schema = @Schema(type = SchemaType.STRING, format = "binary")))
+  @APIResponse(responseCode = "400", description = "Size out of range (< 64 or > 2048).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "Container or file not found, or thumbnail unavailable.")
@@ -1459,8 +1461,8 @@ public class ContainersV2Rest {
   public Response getThumbnail(
     @PathParam("appId") String appId,
     @PathParam("oid") String oid,
-    @Parameter(description = "Thumbnail pixel size. Accepted values: 64, 200, 400. Any other value (including absent) is normalised to 400.")
-    @QueryParam("size") Integer size,
+    @Parameter(description = "Thumbnail pixel size. Default 200. Valid standard sizes: 64, 200, 400; values in 64–2048 not in the standard set are normalised to 400.")
+    @DefaultValue("200") @Min(64) @Max(2048) @QueryParam("size") int size,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
