@@ -290,13 +290,14 @@ class BundleGroupsV2RestTest {
   }
 
   @Test
-  void listGroupFiles_clampsOversizedPageSize() {
+  void listGroupFiles_acceptsMaxPageSize() {
+    // Bean Validation (@Max(1000)) rejects pageSize > 1000 at the JAX-RS layer.
+    // Unit tests bypass BV, so we verify the boundary value (1000) passes correctly.
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
     when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
     when(fileGroupService.countFiles(GROUP_APP_ID)).thenReturn(0L);
 
-    // pageSize=9999 should be clamped to 1000, not rejected
-    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, 9999, securityContext);
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE, securityContext);
     assertEquals(200, r.getStatus());
     var envelope = (PagedFilesIO) r.getEntity();
     assertEquals(BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE, envelope.getSize());
