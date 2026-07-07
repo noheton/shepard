@@ -4,7 +4,6 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
-import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
@@ -25,6 +24,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -124,42 +125,39 @@ public class CrossDoBulkDataRest {
     final long end = body.end();
     final String predicate = body.channelPredicate();
 
+    // Batch phase 1: collect valid appIds, preserving input order.
+    List<String> requestedIds = new ArrayList<>();
+    for (String id : body.dataObjectAppIds()) {
+      if (id != null && !id.isBlank()) requestedIds.add(id);
+    }
+
+    // Batch phase 2: single Neo4j round-trip for permission gate (replaces N serial calls).
+    Set<String> allowedIds =
+      permissionsService.filterAllowedDataObjectAppIds(requestedIds, AccessType.Read, caller);
+
+    // Batch phase 3: single Neo4j round-trip for DO names (only for allowed DOs).
+    // Unknown appIds (not in the collection graph) simply won't appear in this map.
+    Map<String, String> namesByAppId = dataObjectDAO.findNamesByAppIds(allowedIds);
+
     List<CrossDoSeriesIO> out = new ArrayList<>();
-    // Wrap "series" key not "series-with-meta" — array directly for backward compatibility with
-    // the response-shape convention used by TS-OPT2 (returns a JSON array, not an envelope).
-    // Per-DO permission gating: drop silently rather than 403 the entire request — the brief
-    // explicitly calls this out as the right shape for cross-DO views.
-    for (String doAppId : body.dataObjectAppIds()) {
-      if (doAppId == null || doAppId.isBlank()) continue;
+    for (String doAppId : requestedIds) {
+      // Silently drop forbidden DOs; unknown DOs (not attached to any collection) are also
+      // dropped since they won't appear in the allowedIds set.
+      if (!allowedIds.contains(doAppId)) continue;
 
-      // Permission gate first. If the caller can't read this DO, silently skip it — never let
-      // existence-of-DO leak via the response.
-      if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, AccessType.Read, caller)) {
-        continue;
-      }
-
-      DataObject dataObject = dataObjectDAO.findByAppId(doAppId);
-      if (dataObject == null) {
-        // Unknown appId — surface as a row with empty points + null name so the caller knows
-        // which DO it lost (vs. silent permission drop).
-        out.add(new CrossDoSeriesIO(doAppId, null, predicate, null, List.of()));
-        continue;
-      }
+      String doName = namesByAppId.get(doAppId);
 
       List<CrossDoChannelResolver.ResolvedChannel> matches =
         crossDoChannelResolver.resolveChannelsByPredicate(doAppId, predicate);
 
       if (matches.isEmpty()) {
-        // No channel with this predicate on this DO — empty series, but still represented.
-        out.add(new CrossDoSeriesIO(doAppId, dataObject.getName(), predicate, null, List.of()));
+        out.add(new CrossDoSeriesIO(doAppId, doName, predicate, null, List.of()));
         continue;
       }
 
       // Deterministic pick: first by symbolicName ASC (already enforced in the resolver).
       CrossDoChannelResolver.ResolvedChannel pick = matches.get(0);
 
-      // Build the 5-tuple wrapper and call the LTTB-optimised path. CAgg routing is handled
-      // inside getDataPointsLttbOptimised — TS-OPT3 kicks in automatically per wall-clock window.
       Timeseries tuple = new Timeseries(
         pick.measurement(), pick.device(), pick.location(),
         pick.symbolicName(), pick.field()
@@ -170,14 +168,10 @@ public class CrossDoBulkDataRest {
           pick.containerId(), tuple, start, end, downsampleTo
         );
       } catch (RuntimeException ex) {
-        // One channel failing must not poison the response. Empty-points row + continue.
-        // Caller can re-issue the single-DO request to see the underlying error if needed.
         points = List.of();
       }
 
-      out.add(new CrossDoSeriesIO(
-        doAppId, dataObject.getName(), predicate, pick.symbolicName(), points
-      ));
+      out.add(new CrossDoSeriesIO(doAppId, doName, predicate, pick.symbolicName(), points));
     }
 
     return Response.ok(out).build();

@@ -17,7 +17,6 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
-import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
@@ -29,6 +28,8 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.lang.reflect.Field;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -96,18 +97,16 @@ public class CrossDoBulkDataRestTest {
     );
 
     assertEquals(401, resp.getStatus());
-    verify(permsMock, never()).isAccessAllowedForDataObjectAppId(any(), any(), any());
+    verify(permsMock, never()).filterAllowedDataObjectAppIds(any(), any(), any());
   }
 
   // ── Happy path: DO has matching channel, returns LTTB-downsampled series ──
 
   @Test
   void happyPath_returnsSeriesForResolvedChannel() {
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_A), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    DataObject doA = new DataObject();
-    doA.setName("Track_244__Run_30239");
-    when(daoMock.findByAppId(DO_A)).thenReturn(doA);
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "Track_244__Run_30239"));
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE))
       .thenReturn(List.of(new CrossDoChannelResolver.ResolvedChannel(
         42L, "afp", "robot-1", "head", "tcp_temp", "value"
@@ -140,11 +139,9 @@ public class CrossDoBulkDataRestTest {
 
   @Test
   void doWithoutMatchingChannel_returnsEmptyPointsRow() {
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_B), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    DataObject doB = new DataObject();
-    doB.setName("Track_245");
-    when(daoMock.findByAppId(DO_B)).thenReturn(doB);
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_B));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_B, "Track_245"));
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
@@ -168,13 +165,10 @@ public class CrossDoBulkDataRestTest {
 
   @Test
   void permissionDenied_silentlyDropped() {
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_FORBIDDEN), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(false);
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_A), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    DataObject doA = new DataObject();
-    doA.setName("ok");
-    when(daoMock.findByAppId(DO_A)).thenReturn(doA);
+    // Batch permission check returns only the allowed DO; forbidden DO excluded.
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "ok"));
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
@@ -187,17 +181,16 @@ public class CrossDoBulkDataRestTest {
     List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
     assertEquals(1, body.size(), "forbidden DO must be dropped silently, allowed DO kept");
     assertEquals(DO_A, body.get(0).dataObjectAppId());
-    // Crucially we never even hit the DAO for the forbidden DO.
-    verify(daoMock, never()).findByAppId(DO_FORBIDDEN);
   }
 
-  // ── Unknown DO appId: row with empty points + null name (signals 'lost') ──
+  // ── Unknown DO appId: silently dropped (not in the collection graph) ──────
 
   @Test
-  void unknownAppId_emitsRowWithNullName() {
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_UNKNOWN), eq(AccessType.Read), eq(CALLER)))
-      .thenReturn(true);
-    when(daoMock.findByAppId(DO_UNKNOWN)).thenReturn(null);
+  void unknownAppId_silentlyDropped() {
+    // A DO that doesn't exist in the collection graph won't appear in the allowed set.
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of());
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of());
 
     Response resp = resource.getCrossDoBulkData(
       new CrossDoBulkDataRequestIO(List.of(DO_UNKNOWN), PREDICATE, START_NS, END_NS, 500),
@@ -207,10 +200,7 @@ public class CrossDoBulkDataRestTest {
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
     List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
-    assertEquals(1, body.size());
-    assertNull(body.get(0).dataObjectName());
-    assertTrue(body.get(0).points().isEmpty());
-    // Resolver and service not consulted for missing DO.
+    assertTrue(body.isEmpty());
     verify(resolverMock, never()).resolveChannelsByPredicate(eq(DO_UNKNOWN), any());
     verify(serviceMock, never()).getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt());
   }
@@ -219,10 +209,12 @@ public class CrossDoBulkDataRestTest {
 
   @Test
   void mixedShapes_orderPreserved() {
-    // Allowed + has data
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_A), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
-    DataObject doA = new DataObject(); doA.setName("A");
-    when(daoMock.findByAppId(DO_A)).thenReturn(doA);
+    // Batch permission check: only DO_A and DO_B allowed; DO_FORBIDDEN and DO_C excluded.
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A, DO_B));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "A", DO_B, "B"));
+
+    // DO_A: has a channel with data
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE))
       .thenReturn(List.of(new CrossDoChannelResolver.ResolvedChannel(
         1L, "m", "d", "l", "sym", "f"
@@ -230,18 +222,8 @@ public class CrossDoBulkDataRestTest {
     when(serviceMock.getDataPointsLttbOptimised(eq(1L), any(), anyLong(), anyLong(), anyInt()))
       .thenReturn(List.of(new TimeseriesDataPoint(1_000_000_000L, 1.0)));
 
-    // Allowed + no channel
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_B), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
-    DataObject doB = new DataObject(); doB.setName("B");
-    when(daoMock.findByAppId(DO_B)).thenReturn(doB);
+    // DO_B: no channel match
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
-
-    // Forbidden — drop
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_FORBIDDEN), eq(AccessType.Read), eq(CALLER))).thenReturn(false);
-
-    // Allowed but unknown
-    when(permsMock.isAccessAllowedForDataObjectAppId(eq(DO_C), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
-    when(daoMock.findByAppId(DO_C)).thenReturn(null);
 
     Response resp = resource.getCrossDoBulkData(
       new CrossDoBulkDataRequestIO(
@@ -254,14 +236,12 @@ public class CrossDoBulkDataRestTest {
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
     List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
-    // 3 rows: A (data), B (no channel), C (unknown). Forbidden dropped.
-    assertEquals(3, body.size());
+    // 2 rows: A (data), B (no channel). Forbidden and unknown DOs silently dropped.
+    assertEquals(2, body.size());
     assertEquals(DO_A, body.get(0).dataObjectAppId());
     assertEquals(DO_B, body.get(1).dataObjectAppId());
-    assertEquals(DO_C, body.get(2).dataObjectAppId());
     assertNotNull(body.get(0).channelSymbolicName());
     assertNull(body.get(1).channelSymbolicName());
-    assertNull(body.get(2).channelSymbolicName());
   }
 
   // ── Downsample clamping ──────────────────────────────────────────────────
@@ -292,12 +272,10 @@ public class CrossDoBulkDataRestTest {
 
   @Test
   void multipleResolvedDOs_lttbCalledPerSeries() {
-    when(permsMock.isAccessAllowedForDataObjectAppId(any(), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A, DO_B));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "A", DO_B, "B"));
 
-    DataObject doA = new DataObject(); doA.setName("A");
-    DataObject doB = new DataObject(); doB.setName("B");
-    when(daoMock.findByAppId(DO_A)).thenReturn(doA);
-    when(daoMock.findByAppId(DO_B)).thenReturn(doB);
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE))
       .thenReturn(List.of(new CrossDoChannelResolver.ResolvedChannel(1L, "m", "d", "l", "symA", "f")));
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE))
