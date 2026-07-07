@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Full history needed: the index includes a per-file `last-touched`
           # column populated via `git log -1 --format=%ad`. A shallow clone

@@ -67,7 +67,7 @@ jobs:
     name: Unit tests + coverage gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -147,7 +147,7 @@ jobs:
     name: SpotBugs + findsecbugs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -183,7 +183,7 @@ jobs:
     needs: [unit-tests, spotbugs]
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -294,7 +294,7 @@ jobs:
     name: Frontend unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Node 24
         uses: actions/setup-node@v4
@@ -316,7 +316,7 @@ jobs:
     needs: [unit-tests, spotbugs, frontend-tests]
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Node 24
         uses: actions/setup-node@v4

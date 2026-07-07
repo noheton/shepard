@@ -71,7 +71,7 @@ jobs:
           - 7474:7474
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # --- Toolchain --------------------------------------------------
       - name: Set up .NET 8 (for Kiota CLI)
