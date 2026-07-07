@@ -30,7 +30,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * VID1a — service layer for {@link VideoStreamReference} CRUD.
  *
  * <p>Permission enforcement happens at the REST layer
- * ({@link de.dlr.shepard.v2.video.resources.VideoStreamReferenceV2Rest});
+ * (unified {@code /v2/references} surface via {@code VideoStreamReferenceKindHandler});
  * this service trusts its callers, mirroring the
  * {@link de.dlr.shepard.context.references.file.services.SingletonFileReferenceService}
  * posture.

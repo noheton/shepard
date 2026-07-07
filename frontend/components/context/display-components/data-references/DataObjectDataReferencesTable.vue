@@ -155,10 +155,15 @@ async function confirmDelete() {
     return;
   }
 
-  // FR1b singletons + Spatial: V2CONV-A2 / SPATIAL-UNIFY DELETE
-  // /v2/references/{appId} (unified surface). The kind is resolved from the
-  // entity server-side, so spatial deletes through the same path.
-  if (item.type === "File" || item.type === "Notebook" || item.type === "Spatial") {
+  // FR1b singletons + Spatial + Video: V2CONV-A2 / APISIMP-VIDEO-TOMBSTONE-DELETE
+  // All reference kinds served by /v2/references/{appId} (unified surface).
+  // Kind is resolved server-side; no per-kind path needed.
+  if (
+    item.type === "File" ||
+    item.type === "Notebook" ||
+    item.type === "Spatial" ||
+    item.type === "Video"
+  ) {
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
     const url = `${v2BaseUrl()}/v2/references/${encodeURIComponent(appId)}`;
@@ -177,28 +182,6 @@ async function confirmDelete() {
       handleError(err, `delete ${item.type} reference`);
     }
     return;
-  }
-
-  // Video: raw fetch DELETE
-  const accessToken = session.value?.accessToken;
-  if (!accessToken) return;
-
-  const kindPath = "video-stream-references";
-  const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/${kindPath}/${encodeURIComponent(appId)}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (response.ok || response.status === 204) {
-      showDeleteDialog.value = false;
-      emit("refresh");
-    } else {
-      handleError(`HTTP ${response.status}`, `delete ${item.type} reference`);
-    }
-  } catch (err) {
-    handleError(err, `delete ${item.type} reference`);
   }
 }
 

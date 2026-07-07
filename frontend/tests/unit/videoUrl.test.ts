@@ -23,14 +23,13 @@ describe("withAccessTokenQueryParam", () => {
   });
 
   it("appends ?access_token to a relative URL with no existing query", () => {
+    // APISIMP-VIDEO-TOMBSTONE-DELETE: unified download path
     const out = withAccessTokenQueryParam(
-      "/v2/data-objects/x/video-stream-references/y/download",
+      "/v2/references/y/content",
       "tok123",
       "http://shep.local",
     );
-    expect(out).toBe(
-      "/v2/data-objects/x/video-stream-references/y/download?access_token=tok123",
-    );
+    expect(out).toBe("/v2/references/y/content?access_token=tok123");
   });
 
   it("preserves existing query parameters", () => {
