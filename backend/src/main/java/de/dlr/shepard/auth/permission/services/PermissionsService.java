@@ -38,6 +38,7 @@ import jakarta.ws.rs.core.PathSegment;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -425,6 +426,61 @@ public class PermissionsService {
           new CompositeCacheKey(id, accessType, username, iat),
           CompletableFuture.completedFuture(isAllowed)
         );
+      }
+    }
+    return allowed;
+  }
+
+  /**
+   * Returns the subset of {@code doAppIds} for which {@code username} has the given access.
+   *
+   * <p>Issues one Cypher to map every DataObject appId to its parent Collection's Neo4j id,
+   * then delegates to {@link #filterAllowedForUser} for the batch permission check.
+   * DataObject appIds that do not exist in the collection graph are silently excluded
+   * (indistinguishable from permission-denied, which is the correct security posture).
+   *
+   * @param doAppIds   DataObject appIds to evaluate
+   * @param accessType Read / Write / Manage
+   * @param username   the caller's username
+   * @return allowed DataObject appIds (subset of {@code doAppIds}), never {@code null}
+   */
+  public Set<String> filterAllowedDataObjectAppIds(
+      Collection<String> doAppIds, AccessType accessType, String username) {
+    if (doAppIds == null || doAppIds.isEmpty()) return Collections.emptySet();
+    if (dbHealthRegistry != null && dbHealthRegistry.isCurrentlyDown(DatabaseKind.NEO4J)) {
+      return Collections.emptySet();
+    }
+    var session = de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) return Collections.emptySet();
+
+    List<String> filtered = new ArrayList<>();
+    for (String s : doAppIds) {
+      if (s != null && !s.isBlank()) filtered.add(s);
+    }
+    if (filtered.isEmpty()) return Collections.emptySet();
+
+    String cypher =
+      "MATCH (c:Collection)-[:" + Constants.HAS_DATAOBJECT + "]->(d:DataObject) " +
+      "WHERE d.appId IN $appIds " +
+      "RETURN d.appId AS doAppId, id(c) AS collOgmId";
+    var result = session.query(cypher, Map.of("appIds", filtered));
+
+    Map<String, Long> doToCollId = new HashMap<>();
+    for (var row : result) {
+      Object doAppId = row.get("doAppId");
+      Object collId = row.get("collOgmId");
+      if (doAppId instanceof String s && collId instanceof Number n) {
+        doToCollId.put(s, n.longValue());
+      }
+    }
+    if (doToCollId.isEmpty()) return Collections.emptySet();
+
+    Set<Long> allowedCollIds = filterAllowedForUser(doToCollId.values(), accessType, username);
+
+    Set<String> allowed = new HashSet<>();
+    for (var entry : doToCollId.entrySet()) {
+      if (allowedCollIds.contains(entry.getValue())) {
+        allowed.add(entry.getKey());
       }
     }
     return allowed;

@@ -9,6 +9,7 @@ import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -543,6 +544,31 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     DataObject stub = StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
     if (stub == null) return null;
     return session.load(DataObject.class, stub.getId(), DEPTH_ENTITY);
+  }
+
+  /**
+   * Fetches the {@code name} property for each of the supplied DataObject appIds in a single
+   * Cypher round-trip.  Only the scalar {@code name} field is read — no entity loading or
+   * relationship hydration occurs, making this suitable for high-fan-out batch views.
+   *
+   * <p>AppIds with no matching DataObject node are absent from the result map.
+   * DataObjects with a {@code null} name map to {@code null}.
+   *
+   * @param appIds DataObject appIds to look up
+   * @return map of appId → name (subset of {@code appIds})
+   */
+  public Map<String, String> findNamesByAppIds(Collection<String> appIds) {
+    if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
+    String cypher = "MATCH (d:DataObject) WHERE d.appId IN $appIds RETURN d.appId AS appId, d.name AS name";
+    var result = session.query(cypher, Map.of("appIds", new ArrayList<>(appIds)));
+    Map<String, String> names = new LinkedHashMap<>();
+    for (var row : result) {
+      Object appId = row.get("appId");
+      if (appId instanceof String s) {
+        names.put(s, (String) row.get("name"));
+      }
+    }
+    return names;
   }
 
   /**
