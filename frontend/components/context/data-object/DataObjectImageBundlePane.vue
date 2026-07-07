@@ -8,8 +8,10 @@
  *
  * Detection: iterates over `candidateBundleAppIds` (FileBundleReference
  * appIds already gathered by the parent from the v1 dataReferences list),
- * calls `GET /v2/bundles/{appId}` for each, and picks the first bundle
- * whose first group's first file has an image-extension filename.
+ * calls `GET /v2/references/{appId}` (for containerAppId) and
+ * `GET /v2/references/{appId}/groups?page=0&pageSize=1` (for first group)
+ * in parallel for each, and picks the first bundle whose first group's
+ * first file has an image-extension filename.
  *
  * Rendering: once resolved, delegates to `ImageBundleViewer` which owns
  * the pagination + scrubber + thumbnail strip affordances.
@@ -75,16 +77,25 @@ function v2BaseUrl(): string {
 async function fetchBundle(bundleAppId: string): Promise<FileBundleIO | null> {
   const { data: session } = useAuth();
   const token = (session.value as { accessToken?: string } | null)?.accessToken;
-  const url = `${v2BaseUrl()}/v2/bundles/${encodeURIComponent(bundleAppId)}`;
+  const headers = {
+    Authorization: token ? `Bearer ${token}` : "",
+    Accept: "application/json",
+  };
+  const base = v2BaseUrl();
+  const encoded = encodeURIComponent(bundleAppId);
   try {
-    const r = await fetch(url, {
-      headers: {
-        Authorization: token ? `Bearer ${token}` : "",
-        Accept: "application/json",
-      },
-    });
-    if (!r.ok) return null;
-    return (await r.json()) as FileBundleIO;
+    const [refRes, groupsRes] = await Promise.all([
+      fetch(`${base}/v2/references/${encoded}`, { headers }),
+      fetch(`${base}/v2/references/${encoded}/groups?page=0&pageSize=1`, { headers }),
+    ]);
+    if (!refRes.ok || !groupsRes.ok) return null;
+    const refJson = (await refRes.json()) as { payload?: { containerAppId?: string | null } };
+    const groupsJson = (await groupsRes.json()) as { items?: FileGroupIO[] };
+    return {
+      appId: bundleAppId,
+      containerAppId: refJson.payload?.containerAppId ?? null,
+      groups: groupsJson.items ?? [],
+    };
   } catch {
     return null;
   }

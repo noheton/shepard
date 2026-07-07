@@ -3,9 +3,10 @@
  * detection logic and the imageBundleScrubber helpers.
  *
  * Strategy:
- *   - The pane's detection logic is driven by `fetch` calls against
- *     GET /v2/bundles/{appId}. We stub `globalThis.fetch` per test to
- *     return controlled FileBundleIO shapes.
+ *   - The pane's detection logic is driven by two parallel `fetch` calls per
+ *     candidate: GET /v2/references/{appId} (for containerAppId) and
+ *     GET /v2/references/{appId}/groups?page=0&pageSize=1 (for first group).
+ *     We stub `globalThis.fetch` per test to return controlled shapes.
  *   - The `imageBundleScrubber.ts` helpers are pure functions; tested
  *     directly without mocking.
  *
@@ -250,24 +251,37 @@ interface TestResolvedBundle {
  * Minimal re-implementation of the async detection loop from
  * DataObjectImageBundlePane.vue, used to test fetch-mock scenarios without
  * mounting the full SFC.
+ *
+ * Mirrors the 2-parallel-call shape introduced by APISIMP-BUNDLE-REF-KIND-UNIFY
+ * slice 2: GET /v2/references/{id} + GET /v2/references/{id}/groups?page=0&pageSize=1.
  */
 async function detectImageBundle(
   candidateBundleAppIds: string[],
   baseUrl: string,
   token: string | null,
 ): Promise<TestResolvedBundle | null> {
+  const headers = {
+    Authorization: token ? `Bearer ${token}` : "",
+    Accept: "application/json",
+  };
   for (const bundleAppId of candidateBundleAppIds) {
-    const url = `${baseUrl}/v2/bundles/${encodeURIComponent(bundleAppId)}`;
+    const encoded = encodeURIComponent(bundleAppId);
     let bundle: TestFileBundleIO | null = null;
     try {
-      const r = await fetch(url, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          Accept: "application/json",
-        },
-      });
-      if (!r.ok) continue;
-      bundle = (await r.json()) as TestFileBundleIO;
+      const [refRes, groupsRes] = await Promise.all([
+        fetch(`${baseUrl}/v2/references/${encoded}`, { headers }),
+        fetch(`${baseUrl}/v2/references/${encoded}/groups?page=0&pageSize=1`, { headers }),
+      ]);
+      if (!refRes.ok || !groupsRes.ok) continue;
+      const refJson = (await refRes.json()) as { payload?: { containerAppId?: string | null } };
+      const groupsJson = (await groupsRes.json()) as {
+        items?: Array<{ appId?: string | null; name?: string | null; files?: Array<{ filename?: string | null }> }>;
+      };
+      bundle = {
+        appId: bundleAppId,
+        containerAppId: refJson.payload?.containerAppId ?? null,
+        groups: groupsJson.items ?? [],
+      };
     } catch {
       continue;
     }
@@ -300,11 +314,13 @@ describe("detectImageBundle — async detection loop", () => {
   });
 
   it("returns null when all candidate bundles have non-image first groups", async () => {
-    const nonImageBundle = makeBundle([{ filename: "data.csv" }]);
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => nonImageBundle,
-    });
+    const nonImageGroup = [{ appId: "g1", name: "Group 1", files: [{ filename: "data.csv" }] }];
+    // 2 calls per candidate (ref + groups) × 2 candidates = 4 total
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: nonImageGroup }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: nonImageGroup }) });
 
     const result = await detectImageBundle(
       ["bundle-a", "bundle-b"],
@@ -313,23 +329,17 @@ describe("detectImageBundle — async detection loop", () => {
     );
 
     expect(result).toBeNull();
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(4);
   });
 
   it("resolves to the FIRST matching bundle when image files found", async () => {
-    const nonImageBundle = makeBundle([{ filename: "data.csv" }], {
-      bundleAppId: "bundle-a",
-      groupAppId: "g-a",
-    });
-    const imageBundle = makeBundle([{ filename: "frame.png" }], {
-      bundleAppId: "bundle-b",
-      groupAppId: "g-b",
-      containerAppId: "container-b",
-    });
-
+    // bundle-a: ref + groups (non-image)
+    // bundle-b: ref + groups (image) — 4 calls total
     (fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({ ok: true, json: async () => nonImageBundle })
-      .mockResolvedValueOnce({ ok: true, json: async () => imageBundle });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-a", name: "Group 1", files: [{ filename: "data.csv" }] }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: "container-b" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-b", name: "Group 1", files: [{ filename: "frame.png" }] }] }) });
 
     const result = await detectImageBundle(
       ["bundle-a", "bundle-b"],
@@ -343,18 +353,17 @@ describe("detectImageBundle — async detection loop", () => {
       containerAppId: "container-b",
       groupName: "Group 1",
     });
-    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(4);
   });
 
   it("skips candidates that return HTTP errors (fail-soft, not fail-hard)", async () => {
-    const imageBundle = makeBundle([{ filename: "frame.tif" }], {
-      bundleAppId: "bundle-b",
-      groupAppId: "g-b",
-    });
-
+    // bundle-404: ref returns not-ok → whole block skipped; groups call still consumed by Promise.all
+    // bundle-b: both ok → found
     (fetch as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce({ ok: true, json: async () => imageBundle });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-b", name: "Group 1", files: [{ filename: "frame.tif" }] }] }) });
 
     const result = await detectImageBundle(
       ["bundle-404", "bundle-b"],
@@ -366,14 +375,14 @@ describe("detectImageBundle — async detection loop", () => {
   });
 
   it("skips candidates that throw network errors (fail-soft)", async () => {
-    const imageBundle = makeBundle([{ filename: "frame.jpg" }], {
-      bundleAppId: "bundle-b",
-      groupAppId: "g-b",
-    });
-
+    // bundle-fail: ref throws → Promise.all rejects → catch → continue
+    // (groups call for bundle-fail is started but its result is discarded)
+    // bundle-b: both ok → found
     (fetch as ReturnType<typeof vi.fn>)
       .mockRejectedValueOnce(new Error("network error"))
-      .mockResolvedValueOnce({ ok: true, json: async () => imageBundle });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-b", name: "Group 1", files: [{ filename: "frame.jpg" }] }] }) });
 
     const result = await detectImageBundle(
       ["bundle-fail", "bundle-b"],
@@ -385,39 +394,37 @@ describe("detectImageBundle — async detection loop", () => {
   });
 
   it("stops at the first matching bundle (short-circuit — no further fetches)", async () => {
-    const imageBundle1 = makeBundle([{ filename: "frame.png" }], {
-      bundleAppId: "bundle-a",
-      groupAppId: "g-a",
-    });
-    const imageBundle2 = makeBundle([{ filename: "frame.png" }], {
-      bundleAppId: "bundle-b",
-      groupAppId: "g-b",
-    });
-
+    // bundle-a: 2 parallel calls (ref + groups) → image found → return
+    // bundle-b: never fetched (2 remaining mocks unused)
     (fetch as ReturnType<typeof vi.fn>)
-      .mockResolvedValueOnce({ ok: true, json: async () => imageBundle1 })
-      .mockResolvedValueOnce({ ok: true, json: async () => imageBundle2 });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: "c-a" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-a", name: "Group 1", files: [{ filename: "frame.png" }] }] }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: "c-b" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-b", name: "Group 1", files: [{ filename: "frame.png" }] }] }) });
 
     await detectImageBundle(["bundle-a", "bundle-b"], "http://localhost", "tok");
 
-    // Only one fetch should have been made (short-circuit after first match)
-    expect(fetch).toHaveBeenCalledTimes(1);
+    // Only bundle-a's 2 parallel calls were made (short-circuit after first match)
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it("includes Authorization bearer token in the request when token is present", async () => {
-    const imageBundle = makeBundle([{ filename: "frame.png" }], {
-      bundleAppId: "bundle-a",
-      groupAppId: "g-a",
-    });
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => imageBundle,
-    });
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: "c-a" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-a", name: "Group 1", files: [{ filename: "frame.png" }] }] }) });
 
     await detectImageBundle(["bundle-a"], "http://localhost", "my-jwt-token");
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://localhost/v2/bundles/bundle-a",
+      "http://localhost/v2/references/bundle-a",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer my-jwt-token",
+        }),
+      }),
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      "http://localhost/v2/references/bundle-a/groups?page=0&pageSize=1",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer my-jwt-token",
@@ -427,19 +434,14 @@ describe("detectImageBundle — async detection loop", () => {
   });
 
   it("uses empty Authorization header when no token (anonymous access)", async () => {
-    const imageBundle = makeBundle([{ filename: "frame.png" }], {
-      bundleAppId: "bundle-a",
-      groupAppId: "g-a",
-    });
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => imageBundle,
-    });
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: "c-a" } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ appId: "g-a", name: "Group 1", files: [{ filename: "frame.png" }] }] }) });
 
     await detectImageBundle(["bundle-a"], "http://localhost", null);
 
     expect(fetch).toHaveBeenCalledWith(
-      "http://localhost/v2/bundles/bundle-a",
+      "http://localhost/v2/references/bundle-a",
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: "" }),
       }),
@@ -447,10 +449,9 @@ describe("detectImageBundle — async detection loop", () => {
   });
 
   it("returns null when bundle has no groups (empty FileBundleIO)", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      json: async () => ({ appId: "b1", containerAppId: null, groups: [] }),
-    });
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ payload: { containerAppId: null } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [] }) });
 
     const result = await detectImageBundle(["b1"], "http://localhost", null);
     expect(result).toBeNull();
