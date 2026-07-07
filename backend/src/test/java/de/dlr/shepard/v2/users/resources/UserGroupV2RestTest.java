@@ -135,24 +135,28 @@ class UserGroupV2RestTest {
   }
 
   @Test
-  void listUserGroups_withQ_returnsPlainArray() {
+  void listUserGroups_withQ_returnsPagedEnvelope() {
     when(searchService.searchByText("lumen")).thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
     Response r = resource.listUserGroups("lumen", 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals(GROUP_NAME, body.get(0).getName());
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(1, body.pageSize());
+    assertEquals(GROUP_NAME, body.items().get(0).getName());
   }
 
   @Test
-  void listUserGroups_withQ_returnsEmptyArray_whenNoMatches() {
+  void listUserGroups_withQ_noMatches_returnsEmptyPagedEnvelope() {
     when(searchService.searchByText("nomatch")).thenReturn(List.of());
     Response r = resource.listUserGroups("nomatch", 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<UserGroupV2IO> body = (List<UserGroupV2IO>) r.getEntity();
-    assertEquals(0, body.size());
+    PagedResponseIO<UserGroupV2IO> body = (PagedResponseIO<UserGroupV2IO>) r.getEntity();
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
   }
 
   // ── GET /v2/user-groups/{appId} ──────────────────────────────────────
