@@ -20,14 +20,14 @@ public class UserWithApiKeyBuilder {
   private User user;
   private ApiKey apiKey;
 
-  String neo4jConnectionString;
-
   public UserWithApiKeyBuilder() {
     String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
     String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
     String host = ConfigProvider.getConfig().getValue("neo4j.host", String.class);
-    neo4jConnectionString = "bolt://" + username + ":" + password + "@" + host;
-    session = openSession(neo4jConnectionString);
+    // neo4j-ogm 5.0.7 pulls neo4j-java-driver 6.x, which dropped support for
+    // credentials embedded in the bolt URI (bolt://user:pass@host). Pass them
+    // through OGM's Configuration.credentials() instead — the driver-6.x form.
+    session = openSession("bolt://" + host, username, password);
   }
 
   public UserWithApiKeyBuilder withUser() {
@@ -51,8 +51,8 @@ public class UserWithApiKeyBuilder {
     return new UserWithApiKey(user, apiKey);
   }
 
-  private Session openSession(String connectionString) {
-    Configuration configuration = new Configuration.Builder().uri(connectionString).build();
+  private Session openSession(String uri, String username, String password) {
+    Configuration configuration = new Configuration.Builder().uri(uri).credentials(username, password).build();
     sessionFactory = new SessionFactory(configuration, User.class.getPackageName(), ApiKey.class.getPackageName());
     return sessionFactory.openSession();
   }
@@ -64,11 +64,11 @@ public class UserWithApiKeyBuilder {
 
     Date currentDate = new Date();
     String jws = Jwts.builder()
-      .setSubject(apiKey.getBelongsTo().getUsername())
-      .setIssuer(issuer)
-      .setNotBefore(currentDate)
-      .setIssuedAt(currentDate)
-      .setId(apiKey.getUid().toString())
+      .subject(apiKey.getBelongsTo().getUsername())
+      .issuer(issuer)
+      .notBefore(currentDate)
+      .issuedAt(currentDate)
+      .id(apiKey.getUid().toString())
       .signWith(key)
       .compact();
     return jws;

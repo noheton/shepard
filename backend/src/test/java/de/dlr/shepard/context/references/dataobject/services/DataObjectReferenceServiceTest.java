@@ -212,7 +212,7 @@ public class DataObjectReferenceServiceTest {
     };
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObject(nullDataObjectShepardId)).thenThrow(InvalidPathException.class);
+    when(dataObjectService.getDataObject(nullDataObjectShepardId)).thenThrow(new InvalidPathException());
     assertThrows(InvalidBodyException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
     );
@@ -235,7 +235,7 @@ public class DataObjectReferenceServiceTest {
     };
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidPathException.class);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(new InvalidPathException());
     assertThrows(InvalidBodyException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
     );
@@ -267,7 +267,7 @@ public class DataObjectReferenceServiceTest {
 
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidAuthException.class);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(new InvalidAuthException());
     var ex = assertThrows(InvalidBodyException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
     );
@@ -359,7 +359,7 @@ public class DataObjectReferenceServiceTest {
 
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidAuthException.class);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(new InvalidAuthException());
     assertThrows(InvalidAuthException.class, () ->
       service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), null)
     );
@@ -375,7 +375,7 @@ public class DataObjectReferenceServiceTest {
     dataObject.setReferences(List.of(ref));
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(dataObjectService.getDataObject(200L)).thenThrow(InvalidPathException.class);
+    when(dataObjectService.getDataObject(200L)).thenThrow(new InvalidPathException());
 
     assertThrows(NotFoundException.class, () ->
       service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), null)

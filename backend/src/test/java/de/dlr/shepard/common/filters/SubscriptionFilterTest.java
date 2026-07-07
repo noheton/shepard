@@ -21,6 +21,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.RequestMethod;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
+import io.quarkus.test.component.SkipInject;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -137,7 +138,7 @@ public class SubscriptionFilterTest {
 
   @ParameterizedTest
   @CsvSource({ "http://my.url/test2,200", "http://my.url/test/200/sub,100", "http://my.url/test/200/sub,400" })
-  public void testFilterNoExecution(String subscribedUrl, Integer statusCode) {
+  public void testFilterNoExecution(@SkipInject String subscribedUrl, @SkipInject Integer statusCode) {
     Subscription sub = new Subscription();
     sub.setCallbackURL("http://callback.url/test");
     sub.setId(200L);

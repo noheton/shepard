@@ -22,6 +22,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
+import io.quarkus.test.component.SkipInject;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Stream;
@@ -62,7 +63,7 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
 
   @ParameterizedTest
   @MethodSource
-  public void test(SearchScope scope, Neo4jQuery selectionQuery) {
+  public void test(@SkipInject SearchScope scope, @SkipInject Neo4jQuery selectionQuery) {
     var collection = new Collection(1L);
     collection.setShepardId(collection.getId());
     var dataObject = new DataObject(2L);

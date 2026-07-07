@@ -187,10 +187,10 @@ public class JwtTokenAuthService {
 
   Jws<Claims> parseAccessTokenFromHeader(String header) {
     String token = header.startsWith("Bearer ") ? header.substring(7) : header;
-    var parser = Jwts.parserBuilder().setSigningKey(oidcPublicKey).build();
+    var parser = Jwts.parser().verifyWith(oidcPublicKey).build();
     try {
-      Jws<Claims> jws = parser.parseClaimsJws(token);
-      Log.debugf("Valid token: %s", jws.getBody().getId());
+      Jws<Claims> jws = parser.parseSignedClaims(token);
+      Log.debugf("Valid token: %s", jws.getPayload().getId());
       return jws;
     } catch (ExpiredJwtException ex) {
       // Expired tokens are normal client-side staleness (rotation lag, probe
@@ -205,10 +205,13 @@ public class JwtTokenAuthService {
   }
 
   public JWTPrincipal parsePrincipalFromAccessToken(Jws<Claims> jws) {
-    var body = jws.getBody();
+    var body = jws.getPayload();
     String keyId = body.getId();
     String subject = body.getSubject();
-    String audience = body.getAudience();
+    // jjwt 0.12+ types `aud` as Set<String> (the RFC 7519 array form). Preserve
+    // the prior single-audience behaviour: take the sole element, null if absent.
+    Set<String> audiences = body.getAudience();
+    String audience = (audiences == null || audiences.isEmpty()) ? null : audiences.iterator().next();
     String issuedFor = body.get("azp", String.class);
 
     if (subject == null || subject.isEmpty()) {

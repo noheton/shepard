@@ -49,7 +49,7 @@ public class SubscriptionServiceTest {
 
   @Test
   public void getSubscriptionTestNull() {
-    when(dao.findByNeo4jId(1L)).thenThrow(InvalidPathException.class);
+    when(dao.findByNeo4jId(1L)).thenThrow(new InvalidPathException());
 
     assertThrows(InvalidPathException.class, () -> service.getSubscription(1L, "bob"));
   }
@@ -80,7 +80,7 @@ public class SubscriptionServiceTest {
 
   @Test
   public void getAllSubscriptionsTest_noUser() {
-    when(userService.getUser("bob")).thenThrow(InvalidPathException.class);
+    when(userService.getUser("bob")).thenThrow(new InvalidPathException());
 
     assertThrows(InvalidPathException.class, () -> service.getAllSubscriptions("bob"));
   }
