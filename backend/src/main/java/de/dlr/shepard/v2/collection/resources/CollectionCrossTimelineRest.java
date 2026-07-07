@@ -13,7 +13,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -23,6 +22,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -151,15 +152,21 @@ public class CollectionCrossTimelineRest {
         collectionAppIds.size());
     }
 
+    // Batch-resolve all appIds → Neo4j Long IDs (1 Cypher round-trip).
+    Map<String, Long> resolved = entityIdResolver.resolveLongs(collectionAppIds);
+    // Fail-fast on any collection not found (preserves the existing 404 contract).
     for (String appId : collectionAppIds) {
-      long ogmId;
-      try {
-        ogmId = entityIdResolver.resolveLong(appId);
-      } catch (NotFoundException nfe) {
+      if (!resolved.containsKey(appId)) {
         return problem(PT_NOT_FOUND, "Collection not found",
           Response.Status.NOT_FOUND, "no Collection with appId '" + appId + "'");
       }
-      if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
+    }
+    // Batch permission check (1 Cypher round-trip).
+    Set<Long> allowed = permissionsService.filterAllowedForUser(
+        resolved.values(), AccessType.Read, caller);
+    // Fail-fast on any forbidden collection (preserves the existing 403 contract).
+    for (String appId : collectionAppIds) {
+      if (!allowed.contains(resolved.get(appId))) {
         return problem(PT_FORBIDDEN, "Read access required",
           Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + appId + "'");
       }

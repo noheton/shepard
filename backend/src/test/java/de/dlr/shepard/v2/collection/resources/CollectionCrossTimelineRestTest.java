@@ -2,7 +2,8 @@ package de.dlr.shepard.v2.collection.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -15,13 +16,15 @@ import de.dlr.shepard.v2.collection.daos.CollectionTimelineDAO;
 import de.dlr.shepard.v2.collection.daos.CollectionTimelineDAO.TimelineAggregate;
 import de.dlr.shepard.v2.collection.daos.CollectionTimelineDAO.TimelineRow;
 import de.dlr.shepard.v2.collection.io.CollectionTimelineIO;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -72,12 +75,12 @@ class CollectionCrossTimelineRestTest {
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
-    when(entityIdResolver.resolveLong(COLL_A)).thenReturn(OGM_A);
-    when(entityIdResolver.resolveLong(COLL_B)).thenReturn(OGM_B);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_A), eq(AccessType.Read), eq(CALLER), anyLong()))
-      .thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_B), eq(AccessType.Read), eq(CALLER), anyLong()))
-      .thenReturn(true);
+    // Default: batch-resolve both collections (1 Cypher round-trip).
+    when(entityIdResolver.resolveLongs(anyList()))
+      .thenReturn(new LinkedHashMap<>(Map.of(COLL_A, OGM_A, COLL_B, OGM_B)));
+    // Default: batch permission check allows both (1 Cypher round-trip).
+    when(permissionsService.filterAllowedForUser(anyCollection(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(OGM_A, OGM_B));
   }
 
   @Test
@@ -156,15 +159,16 @@ class CollectionCrossTimelineRestTest {
 
   @Test
   void returns200WithExactlyMaxCollections() {
+    Map<String, Long> resolved = new LinkedHashMap<>();
     List<String> atLimit = new java.util.ArrayList<>();
     for (int i = 0; i < CollectionCrossTimelineRest.MAX_COLLECTIONS; i++) {
       String id = "coll-appid-" + i;
       atLimit.add(id);
-      when(entityIdResolver.resolveLong(id)).thenReturn((long) (200 + i));
-      when(permissionsService.isAccessTypeAllowedForUser(
-          eq((long) (200 + i)), eq(AccessType.Read), eq(CALLER), anyLong()))
-        .thenReturn(true);
+      resolved.put(id, (long) (200 + i));
     }
+    when(entityIdResolver.resolveLongs(anyList())).thenReturn(resolved);
+    when(permissionsService.filterAllowedForUser(anyCollection(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(new java.util.HashSet<>(resolved.values()));
     when(timelineDAO.aggregateMulti(atLimit))
       .thenReturn(new CollectionTimelineDAO.TimelineAggregate(List.of(), 0L, null, null));
 
@@ -174,7 +178,9 @@ class CollectionCrossTimelineRestTest {
 
   @Test
   void returns404WhenFirstCollectionNotFound() {
-    when(entityIdResolver.resolveLong(COLL_A)).thenThrow(new NotFoundException());
+    // resolveLongs returns a map without COLL_A (not found).
+    when(entityIdResolver.resolveLongs(anyList()))
+      .thenReturn(new LinkedHashMap<>(Map.of(COLL_B, OGM_B)));
 
     Response r = resource.crossTimeline(List.of(COLL_A, COLL_B), 1, sc);
 
@@ -184,7 +190,9 @@ class CollectionCrossTimelineRestTest {
 
   @Test
   void returns404WhenSecondCollectionNotFound() {
-    when(entityIdResolver.resolveLong(COLL_B)).thenThrow(new NotFoundException());
+    // resolveLongs returns a map without COLL_B (not found).
+    when(entityIdResolver.resolveLongs(anyList()))
+      .thenReturn(new LinkedHashMap<>(Map.of(COLL_A, OGM_A)));
 
     Response r = resource.crossTimeline(List.of(COLL_A, COLL_B), 1, sc);
 
@@ -194,8 +202,9 @@ class CollectionCrossTimelineRestTest {
 
   @Test
   void returns403WhenCallerLacksReadOnSecondCollection() {
-    when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_B), eq(AccessType.Read), eq(CALLER), anyLong()))
-      .thenReturn(false);
+    // filterAllowedForUser returns only OGM_A (COLL_B forbidden).
+    when(permissionsService.filterAllowedForUser(anyCollection(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(OGM_A));
 
     Response r = resource.crossTimeline(List.of(COLL_A, COLL_B), 1, sc);
 
