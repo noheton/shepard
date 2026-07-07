@@ -302,6 +302,57 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
   }
 
   /**
+   * Returns the count of non-deleted {@link SnapshotEntry} nodes in the given
+   * snapshot whose {@code entityAppId} resolves to a live (non-deleted)
+   * {@code :DataObject} node. Used to populate {@code totalDataObjects} in
+   * the paginated pinned-read response without loading all entries.
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the parent Snapshot.
+   * @return count of DataObject-typed entries; 0 when none exist.
+   */
+  public long countDataObjectAppIds(long snapshotNeo4jId) {
+    String query =
+      "MATCH (e:SnapshotEntry)-[:ENTRY_OF]->(s:Snapshot) " +
+      "WHERE id(s) = $id AND (e.deleted IS NULL OR e.deleted = false) " +
+      "MATCH (d:DataObject {appId: e.entityAppId}) " +
+      "WHERE (d.deleted IS NULL OR d.deleted = false) " +
+      "RETURN count(d) AS total";
+    return countFromQuery(query, Map.of("id", snapshotNeo4jId));
+  }
+
+  /**
+   * Returns one page of {@code appId} strings for non-deleted
+   * {@code :DataObject} nodes captured in the given snapshot, ordered by
+   * {@code appId} ascending (same order as {@link #filterDataObjectAppIds}).
+   * DB-side SKIP/LIMIT is applied so only the requested window is loaded.
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the parent Snapshot.
+   * @param skip            number of rows to skip ({@code page * pageSize}).
+   * @param limit           maximum number of rows to return ({@code pageSize}).
+   * @return paged list of DataObject appId strings; empty when skip &ge; total.
+   */
+  public List<String> findDataObjectAppIds(long snapshotNeo4jId, int skip, int limit) {
+    String query =
+      "MATCH (e:SnapshotEntry)-[:ENTRY_OF]->(s:Snapshot) " +
+      "WHERE id(s) = $id AND (e.deleted IS NULL OR e.deleted = false) " +
+      "MATCH (d:DataObject {appId: e.entityAppId}) " +
+      "WHERE (d.deleted IS NULL OR d.deleted = false) " +
+      "RETURN d.appId AS appId " +
+      "ORDER BY d.appId ASC " +
+      "SKIP $skip LIMIT $limit";
+    org.neo4j.ogm.model.Result result = session.query(
+      query,
+      Map.of("id", snapshotNeo4jId, "skip", (long) skip, "limit", (long) limit)
+    );
+    List<String> out = new ArrayList<>();
+    for (Map<String, Object> row : result) {
+      Object val = row.get("appId");
+      if (val != null) out.add(val.toString());
+    }
+    return out;
+  }
+
+  /**
    * Persists a {@link SnapshotEntry} node. Mints a fresh UUID v7
    * {@code appId} via {@link AppIdGenerator#next()} before saving (since
    * this method bypasses the type-parameterised {@code createOrUpdate} that

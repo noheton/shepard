@@ -152,13 +152,12 @@ public class SnapshotPinnedReadRest {
           "Snapshot '" + snapshotAppId + "' does not belong to Collection '" + collectionAppId + "'.");
     }
 
-    // Load all DataObject appIds, then slice the requested page window
-    List<String> all = snapshotService.listDataObjectAppIds(snapshot);
-    int from = Math.min(page * pageSize, all.size());
-    int to = Math.min(from + pageSize, all.size());
-    List<String> paged = all.subList(from, to);
+    // DB-side SKIP/LIMIT: count + fetch only the requested window
+    long total = snapshotService.countDataObjectAppIds(snapshot);
+    int skip = page * pageSize;
+    List<String> paged = snapshotService.listDataObjectAppIdsPage(snapshot, skip, pageSize);
 
-    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, all.size(), page, pageSize)).build();
+    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize)).build();
   }
 
   // ── private helper ────────────────────────────────────────────────────────
