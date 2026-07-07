@@ -91,7 +91,7 @@ class ProvenanceRestJsonLdTest {
     when(provenance.list(eq(CALLER), any(), any(), any(), any(), anyInt()))
       .thenReturn(List.of(row("a-1", "CREATE", "Collection", "c-1")));
 
-    Response r = resource.listActivities(null, null, null, null, null, null, securityContext);
+    Response r = resource.listActivities(null, null, null, null, null, 100, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -113,7 +113,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -154,7 +154,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json; profile=\"https://w3id.org/nfdi4ing/metadata4ing/\"",
       securityContext
     );
@@ -192,7 +192,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json; profile=metadata4ing",
       securityContext
     );
@@ -213,7 +213,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json; profile=unknown",
       securityContext
     );
@@ -237,7 +237,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -254,7 +254,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -271,7 +271,7 @@ class ProvenanceRestJsonLdTest {
       null,
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -296,7 +296,7 @@ class ProvenanceRestJsonLdTest {
       "c-1",
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -325,7 +325,7 @@ class ProvenanceRestJsonLdTest {
       "c-1",
       null,
       null,
-      null,
+      100,
       "application/ld+json; profile=metadata4ing",
       securityContext
     );
@@ -351,7 +351,7 @@ class ProvenanceRestJsonLdTest {
       "c-1",
       null,
       null,
-      null,
+      100,
       "application/ld+json; profile=\"https://example.com/foo\"",
       securityContext
     );
@@ -365,7 +365,7 @@ class ProvenanceRestJsonLdTest {
       "c-1",
       null,
       null,
-      null,
+      100,
       "application/ld+json",
       securityContext
     );
@@ -481,7 +481,7 @@ class ProvenanceRestJsonLdTest {
   @Test
   void listActivitiesPlainJson401Unauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = resource.listActivities(null, null, null, null, null, null, securityContext);
+    Response r = resource.listActivities(null, null, null, null, null, 100, securityContext);
     assertEquals(401, r.getStatus());
   }
 
@@ -491,7 +491,7 @@ class ProvenanceRestJsonLdTest {
     when(provenance.list(eq(CALLER), any(), any(), any(), any(), anyInt()))
       .thenReturn(List.of(row("a-1", "CREATE", "Collection", "c-1")));
 
-    Response r = resource.listActivitiesProvJson(null, null, null, null, null, null, securityContext);
+    Response r = resource.listActivitiesProvJson(null, null, null, null, null, 100, securityContext);
 
     assertEquals(200, r.getStatus());
     assertEquals(ProvJsonRenderer.MEDIA_TYPE, r.getMediaType().toString());

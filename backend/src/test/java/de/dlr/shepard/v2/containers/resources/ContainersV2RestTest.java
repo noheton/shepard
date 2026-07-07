@@ -820,7 +820,7 @@ class ContainersV2RestTest {
   @Test
   void getThumbnail_sizeParamAnnotationMatchesJavaName() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getThumbnail", String.class, String.class, Integer.class,
+        "getThumbnail", String.class, String.class, int.class,
         jakarta.ws.rs.core.SecurityContext.class);
     String actual = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -835,7 +835,7 @@ class ContainersV2RestTest {
   @Test
   void getThumbnail_sizeParamIsDocumented() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getThumbnail", String.class, String.class, Integer.class,
+        "getThumbnail", String.class, String.class, int.class,
         jakarta.ws.rs.core.SecurityContext.class);
     String desc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
