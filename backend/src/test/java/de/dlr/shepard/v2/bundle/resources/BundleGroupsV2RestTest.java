@@ -11,6 +11,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.file.Path;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
@@ -32,6 +34,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.List;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -55,6 +58,7 @@ class BundleGroupsV2RestTest {
   @Mock PermissionsService     permissionsService;
   @Mock SecurityContext        securityContext;
   @Mock Principal              principal;
+  @Mock FileUpload             fileUpload;
 
   BundleGroupsV2Rest resource;
 
@@ -303,5 +307,153 @@ class BundleGroupsV2RestTest {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
     when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(null);
     assertEquals(404, resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, 200, securityContext).getStatus());
+  }
+
+  // ─── checkAccess() branch coverage ───────────────────────────────────────
+
+  @Test
+  void listGroups_returns404WhenBundleHasNoDataObject() {
+    var bundle = new FileBundleReference(7L);
+    bundle.setAppId(BUNDLE_APP_ID);
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    assertEquals(404, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
+  }
+
+  @Test
+  void listGroups_200WhenDoAppIdNullAndOgmAccessAllowed() {
+    var parent = new DataObject(DO_OGM_ID);
+    // appId stays null → OGM-id fallback path; setUp stubs isAccessTypeAllowedForUser(DO_OGM_ID) → true
+    var bundle = new FileBundleReference(7L);
+    bundle.setAppId(BUNDLE_APP_ID);
+    bundle.setDataObject(parent);
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupService.countGroups(BUNDLE_APP_ID)).thenReturn(0L);
+    when(fileGroupService.listGroups(BUNDLE_APP_ID, 0, 50)).thenReturn(List.of());
+    assertEquals(200, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
+  }
+
+  @Test
+  void listGroups_403WhenDoAppIdNullAndOgmAccessDenied() {
+    var parent = new DataObject(DO_OGM_ID);
+    var bundle = new FileBundleReference(7L);
+    bundle.setAppId(BUNDLE_APP_ID);
+    bundle.setDataObject(parent);
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), any(AccessType.class), eq(CALLER))).thenReturn(false);
+    assertEquals(403, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
+  }
+
+  // ─── createGroup() service-exception branches ─────────────────────────────
+
+  @Test
+  void createGroup_returns400WhenServiceThrowsBadRequest() {
+    var body = new CreateFileGroupIO();
+    body.setName("g");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    doThrow(new BadRequestException("dup")).when(fileGroupService).createGroup(eq(BUNDLE_APP_ID), any());
+    assertEquals(400, resource.createGroup(BUNDLE_APP_ID, body, securityContext).getStatus());
+  }
+
+  @Test
+  void createGroup_returns404WhenServiceThrowsNotFound() {
+    var body = new CreateFileGroupIO();
+    body.setName("g");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    doThrow(new NotFoundException("gone")).when(fileGroupService).createGroup(eq(BUNDLE_APP_ID), any());
+    assertEquals(404, resource.createGroup(BUNDLE_APP_ID, body, securityContext).getStatus());
+  }
+
+  // ─── patchGroup() service-exception branches + jsonNodeToMap types ────────
+
+  @Test
+  void patchGroup_returns400WhenServiceThrowsBadRequest() throws Exception {
+    var body = new ObjectMapper().readTree("{\"name\":\"x\"}");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    doThrow(new BadRequestException("bad")).when(fileGroupService).patchGroup(eq(GROUP_APP_ID), any());
+    assertEquals(400, resource.patchGroup(BUNDLE_APP_ID, GROUP_APP_ID, body, securityContext).getStatus());
+  }
+
+  @Test
+  void patchGroup_returns404WhenServiceThrowsNotFound() throws Exception {
+    var body = new ObjectMapper().readTree("{\"name\":\"x\"}");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    doThrow(new NotFoundException("gone")).when(fileGroupService).patchGroup(eq(GROUP_APP_ID), any());
+    assertEquals(404, resource.patchGroup(BUNDLE_APP_ID, GROUP_APP_ID, body, securityContext).getStatus());
+  }
+
+  @Test
+  void patchGroup_handlesAllJsonNodeTypes() throws Exception {
+    // Exercises boolean, int/long, float (number), object, null, and array (else) branches in jsonNodeToMap
+    var body = new ObjectMapper().readTree(
+        "{\"flag\":true,\"count\":42,\"ratio\":3.14,\"sub\":{\"k\":\"v\"},\"tag\":null,\"arr\":[1]}");
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    when(fileGroupService.patchGroup(eq(GROUP_APP_ID), any())).thenReturn(existingGroup());
+    assertEquals(200, resource.patchGroup(BUNDLE_APP_ID, GROUP_APP_ID, body, securityContext).getStatus());
+  }
+
+  // ─── deleteGroup() service-exception branch ──────────────────────────────
+
+  @Test
+  void deleteGroup_returns404WhenServiceThrowsNotFound() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    doThrow(new NotFoundException("gone")).when(fileGroupService).deleteGroup(GROUP_APP_ID, false);
+    assertEquals(404, resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext).getStatus());
+  }
+
+  // ─── listGroupFiles() extra branches ─────────────────────────────────────
+
+  @Test
+  void listGroupFiles_returnsEmptyListWhenSkipBeyondTotal() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    when(fileGroupService.countFiles(GROUP_APP_ID)).thenReturn(5L);
+    // page=1, pageSize=200 → skip=200 which is >= total=5
+    var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 1, 200, securityContext);
+    assertEquals(200, r.getStatus());
+    var envelope = (PagedFilesIO) r.getEntity();
+    assertEquals(0, envelope.getItems().size());
+    assertEquals(5L, envelope.getTotalElements());
+  }
+
+  @Test
+  void listGroupFiles_returns404WhenGroupNotInBundle() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn("other-bundle");
+    assertEquals(404, resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, 50, securityContext).getStatus());
+  }
+
+  // ─── uploadFileIntoGroup() branches ──────────────────────────────────────
+
+  @Test
+  void uploadFileIntoGroup_returns404WhenGroupNotInBundle() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn("other-bundle");
+    assertEquals(404, resource.uploadFileIntoGroup(BUNDLE_APP_ID, GROUP_APP_ID, null, securityContext).getStatus());
+  }
+
+  @Test
+  void uploadFileIntoGroup_returns400WhenUploadNull() {
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    assertEquals(400, resource.uploadFileIntoGroup(BUNDLE_APP_ID, GROUP_APP_ID, null, securityContext).getStatus());
+  }
+
+  @Test
+  void uploadFileIntoGroup_returns400WhenFileContainerNull() {
+    var parent = new DataObject(DO_OGM_ID);
+    parent.setAppId("do-app-id");
+    var bundle = new FileBundleReference(7L);
+    bundle.setAppId(BUNDLE_APP_ID);
+    bundle.setDataObject(parent);
+    // fileContainer intentionally not set → null
+    when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(bundle);
+    when(fileGroupService.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(anyString(), any(AccessType.class), eq(CALLER))).thenReturn(true);
+    when(fileUpload.uploadedFile()).thenReturn(Path.of("/tmp/dummy"));
+    assertEquals(400, resource.uploadFileIntoGroup(BUNDLE_APP_ID, GROUP_APP_ID, fileUpload, securityContext).getStatus());
   }
 }

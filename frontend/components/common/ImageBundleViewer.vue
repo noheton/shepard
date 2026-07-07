@@ -10,7 +10,7 @@
  *     are rendered, lazy-loaded via `loading="lazy"`.
  *
  * The component fetches frames page-by-page from
- * `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files` and
+ * `GET /v2/references/{bundleAppId}/groups/{groupAppId}/files` and
  * caches one page at a time — moving the slider triggers a refetch
  * only when crossing a page boundary.
  *
@@ -91,9 +91,9 @@ async function fetchPage(page: number, size: number): Promise<PagedFiles | null>
     return null;
   }
   const url =
-    `${v2BaseUrl()}/v2/bundles/${encodeURIComponent(props.bundleAppId)}` +
+    `${v2BaseUrl()}/v2/references/${encodeURIComponent(props.bundleAppId)}` +
     `/groups/${encodeURIComponent(props.groupAppId)}` +
-    `/files?page=${page}&size=${size}`;
+    `/files?page=${page}&pageSize=${size}`;
   isLoading.value = true;
   fetchError.value = null;
   try {
