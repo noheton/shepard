@@ -1222,13 +1222,14 @@ export class AdminApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/admin/runtime-toggles`,
+            path: `/v2/admin/config/feature-toggles`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(FeatureToggleFromJSON));
+        // APISIMP-FEATURE-TOGGLE-CONFIG-UNIFY: response is now FeatureTogglesConfig {toggles: FeatureToggle[]}
+        return new runtime.JSONApiResponse(response, (jsonValue) => (jsonValue.toggles ?? []).map(FeatureToggleFromJSON));
     }
 
     /**
@@ -1641,15 +1642,21 @@ export class AdminApi extends runtime.BaseAPI {
                 headerParameters["Authorization"] = `Bearer ${tokenString}`;
             }
         }
+        // APISIMP-FEATURE-TOGGLE-CONFIG-UNIFY: PATCH /v2/admin/config/feature-toggles with flat {name: boolean} body
+        const toggleName = requestParameters['name'];
         const response = await this.request({
-            path: `/v2/admin/runtime-toggles/{name}`.replace(`{${"name"}}`, encodeURIComponent(String(requestParameters['name']))),
+            path: `/v2/admin/config/feature-toggles`,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchFeatureToggleToJSON(requestParameters['patchFeatureToggle']),
+            body: JSON.stringify({ [toggleName]: requestParameters['patchFeatureToggle'].enabled }),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => FeatureToggleFromJSON(jsonValue));
+        // Response is FeatureTogglesConfig {toggles: FeatureToggle[]}; return the updated toggle
+        return new runtime.JSONApiResponse(response, (jsonValue) => {
+            const toggles: FeatureToggle[] = (jsonValue.toggles ?? []).map(FeatureToggleFromJSON);
+            return toggles.find(t => t.name === toggleName) ?? toggles[0];
+        });
     }
 
     /**
