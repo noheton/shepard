@@ -127,6 +127,21 @@
         <artifactId>libthrift</artifactId>
         <version>0.23.0</version>
       </dependency>
+      <!-- SECURITY (OWASP dep-check, HIGH CVSS 7.5): the AWS SDK 2.x
+           apache5-client transitively pulls
+           org.apache.httpcomponents.core5:httpcore5-h2:5.4, which carries
+           CVE-2026-54399 + CVE-2026-54428 (HTTP/2 HPACK-decoder
+           memory-exhaustion DoS on the client), fixed in 5.4.2+. Pin the h2
+           module to 5.4.3 so it aligns with the already-resolved
+           httpcore5:5.4.3 core module (both HTTP-core5 modules on the patched
+           line). Verified via
+           `mvn dependency:tree -Dincludes=org.apache.httpcomponents.core5:httpcore5-h2`.
+           See aidocs/34 (#2382). -->
+      <dependency>
+        <groupId>org.apache.httpcomponents.core5</groupId>
+        <artifactId>httpcore5-h2</artifactId>
+        <version>5.4.3</version>
+      </dependency>
       <!-- QUARKUS-3.37-PLATFORM-MIGRATION: the standalone netty-bom pin that
            Quarkus 3.27.2 needed (to force io.netty:* to a CVE-fixed 4.1.133
            ahead of the platform BOM) is dropped here. Quarkus 3.37.1's platform
