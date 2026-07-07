@@ -211,6 +211,11 @@
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
     </dependency>
+    <!-- SECURITY note: OWASP dependency-check matches MongoDB *server* CVEs
+         (CVE-2021-32036, CVE-2025-14847, CVE-2026-9753, …) against this client
+         extension via the broad "mongodb" CPE. These are false positives — the
+         extension wraps the MongoDB Java driver and runs no server. Handled as
+         OWASP-SUPP-009 in backend/dependency-check-suppressions.xml. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-mongodb-client</artifactId>
