@@ -1,13 +1,10 @@
 package de.dlr.shepard.plugins.minter.epic.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient.EpicHttpResponse;
 import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialSetIO;
-import de.dlr.shepard.plugins.minter.epic.io.EpicMinterConfigIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicTestConnectionIO;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
 import jakarta.annotation.security.RolesAllowed;
@@ -21,7 +18,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -30,17 +26,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * KIP1c — admin REST surface for the ePIC handle service minter plugin.
+ * APISIMP-MINTER-CRED-CONFIG-UNIFY — admin REST surface for the ePIC handle service minter.
  *
- * <p>Lives under {@code /v2/admin/minters/epic/...}. Class-level
- * {@code @RolesAllowed("instance-admin")} gate. Config fields (enabled,
- * apiBaseUrl, handlePrefix) are now managed via
- * {@code GET|PATCH /v2/admin/config/minter-epic} (V2CONV-A7);
- * this resource retains the credential and test-connection sister endpoints.
+ * <p>Config fields and credentials are now managed via
+ * {@code PATCH /v2/admin/config/minter-epic} (V2CONV-A7): pass a {@code "credential"}
+ * field to set or clear the credential. The bespoke
+ * {@code POST/DELETE .../credential} sub-resources are tombstoned (410 Gone).
  *
- * <p>PROV1a captures every mutation via {@code ProvenanceCaptureFilter};
- * the filter records method + path + status only — the {@code POST
- * .../credential} plaintext never enters the {@code :Activity} audit trail.
+ * <p>{@code POST .../test-connection} is retained as a standalone diagnostic action.
  *
  * @see EpicMinterConfigService
  */
@@ -52,8 +45,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Admin")
 public class EpicAdminRest {
 
-  /** RFC 7807 type URI for bad-request responses on this resource. */
-  static final String PROBLEM_TYPE_BAD_REQUEST = "/problems/minters.epic.config.bad-request";
+  private static final String GONE_MSG =
+    "This endpoint has been removed. Use PATCH /v2/admin/config/minter-epic " +
+    "with a 'credential' field to set the credential, or 'credential': null to clear it.";
 
   @Inject
   EpicMinterConfigService service;
@@ -61,66 +55,32 @@ public class EpicAdminRest {
   @Inject
   EpicHttpClient http;
 
-  // ─── POST /credential ───────────────────────────────────────────
+  // ─── POST /credential (tombstoned) ──────────────────────────────
 
   @POST
   @Path("/credential")
   @Operation(
-    operationId = "setEpicMinterCredential",
-    summary = "Set or rotate the ePIC credential.",
-    description = "Body: {\"credential\": \"<plaintext>\"}. The plaintext is encrypted with " +
-    "AES-GCM keyed off the shepard instance id and stored on :EpicMinterConfig. The " +
-    "response carries only the fingerprint (first 8 hex of the SHA-256) — the plaintext is " +
-    "never echoed. ProvenanceCaptureFilter captures the request method + path + status only."
+    operationId = "setEpicMinterCredential_gone",
+    summary = "[Gone] Use PATCH /v2/admin/config/minter-epic with a 'credential' field.",
+    deprecated = true
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Credential stored successfully.",
-    content = @Content(schema = @Schema(implementation = EpicCredentialSetIO.class))
-  )
-  @APIResponse(
-    responseCode = "400",
-    description = "Empty / missing credential.",
-    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
+  @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response setCredential(EpicCredentialIO body, @Context SecurityContext security) {
-    if (body == null || body.credential() == null || body.credential().isBlank()) {
-      return problem(
-        PROBLEM_TYPE_BAD_REQUEST,
-        "Empty credential",
-        Status.BAD_REQUEST,
-        "Body must carry a non-empty 'credential' field."
-      );
-    }
-    EpicMinterConfig saved = service.setCredential(body.credential(), callerName(security));
-    EpicCredentialSetIO out = new EpicCredentialSetIO(
-      true,
-      EpicMinterConfigService.fingerprint(saved.getCredentialHash())
-    );
-    return Response.ok(out).build();
+    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
   }
 
-  // ─── DELETE /credential ─────────────────────────────────────────
+  // ─── DELETE /credential (tombstoned) ────────────────────────────
 
   @DELETE
   @Path("/credential")
   @Operation(
-    operationId = "clearEpicMinterCredential",
-    summary = "Clear the stored ePIC credential.",
-    description = "Wipes :EpicMinterConfig.credentialKey + .credentialHash. Subsequent " +
-    "mint calls throw publish.minter.failed until a fresh credential is set. The action is " +
-    "captured as an :Activity row via PROV1a."
+    operationId = "clearEpicMinterCredential_gone",
+    summary = "[Gone] Use PATCH /v2/admin/config/minter-epic with 'credential': null to clear.",
+    deprecated = true
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Credential cleared.",
-    content = @Content(schema = @Schema(implementation = EpicMinterConfigIO.class))
-  )
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
+  @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response clearCredential(@Context SecurityContext security) {
-    EpicMinterConfig saved = service.clearCredential(callerName(security));
-    return Response.ok(EpicMinterConfigIO.from(saved)).build();
+    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
   }
 
   // ─── POST /test-connection ──────────────────────────────────────
@@ -167,18 +127,5 @@ public class EpicAdminRest {
   private static String stripTrailingSlash(String s) {
     if (s == null) return "";
     return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
-  }
-
-  private static String callerName(SecurityContext security) {
-    if (security == null) return "unknown";
-    var p = security.getUserPrincipal();
-    if (p == null) return "unknown";
-    String name = p.getName();
-    return (name == null || name.isBlank()) ? "unknown" : name;
-  }
-
-  private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 }
