@@ -151,4 +151,99 @@ public class EntityIdResolverTest {
     assertThat(resolver.resolveLong("primed-99")).isEqualTo(99L);
     verify(session, never()).query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap());
   }
+
+  // ── resolveLongs batch tests ─────────────────────────────────────────────
+
+  @Mock
+  private Result resolveLongsResult;
+
+  @Test
+  public void resolveLongs_resolvesAllIdsInOneCypherCall() {
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(
+      Map.of("appId", "id-a", "ogmId", 10L),
+      Map.of("appId", "id-b", "ogmId", 20L)
+    ).iterator();
+    when(resolveLongsResult.iterator()).thenReturn(iter);
+    when(session.query(
+        eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+        eq(Map.of("appIds", List.of("id-a", "id-b")))))
+      .thenReturn(resolveLongsResult);
+
+    Map<String, Long> result = resolver.resolveLongs(List.of("id-a", "id-b"));
+
+    assertThat(result).containsEntry("id-a", 10L).containsEntry("id-b", 20L);
+    verify(session, times(1)).query(
+      eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+      eq(Map.of("appIds", List.of("id-a", "id-b")))
+    );
+  }
+
+  @Test
+  public void resolveLongs_memoHit_skipsCypherForAlreadyResolved() {
+    resolver.primeForTesting(10L, "id-a");
+
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(
+      Map.of("appId", "id-b", "ogmId", 20L)
+    ).iterator();
+    when(resolveLongsResult.iterator()).thenReturn(iter);
+    when(session.query(
+        eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+        eq(Map.of("appIds", List.of("id-b")))))
+      .thenReturn(resolveLongsResult);
+
+    Map<String, Long> result = resolver.resolveLongs(List.of("id-a", "id-b"));
+
+    assertThat(result).containsEntry("id-a", 10L).containsEntry("id-b", 20L);
+    // Only "id-b" is sent to Cypher — "id-a" is served from memo.
+    verify(session, times(1)).query(
+      eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+      eq(Map.of("appIds", List.of("id-b")))
+    );
+  }
+
+  @Test
+  public void resolveLongs_missingAppId_absentFromResult() {
+    // Cypher returns only one of the two requested ids (the other does not exist).
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(
+      Map.of("appId", "id-a", "ogmId", 10L)
+    ).iterator();
+    when(resolveLongsResult.iterator()).thenReturn(iter);
+    when(session.query(
+        eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+        eq(Map.of("appIds", List.of("id-a", "missing")))))
+      .thenReturn(resolveLongsResult);
+
+    Map<String, Long> result = resolver.resolveLongs(List.of("id-a", "missing"));
+
+    assertThat(result).containsOnlyKeys("id-a");
+    assertThat(result).doesNotContainKey("missing");
+  }
+
+  @Test
+  public void resolveLongs_emptyInput_returnsEmptyMap() {
+    assertThat(resolver.resolveLongs(List.of())).isEmpty();
+    assertThat(resolver.resolveLongs(null)).isEmpty();
+    verify(session, never()).query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap());
+  }
+
+  @Test
+  public void resolveLongs_populatesMemoForSubsequentResolveLong() {
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(
+      Map.of("appId", "id-c", "ogmId", 30L)
+    ).iterator();
+    when(resolveLongsResult.iterator()).thenReturn(iter);
+    when(session.query(
+        eq("MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId"),
+        eq(Map.of("appIds", List.of("id-c")))))
+      .thenReturn(resolveLongsResult);
+
+    resolver.resolveLongs(List.of("id-c"));
+
+    // Subsequent resolveLong should hit memo — no extra Cypher call.
+    assertThat(resolver.resolveLong("id-c")).isEqualTo(30L);
+    verify(session, never()).query(
+      eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+      org.mockito.ArgumentMatchers.anyMap()
+    );
+  }
 }

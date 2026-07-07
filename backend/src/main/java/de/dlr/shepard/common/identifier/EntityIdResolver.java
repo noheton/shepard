@@ -5,7 +5,9 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.neo4j.ogm.model.Result;
@@ -184,6 +186,56 @@ public class EntityIdResolver {
     public String labelsString() {
       return labels == null || labels.isEmpty() ? "" : String.join(",", labels);
     }
+  }
+
+  /**
+   * Batch-resolves a collection of appIds to their Neo4j OGM Long IDs in a
+   * single Cypher round-trip. The result map contains only the appIds that
+   * were successfully resolved; missing appIds are absent from the map.
+   * The request-scoped memo is populated for all resolved entries so
+   * subsequent {@link #resolveLong(String)} calls for those appIds are free.
+   *
+   * @param appIds collection of appIds to resolve; nulls and blanks are skipped
+   * @return mutable map of appId → ogmId for all resolved entries; insertion
+   *   order (LinkedHashMap) mirrors the iteration order of {@code appIds}
+   */
+  public Map<String, Long> resolveLongs(Collection<String> appIds) {
+    if (appIds == null || appIds.isEmpty()) return new LinkedHashMap<>();
+
+    Map<String, Long> out = new LinkedHashMap<>();
+    List<String> toFetch = new ArrayList<>();
+
+    for (String appId : appIds) {
+      if (appId == null || appId.isBlank()) continue;
+      Long memo = ogmIdByAppId.get(appId);
+      if (memo != null) {
+        out.put(appId, memo);
+      } else {
+        toFetch.add(appId);
+      }
+    }
+
+    if (!toFetch.isEmpty()) {
+      Session session = session();
+      if (session != null) {
+        String query = "MATCH (e) WHERE e.appId IN $appIds RETURN e.appId AS appId, id(e) AS ogmId";
+        Result result = session.query(query, Map.of("appIds", toFetch));
+        var iter = result.iterator();
+        while (iter.hasNext()) {
+          var row = iter.next();
+          Object appIdObj = row.get("appId");
+          Object ogmIdObj = row.get("ogmId");
+          if (appIdObj != null && ogmIdObj != null) {
+            String appId = appIdObj.toString();
+            long ogmId = ((Number) ogmIdObj).longValue();
+            appIdByOgmId.put(ogmId, appId);
+            ogmIdByAppId.put(appId, ogmId);
+            out.put(appId, ogmId);
+          }
+        }
+      }
+    }
+    return out;
   }
 
   /**
