@@ -377,6 +377,25 @@
     <packageUrl regex="true">^pkg:maven/io\.quarkus/quarkus-mongodb-client@.*$</packageUrl>
     <cve>CVE-2025-14847</cve>
   </suppress>
+  <!--
+    CVE-2026-9753 (CVSS 8.1): False positive, same class. The CVE is an
+    out-of-bounds-read / crash in the MongoDB *server* ($_internalApplyOplogUpdate
+    aggregation-pipeline stage, mongod 7.0/8.0/8.2/8.3), exploitable only by an
+    authenticated user issuing the aggregate command against a running server. The
+    flagged artifact is the Quarkus MongoDB *client* extension (io.quarkus:
+    quarkus-mongodb-client@3.37.1) wrapping the MongoDB Java driver — it runs no
+    server, implements no aggregation stage, and exposes no mongod. Matched purely
+    via the broad mongodb CPE + version coincidence. OWASP-SUPP-009.
+  -->
+  <suppress until="2027-06-10">
+    <notes>CVE-2026-9753 (CVSS 8.1): False positive. CVE targets the MongoDB *server*
+    ($_internalApplyOplogUpdate aggregation stage in mongod; OOB-read/crash by an
+    authenticated aggregate-command user). Matched against the Quarkus MongoDB client
+    extension quarkus-mongodb-client@3.37.1 (driver wrapper, no server) via broad mongodb
+    CPE. Same server-vs-client class as CVE-2021-32036 / CVE-2025-14847. OWASP-SUPP-009.</notes>
+    <packageUrl regex="true">^pkg:maven/io\.quarkus/quarkus-mongodb-client@.*$</packageUrl>
+    <cve>CVE-2026-9753</cve>
+  </suppress>
 
   <!-- ===================================================================
        OWASP-SUPP-010: Apache HttpComponents httpcore 4.4.16 — test-only
