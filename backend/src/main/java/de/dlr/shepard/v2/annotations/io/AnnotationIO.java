@@ -83,18 +83,26 @@ public class AnnotationIO {
   @Schema(nullable = true, description = "Confidence score [0.0, 1.0]. Null = not specified (human writes default 1.0).")
   private Double confidence;
 
-  // ─── legacy fields (backward compat) ──────────────────────────────────────
+  // ─── legacy fields (backward compat — deprecated; use v6 canonical fields) ─
 
-  @Schema(nullable = true, description = "Legacy: human-readable predicate label snapshot (mapped from propertyName).")
+  @Deprecated
+  @Schema(nullable = true, deprecated = true,
+      description = "Deprecated: use predicateLabel. Legacy predicate label snapshot.")
   private String propertyName;
 
-  @Schema(nullable = true, description = "Legacy: predicate IRI (mapped from propertyIRI; same as predicateIri).")
+  @Deprecated
+  @Schema(nullable = true, deprecated = true,
+      description = "Deprecated: use predicateIri. Legacy predicate IRI (same value).")
   private String propertyIri;
 
-  @Schema(nullable = true, description = "Legacy: object label snapshot (mapped from valueName).")
+  @Deprecated
+  @Schema(nullable = true, deprecated = true,
+      description = "Deprecated: use objectLiteral. Legacy object label snapshot.")
   private String valueName;
 
-  @Schema(nullable = true, description = "Legacy: object IRI (mapped from valueIRI; same as objectIri).")
+  @Deprecated
+  @Schema(nullable = true, deprecated = true,
+      description = "Deprecated: use objectIri. Legacy object IRI (same value).")
   private String valueIri;
 
   // ─── constructor from entity ───────────────────────────────────────────────
