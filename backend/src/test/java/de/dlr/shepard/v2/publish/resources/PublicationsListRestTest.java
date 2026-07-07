@@ -12,6 +12,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -73,9 +74,10 @@ class PublicationsListRestTest {
     return p;
   }
 
-  /** Stub the bounded DAO overload (skip=0, limit=1000) used by PublicationsListRest. */
+  /** Stub count + bounded DAO overload used by PublicationsListRest (default page=0, pageSize=50). */
   private void stubBoundedDao(String appId, List<Publication> pubs) {
-    when(publicationDAO.findByEntityAppId(eq(appId), eq(0), eq(1000))).thenReturn(pubs);
+    when(publicationDAO.countByEntityAppId(eq(appId))).thenReturn((long) pubs.size());
+    when(publicationDAO.findByEntityAppId(eq(appId), eq(0), eq(50))).thenReturn(pubs);
   }
 
   @Test
@@ -86,15 +88,16 @@ class PublicationsListRestTest {
     Publication pub = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", 1_747_000_000_000L);
     stubBoundedDao("01HF-A", List.of(pub));
 
-    Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", body.get(0).pid());
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", body.items().get(0).pid());
     assertTrue(
-      body.get(0).resolverUrl().endsWith(
+      body.items().get(0).resolverUrl().endsWith(
         "/v2/.well-known/kip/shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1"
       ),
       "resolverUrl should point to the KIP resolver path"
@@ -108,12 +111,13 @@ class PublicationsListRestTest {
       .thenReturn(true);
     stubBoundedDao("01HF-NEW", List.of());
 
-    Response r = rest.list("data-objects", "01HF-NEW", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-NEW", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertTrue(body.isEmpty(), "Unpublished entity should return an empty list");
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(0, body.total());
+    assertTrue(body.items().isEmpty(), "Unpublished entity should return an empty list");
   }
 
   @Test
@@ -127,14 +131,15 @@ class PublicationsListRestTest {
     // DAO returns most-recent first (matches PublicationDAO.findByEntityAppId ordering)
     stubBoundedDao("01HF-A", List.of(v2, v1));
 
-    Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals(2, body.size());
-    assertTrue(body.get(0).pid().endsWith(":v2"), "First item should be most-recent (v2)");
-    assertTrue(body.get(1).pid().endsWith(":v1"), "Second item should be v1");
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(2, body.total());
+    assertEquals(2, body.items().size());
+    assertTrue(body.items().get(0).pid().endsWith(":v2"), "First item should be most-recent (v2)");
+    assertTrue(body.items().get(1).pid().endsWith(":v1"), "Second item should be v1");
   }
 
   @Test
@@ -146,25 +151,26 @@ class PublicationsListRestTest {
     retired.setDigitalObjectMutability("retired");
     stubBoundedDao("01HF-A", List.of(retired));
 
-    Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<PublicationIO> body = (List<PublicationIO>) r.getEntity();
-    assertEquals(1, body.size(), "Retired publications should still appear in the list");
-    assertEquals("retired", body.get(0).digitalObjectMutability());
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals(1, body.items().size(), "Retired publications should still appear in the list");
+    assertEquals("retired", body.items().get(0).digitalObjectMutability());
   }
 
   @Test
   void missingAuthReturns401() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-A", 0, 50, securityContext, uriInfo);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void unsupportedKindReturns404WithProblemJson() {
-    Response r = rest.list("file-references", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("file-references", "01HF-A", 0, 50, securityContext, uriInfo);
     assertEquals(404, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
     assertTrue(r.getEntity().toString().contains("publish.kind.unsupported"));
@@ -173,7 +179,7 @@ class PublicationsListRestTest {
   @Test
   void missingEntityReturns404() {
     when(entityIdResolver.resolveLong("01HF-MISSING")).thenThrow(new NotFoundException("nope"));
-    Response r = rest.list("data-objects", "01HF-MISSING", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-MISSING", 0, 50, securityContext, uriInfo);
     assertEquals(404, r.getStatus());
   }
 
@@ -182,7 +188,7 @@ class PublicationsListRestTest {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
       .thenReturn(false);
-    Response r = rest.list("data-objects", "01HF-A", securityContext, uriInfo);
+    Response r = rest.list("data-objects", "01HF-A", 0, 50, securityContext, uriInfo);
     assertEquals(403, r.getStatus());
   }
 
@@ -196,8 +202,30 @@ class PublicationsListRestTest {
     pub.setEntityAppId("01COLL-A");
     stubBoundedDao("01COLL-A", List.of(pub));
 
-    Response r = rest.list("collections", "01COLL-A", securityContext, uriInfo);
+    Response r = rest.list("collections", "01COLL-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void paginationParamsForwardedToDao() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Read), eq("alice")))
+      .thenReturn(true);
+    // Simulate 75 publications total; request page 1, pageSize 25 → skip=25.
+    when(publicationDAO.countByEntityAppId(eq("01HF-A"))).thenReturn(75L);
+    Publication pub = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v26", 1_747_000_000_000L);
+    when(publicationDAO.findByEntityAppId(eq("01HF-A"), eq(25), eq(25))).thenReturn(List.of(pub));
+
+    Response r = rest.list("data-objects", "01HF-A", 1, 25, securityContext, uriInfo);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(75L, body.total());
+    assertEquals(1, body.page());
+    assertEquals(25, body.pageSize());
+    assertEquals(1, body.items().size());
+    assertEquals("75", r.getHeaderString("X-Total-Count"));
   }
 }
