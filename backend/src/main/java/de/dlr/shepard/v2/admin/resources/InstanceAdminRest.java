@@ -112,16 +112,16 @@ public class InstanceAdminRest {
     description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
   )
   @APIResponse(
-    description = "List of all active Neo4j-side instance-admin grants with audit metadata.",
+    description = "Paged list of active Neo4j-side instance-admin grants with audit metadata.",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = InstanceAdminGrantIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    return Response.ok(grants).build();
+    return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size())).build();
   }
 
   @POST

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
 import de.dlr.shepard.v2.notifications.transport.io.NotificationTransportReadIO;
@@ -21,11 +22,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * NTF1-BACKEND-LIST — unit tests for the GET endpoint.
+ * NTF1-BACKEND-LIST + APISIMP-NOTIF-TRANSPORT-BARE-LIST — unit tests for the GET endpoint.
  *
  * <p>Covers: annotation gates (path, role-allowed); empty result;
- * populated result; secret fields never appear in the serialised
- * response body (defence in depth — the
+ * populated result wrapped in {@link PagedResponseIO}; secret fields
+ * never appear in the serialised response body (defence in depth — the
  * {@code NotificationTransportReadIOTest} class proves the projection
  * shape, this class proves the full GET round-trip).
  */
@@ -61,16 +62,21 @@ class NotificationTransportRestListTest {
   // ─── GET ───────────────────────────────────────────────────────────────
 
   @Test
-  void list_emptyServiceReturnsEmptyList() {
+  void list_emptyServiceReturnsPagedEnvelopeWithEmptyItems() {
     when(service.listAll()).thenReturn(List.of());
 
     Response r = rest.list();
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<NotificationTransportReadIO> out = (List<NotificationTransportReadIO>) r.getEntity();
+    PagedResponseIO<NotificationTransportReadIO> out =
+        (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
     assertNotNull(out);
-    assertTrue(out.isEmpty());
+    assertNotNull(out.items());
+    assertTrue(out.items().isEmpty());
+    assertEquals(0, out.total());
+    assertEquals(0, out.page());
+    assertEquals(0, out.pageSize());
   }
 
   @Test
@@ -96,10 +102,12 @@ class NotificationTransportRestListTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<NotificationTransportReadIO> out = (List<NotificationTransportReadIO>) r.getEntity();
-    assertEquals(2, out.size());
-    assertEquals("app-smtp", out.get(0).appId());
-    assertEquals("app-matrix", out.get(1).appId());
+    PagedResponseIO<NotificationTransportReadIO> out =
+        (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
+    assertEquals(2, out.items().size());
+    assertEquals(2, out.total());
+    assertEquals("app-smtp", out.items().get(0).appId());
+    assertEquals("app-matrix", out.items().get(1).appId());
   }
 
   @Test
@@ -121,6 +129,7 @@ class NotificationTransportRestListTest {
     when(service.listAll()).thenReturn(List.of(smtp, matrix));
 
     Response r = rest.list();
+    // Serialize the PagedResponseIO envelope — credential values must not appear anywhere.
     String json = new ObjectMapper().writeValueAsString(r.getEntity());
 
     assertFalse(json.contains("plaintext-password-do-not-leak"),

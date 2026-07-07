@@ -11,6 +11,7 @@ import de.dlr.shepard.v2.admin.services.InstanceAdminService;
 import de.dlr.shepard.v2.admin.services.NukeService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
@@ -21,9 +22,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * APISIMP-INSTANCE-ADMIN-FAKE-PAGED — verifies that {@code listInstanceAdmins}
- * and {@code permissionAudit} return a plain {@code List} and not a
- * {@code PagedResponseIO} wrapper.
+ * APISIMP-INSTANCE-ADMINS-BARE-LIST — verifies that {@code listInstanceAdmins}
+ * returns a {@link PagedResponseIO} envelope. {@code permissionAudit} still returns
+ * a bare list (APISIMP-PERMISSION-AUDIT-BARE-LIST, needs DB-side pagination, deferred).
  */
 class InstanceAdminListRestTest {
 
@@ -50,19 +51,20 @@ class InstanceAdminListRestTest {
   }
 
   @Test
-  void listInstanceAdmins_returnsBareList() {
+  void listInstanceAdmins_returnsPagedEnvelope() {
     when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of());
 
     Response r = resource.listInstanceAdmins(securityContext);
 
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
-    assertInstanceOf(List.class, entity,
-        "listInstanceAdmins must return a plain List, not PagedResponseIO");
+    assertInstanceOf(PagedResponseIO.class, entity,
+        "listInstanceAdmins must return PagedResponseIO (APISIMP-INSTANCE-ADMINS-BARE-LIST)");
   }
 
   @Test
   void permissionAudit_returnsBareList() {
+    // APISIMP-PERMISSION-AUDIT-BARE-LIST: still bare — needs DB-side pagination (deferred S-size row).
     when(permissionAuditService.listOrphans()).thenReturn(List.of());
 
     Response r = resource.permissionAudit(securityContext);
@@ -70,19 +72,20 @@ class InstanceAdminListRestTest {
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
     assertInstanceOf(List.class, entity,
-        "permissionAudit must return a plain List, not PagedResponseIO");
+        "permissionAudit still returns a plain List (APISIMP-PERMISSION-AUDIT-BARE-LIST pending)");
   }
 
   @Test
-  void listInstanceAdmins_returnsAllItems() {
+  void listInstanceAdmins_returnsAllItemsInEnvelope() {
     InstanceAdminGrantIO grant = new InstanceAdminGrantIO("alice", "Neo4j", "bob", null);
     when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of(grant));
 
     Response r = resource.listInstanceAdmins(securityContext);
 
     @SuppressWarnings("unchecked")
-    List<InstanceAdminGrantIO> body = (List<InstanceAdminGrantIO>) r.getEntity();
-    assertEquals(1, body.size());
-    assertEquals("alice", body.get(0).getUsername());
+    PagedResponseIO<InstanceAdminGrantIO> body = (PagedResponseIO<InstanceAdminGrantIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1, body.total());
+    assertEquals("alice", body.items().get(0).getUsername());
   }
 }
