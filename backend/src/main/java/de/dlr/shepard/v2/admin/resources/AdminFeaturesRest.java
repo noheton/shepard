@@ -1,14 +1,8 @@
 package de.dlr.shepard.v2.admin.resources;
 
-import de.dlr.shepard.common.configuration.feature.runtime.FeatureToggleRegistry;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.v2.admin.io.FeatureToggleIO;
-import de.dlr.shepard.v2.admin.io.PatchFeatureToggleIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
@@ -17,86 +11,57 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+/**
+ * APISIMP-FEATURE-TOGGLE-CONFIG-UNIFY — tombstoned.
+ *
+ * <p>Use {@code GET /v2/admin/config/feature-toggles} (list + current state) and
+ * {@code PATCH /v2/admin/config/feature-toggles} (toggle-name → boolean flat map)
+ * instead.
+ */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-// Path is /v2/admin/runtime-toggles (not /features) because these toggles are
-// transient (JVM-lifetime only, not persisted). The /features namespace is
-// reserved for ConfigRegistry-backed, persisted feature config (see ConfigRest).
 @Path("/v2/admin/runtime-toggles")
 @RequestScoped
 @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
 @Tag(name = "Admin")
 public class AdminFeaturesRest {
 
-  private static final String PT_NOT_FOUND = "/problems/features.not-found";
+  private static final String GONE_DETAIL =
+    "This endpoint has been unified under the generic config surface. " +
+    "Use GET /v2/admin/config/feature-toggles to list toggles and " +
+    "PATCH /v2/admin/config/feature-toggles with {\"toggle-name\": true/false} to mutate them.";
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
+  private static Response gone() {
+    return Response.status(Response.Status.GONE)
+      .header("Link", "</v2/admin/config/feature-toggles>; rel=\"successor-version\"")
+      .entity(GONE_DETAIL)
+      .build();
   }
-
-  @Inject
-  FeatureToggleRegistry registry;
 
   @GET
   @Operation(
     operationId = "listFeatureToggles",
-    summary = "List runtime feature toggles.",
-    description = "Returns all registered feature toggles with their current enabled state. " +
-    "Changes made via PATCH take effect immediately in the running JVM but are not persisted " +
-    "across restarts — the config-property value is restored on next startup."
+    summary = "[GONE] List runtime feature toggles — use GET /v2/admin/config/feature-toggles.",
+    deprecated = true
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Current state of all feature toggles.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FeatureToggleIO.class))
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
+  @APIResponse(responseCode = "410", description = "Endpoint removed. Use GET /v2/admin/config/feature-toggles.")
   public Response list() {
-    List<FeatureToggleIO> result = registry.list()
-      .stream()
-      .map(e -> new FeatureToggleIO(e.getName(), e.isEnabled(), e.getDescription(), e.getSource()))
-      .toList();
-    return Response.ok(result).build();
+    return gone();
   }
 
   @PATCH
   @Path("/{name}")
   @Operation(
     operationId = "patchFeatureToggle",
-    summary = "Toggle a runtime feature flag.",
-    description = "Sets the enabled state of the named feature toggle for the lifetime of the " +
-    "current JVM process. The change does not survive a restart."
+    summary = "[GONE] Toggle a runtime feature flag — use PATCH /v2/admin/config/feature-toggles.",
+    deprecated = true
   )
-  @APIResponse(
-    responseCode = "200",
-    description = "Updated state of the toggle.",
-    content = @Content(schema = @Schema(implementation = FeatureToggleIO.class))
-  )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  @APIResponse(responseCode = "404", description = "No toggle registered under that name.")
-  public Response patch(
-    @PathParam("name") String name,
-    @RequestBody(required = true, content = @Content(schema = @Schema(implementation = PatchFeatureToggleIO.class))) @Valid PatchFeatureToggleIO body
-  ) {
-    return registry.get(name).map(entry -> {
-      entry.setEnabled(body.getEnabled());
-      return Response.ok(new FeatureToggleIO(entry.getName(), entry.isEnabled(), entry.getDescription(), entry.getSource())).build();
-    }).orElseGet(() ->
-      problem(PT_NOT_FOUND, "Not Found", Status.NOT_FOUND,
-        "No feature toggle registered with name '" + name + "'")
-    );
+  @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/feature-toggles.")
+  public Response patch(@PathParam("name") String name) {
+    return gone();
   }
 }
