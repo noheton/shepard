@@ -19,6 +19,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -333,7 +334,7 @@ public class BundleGroupsV2Rest {
     description =
       "Canonical path (APISIMP-BUNDLE-REF-KIND-UNIFY). " +
       "Returns the files attached to the `:FileGroup` identified by `groupAppId`, paginated. " +
-      "`pageSize` default 200; max 1000; out-of-range values are clamped, never rejected. " +
+      "`pageSize` default 200; max 1000. " +
       "Auth: Read permission on the parent DataObject."
   )
   @APIResponse(
@@ -348,15 +349,15 @@ public class BundleGroupsV2Rest {
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
     @Parameter(
-      description = "0-based page index. Default 0.",
+      description = "Zero-based page index (default 0).",
       schema = @Schema(minimum = "0", defaultValue = "0")
     )
-    @QueryParam("page") @DefaultValue("0") Integer page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(
-      description = "Page size; clamped at 1000. Default 200.",
+      description = "Page size, 1–1000 (default 200).",
       schema = @Schema(minimum = "1", maximum = "1000", defaultValue = "200")
     )
-    @QueryParam("pageSize") @DefaultValue("200") Integer pageSize,
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
@@ -368,15 +369,12 @@ public class BundleGroupsV2Rest {
     if (parent == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
 
-    int pageIdx = (page == null || page < 0) ? 0 : page;
-    int effectiveSize = (pageSize == null) ? DEFAULT_FILES_PAGE_SIZE : Math.min(MAX_FILES_PAGE_SIZE, Math.max(1, pageSize));
-
     long total = fileGroupService.countFiles(groupAppId);
-    int totalPages = effectiveSize == 0 ? 0 : (int) ((total + effectiveSize - 1) / effectiveSize);
-    int skip = pageIdx * effectiveSize;
-    List<ShepardFile> items = skip < total ? fileGroupService.listFiles(groupAppId, skip, effectiveSize) : List.of();
+    int totalPages = (int) ((total + pageSize - 1) / pageSize);
+    int skip = page * pageSize;
+    List<ShepardFile> items = skip < total ? fileGroupService.listFiles(groupAppId, skip, pageSize) : List.of();
 
-    return Response.ok(new PagedFilesIO(items, pageIdx, effectiveSize, total, totalPages)).build();
+    return Response.ok(new PagedFilesIO(items, page, pageSize, total, totalPages)).build();
   }
 
   // ─── upload file into a group ─────────────────────────────────────────────
