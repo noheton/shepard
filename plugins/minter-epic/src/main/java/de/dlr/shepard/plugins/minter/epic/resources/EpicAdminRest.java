@@ -1,5 +1,6 @@
 package de.dlr.shepard.plugins.minter.epic.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient.EpicHttpResponse;
@@ -48,6 +49,7 @@ public class EpicAdminRest {
   private static final String GONE_MSG =
     "This endpoint has been removed. Use PATCH /v2/admin/config/minter-epic " +
     "with a 'credential' field to set the credential, or 'credential': null to clear it.";
+  private static final String GONE_LOCATION = "/v2/admin/config/minter-epic";
 
   @Inject
   EpicMinterConfigService service;
@@ -66,7 +68,16 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response setCredential(EpicCredentialIO body, @Context SecurityContext security) {
-    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
+    return Response.status(Response.Status.GONE)
+      .type("application/problem+json")
+      .header("Location", GONE_LOCATION)
+      .entity(new ProblemJson(
+        "urn:shepard:error:gone",
+        "Gone",
+        Response.Status.GONE.getStatusCode(),
+        GONE_MSG,
+        null))
+      .build();
   }
 
   // ─── DELETE /credential (tombstoned) ────────────────────────────
@@ -80,7 +91,16 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response clearCredential(@Context SecurityContext security) {
-    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
+    return Response.status(Response.Status.GONE)
+      .type("application/problem+json")
+      .header("Location", GONE_LOCATION)
+      .entity(new ProblemJson(
+        "urn:shepard:error:gone",
+        "Gone",
+        Response.Status.GONE.getStatusCode(),
+        GONE_MSG,
+        null))
+      .build();
   }
 
   // ─── POST /test-connection ──────────────────────────────────────

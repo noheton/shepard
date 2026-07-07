@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.structureddatacontainer.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -7,6 +8,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -24,9 +26,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Structured data containers — stats (tombstoned, use /v2/containers/{appId}/stats)")
 public class StructuredDataContainerStatsRest {
 
-  private static final String GONE_MSG =
-    "This path has been removed. Use GET /v2/containers/{appId}/stats instead.";
-
   @GET
   @Path("/{containerAppId}/stats")
   @Operation(
@@ -36,6 +35,18 @@ public class StructuredDataContainerStatsRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use GET /v2/containers/{appId}/stats.")
   public Response getStats(@PathParam("containerAppId") String containerAppId) {
-    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
+    String newLocation = UriBuilder.fromPath("/v2/containers/{appId}/stats")
+      .build(containerAppId)
+      .toString();
+    return Response.status(Response.Status.GONE)
+      .type("application/problem+json")
+      .header("Location", newLocation)
+      .entity(new ProblemJson(
+        "urn:shepard:error:gone",
+        "Gone",
+        Response.Status.GONE.getStatusCode(),
+        "This path has been removed. Use GET " + newLocation + " instead.",
+        null))
+      .build();
   }
 }

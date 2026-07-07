@@ -1,7 +1,9 @@
 package de.dlr.shepard.v2.structureddatacontainer.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,5 +34,17 @@ class StructuredDataContainerStatsRestTest {
   void returnsGoneForArbitraryAppId() {
     Response r = rest.getStats("00000000-0000-7000-8000-000000000001");
     assertEquals(410, r.getStatus());
+  }
+
+  @Test
+  void responseBodyIsProblemJsonWithLocationHeader() {
+    String appId = "01928eaa-2222-7000-9000-bbbbbbbbbbbb";
+    Response r = rest.getStats(appId);
+    ProblemJson body = (ProblemJson) r.getEntity();
+    assertNotNull(body);
+    assertEquals("urn:shepard:error:gone", body.type());
+    String location = (String) r.getHeaders().getFirst("Location");
+    assertNotNull(location);
+    assertEquals("/v2/containers/" + appId + "/stats", location);
   }
 }
