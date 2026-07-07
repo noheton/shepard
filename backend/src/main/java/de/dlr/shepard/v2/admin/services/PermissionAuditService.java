@@ -25,11 +25,26 @@ public class PermissionAuditService {
 
   static final int DEFAULT_LIMIT = 1000;
 
-  public List<PermissionAuditEntryIO> listOrphans() {
-    return listOrphans(DEFAULT_LIMIT);
+  public long countOrphans() {
+    var session = NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) return 0L;
+    String cypher =
+      "MATCH (e:BasicEntity) " +
+      "WHERE NOT (e)-[:has_permissions]->(:Permissions) " +
+      "RETURN count(e) AS total";
+    var result = session.query(cypher, Map.of());
+    for (Map<String, Object> row : result.queryResults()) {
+      Object v = row.get("total");
+      if (v instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
-  public List<PermissionAuditEntryIO> listOrphans(int limit) {
+  public List<PermissionAuditEntryIO> listOrphans() {
+    return listOrphans(0, DEFAULT_LIMIT);
+  }
+
+  public List<PermissionAuditEntryIO> listOrphans(int skip, int limit) {
     var session = NeoConnector.getInstance().getNeo4jSession();
     if (session == null) return Collections.emptyList();
     String cypher =
@@ -37,8 +52,9 @@ public class PermissionAuditService {
       "WHERE NOT (e)-[:has_permissions]->(:Permissions) " +
       "RETURN id(e) AS id, e.appId AS appId, e.name AS name, labels(e) AS labels " +
       "ORDER BY id(e) " +
+      "SKIP $skip " +
       "LIMIT $limit";
-    var result = session.query(cypher, Map.of("limit", limit));
+    var result = session.query(cypher, Map.of("skip", skip, "limit", limit));
     List<PermissionAuditEntryIO> out = new ArrayList<>();
     for (Map<String, Object> row : result.queryResults()) {
       Object idObj = row.get("id");

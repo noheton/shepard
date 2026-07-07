@@ -41,7 +41,6 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -184,19 +183,28 @@ public class InstanceAdminRest {
   @Operation(
     operationId = "permissionAudit",
     summary = "List entities with orphaned permissions.",
-    description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges."
+    description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges. Results are paginated via `page`/`pageSize`."
   )
   @APIResponse(
-    description = "List of BasicEntity nodes that have no `:has_permissions` edge; empty array means no orphans.",
+    description = "Paged list of BasicEntity nodes that have no `:has_permissions` edge; empty items array means no orphans.",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditEntryIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
-  public Response permissionAudit(@Context SecurityContext securityContext) {
+  public Response permissionAudit(
+    @Context SecurityContext securityContext,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–500 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize
+  ) {
     requireInstanceAdmin(securityContext);
-    List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans();
-    return Response.ok(orphans).build();
+    long total = permissionAuditService.countOrphans();
+    List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans(page * pageSize, pageSize);
+    return Response.ok(new PagedResponseIO<>(orphans, total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   /**
