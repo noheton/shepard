@@ -2,7 +2,9 @@ package de.dlr.shepard.v2.admin.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import jakarta.annotation.security.RolesAllowed;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,22 +36,26 @@ class AdminFeaturesRestTest {
   }
 
   @Test
-  void listResponseBodyMentionsSuccessorPath() {
+  void listResponseBodyIsProblemJson() {
     var r = resource.list();
-    String body = (String) r.getEntity();
+    ProblemJson body = (ProblemJson) r.getEntity();
     assertNotNull(body);
-    org.junit.jupiter.api.Assertions.assertTrue(
-      body.contains("/v2/admin/config/feature-toggles"),
-      "410 body must reference the successor path"
+    assertTrue(
+      body.detail().contains("/v2/admin/config/feature-toggles"),
+      "410 body detail must reference the successor path"
     );
+    assertEquals("urn:shepard:error:gone", body.type());
   }
 
   @Test
-  void listResponseCarriesLinkHeader() {
+  void listResponseCarriesLocationAndLinkHeaders() {
     var r = resource.list();
+    String location = (String) r.getHeaders().getFirst("Location");
+    assertNotNull(location, "410 response must carry a Location header");
+    assertEquals("/v2/admin/config/feature-toggles", location);
     String link = (String) r.getHeaders().getFirst("Link");
     assertNotNull(link, "410 response must carry a Link header");
-    org.junit.jupiter.api.Assertions.assertTrue(
+    assertTrue(
       link.contains("/v2/admin/config/feature-toggles"),
       "Link header must point to the successor resource"
     );
@@ -62,13 +68,13 @@ class AdminFeaturesRestTest {
   }
 
   @Test
-  void patchResponseBodyMentionsSuccessorPath() {
+  void patchResponseBodyIsProblemJson() {
     var r = resource.patch("any-toggle");
-    String body = (String) r.getEntity();
+    ProblemJson body = (ProblemJson) r.getEntity();
     assertNotNull(body);
-    org.junit.jupiter.api.Assertions.assertTrue(
-      body.contains("/v2/admin/config/feature-toggles"),
-      "410 body must reference the successor path"
+    assertTrue(
+      body.detail().contains("/v2/admin/config/feature-toggles"),
+      "410 body detail must reference the successor path"
     );
   }
 }
