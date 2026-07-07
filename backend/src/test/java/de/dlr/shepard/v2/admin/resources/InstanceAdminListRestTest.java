@@ -22,9 +22,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * APISIMP-INSTANCE-ADMINS-BARE-LIST — verifies that {@code listInstanceAdmins}
- * returns a {@link PagedResponseIO} envelope. {@code permissionAudit} still returns
- * a bare list (APISIMP-PERMISSION-AUDIT-BARE-LIST, needs DB-side pagination, deferred).
+ * APISIMP-INSTANCE-ADMINS-BARE-LIST + APISIMP-PERMISSION-AUDIT-BARE-LIST —
+ * verifies that both list endpoints return a {@link PagedResponseIO} envelope
+ * with DB-side pagination params forwarded to the service.
  */
 class InstanceAdminListRestTest {
 
@@ -63,16 +63,31 @@ class InstanceAdminListRestTest {
   }
 
   @Test
-  void permissionAudit_returnsBareList() {
-    // APISIMP-PERMISSION-AUDIT-BARE-LIST: still bare — needs DB-side pagination (deferred S-size row).
-    when(permissionAuditService.listOrphans()).thenReturn(List.of());
+  void permissionAudit_returnsPagedEnvelope() {
+    when(permissionAuditService.countOrphans()).thenReturn(0L);
+    when(permissionAuditService.listOrphans(0, 50)).thenReturn(List.of());
 
-    Response r = resource.permissionAudit(securityContext);
+    Response r = resource.permissionAudit(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
-    Object entity = r.getEntity();
-    assertInstanceOf(List.class, entity,
-        "permissionAudit still returns a plain List (APISIMP-PERMISSION-AUDIT-BARE-LIST pending)");
+    assertInstanceOf(PagedResponseIO.class, r.getEntity(),
+        "permissionAudit must return PagedResponseIO (APISIMP-PERMISSION-AUDIT-BARE-LIST)");
+  }
+
+  @Test
+  void permissionAudit_paginationParamsForwardedToService() {
+    PermissionAuditEntryIO entry = new PermissionAuditEntryIO(42L, "test-app-id", List.of("BasicEntity"), "thing");
+    when(permissionAuditService.countOrphans()).thenReturn(1L);
+    when(permissionAuditService.listOrphans(100, 50)).thenReturn(List.of(entry));
+
+    Response r = resource.permissionAudit(securityContext, 2, 50);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PermissionAuditEntryIO> body = (PagedResponseIO<PermissionAuditEntryIO>) r.getEntity();
+    assertEquals(1L, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals("test-app-id", body.items().get(0).getAppId());
   }
 
   @Test
