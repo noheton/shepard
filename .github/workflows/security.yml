@@ -57,6 +57,9 @@ jobs:
             owasp-nvd-
 
       - name: Install in-tree plugins (scripts/install-plugins.sh)
+        # Runs from the repo root (the job default working-directory is
+        # `backend`, but install-plugins.sh + the plugin reactor live at root).
+        working-directory: ${{ github.workspace }}
         # SECURITY-YML-PLUGIN-INSTALL (2026-07-07): the with-plugins backend
         # install below resolves shepard-plugin-* SNAPSHOT JARs from ~/.m2 —
         # they are never published to Maven Central, so they must be built and
