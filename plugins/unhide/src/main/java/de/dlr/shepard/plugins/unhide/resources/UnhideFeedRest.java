@@ -11,6 +11,9 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -128,10 +131,10 @@ public class UnhideFeedRest {
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
   public Response feed(
-    @Parameter(description = "0-based page index. Default 0. When absent, defaults to 0.")
-    @QueryParam("page") Integer page,
-    @Parameter(description = "Records per page. When absent, defaults to " + UnhideFeedService.DEFAULT_PAGE_SIZE + ". Clamped server-side by UnhideFeedService.")
-    @QueryParam("pageSize") Integer pageSize,
+    @Parameter(description = "0-based page index. Default 0.")
+    @DefaultValue("0") @PositiveOrZero @QueryParam("page") int page,
+    @Parameter(description = "Records per page. Default " + UnhideFeedService.DEFAULT_PAGE_SIZE + ". Range [1, 500].")
+    @DefaultValue("" + UnhideFeedService.DEFAULT_PAGE_SIZE) @Min(1) @Max(500) @QueryParam("pageSize") int pageSize,
     @Parameter(description = "When true, each returned record is validated against its SHACL shape before inclusion. Validation failures are skipped. Default false.")
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
@@ -174,13 +177,11 @@ public class UnhideFeedRest {
       }
     }
 
-    int p = page == null ? 0 : page;
-    int ps = pageSize == null ? UnhideFeedService.DEFAULT_PAGE_SIZE : pageSize;
     String baseUrl = uriInfo == null ? "" : uriInfo.getBaseUri().toString();
-    FeedIO body = feedService.buildFeed(cfg, baseUrl, p, ps);
+    FeedIO body = feedService.buildFeed(cfg, baseUrl, page, pageSize);
 
     if (validate) {
-      Log.debugf("UH1e: validate=true — running structural validation on feed page=%d", p);
+      Log.debugf("UH1e: validate=true — running structural validation on feed page=%d", page);
       UnhideValidationReportIO report = feedService.validateFeed(body);
       return Response.ok(report).type(MediaType.APPLICATION_JSON).build();
     }

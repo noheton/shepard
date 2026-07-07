@@ -6,6 +6,9 @@ import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -64,11 +67,10 @@ public class LegacyV1StatsAdminRest {
   public Response getStats(
     @Parameter(
       description = "Maximum number of entity-type and principal buckets to return, ranked by hit count. " +
-      "Default 50. Values below 1 are clamped to 1; values above " + MAX_TOP_N + " are clamped to " + MAX_TOP_N + ". " +
+      "Default " + LegacyV1StatsService.DEFAULT_TOP_N + ". Range [1, " + MAX_TOP_N + "]. " +
       "Pass a small value (e.g. 10) for a concise admin overview; pass " + MAX_TOP_N + " to see the full tail."
     )
-    @QueryParam("topN") Integer topN) {
-    int effective = topN == null ? LegacyV1StatsService.DEFAULT_TOP_N : Math.min(Math.max(1, topN), MAX_TOP_N);
-    return Response.ok(stats.snapshot(effective)).build();
+    @DefaultValue("" + LegacyV1StatsService.DEFAULT_TOP_N) @Min(1) @Max(MAX_TOP_N) @QueryParam("topN") int topN) {
+    return Response.ok(stats.snapshot(topN)).build();
   }
 }
