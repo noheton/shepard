@@ -151,7 +151,7 @@ public class SqlTimeseriesRest {
   )
   @APIResponse(
     responseCode = "400",
-    description = "DSL body is syntactically invalid, or the number of permitted container IDs exceeds the per-request cap (1000)."
+    description = "DSL body is syntactically invalid; or `container_id_in` (removed — use `container_app_id_in`); or permitted container IDs exceed the per-request cap (1000)."
   )
   @APIResponse(
     responseCode = "401",
@@ -192,20 +192,26 @@ public class SqlTimeseriesRest {
         ? securityContext.getUserPrincipal().getName()
         : null;
 
-    // Prefer container_app_id_in (UUID v7); fall back to deprecated container_id_in (numeric).
-    // Unknown or unresolvable appIds are silently excluded — same policy as forbidden IDs.
-    List<Long> requestedIds;
-    if (spec.where().containerAppIdIn() != null && !spec.where().containerAppIdIn().isEmpty()) {
-      requestedIds = resolveAppIds(spec.where().containerAppIdIn());
-    } else {
-      requestedIds = spec.where().containerIdIn() != null ? spec.where().containerIdIn() : List.of();
+    // container_id_in (numeric Neo4j IDs) was removed — use container_app_id_in (UUID v7).
+    if (spec.where().containerIdIn() != null && !spec.where().containerIdIn().isEmpty()) {
+      return problem(
+        "/problems/sql-timeseries.deprecated-container-id",
+        "Deprecated Field",
+        Response.Status.BAD_REQUEST,
+        "container_id_in is removed — use container_app_id_in (UUID v7 appId strings). " +
+        "Example: {\"where\":{\"container_app_id_in\":[\"<appId>\",...]}}");
     }
+
+    List<Long> requestedIds = spec.where().containerAppIdIn() != null
+        && !spec.where().containerAppIdIn().isEmpty()
+        ? resolveAppIds(spec.where().containerAppIdIn())
+        : List.of();
 
     Set<Long> allowed = permissionsService.filterAllowedForUser(requestedIds, AccessType.Read, username);
 
     if (allowed.size() > MAX_CONTAINERS) {
       throw new BadRequestException(
-          ("Too many containers (%d); tighten the container_id_in filter (max %d)")
+          ("Too many containers (%d); tighten the container_app_id_in filter (max %d)")
               .formatted(allowed.size(), MAX_CONTAINERS));
     }
 

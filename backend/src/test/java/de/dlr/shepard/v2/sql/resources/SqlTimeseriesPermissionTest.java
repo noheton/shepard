@@ -83,7 +83,7 @@ class SqlTimeseriesPermissionTest {
     when(securityContext.getUserPrincipal()).thenReturn(alice);
   }
 
-  // Helper: build a minimal valid SqlQuerySpec with given numeric container IDs (deprecated path)
+  // Helper: build a SqlQuerySpec with container_id_in (now rejected with 400)
   private SqlQuerySpec specWithContainerIds(List<Long> ids) {
     return new SqlQuerySpec(
         List.of(new SqlQuerySpec.SelectItem("time", null, null)),
@@ -105,9 +105,37 @@ class SqlTimeseriesPermissionTest {
         null, null, null);
   }
 
+  // ─── APISIMP-SQL-TIMESERIES-NUMERIC-CONTAINER-ID-FALLBACK tombstone ─────────
+
+  @Test
+  void containerIdIn_returns400WithMigrationGuidance() {
+    // container_id_in is removed; any non-empty value must be rejected with 400.
+    SqlQuerySpec spec = specWithContainerIds(List.of(42L));
+
+    Response response = rest.executeQuery(spec, "application/json", null, securityContext);
+
+    assertEquals(400, response.getStatus());
+    String body = response.getEntity().toString();
+    assertTrue(body.contains("container_app_id_in"), "Error must guide caller to container_app_id_in");
+  }
+
+  @Test
+  void containerIdIn_emptyList_noTombstone() {
+    // An empty container_id_in list is equivalent to omitting it — no tombstone triggered.
+    SqlQuerySpec spec = specWithContainerIds(List.of());
+    permissionsService.stubbedResult = Set.of();
+
+    Response response = rest.executeQuery(spec, "application/json", null, securityContext);
+
+    assertEquals(200, response.getStatus());
+  }
+
+  // ─── Permission-logic tests (all use container_app_id_in) ────────────────
+
   @Test
   void emptyAllowedSet_withJsonAccept_returns200WithEmptyRows() {
-    SqlQuerySpec spec = specWithContainerIds(List.of(42L));
+    entityIdResolver.register("container-x", 42L);
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("container-x"));
     permissionsService.stubbedResult = Set.of();
 
     Response response = rest.executeQuery(spec, "application/json", null, securityContext);
@@ -122,14 +150,14 @@ class SqlTimeseriesPermissionTest {
 
   @Test
   void emptyAllowedSet_defaultAccept_returns200WithCsv() {
-    SqlQuerySpec spec = specWithContainerIds(List.of(42L));
+    entityIdResolver.register("container-y", 99L);
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("container-y"));
     permissionsService.stubbedResult = Set.of();
 
     // null Accept = default CSV
     Response response = rest.executeQuery(spec, null, null, securityContext);
 
     assertEquals(200, response.getStatus());
-    // CSV empty response = empty string (just headers, no data rows)
     org.junit.jupiter.api.Assertions.assertTrue(
         response.getMediaType().toString().startsWith("text/csv"),
         "Content-Type must be text/csv");
@@ -137,7 +165,8 @@ class SqlTimeseriesPermissionTest {
 
   @Test
   void allowedSetAboveCap_returns400() {
-    SqlQuerySpec spec = specWithContainerIds(List.of(1L));
+    entityIdResolver.register("c", 1L);
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("c"));
     // Build an allowed set with 1001 IDs (above MAX_CONTAINERS=1000)
     permissionsService.stubbedResult = LongStream.rangeClosed(1, 1001)
         .boxed()
@@ -149,8 +178,11 @@ class SqlTimeseriesPermissionTest {
 
   @Test
   void allowedSetWithinCap_passedToCompiler() throws IOException {
+    entityIdResolver.register("c10", 10L);
+    entityIdResolver.register("c20", 20L);
+    entityIdResolver.register("c30", 30L);
     Set<Long> allowedIds = Set.of(10L, 20L, 30L);
-    SqlQuerySpec spec = specWithContainerIds(List.of(10L, 20L, 30L));
+    SqlQuerySpec spec = specWithContainerAppIds(List.of("c10", "c20", "c30"));
     permissionsService.stubbedResult = allowedIds;
 
     // executor.executeCsv (default format) needs to return a WriteResult
@@ -205,9 +237,9 @@ class SqlTimeseriesPermissionTest {
   }
 
   @Test
-  void containerAppIdIn_takesPrecedenceOverContainerIdIn() throws IOException {
+  void containerIdIn_nonEmpty_withContainerAppIdIn_stillReturns400() {
+    // Even when container_app_id_in is also supplied, container_id_in triggers the tombstone.
     entityIdResolver.register("uuid-99", 99L);
-    // spec has both: container_id_in=[5L] and container_app_id_in=["uuid-99"]
     SqlQuerySpec spec = new SqlQuerySpec(
         List.of(new SqlQuerySpec.SelectItem("time", null, null)),
         "timeseries_data_points",
@@ -215,17 +247,10 @@ class SqlTimeseriesPermissionTest {
             new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
             List.of(5L), List.of("uuid-99"), null),
         null, null, null);
-    permissionsService.stubbedResult = Set.of(99L);
 
-    when(executor.executeCsv(
-        Mockito.any(), Mockito.anyInt(), Mockito.anyLong(), Mockito.any()))
-        .thenReturn(new WriteResult(0, false));
+    Response response = rest.executeQuery(spec, "application/json", null, securityContext);
 
-    rest.executeQuery(spec, null, null, securityContext);
-
-    // container_app_id_in wins: resolved uuid-99 → 99L (not 5L from container_id_in)
-    assertEquals(Set.of(99L), compiler.lastAllowedIds,
-        "container_app_id_in must take precedence over container_id_in");
+    assertEquals(400, response.getStatus());
   }
 
   @Test
