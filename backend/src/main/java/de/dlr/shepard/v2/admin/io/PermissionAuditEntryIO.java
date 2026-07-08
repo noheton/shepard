@@ -20,8 +20,10 @@ public class PermissionAuditEntryIO {
   @Schema(
     required = true,
     nullable = true,
+    deprecated = true,
     description =
-      "Neo4j internal node id of the orphan entity — exposed here as a triage handle when appId is null (pre-migration rows)."
+      "Neo4j internal node id of the orphan entity — exposed here as a triage handle when appId is null (pre-migration rows). " +
+      "Will be removed once all entities carry a non-null appId (post-L2 migration)."
   )
   private Long neo4jNodeId;
 

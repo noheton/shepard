@@ -24,4 +24,12 @@ class PermissionAuditEntryIOTest {
     org.junit.jupiter.api.Assertions.assertNull(io.getLabels());
     org.junit.jupiter.api.Assertions.assertNull(io.getName());
   }
+
+  @Test
+  void neo4jNodeId_schemaAnnotation_isDeprecated() throws NoSuchFieldException {
+    var field = PermissionAuditEntryIO.class.getDeclaredField("neo4jNodeId");
+    var schema = field.getAnnotation(org.eclipse.microprofile.openapi.annotations.media.Schema.class);
+    org.junit.jupiter.api.Assertions.assertNotNull(schema, "neo4jNodeId must have @Schema annotation");
+    org.junit.jupiter.api.Assertions.assertTrue(schema.deprecated(), "neo4jNodeId @Schema must be deprecated=true (will be removed post-L2 migration)");
+  }
 }

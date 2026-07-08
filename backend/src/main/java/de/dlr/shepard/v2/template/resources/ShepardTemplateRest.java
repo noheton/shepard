@@ -292,8 +292,8 @@ public class ShepardTemplateRest {
     operationId = "tags",
     summary = "Distinct list of tags across all non-retired templates.",
     description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind. " +
-    "Server-side cap: at most 500 distinct tags are returned (alphabetically first 500). " +
-    "Pagination: `page` (0-based, default 0) and `pageSize` (1–500, default 50). " +
+    "Server-side cap: at most 200 distinct tags are returned (alphabetically first 200). " +
+    "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
     "`X-Total-Count` header carries the total before paging."
   )
   @APIResponse(
@@ -305,7 +305,7 @@ public class ShepardTemplateRest {
   public Response tags(
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
     @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @PositiveOrZero int page,
-    @Parameter(description = "Page size (1–500). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(500) int pageSize,
+    @Parameter(description = "Page size (1–200). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
