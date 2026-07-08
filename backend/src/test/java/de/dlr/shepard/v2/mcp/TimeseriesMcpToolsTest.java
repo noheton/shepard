@@ -252,12 +252,12 @@ class TimeseriesMcpToolsTest {
     var channels = root.get("channels");
     assertTrue(channels.isArray());
     assertEquals(2, channels.size());
-    assertEquals(shepardA.toString(), channels.get(0).get("shepardId").asText());
+    assertEquals(shepardA.toString(), channels.get(0).get("appId").asText());
     assertEquals("vibration", channels.get(0).get("measurement").asText());
     assertEquals("Double", channels.get(0).get("valueType").asText());
     assertTrue(channels.get(0).get("unit").isNull());
     assertTrue(channels.get(0).get("sampleRate").isNull());
-    assertEquals(shepardB.toString(), channels.get(1).get("shepardId").asText());
+    assertEquals(shepardB.toString(), channels.get(1).get("appId").asText());
   }
 
   @Test
