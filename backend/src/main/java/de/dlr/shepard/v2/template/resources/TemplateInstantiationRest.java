@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
@@ -259,15 +258,9 @@ public class TemplateInstantiationRest {
             return sb.toString().trim();
           })
           .collect(Collectors.joining("; "));
-        ProblemJson problem = new ProblemJson(
-          PT_UNPROCESSABLE,
-          "SHACL validation failed",
-          422,
+        return problem(PT_UNPROCESSABLE, "SHACL validation failed", 422,
           "DataObject violates the template's SHACL shape. Violations: " + prose,
-          null,
-          Map.of("violations", violations)
-        );
-        return Response.status(422).type("application/problem+json").entity(problem).build();
+          Map.of("violations", violations));
       }
     }
 

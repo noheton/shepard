@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -128,11 +127,7 @@ public class TemplatePortabilityRest {
     try {
       yaml = YAML_MAPPER.writeValueAsString(entries);
     } catch (JsonProcessingException e) {
-      return Response.serverError()
-        .entity(new ProblemJson(PT_INTERNAL, "Export Failed", 500,
-          "YAML serialisation failed: " + e.getMessage(), null))
-        .type("application/problem+json")
-        .build();
+      return problem(PT_INTERNAL, "Export Failed", 500, "YAML serialisation failed: " + e.getMessage());
     }
 
     return Response
@@ -188,12 +183,8 @@ public class TemplatePortabilityRest {
       );
     } catch (JsonProcessingException e) {
       int line = e.getLocation() != null ? (int) e.getLocation().getLineNr() : -1;
-      return Response.status(Response.Status.BAD_REQUEST)
-        .entity(new ProblemJson(PT_BAD_REQUEST, "YAML Parse Error", 400,
-          "YAML parse error: " + e.getOriginalMessage(), null,
-          Map.of("line", line)))
-        .type("application/problem+json")
-        .build();
+      return problem(PT_BAD_REQUEST, "YAML Parse Error", 400,
+          "YAML parse error: " + e.getOriginalMessage(), Map.of("line", line));
     }
 
     if (entries == null || entries.isEmpty()) {
@@ -211,24 +202,16 @@ public class TemplatePortabilityRest {
 
       // Validate required fields.
       if (entry.getName() == null || entry.getTemplateKind() == null || entry.getBody() == null) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new ProblemJson(PT_BAD_REQUEST, "Missing Required Fields", 400,
-            "entry[" + i + "]: name, templateKind, body are required", null,
-            Map.of("line", i + 1)))
-          .type("application/problem+json")
-          .build();
+        return problem(PT_BAD_REQUEST, "Missing Required Fields", 400,
+            "entry[" + i + "]: name, templateKind, body are required", Map.of("line", i + 1));
       }
 
       // Validate the JSON body DSL.
       try {
         bodyValidator.validate(entry.getBody(), entry.getTemplateKind());
       } catch (InvalidTemplateBodyException e) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new ProblemJson(PT_BAD_REQUEST, "Template Body Invalid", 400,
-            "entry[" + i + "] body invalid: " + String.join("; ", e.getErrors()), null,
-            Map.of("line", i + 1)))
-          .type("application/problem+json")
-          .build();
+        return problem(PT_BAD_REQUEST, "Template Body Invalid", 400,
+            "entry[" + i + "] body invalid: " + String.join("; ", e.getErrors()), Map.of("line", i + 1));
       }
 
       // Check for a live (non-retired) template with the same name + kind.

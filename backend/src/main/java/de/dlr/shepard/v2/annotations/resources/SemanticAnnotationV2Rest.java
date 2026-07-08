@@ -422,9 +422,7 @@ public class SemanticAnnotationV2Rest {
       body.getSubjectAppId(), body.getSubjectKind(), body.getPredicateIri(),
       body.getObjectLiteral(), body.getObjectIri());
     if (shaclViolation != null) {
-      ProblemJson violationBody = new ProblemJson(PROBLEM_TYPE_UNPROCESSABLE,
-        "Project constraint violation", 422, shaclViolation, null);
-      return Response.status(422).type("application/problem+json").entity(violationBody).build();
+      return problem(PROBLEM_TYPE_UNPROCESSABLE, "Project constraint violation", 422, shaclViolation);
     }
 
     // PROJ-SEMA-DUAL-OWNERSHIP-1 — for partOf writes, require Write on the

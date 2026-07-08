@@ -1,6 +1,5 @@
 package de.dlr.shepard.plugins.aas.v2.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.plugins.aas.services.AasConfigService;
 import de.dlr.shepard.plugins.aas.services.AasShellMappingService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
@@ -76,15 +75,8 @@ public class AasShellsRest {
   }
 
   private static Response aasDisabledResponse() {
-    return Response.status(501)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-            "/problems/aas.integration-disabled",
-            "AAS Integration Disabled",
-            501,
-            "AAS integration is disabled on this instance. Enable via PATCH /v2/admin/aas/config.",
-            null))
-        .build();
+    return problem("/problems/aas.integration-disabled", "AAS Integration Disabled", 501,
+        "AAS integration is disabled on this instance. Enable via PATCH /v2/admin/aas/config.");
   }
 
   @GET

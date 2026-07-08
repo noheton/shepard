@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.provenance.resources;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.common.util.Constants;
@@ -633,19 +632,13 @@ public class ProvenanceRest {
     if (raw == null || raw.isBlank()) return null;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
     if (profile != null) return null;
-    ProblemJson body = new ProblemJson(
+    return problem(
       "https://noheton.github.io/shepard/errors/provenance.unsupported-profile",
       "Unsupported JSON-LD profile",
-      Response.Status.NOT_ACCEPTABLE.getStatusCode(),
+      Response.Status.NOT_ACCEPTABLE,
       "The profile= parameter '" + raw + "' on the Accept header is not recognised. " +
       "Supported: '" + ProvJsonLdRenderer.M4I_PROFILE_URI + "' (or short 'metadata4ing'). " +
-      "Omit the parameter for plain PROV-O JSON-LD.",
-      null
-    );
-    return Response.status(Response.Status.NOT_ACCEPTABLE)
-      .entity(body)
-      .type("application/problem+json")
-      .build();
+      "Omit the parameter for plain PROV-O JSON-LD.");
   }
 
   /**

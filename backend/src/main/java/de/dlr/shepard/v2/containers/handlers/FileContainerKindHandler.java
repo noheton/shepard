@@ -2,8 +2,8 @@ package de.dlr.shepard.v2.containers.handlers;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -180,17 +180,10 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     } catch (IllegalArgumentException e) {
       throw new BadRequestException(e.getMessage());
     } catch (ServiceUnavailableException sue) {
-      var problem = new ProblemJson(
-        "/problems/files.thumbnail-unavailable",
-        "Thumbnail Service Unavailable",
-        Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
-        sue.getMessage(),
-        null
-      );
-      return Optional.of(Response.status(Response.Status.SERVICE_UNAVAILABLE)
+      return Optional.of(ProblemResponse.problemBuilder(
+          "/problems/files.thumbnail-unavailable", "Thumbnail Service Unavailable",
+          Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), sue.getMessage())
         .header("Retry-After", "5")
-        .type("application/problem+json")
-        .entity(problem)
         .build());
     }
     if (pngBytes == null) {

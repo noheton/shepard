@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.admin.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Consumes;
@@ -39,16 +39,10 @@ public class AdminFeaturesRest {
   private static final String SUCCESSOR = "/v2/admin/config/feature-toggles";
 
   private static Response gone() {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder(
+        "urn:shepard:error:gone", "Gone", Response.Status.GONE.getStatusCode(), GONE_DETAIL)
       .header("Location", SUCCESSOR)
       .header("Link", "<" + SUCCESSOR + ">; rel=\"successor-version\"")
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        GONE_DETAIL,
-        null))
       .build();
   }
 

@@ -3,7 +3,6 @@ package de.dlr.shepard.v2.admin.users;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.auth.users.validation.OrcidValidator;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -79,10 +78,8 @@ public class AdminUserOrcidRest {
     ) AdminOrcidPatchIO patch
   ) {
     if (patch.orcid() != null && !OrcidValidator.isValid(patch.orcid())) {
-      ProblemJson problem = new ProblemJson("/problems/users.bad-request", "Bad Request",
-          Response.Status.BAD_REQUEST.getStatusCode(),
-          "Invalid ORCID format. Expected 16 digits in groups of 4 with mod 11-2 checksum.", null);
-      return Response.status(Response.Status.BAD_REQUEST).type("application/problem+json").entity(problem).build();
+      return problem("/problems/users.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "Invalid ORCID format. Expected 16 digits in groups of 4 with mod 11-2 checksum.");
     }
     var optionalUser = userService.getUserOptional(username);
     if (optionalUser.isEmpty()) {

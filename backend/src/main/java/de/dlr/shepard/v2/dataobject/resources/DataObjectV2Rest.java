@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -238,16 +237,10 @@ public class DataObjectV2Rest {
     if (fields != null && !fields.isBlank()) {
       String unknown = DataObjectListFieldFilter.firstUnknownField(fields);
       if (unknown != null) {
-        return Response.status(Response.Status.BAD_REQUEST)
-          .entity(new ProblemJson(
-            "/problems/data-objects.unknown-field",
+        return problem("/problems/data-objects.unknown-field",
             "Unknown field in ?fields= query parameter",
-            400,
-            "Field '" + unknown + "' does not exist on DataObjectListItemV2.",
-            null
-          ))
-          .type("application/problem+json")
-          .build();
+            Response.Status.BAD_REQUEST,
+            "Field '" + unknown + "' does not exist on DataObjectListItemV2.");
       }
     }
     Long collectionOgmId = resolveOrNull(collectionAppId);
@@ -1099,18 +1092,12 @@ public class DataObjectV2Rest {
     if (raw == null || raw.isBlank()) return null;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
     if (profile != null) return null;
-    de.dlr.shepard.common.exceptions.ProblemJson body = new de.dlr.shepard.common.exceptions.ProblemJson(
+    return problem(
       "https://noheton.github.io/shepard/errors/dataobject.unsupported-profile",
       "Unsupported JSON-LD profile",
-      Response.Status.NOT_ACCEPTABLE.getStatusCode(),
+      Response.Status.NOT_ACCEPTABLE,
       "The profile= parameter '" + raw + "' on the Accept header is not recognised. " +
       "Supported: '" + M4iDataObjectRenderer.M4I_PROFILE_URI + "' (or short 'metadata4ing'). " +
-      "Omit the parameter for the canonical JSON projection.",
-      null
-    );
-    return Response.status(Response.Status.NOT_ACCEPTABLE)
-      .entity(body)
-      .type("application/problem+json")
-      .build();
+      "Omit the parameter for the canonical JSON projection.");
   }
 }

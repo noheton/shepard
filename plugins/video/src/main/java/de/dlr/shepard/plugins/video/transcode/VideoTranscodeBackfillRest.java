@@ -1,6 +1,6 @@
 package de.dlr.shepard.plugins.video.transcode;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
@@ -84,14 +84,11 @@ public class VideoTranscodeBackfillRest {
       candidates = videoStreamReferenceDAO.findBackfillCandidates(codec, limit);
     } catch (Exception ex) {
       Log.errorf("VIDEO-HEVC-TRANSCODE-BACKFILL: query failed: %s", ex.getMessage());
-      return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
+      return ProblemResponse.problem(
           "urn:shepard:error:internal",
           Response.Status.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-          Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
-          ex.getMessage(), null))
-        .build();
+          Response.Status.INTERNAL_SERVER_ERROR,
+          ex.getMessage());
     }
 
     int submitted = 0;
