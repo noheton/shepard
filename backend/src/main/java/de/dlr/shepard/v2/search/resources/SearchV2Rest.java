@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -89,6 +91,11 @@ public class SearchV2Rest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = SearchV2ResultIO.class)
+    ),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "400", description = "Query parameter `q` is blank/absent, or `collectionAppId` is not found.")

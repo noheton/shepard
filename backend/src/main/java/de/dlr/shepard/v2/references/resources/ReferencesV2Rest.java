@@ -42,6 +42,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 
 /**
  * V2CONV-A2 — the unified {@code /v2/references} REST surface that converges
@@ -455,6 +457,11 @@ public class ReferencesV2Rest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
+    ),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "400", description = "Missing kind/dataObjectAppId, invalid page/pageSize, or unknown kind.")

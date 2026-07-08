@@ -29,6 +29,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -198,7 +200,12 @@ public class SemanticTermSearchRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Items carry `uri`, `label`, and optionally `description`.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")

@@ -64,6 +64,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 
 /**
  * V2CONV-A3 — the unified {@code /v2/containers} REST surface that converges
@@ -444,6 +445,11 @@ public class ContainersV2Rest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
+    ),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "400", description = "Missing/unknown kind.")
@@ -1001,7 +1007,12 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of channel annotations with X-Total-Count header (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1118,7 +1129,12 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of temporal annotations with X-Total-Count header (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
