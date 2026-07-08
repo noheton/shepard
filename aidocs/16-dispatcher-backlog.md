@@ -4397,7 +4397,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:76`; apisimp-sweep-fire478-2026-07-08.md §F2.
 
 ## APISIMP-XCOUNT-OPENAPI-HEADER-2 — Plugin REST classes missing formal @Header X-Total-Count declaration (size: XS, sweep: fire-479)
-- **Status:** 🔄 queued (next fire).
+- **Status:** ✅ shipped (fire-480, PR #2412, branch `APISIMP-XCOUNT-OPENAPI-HEADER-2-1`).
 - **Why:** The fire-479 batch covered all `/v2/` in-tree REST classes. Two plugin REST classes also emit `X-Total-Count` at runtime but lack the formal `@Header` OpenAPI declaration: `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/resources/AasRegistrationAdminRest.java:85` and `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasShellsRest.java:122,213`.
 - **Fix:** Same pattern as APISIMP-XCOUNT-OPENAPI-HEADER-1 — add `headers = @Header(...)` to each `@APIResponse(responseCode="200")` block. Import `Header` and `SchemaType` in each plugin file.
 - **First refs:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/resources/AasRegistrationAdminRest.java:85`; `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasShellsRest.java:122,213`.
