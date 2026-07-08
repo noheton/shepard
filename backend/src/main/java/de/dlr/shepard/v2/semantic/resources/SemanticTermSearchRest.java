@@ -241,7 +241,9 @@ public class SemanticTermSearchRest {
 
     // 4 — query
     List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit, skip);
-    return Response.ok(new PagedResponseIO<>(results, results.size(), effectivePage, effectiveLimit)).build();
+    return Response.ok(new PagedResponseIO<>(results, results.size(), effectivePage, effectiveLimit))
+        .header("X-Total-Count", (long) results.size())
+        .build();
   }
 
   // ─── query logic ──────────────────────────────────────────────────────────

@@ -67,7 +67,7 @@ public class AasRegistrationAdminRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged outbox rows (may be empty if no collections exist or no registry is configured).",
-    content = @Content(schema = @Schema(implementation = AasRegistrationIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response listRegistrations(
@@ -81,7 +81,9 @@ public class AasRegistrationAdminRest {
       .stream()
       .map(AasRegistrationIO::from)
       .toList();
-    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @POST
