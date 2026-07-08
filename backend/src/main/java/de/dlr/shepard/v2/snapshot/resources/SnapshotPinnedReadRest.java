@@ -157,7 +157,9 @@ public class SnapshotPinnedReadRest {
     int skip = page * pageSize;
     List<String> paged = snapshotService.listDataObjectAppIdsPage(snapshot, skip, pageSize);
 
-    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize)).build();
+    return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ── private helper ────────────────────────────────────────────────────────

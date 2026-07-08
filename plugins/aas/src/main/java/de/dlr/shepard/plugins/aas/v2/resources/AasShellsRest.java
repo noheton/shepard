@@ -118,7 +118,9 @@ public class AasShellsRest {
         .map(mappingService::toShell)
         .toList();
 
-    return Response.ok(new PagedResponseIO<>(shells, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(shells, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @GET
@@ -208,7 +210,7 @@ public class AasShellsRest {
     List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId, page, pageSize);
     return Response.ok(
         new PagedResponseIO<>(mappingService.toSubmodelRefs(dataObjects), total, page, pageSize)
-    ).build();
+    ).header("X-Total-Count", total).build();
   }
 
   private static Response problem(Response.Status status, String detail) {
