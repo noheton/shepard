@@ -69,6 +69,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 
 /**
  * L2d Phase A.2 — {@code /v2/collections/{collectionAppId}/data-objects}.
@@ -192,7 +193,12 @@ public class DataObjectV2Rest {
       "`structuredDataCount`. When `?include=time-bounds` is set, `timeBoundsStart`/`timeBoundsEnd` " +
       "are also populated (null means no data yet). Use `?status=READY` (or DRAFT, IN_REVIEW, " +
       "PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED) to filter server-side by lifecycle status.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -671,7 +677,12 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct predecessors (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -781,7 +792,12 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct successors (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -827,7 +843,12 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct children (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")

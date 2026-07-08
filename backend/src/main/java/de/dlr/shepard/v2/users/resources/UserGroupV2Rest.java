@@ -42,6 +42,8 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 
 /**
  * V2-SWEEP-002 — appId-keyed user-group CRUD at {@code /v2/user-groups}.
@@ -91,7 +93,12 @@ public class UserGroupV2Rest {
     responseCode = "200",
     description = "Paged list of user groups (`PagedResponseIO<UserGroupV2IO>`). " +
       "When `q` is set, `total=items.size(), page=0, pageSize=items.size()`.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = "q", description = "Optional name filter. When set, returns a PagedResponseIO with all matching groups; ordering and pagination are ignored.")

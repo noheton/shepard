@@ -33,6 +33,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 
 /**
  * V2b — {@code /v2/collections/{collectionAppId}/snapshots}.
@@ -177,6 +179,11 @@ public class CollectionSnapshotRest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
+    ),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

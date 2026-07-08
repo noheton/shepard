@@ -28,6 +28,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 
 /**
  * PROJ-REST-1 + PROJ-REST-2 — dedicated REST namespace for Project-shaped
@@ -84,7 +86,12 @@ public class ProjectsRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(
+      name = "X-Total-Count",
+      description = "Total element count before paging.",
+      schema = @Schema(type = SchemaType.INTEGER)
+    )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(

@@ -4391,19 +4391,25 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:115`; apisimp-sweep-fire478-2026-07-08.md §F1.
 
 ## APISIMP-XCOUNT-OPENAPI-HEADER — 37 list endpoints emit X-Total-Count but omit the formal @Header OpenAPI declaration (size: M, sweep: fire-478)
-- **Status:** 🔄 queued.
+- **Status:** ✅ shipped (fire-479, PR #2411, branch `APISIMP-XCOUNT-OPENAPI-HEADER-1`).
 - **Why:** All v2 list endpoints now emit `X-Total-Count` at runtime (post-fire-478 APISIMP-ADMIN-CONFIG-NO-XCOUNT), but 37 of 38 endpoints mention the header only in the `description` string of `@APIResponse(responseCode="200")`. Only `AdminConfigRest` (PR #2409) declares it with a formal `headers = @Header(name="X-Total-Count", schema=@Schema(type=SchemaType.INTEGER))` block. Without the formal declaration, OpenAPI-generated clients never see the header in the spec, so programmatic pagination is invisible to tooling.
 - **Fix:** Add `headers = @Header(name="X-Total-Count", description="Total element count before paging.", schema=@Schema(type=SchemaType.INTEGER))` to the `@APIResponse(responseCode="200")` block for each of the 37 list endpoints. Template: `AdminConfigRest.java` (post-#2409). Import `org.eclipse.microprofile.openapi.annotations.headers.Header` is already in-tree.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:76`; apisimp-sweep-fire478-2026-07-08.md §F2.
 
+## APISIMP-XCOUNT-OPENAPI-HEADER-2 — Plugin REST classes missing formal @Header X-Total-Count declaration (size: XS, sweep: fire-479)
+- **Status:** 🔄 queued (next fire).
+- **Why:** The fire-479 batch covered all `/v2/` in-tree REST classes. Two plugin REST classes also emit `X-Total-Count` at runtime but lack the formal `@Header` OpenAPI declaration: `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/resources/AasRegistrationAdminRest.java:85` and `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasShellsRest.java:122,213`.
+- **Fix:** Same pattern as APISIMP-XCOUNT-OPENAPI-HEADER-1 — add `headers = @Header(...)` to each `@APIResponse(responseCode="200")` block. Import `Header` and `SchemaType` in each plugin file.
+- **First refs:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/resources/AasRegistrationAdminRest.java:85`; `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasShellsRest.java:122,213`.
+
 ## APISIMP-TPLREST-TAG-PAGECAP — ShepardTemplateRest.tags() uses @Max(500) while all other v2 list endpoints use @Max(200) (size: XS, sweep: fire-478)
-- **Status:** 🔄 in-flight (fire-478, branch `APISIMP-ANNO-MINOR-BATCH-1`).
+- **Status:** ✅ shipped (fire-478, PR #2410).
 - **Why:** `GET /v2/templates/tags` at `ShepardTemplateRest.java:308` declares `@Max(500)` on `pageSize`, while `GET /v2/templates` on the same class uses `@Max(200)` and 32 other v2 list endpoints use `@Max(200)`. The tags endpoint returns `List<String>` (lighter than full template objects), but no documented reason justifies the divergent cap. The description strings also say "1–500" in three places.
 - **Fix:** Change `@Max(500)` to `@Max(200)` on line 308. Update description string on line 295 from "at most 500 distinct tags" to "at most 200 distinct tags", line 296 from "`pageSize` (1–500, default 50)" to "`pageSize` (1–200, default 50)", and line 308 from "Page size (1–500)" to "Page size (1–200)". One-liner + three string updates.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/ShepardTemplateRest.java:308`; apisimp-sweep-fire478-2026-07-08.md §F4.
 
 ## APISIMP-PERM-AUDIT-DEPRECATED — PermissionAuditEntryIO.neo4jNodeId exposes raw Neo4j internal id without @Schema(deprecated=true) (size: XS, sweep: fire-478)
-- **Status:** 🔄 in-flight (fire-478, branch `APISIMP-ANNO-MINOR-BATCH-1`).
+- **Status:** ✅ shipped (fire-478, PR #2410).
 - **Why:** `GET /v2/admin/permission-audit` exposes `Long neo4jNodeId` in its response body via `PermissionAuditEntryIO.java:20`. The field is a raw Neo4j node id — a v2 wire policy violation ("no numeric internal IDs on the v2 wire"). The `@Schema` documents it as a "triage handle when appId is null (pre-migration rows)", which is intentional for L2-transition rows, but omits `deprecated = true`. Callers may treat it as stable; the lack of the deprecated flag signals no intent to remove it once all rows carry a non-null `appId` after the L2 migration completes.
 - **Fix:** Add `deprecated = true` to the `@Schema` annotation on line 20 and append a note to the description: "Will be removed once all entities carry a non-null appId (post-L2 migration)". One-liner.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/PermissionAuditEntryIO.java:20`; apisimp-sweep-fire478-2026-07-08.md §F5.
