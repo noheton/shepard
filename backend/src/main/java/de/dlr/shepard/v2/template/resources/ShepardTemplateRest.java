@@ -199,8 +199,9 @@ public class ShepardTemplateRest {
     description = "The new version.",
     content = @Content(schema = @Schema(implementation = ShepardTemplateIO.class))
   )
-  @APIResponse(responseCode = "404", description = "No template with that appId.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
+  @APIResponse(responseCode = "404", description = "No template with that appId.")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   public Response patch(@PathParam("appId") String appId, PatchShepardTemplateIO body, @Context SecurityContext securityContext) {
     Optional<ShepardTemplate> existing = dao.findByAppId(appId);
@@ -271,8 +272,9 @@ public class ShepardTemplateRest {
     description = "Sets retired = true; the row stays on disk so existing citations remain valid."
   )
   @APIResponse(responseCode = "204", description = "Retired.")
-  @APIResponse(responseCode = "404", description = "No template with that appId.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
+  @APIResponse(responseCode = "404", description = "No template with that appId.")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   public Response retire(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     Optional<ShepardTemplate> existing = dao.findByAppId(appId);

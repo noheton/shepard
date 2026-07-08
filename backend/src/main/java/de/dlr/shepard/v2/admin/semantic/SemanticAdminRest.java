@@ -287,6 +287,7 @@ public class SemanticAdminRest {
     "manifest entry carries required=true (prov-o, obo-relations today)."
   )
   @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = OntologyBundleIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "404", description = "Unknown bundle id (RFC 7807).")
   @APIResponse(responseCode = "409", description = "Bundle is required and cannot be disabled (RFC 7807).")
   public Response disableOntology(
@@ -307,6 +308,7 @@ public class SemanticAdminRest {
     "currently disabled. The bundle seeds on the next startup."
   )
   @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = OntologyBundleIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "404", description = "Unknown bundle id (RFC 7807).")
   public Response enableOntology(
     @PathParam("bundleId") String bundleId,
@@ -374,6 +376,7 @@ public class SemanticAdminRest {
   )
   @APIResponse(responseCode = "201", description = "Ontology bundle uploaded and registered.", content = @Content(schema = @Schema(implementation = OntologyBundleIO.class)))
   @APIResponse(responseCode = "400", description = "Invalid TTL or missing metadata (RFC 7807).")
+  @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "409", description = "Bundle id collides with a built-in or existing user upload (RFC 7807).")
   public Response uploadOntology(
     @RestForm("file") FileUpload upload,
@@ -497,6 +500,7 @@ public class SemanticAdminRest {
     "ship in the JAR and update via release upgrades."
   )
   @APIResponse(responseCode = "204", description = "Bundle removed.")
+  @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "404", description = "Unknown bundle id (RFC 7807).")
   @APIResponse(responseCode = "409", description = "Bundle is built-in and cannot be removed (RFC 7807).")
   public Response deleteOntology(
