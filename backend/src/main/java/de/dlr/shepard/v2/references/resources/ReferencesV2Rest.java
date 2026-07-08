@@ -451,7 +451,7 @@ public class ReferencesV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged list of ReferenceV2IO (may be empty).",
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -495,7 +495,9 @@ public class ReferencesV2Rest {
       int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
       int total = referencesService.countByDataObject(kind, dataObjectAppId, fileKind);
       List<ReferenceV2IO> pageItems = referencesService.listByDataObject(kind, dataObjectAppId, fileKind, skip, pageSize);
-      return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
+      return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
+          .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
+          .build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
