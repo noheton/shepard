@@ -4356,7 +4356,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:376`; `backend/src/main/java/de/dlr/shepard/v2/bundle/io/PagedFilesIO.java`; apisimp-sweep-fire475-2026-07-08.md §F5
 
 ## APISIMP-PROV-CURSOR-PAGED-WRAP — ProvenanceRest cursor-based paged endpoints use misleading PagedResponseIO fields (size: S, sweep: fire-475)
-- **Status:** queued.
+- **Status:** 🔄 in-flight (fire-476, branch `APISIMP-PROV-CURSOR-PAGED-WRAP`). Fix: set `pageSize=limit` (not rows.size()); add `X-Has-More` + `X-Next-Cursor` headers. 8 new Mockito unit tests in `ProvenanceRestCursorPagedTest`.
 - **Why:** `GET /v2/collections/{cid}/activities` and `GET /v2/dataobjects/{did}/activities` use time-cursor pagination (`since`/`until` epoch ms) but wrap results in `PagedResponseIO` with `total=rows.size()`, `page=0`, `pageSize=rows.size()`. These fields are semantically wrong for cursor pagination: `total` is the window size not the true count, `page` is always 0, `pageSize` is the window. No `X-Total-Count` header emitted. A caller using the standard envelope contract to drive offset-based paging will silently get confused. Also missing `X-Next-Cursor` / `X-Has-More` response headers that cursor clients expect.
 - **Fix shape:** either (a) emit the actual window limit in `pageSize`, document `total=null` to signal "cursor mode", and add `X-Has-More: true/false` + `X-Next-Cursor: <unix_ms>` headers; or (b) introduce a dedicated `CursorPagedResponseIO` type and update the 200 schema annotation to match.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:160,312`; apisimp-sweep-fire475-2026-07-08.md §F6

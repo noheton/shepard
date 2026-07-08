@@ -115,7 +115,9 @@ public class ProvenanceRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Matching activities, sorted by startedAt DESC.",
+    description = "Matching activities, sorted by startedAt DESC. " +
+    "Envelope: `pageSize` reflects the `?limit=` window; `total` reflects rows returned (not true DB total — cursor mode). " +
+    "Response header `X-Has-More: true` when the window is full and more rows may exist; use the `X-Next-Cursor` epoch-ms value as `?until=` on the next call.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
@@ -157,7 +159,13 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
+    boolean hasMore = rows.size() >= limit;
+    var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, limit))
+        .header("X-Has-More", hasMore);
+    if (hasMore) {
+      rb.header("X-Next-Cursor", rows.get(rows.size() - 1).getStartedAtMillis());
+    }
+    return rb.build();
   }
 
   private static ActivityIO applyProfile(ActivityIO io, OutputProfile profile) {
@@ -279,7 +287,9 @@ public class ProvenanceRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Activities targeting the entity, sorted by startedAt DESC.",
+    description = "Activities targeting the entity, sorted by startedAt DESC. " +
+    "Envelope: `pageSize` reflects the `?limit=` window; `total` reflects rows returned (cursor mode, not true DB total). " +
+    "Header `X-Has-More: true` when window is full; use `X-Next-Cursor` epoch-ms as `?until=` on the next call.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
@@ -309,7 +319,13 @@ public class ProvenanceRest {
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
       .toList();
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
+    boolean hasMore = rows.size() >= limit;
+    var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, limit))
+        .header("X-Has-More", hasMore);
+    if (hasMore) {
+      rb.header("X-Next-Cursor", rows.get(rows.size() - 1).getStartedAtMillis());
+    }
+    return rb.build();
   }
 
   @GET
