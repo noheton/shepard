@@ -628,8 +628,8 @@ public class ContainersV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Per-channel listing.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesChannelV2IO.class))
+    description = "Paged per-channel listing.",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")

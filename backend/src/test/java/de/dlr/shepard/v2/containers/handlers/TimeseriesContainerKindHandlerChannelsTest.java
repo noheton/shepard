@@ -20,6 +20,7 @@ import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
@@ -91,14 +92,19 @@ class TimeseriesContainerKindHandlerChannelsTest {
     TimeseriesEntity entity = channelEntity(CHANNEL_UUID);
     when(tsChannelResolver.listPaged(eq(CONTAINER_ID), eq(0), eq(200)))
         .thenReturn(List.of(entity));
+    when(tsChannelResolver.countByContainerId(CONTAINER_ID)).thenReturn(1L);
 
-    var result = handler.listChannels(CONTAINER_APP_ID, 0, 200);
+    Optional<PagedResponseIO<TimeseriesChannelV2IO>> result = handler.listChannels(CONTAINER_APP_ID, 0, 200);
 
     assertTrue(result.isPresent(), "Should return a present Optional");
-    List<TimeseriesChannelV2IO> channels = result.get();
-    assertEquals(1, channels.size());
-    assertEquals(CHANNEL_UUID, channels.get(0).shepardId());
+    PagedResponseIO<TimeseriesChannelV2IO> page = result.get();
+    assertEquals(1, page.items().size());
+    assertEquals(1L, page.total());
+    assertEquals(0, page.page());
+    assertEquals(200, page.pageSize());
+    assertEquals(CHANNEL_UUID, page.items().get(0).shepardId());
     verify(tsChannelResolver).listPaged(CONTAINER_ID, 0, 200);
+    verify(tsChannelResolver).countByContainerId(CONTAINER_ID);
   }
 
   /**
@@ -109,10 +115,12 @@ class TimeseriesContainerKindHandlerChannelsTest {
   void listChannels_pageSize_clamped() {
     when(tsChannelResolver.listPaged(eq(CONTAINER_ID), eq(0), eq(1000)))
         .thenReturn(List.of());
+    when(tsChannelResolver.countByContainerId(CONTAINER_ID)).thenReturn(0L);
 
     var result = handler.listChannels(CONTAINER_APP_ID, 0, 9999);
 
     assertTrue(result.isPresent());
+    assertEquals(1000, result.get().pageSize(), "pageSize must be clamped to 1000");
     // The resolver must have been called with 1000, not 9999
     verify(tsChannelResolver).listPaged(CONTAINER_ID, 0, 1000);
   }

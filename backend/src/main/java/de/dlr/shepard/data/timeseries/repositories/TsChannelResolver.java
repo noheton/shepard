@@ -193,6 +193,18 @@ public class TsChannelResolver implements PanacheRepositoryBase<TimeseriesEntity
   }
 
   /**
+   * Count channels for a container. Used to build the {@code total} field in
+   * paginated responses so callers can compute page counts without fetching
+   * all rows.
+   *
+   * @param containerId the owning timeseries container's numeric id
+   * @return total number of channels in that container
+   */
+  public long countByContainerId(long containerId) {
+    return this.count("containerId = ?1", containerId);
+  }
+
+  /**
    * Convenience: resolve a shepardId to its 5-tuple representation. The
    * caller usually wants the 5-tuple to plug into the existing data-point
    * query layer (which is still 5-tuple addressed) without needing the
