@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -148,7 +150,11 @@ public class ReferenceAnnotationRest {
       "Returns 404 when no reference with that appId exists, or when the reference kind " +
       "does not support annotations. Auth: Read permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "200", description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).")
+  @APIResponse(
+    responseCode = "200",
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No reference with that appId, or kind does not support annotations.")
