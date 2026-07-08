@@ -100,8 +100,8 @@ public class VocabularyBrowseRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged list of vocabularies (may be empty). Header X-Total-Count = total before paging.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabularies(
@@ -143,8 +143,8 @@ public class VocabularyBrowseRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged predicates for this vocabulary (may be empty).",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PredicateIO.class))
+    description = "Paged envelope: items + total + page + pageSize (APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No vocabulary with this appId.")
@@ -201,8 +201,8 @@ public class VocabularyBrowseRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged vocabularies referenced by the entity (may be empty). Header X-Total-Count = total before paging.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = VocabularyIO.class))
+    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabulariesUsedBy(
