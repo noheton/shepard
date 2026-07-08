@@ -11,11 +11,13 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
 import java.security.Principal;
 import jakarta.ws.rs.core.SecurityContext;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -27,10 +29,9 @@ import org.mockito.MockitoAnnotations;
  * <p>Plain Mockito (no {@code @QuarkusTest}) following the pattern of
  * {@link de.dlr.shepard.v2.collectionwatchers.resources.CollectionWatchersRestTest}.
  *
- * <p>The {@code subscribe()} method returns {@code void} and communicates
- * error conditions by calling {@link SseEventSink#close()} before returning.
- * Happy-path tests verify that {@link CollectionEventBus#subscribe} is called.
- * Error-path tests verify that the sink is closed and the bus is not subscribed.
+ * <p>Error paths throw JAX-RS exceptions so that RESTEasy maps them to 404/403
+ * before the SSE handshake is established. 401 is enforced at the framework level
+ * by {@code @Authenticated} and is not tested here.
  */
 class CollectionEventsRestTest {
 
@@ -80,41 +81,33 @@ class CollectionEventsRestTest {
     when(sink.isClosed()).thenReturn(false);
   }
 
-  // ─── 401: unauthenticated ─────────────────────────────────────────────────
-
-  @Test
-  void closesSinkWhenUnauthenticated() {
-    when(securityContext.getUserPrincipal()).thenReturn(null);
-
-    resource.subscribe(COLL_APP_ID, sink, sse, securityContext);
-
-    verify(sink).close();
-    verify(eventBus, never()).subscribe(anyString(), any(), any());
-  }
-
   // ─── 404: collection not found ────────────────────────────────────────────
 
   @Test
-  void closesSinkWhenCollectionNotFound() {
+  void throwsNotFoundWhenCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
 
-    resource.subscribe(COLL_APP_ID, sink, sse, securityContext);
-
-    verify(sink).close();
+    Assertions.assertThrows(
+      NotFoundException.class,
+      () -> resource.subscribe(COLL_APP_ID, sink, sse, securityContext)
+    );
+    verify(sink, never()).close();
     verify(eventBus, never()).subscribe(anyString(), any(), any());
   }
 
   // ─── 403: no Read permission ──────────────────────────────────────────────
 
   @Test
-  void closesSinkWhenCallerLacksReadPermission() {
+  void throwsForbiddenWhenCallerLacksReadPermission() {
     when(permissionsService.isAccessTypeAllowedForUser(
       eq(OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()
     )).thenReturn(false);
 
-    resource.subscribe(COLL_APP_ID, sink, sse, securityContext);
-
-    verify(sink).close();
+    Assertions.assertThrows(
+      ForbiddenException.class,
+      () -> resource.subscribe(COLL_APP_ID, sink, sse, securityContext)
+    );
+    verify(sink, never()).close();
     verify(eventBus, never()).subscribe(anyString(), any(), any());
   }
 

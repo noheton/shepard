@@ -6,6 +6,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -84,38 +85,18 @@ public class CollectionEventsRest {
     @Context Sse sse,
     @Context SecurityContext securityContext
   ) {
-    // Auth: must be authenticated (enforced by @Authenticated) and have Read access.
-    String caller = securityContext.getUserPrincipal() != null
-      ? securityContext.getUserPrincipal().getName()
-      : null;
-    if (caller == null) {
-      sink.close();
-      return;
-    }
+    // @Authenticated guarantees a non-null principal here.
+    String caller = securityContext.getUserPrincipal().getName();
 
-    Long ogmId = resolveOrNull(collectionAppId);
-    if (ogmId == null) {
-      sink.close();
-      return;
-    }
+    // Throws NotFoundException (→ HTTP 404) if no Collection with this appId.
+    Long ogmId = entityIdResolver.resolveLong(collectionAppId);
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
-      sink.close();
-      return;
+      throw new ForbiddenException();
     }
 
     eventBus.subscribe(collectionAppId, sink, sse);
     // The sink stays open; the JAX-RS runtime holds the HTTP connection open
     // for the lifetime of the sink. The bus prunes closed sinks on next emit.
-  }
-
-  // ── helpers ───────────────────────────────────────────────────────────────
-
-  private Long resolveOrNull(String appId) {
-    try {
-      return entityIdResolver.resolveLong(appId);
-    } catch (NotFoundException nfe) {
-      return null;
-    }
   }
 }
