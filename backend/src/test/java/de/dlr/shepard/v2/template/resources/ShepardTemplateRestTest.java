@@ -291,6 +291,19 @@ class ShepardTemplateRestTest {
   }
 
   @Test
+  void tags_pageSizeParam_hasMaxConstraintOf200() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ShepardTemplateRest.class.getMethod(
+        "tags", String.class, int.class, int.class, jakarta.ws.rs.core.SecurityContext.class);
+    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
+        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
+        .findFirst().orElse(null);
+    assertNotNull(param, "tags.pageSize must carry @QueryParam");
+    var max = param.getAnnotation(jakarta.validation.constraints.Max.class);
+    assertNotNull(max, "tags.pageSize must have @Max constraint");
+    assertEquals(200L, max.value(), "tags.pageSize @Max must be 200 (same as list endpoint)");
+  }
+
+  @Test
   void createReturns400OnMalformedJson() {
     var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null, null, null);
     Response r = resource.create(body, securityContext);
