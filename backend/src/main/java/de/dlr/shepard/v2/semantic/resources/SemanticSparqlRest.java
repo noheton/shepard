@@ -3,7 +3,7 @@ package de.dlr.shepard.v2.semantic.resources;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
@@ -469,15 +469,6 @@ public class SemanticSparqlRest {
       httpClient = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build();
     }
     return httpClient;
-  }
-
-  /**
-   * Build a {@code application/problem+json} response with the standard
-   * RFC 7807 fields.
-   */
-  static Response problem(Status status, String type, String title, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private static String readConfig(String key, String fallback) {

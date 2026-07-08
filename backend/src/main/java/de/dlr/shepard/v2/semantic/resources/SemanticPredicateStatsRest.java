@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.semantic.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService.PredicateStats;
 import de.dlr.shepard.v2.semantic.io.PredicateStatsIO;
@@ -128,18 +128,10 @@ public class SemanticPredicateStatsRest {
   }
 
   private static Response badIri(String received) {
-    ProblemJson body = new ProblemJson(
-      PROBLEM_TYPE_BAD_IRI,
-      "Bad predicate IRI",
-      Status.BAD_REQUEST.getStatusCode(),
-      "predicateIriBase64='" + (received == null ? "" : received) +
-        "' is missing, not URL-safe Base64, or decodes to a blank IRI.",
-      null
-    );
-    return Response.status(Status.BAD_REQUEST)
-      .type("application/problem+json")
-      .entity(body)
-      .build();
+    return ProblemResponse.problem(PROBLEM_TYPE_BAD_IRI, "Bad predicate IRI",
+        Status.BAD_REQUEST,
+        "predicateIriBase64='" + (received == null ? "" : received) +
+          "' is missing, not URL-safe Base64, or decodes to a blank IRI.");
   }
 
   /** Wire-shape mapper from the service-layer carrier. */

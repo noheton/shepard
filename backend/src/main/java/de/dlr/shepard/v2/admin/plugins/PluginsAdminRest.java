@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.plugins;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginRegistry;
@@ -233,7 +234,6 @@ public class PluginsAdminRest {
   // ─── helpers ────────────────────────────────────────────────────────────
 
   private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson envelope = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(envelope).build();
+    return ProblemResponse.problem(type, title, status, detail);
   }
 }

@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.references.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
@@ -81,13 +81,6 @@ public class ReferenceAnnotationRest {
 
   private String callerOrNull(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-  }
-
-  private Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status)
-      .type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null))
-      .build();
   }
 
   /**
