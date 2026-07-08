@@ -6,6 +6,7 @@ import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
 import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
@@ -283,7 +284,7 @@ public interface ContainerKindHandler {
    * @param pageSize       page size (clamped to 1–1000 by the handler).
    * @return the channel listing, or empty when this kind has no channels.
    */
-  default Optional<List<TimeseriesChannelV2IO>> listChannels(
+  default Optional<PagedResponseIO<TimeseriesChannelV2IO>> listChannels(
       String containerAppId, int page, int pageSize) {
     return Optional.empty();
   }

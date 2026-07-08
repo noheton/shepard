@@ -29,6 +29,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
@@ -240,12 +241,15 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
    * {@code TimeseriesContainerChannelsRest.listChannels}.
    */
   @Override
-  public Optional<List<TimeseriesChannelV2IO>> listChannels(
+  public Optional<PagedResponseIO<TimeseriesChannelV2IO>> listChannels(
       String containerAppId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(containerAppId).getId();
     int safeSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
     List<TimeseriesEntity> rows = tsChannelResolver.listPaged(containerId, page, safeSize);
-    return Optional.of(rows.stream().map(TimeseriesChannelV2IO::from).toList());
+    long total = tsChannelResolver.countByContainerId(containerId);
+    return Optional.of(new PagedResponseIO<>(
+        rows.stream().map(TimeseriesChannelV2IO::from).toList(),
+        total, page, safeSize));
   }
 
   /**
