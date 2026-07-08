@@ -28,6 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -115,7 +116,9 @@ public class LabJournalHistoryRest {
   )
   public Response history(
       @PathParam("entryAppId") String entryAppId,
+      @Parameter(description = "Zero-based page index (default 0).")
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size, 1–200 (default 50).")
       @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
       @Context SecurityContext sc) {
     // 401 if unauthenticated
