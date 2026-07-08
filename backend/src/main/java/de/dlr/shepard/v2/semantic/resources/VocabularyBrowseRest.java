@@ -166,7 +166,9 @@ public class VocabularyBrowseRest {
     long skip = Math.min((long) page * pageSize, total);
     List<Predicate> rows = predicateDAO.listByVocabularyPaged(vocabId, skip, pageSize);
     List<PredicateIO> page_ = rows.stream().map(PredicateIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── GET /v2/semantic/vocabularies/used-by/{entityAppId} ──────────────────

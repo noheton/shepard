@@ -699,6 +699,7 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listPredecessors(dataObjectAppId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+      .header("X-Total-Count", (long) total)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -807,7 +808,9 @@ public class DataObjectV2Rest {
     int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
     List<DataObjectSummaryIO> items = dataObjectService.listSuccessors(dataObjectAppId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", (long) total)
+        .build();
   }
 
   @GET
@@ -851,7 +854,9 @@ public class DataObjectV2Rest {
     int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
     List<DataObjectSummaryIO> items = dataObjectService.listChildren(dataObjectAppId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", (long) total)
+        .build();
   }
 
   @GET

@@ -170,7 +170,9 @@ public class SnapshotRest {
       .map(SnapshotEntryIO::new)
       .toList();
 
-    return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize))
+        .header("X-Total-Count", (long) total)
+        .build();
   }
 
   /**

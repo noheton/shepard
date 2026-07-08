@@ -272,7 +272,9 @@ public class SemanticAdminRest {
     List<BundleView> merged = configService.listMerged(manifest);
     List<OntologyBundleIO> rows = new ArrayList<>(merged.size());
     for (BundleView v : merged) rows.add(OntologyBundleIO.from(v));
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size()))
+        .header("X-Total-Count", (long) rows.size())
+        .build();
   }
 
   @POST

@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -215,8 +215,8 @@ public class AdminUserGitCredentialRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of credentials (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AdminGitCredentialListItemIO.class))
+    description = "Paged list of credentials (may be empty).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks instance-admin role.")
@@ -233,7 +233,9 @@ public class AdminUserGitCredentialRest {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    return Response.ok(items).build();
+    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size()))
+        .header("X-Total-Count", (long) items.size())
+        .build();
   }
 
   @POST

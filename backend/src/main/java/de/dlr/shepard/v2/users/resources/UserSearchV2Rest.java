@@ -84,7 +84,9 @@ public class UserSearchV2Rest {
     String jsonQuery = buildOrContainsQuery(q, "username", "firstName", "lastName", "email");
     var body = new UserSearchBody(new UserSearchParams(jsonQuery));
     PagedResponseIO<UserIO> paged = userSearchService.searchPaged(body, page, pageSize);
-    return Response.ok(paged).build();
+    return Response.ok(paged)
+        .header("X-Total-Count", paged.total())
+        .build();
   }
 
   /**

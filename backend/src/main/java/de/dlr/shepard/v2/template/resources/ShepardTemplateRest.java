@@ -98,7 +98,9 @@ public class ShepardTemplateRest {
     boolean effInclude = includeRetired && securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
     long total = dao.count(kind, effInclude);
     List<ShepardTemplateIO> rows = dao.list(kind, effInclude, page, pageSize).stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @GET

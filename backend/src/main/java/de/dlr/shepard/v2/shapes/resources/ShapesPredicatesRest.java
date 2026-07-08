@@ -112,6 +112,8 @@ public class ShapesPredicatesRest {
       total = repository.count();
       items = skip >= total ? List.of() : repository.findAll(skip, pageSize);
     }
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 }

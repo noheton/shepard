@@ -199,7 +199,9 @@ public class SemanticAnnotationV2Rest {
       .map(AnnotationIO::new)
       .toList();
     long total = annotationDAO.countFiltered(subjectAppId, subjectKind, predicateIri, vocabId);
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── FIND (text search) ────────────────────────────────────────────────────
@@ -255,7 +257,9 @@ public class SemanticAnnotationV2Rest {
       .map(AnnotationIO::new)
       .toList();
     long total = annotationDAO.countTextSearch(q, vocabId);
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── GET BY appId ──────────────────────────────────────────────────────────

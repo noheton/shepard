@@ -177,6 +177,8 @@ public class SnapshotListRest {
       }
     }
 
-    return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 }

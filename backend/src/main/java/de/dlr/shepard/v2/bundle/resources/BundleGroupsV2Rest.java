@@ -142,7 +142,9 @@ public class BundleGroupsV2Rest {
     long total = fileGroupService.countGroups(bundleAppId);
     List<FileGroupIO> items = fileGroupService.listGroups(bundleAppId, page, pageSize)
         .stream().map(FileGroupIO::new).toList();
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ─── create group ─────────────────────────────────────────────────────────

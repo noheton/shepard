@@ -204,7 +204,9 @@ public class CollectionSnapshotRest {
 
     long total = snapshotService.countByCollection(collectionAppId);
 
-    return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize)).build();
+    return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   // ── private helpers ───────────────────────────────────────────────────────

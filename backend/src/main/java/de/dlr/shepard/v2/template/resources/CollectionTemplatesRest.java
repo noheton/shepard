@@ -106,7 +106,9 @@ public class CollectionTemplatesRest {
     long total = templateDAO.countAllowedForCollection(collectionAppId);
     List<ShepardTemplateIO> items = templateDAO.listAllowedForCollection(collectionAppId, page, pageSize)
         .stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @GET
@@ -131,7 +133,9 @@ public class CollectionTemplatesRest {
     long total = templateDAO.countUsedByCollection(collectionAppId);
     List<ShepardTemplateIO> items = templateDAO.listUsedByCollection(collectionAppId, page, pageSize)
         .stream().map(ShepardTemplateIO::from).toList();
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @PUT
