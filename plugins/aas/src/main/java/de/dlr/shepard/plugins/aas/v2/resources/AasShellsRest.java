@@ -30,6 +30,7 @@ import java.util.Base64;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -98,7 +99,12 @@ public class AasShellsRest {
       responseCode = "200",
       description = "Paged list of Shells readable by the caller. " +
           "Envelope: { items[], total, page, pageSize }.",
-      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+      headers = @Header(
+          name = "X-Total-Count",
+          description = "Total element count before paging.",
+          schema = @Schema(type = SchemaType.INTEGER)
+      ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listShells(
       @Parameter(description = "Zero-based page number (default 0). Returns 400 when negative.")
@@ -186,7 +192,12 @@ public class AasShellsRest {
       responseCode = "200",
       description = "Paged Submodel references for the requested Shell. " +
           "Envelope: { items[], total, page, pageSize }.",
-      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+      content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+      headers = @Header(
+          name = "X-Total-Count",
+          description = "Total element count before paging.",
+          schema = @Schema(type = SchemaType.INTEGER)
+      ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "Shell not found or caller lacks read access.")
   public Response listSubmodels(
