@@ -7,6 +7,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoBulkDataRequestIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoSeriesIO;
 import de.dlr.shepard.v2.timeseries.services.CrossDoChannelResolver;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -107,7 +107,7 @@ public class CrossDoBulkDataRest {
   @APIResponse(
     responseCode = "200",
     description = "Resolved series across the requested DataObjects.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CrossDoSeriesIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -174,7 +174,7 @@ public class CrossDoBulkDataRest {
       out.add(new CrossDoSeriesIO(doAppId, doName, predicate, pick.symbolicName(), points));
     }
 
-    return Response.ok(out).build();
+    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
   }
 
   /**
