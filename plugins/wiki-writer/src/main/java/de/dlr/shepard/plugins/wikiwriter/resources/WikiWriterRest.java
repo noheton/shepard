@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.wikiwriter.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteRequestIO;
 import de.dlr.shepard.plugins.wikiwriter.io.WikiWriteResponseIO;
@@ -112,15 +111,9 @@ public class WikiWriterRest {
     // Guard: LLM provider must be available.
     if (!wikiWriterService.isAvailable()) {
       Log.warnf("WW1: wiki-write requested but LLM TEXT capability is not available");
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "urn:shepard:error:service-unavailable",
-          "Service Unavailable",
-          Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
-          "LLM TEXT capability is not configured. Deploy shepard-plugin-ai and configure the TEXT capability.",
-          null))
-        .build();
+      return problem("urn:shepard:error:service-unavailable", "Service Unavailable",
+        Response.Status.SERVICE_UNAVAILABLE,
+        "LLM TEXT capability is not configured. Deploy shepard-plugin-ai and configure the TEXT capability.");
     }
 
     WikiWriteRequestIO request = body != null ? body : new WikiWriteRequestIO();
@@ -132,15 +125,8 @@ public class WikiWriterRest {
       return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (de.dlr.shepard.spi.ai.LlmException e) {
       Log.errorf(e, "WW1: LLM call failed for DataObject %s", dataObjectAppId);
-      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "urn:shepard:error:service-unavailable",
-          "Service Unavailable",
-          Response.Status.SERVICE_UNAVAILABLE.getStatusCode(),
-          "LLM call failed: " + e.getMessage(),
-          null))
-        .build();
+      return problem("urn:shepard:error:service-unavailable", "Service Unavailable",
+        Response.Status.SERVICE_UNAVAILABLE, "LLM call failed: " + e.getMessage());
     }
   }
 

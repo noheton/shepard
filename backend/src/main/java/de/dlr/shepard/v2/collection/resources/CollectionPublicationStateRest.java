@@ -6,7 +6,6 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.context.collection.services.ArchiveStateGuard;
 import de.dlr.shepard.v2.collection.io.PublicationStateIO;
 import io.quarkus.security.Authenticated;
@@ -102,12 +101,8 @@ public class CollectionPublicationStateRest {
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
       Response.Status.UNAUTHORIZED, "caller identity unknown");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
-      return Response.status(Response.Status.FORBIDDEN)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/publication-state.forbidden",
-          "Read access required", 403,
-          "caller lacks Read on Collection '" + collectionAppId + "'", null))
-        .build();
+      return problem("/problems/publication-state.forbidden", "Read access required",
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
     }
 
     String status = readCollectionStatus(ogmId);
@@ -144,12 +139,8 @@ public class CollectionPublicationStateRest {
     @Context SecurityContext sc
   ) {
     if (body == null || body.getState() == null || !VALID_STATES.contains(body.getState())) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/publication-state.invalid",
-          "Invalid publication state", 400,
-          "state must be one of " + VALID_STATES, null))
-        .build();
+      return problem("/problems/publication-state.invalid", "Invalid publication state",
+        Response.Status.BAD_REQUEST, "state must be one of " + VALID_STATES);
     }
 
     Long ogmId = resolveOrNull(collectionAppId);
@@ -165,13 +156,10 @@ public class CollectionPublicationStateRest {
       ogmId, AccessType.Manage, caller, 0L
     );
     if (!isInstanceAdmin && !isManager) {
-      return Response.status(Response.Status.FORBIDDEN)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/publication-state.forbidden",
-          "Insufficient permission", 403,
-          "Only the Collection owner (Manage permission) or an instance-admin " +
-          "may flip publication-state.", null))
-        .build();
+      return problem("/problems/publication-state.forbidden", "Insufficient permission",
+        Response.Status.FORBIDDEN,
+        "Only the Collection owner (Manage permission) or an instance-admin " +
+        "may flip publication-state.");
     }
 
     writeCollectionStatus(ogmId, body.getState());

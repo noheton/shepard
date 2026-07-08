@@ -421,6 +421,7 @@ public class ReferencesV2Rest {
   public Response downloadContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
+    @Parameter(name = "prefer", description = "Response preference hint. Pass `return=minimal` to suppress the response body on success.")
     @QueryParam("prefer") String prefer,
     @Context SecurityContext sc
   ) {

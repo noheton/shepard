@@ -449,7 +449,6 @@ public class CollectionMcpTools {
   private static Map<String, Object> collectionSummary(Collection c) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("appId", c.getAppId());
-    m.put("id", c.getShepardId());
     m.put("name", c.getName());
     m.put("description", c.getDescription());
     m.put("status", c.getStatus());
@@ -459,7 +458,6 @@ public class CollectionMcpTools {
   private static Map<String, Object> dataObjectSummary(DataObject d) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("appId", d.getAppId());
-    m.put("id", d.getShepardId());
     m.put("name", d.getName());
     m.put("description", d.getDescription());
     m.put("status", d.getStatus());

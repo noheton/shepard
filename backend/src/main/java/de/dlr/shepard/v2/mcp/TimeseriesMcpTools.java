@@ -277,7 +277,7 @@ public class TimeseriesMcpTools {
       List<Map<String, Object>> channels = new ArrayList<>(all.size());
       for (TimeseriesEntity row : all) {
         Map<String, Object> ch = new LinkedHashMap<>();
-        ch.put("shepardId", row.getShepardId() == null ? null : row.getShepardId().toString());
+        ch.put("appId", row.getShepardId() == null ? null : row.getShepardId().toString());
         ch.put("measurement", row.getMeasurement());
         ch.put("device", row.getDevice());
         ch.put("location", row.getLocation());
