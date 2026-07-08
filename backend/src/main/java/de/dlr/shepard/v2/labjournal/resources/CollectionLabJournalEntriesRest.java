@@ -36,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * UI-020 — bulk fetch of all lab journal entries within a single Collection.
@@ -155,8 +156,4 @@ public class CollectionLabJournalEntriesRest {
         .build();
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

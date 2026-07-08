@@ -26,6 +26,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * WW1 — REST resource for the wiki-writer plugin.
@@ -143,18 +144,4 @@ public class WikiWriterRest {
     }
   }
 
-  private static Response problem(Response.Status status, String detail) {
-    String type = switch (status) {
-      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
-      case FORBIDDEN -> "urn:shepard:error:forbidden";
-      case BAD_REQUEST -> "urn:shepard:error:validation";
-      case NOT_FOUND -> "urn:shepard:error:not-found";
-      case SERVICE_UNAVAILABLE -> "urn:shepard:error:service-unavailable";
-      default -> "urn:shepard:error:internal";
-    };
-    return Response.status(status)
-      .type("application/problem+json")
-      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
-      .build();
-  }
 }

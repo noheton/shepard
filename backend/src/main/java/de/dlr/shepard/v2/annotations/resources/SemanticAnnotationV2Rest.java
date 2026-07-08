@@ -54,6 +54,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * SEMA-V6-004 — polymorphic REST surface for semantic annotations.
@@ -1102,11 +1103,6 @@ public class SemanticAnnotationV2Rest {
   private static Response notFound(String kind, String id) {
     return problem(PROBLEM_TYPE_NOT_FOUND, "Not found",
       Response.Status.NOT_FOUND, kind + " with appId '" + id + "' not found.");
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private static boolean blank(String s) {

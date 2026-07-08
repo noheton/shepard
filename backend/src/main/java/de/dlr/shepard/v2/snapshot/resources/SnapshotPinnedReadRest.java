@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * V2c — {@code GET /v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects}.
@@ -81,11 +82,6 @@ public class SnapshotPinnedReadRest {
   private static final String PT_FORBIDDEN = "/problems/snapshots.forbidden";
   private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
   private static final String PT_CONFLICT = "/problems/snapshots.ownership-conflict";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   /**
    * Returns the DataObject {@code appId} list captured in a snapshot.

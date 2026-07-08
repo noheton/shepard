@@ -37,6 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * MFFD-BATCH-01 — {@code POST /v2/data-objects/batch}.
@@ -79,11 +80,6 @@ public class DataObjectBatchV2Rest {
 
   /** Maximum number of items accepted in a single batch request. */
   static final int MAX_BATCH_SIZE = 500;
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   @Inject
   DataObjectService dataObjectService;

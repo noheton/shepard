@@ -34,6 +34,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * P10a/P10b — {@code POST /v2/sql/timeseries}: JSON DSL bulk read endpoint for timeseries data.
@@ -75,11 +76,6 @@ import java.util.Set;
 public class SqlTimeseriesRest {
 
   private static final String PT_NOT_FOUND = "/problems/sql-timeseries.not-found";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   /** Hard cap on the number of container IDs per request. */
   private static final int MAX_CONTAINERS = 1000;

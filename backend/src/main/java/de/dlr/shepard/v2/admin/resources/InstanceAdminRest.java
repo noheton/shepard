@@ -49,6 +49,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * The {@code /v2/admin/instance-admins} + {@code /v2/admin/permission-audit}
@@ -69,11 +70,6 @@ public class InstanceAdminRest {
 
   private static final String PT_NOT_FOUND = "/problems/instance-admin.not-found";
   private static final String PT_BAD_REQUEST = "/problems/instance-admin.bad-request";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
 
   @Inject
   InstanceAdminService instanceAdminService;

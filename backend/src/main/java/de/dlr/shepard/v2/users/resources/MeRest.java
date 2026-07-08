@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * {@code PATCH /v2/users/me} — partial update of the caller's User
@@ -172,8 +173,4 @@ public class MeRest {
     return Response.ok(new UserIO(saved)).build();
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

@@ -31,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.neo4j.ogm.model.Result;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * #27-ARCHIVED — owner-or-instance-admin gated PATCH for a Container's
@@ -210,8 +211,4 @@ public class ContainerPublicationStateRest {
     );
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
 }

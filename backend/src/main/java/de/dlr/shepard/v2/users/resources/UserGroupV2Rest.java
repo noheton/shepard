@@ -44,6 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * V2-SWEEP-002 — appId-keyed user-group CRUD at {@code /v2/user-groups}.
@@ -74,11 +75,6 @@ public class UserGroupV2Rest {
 
   private static final String PT_BAD_REQUEST = "/problems/user-groups.bad-request";
   private static final int MAX_MEMBERS = 500;
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   @GET
   @Operation(

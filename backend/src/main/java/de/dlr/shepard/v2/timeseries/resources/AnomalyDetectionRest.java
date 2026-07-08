@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * AI1b — rolling-median MAD anomaly detection endpoint.
@@ -65,11 +66,6 @@ public class AnomalyDetectionRest {
   private static final String PT_UNAUTHORIZED = "/problems/anomaly-detection.unauthorized";
   private static final String PT_NOT_FOUND    = "/problems/anomaly-detection.not-found";
   private static final String PT_FORBIDDEN    = "/problems/anomaly-detection.forbidden";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   private TimeseriesReference resolveRef(String refAppId) {
     return timeseriesReferenceDAO.findByAppId(refAppId);

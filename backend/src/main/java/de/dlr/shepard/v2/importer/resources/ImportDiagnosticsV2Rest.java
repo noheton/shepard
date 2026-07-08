@@ -34,6 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * IMP-DIAG — {@code /v2/import/diagnostics}: structured diagnostic log for import runs.
@@ -323,8 +324,4 @@ public class ImportDiagnosticsV2Rest {
       "authentication required");
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

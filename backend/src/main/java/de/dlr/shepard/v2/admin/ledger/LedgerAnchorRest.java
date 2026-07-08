@@ -23,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * Admin endpoints for distributed-ledger anchoring of {@code prov:Activity} records.
@@ -50,11 +51,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class LedgerAnchorRest {
 
   private static final String PT_NOT_IMPLEMENTED = "/problems/ledger.not-implemented";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
 
   // -----------------------------------------------------------------------
   // POST /v2/admin/ledger/anchor

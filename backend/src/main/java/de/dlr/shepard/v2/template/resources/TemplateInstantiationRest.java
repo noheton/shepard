@@ -44,6 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * {@code POST /v2/collections/{collectionAppId}/data-objects/from-template/{templateAppId}}
@@ -336,16 +337,6 @@ public class TemplateInstantiationRest {
       return p.substring(1, p.length() - 1);
     }
     return p;
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
-
-  private static Response problem(String type, String title, int status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status, detail, null)).build();
   }
 
   /**

@@ -55,6 +55,7 @@ import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * Groups sub-resource for {@code FileBundleReference} under the unified
@@ -462,11 +463,6 @@ public class BundleGroupsV2Rest {
           "Caller does not have " + accessType + " access to the parent DataObject.");
     }
     return null;
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private Map<String, Object> jsonNodeToMap(JsonNode node) {

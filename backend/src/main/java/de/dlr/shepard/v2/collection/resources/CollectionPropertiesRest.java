@@ -25,6 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * {@code /v2/collections/{appId}/properties} REST surface for the
@@ -155,8 +156,4 @@ public class CollectionPropertiesRest {
     return Response.ok(CollectionPropertiesIO.from(saved)).build();
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
 }

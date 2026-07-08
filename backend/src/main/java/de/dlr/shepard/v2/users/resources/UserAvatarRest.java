@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * U1e — caller's avatar (PUT + DELETE).
@@ -129,8 +130,4 @@ public class UserAvatarRest {
     return Response.noContent().build();
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

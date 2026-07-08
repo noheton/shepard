@@ -24,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * KIP1a/b — the {@code GET /v2/.well-known/kip/{pid-suffix}} public
@@ -217,11 +218,4 @@ public class KipResolverRest {
     return sb.toString();
   }
 
-  private static Response problem(Response.Status status, String type, String title, String detail) {
-    return Response
-      .status(status)
-      .type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null))
-      .build();
-  }
 }

@@ -29,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -177,11 +178,6 @@ public class NotificationAdminRest {
     }
     recordTestOutcome(transport, "FAIL", "sender returned false (see backend logs)");
     return problem(PROBLEM_TYPE_BAD_GATEWAY, "Transport error", Response.Status.BAD_GATEWAY, "transport send returned false");
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /** Persist last-test fields on the transport row. Best-effort — never throws. */
