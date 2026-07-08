@@ -13,7 +13,7 @@ import de.dlr.shepard.spi.view.ViewRecipeRenderer;
 import de.dlr.shepard.spi.view.ViewRecipeRendererRegistry;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderRequestIO;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderResponseIO;
 import de.dlr.shepard.v2.shapes.io.ShapesRenderResponseIO.ChannelBindingProjectionIO;
@@ -204,27 +204,16 @@ public class ShapesRenderRest {
 
     ShepardTemplate template = templateDAO.findByAppId(body.templateAppId()).orElse(null);
     if (template == null) {
-      return Response.status(Response.Status.NOT_FOUND)
-        .entity(
-          new ProblemJson(PT_NOT_FOUND, "Template Not Found", 404,
-            "template not found: " + body.templateAppId(), null)
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_NOT_FOUND, "Template Not Found",
+        Response.Status.NOT_FOUND, "template not found: " + body.templateAppId());
     }
 
     if (!"VIEW_RECIPE".equals(template.getTemplateKind())) {
-      return Response.status(422)
-        .entity(
-          new ProblemJson(PT_WRONG_KIND, "Wrong Template Kind", 422,
-            "render not yet supported for templateKind=" +
-            template.getTemplateKind() +
-            "; only VIEW_RECIPE is supported in this release. " +
-            "Use GET /v2/templates?kind=view to discover VIEW_RECIPE templates.",
-            null)
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_WRONG_KIND, "Wrong Template Kind", 422,
+        "render not yet supported for templateKind=" +
+        template.getTemplateKind() +
+        "; only VIEW_RECIPE is supported in this release. " +
+        "Use GET /v2/templates?kind=view to discover VIEW_RECIPE templates.");
     }
 
     // VIS-S1 — try the renderer SPI dispatch first. When the template
@@ -280,23 +269,13 @@ public class ShapesRenderRest {
   private Response renderFileRooted(HttpHeaders headers, ShapesRenderRequestIO body) {
     String shapeIri = body.shapeIri();
     if (rendererRegistry == null) {
-      return Response.status(422)
-        .entity(
-          new ProblemJson(PT_RENDER_FAILED, "Renderer Unavailable", 422,
-            "no renderer registry available for shape: " + shapeIri, null)
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_RENDER_FAILED, "Renderer Unavailable", 422,
+        "no renderer registry available for shape: " + shapeIri);
     }
     Optional<ViewRecipeRenderer> match = rendererRegistry.resolve(shapeIri);
     if (match.isEmpty()) {
-      return Response.status(422)
-        .entity(
-          new ProblemJson(PT_RENDER_FAILED, "No Renderer Registered", 422,
-            "no renderer registered for shape: " + shapeIri, null)
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_RENDER_FAILED, "No Renderer Registered", 422,
+        "no renderer registered for shape: " + shapeIri);
     }
     RenderRequest req = buildFileRootedRequest(body, shapeIri);
 
@@ -446,17 +425,10 @@ public class ShapesRenderRest {
         concrete,
         req.shapeIri()
       );
-      return Response
-        .status(422)
-        .entity(
-          new ProblemJson(PT_RENDER_FAILED, "Media Render Failed", 422,
-            ex.getMessage() == null ? "media render failed for " + concrete : ex.getMessage(),
-            null,
-            Map.of("code", ex.code() == null ? "render.unknown-error" : ex.code(),
-                   "renderer", renderer.name()))
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_RENDER_FAILED, "Media Render Failed", 422,
+        ex.getMessage() == null ? "media render failed for " + concrete : ex.getMessage(),
+        Map.of("code", ex.code() == null ? "render.unknown-error" : ex.code(),
+               "renderer", renderer.name()));
     } catch (RuntimeException ex) {
       Log.warnf(
         ex,
@@ -465,15 +437,9 @@ public class ShapesRenderRest {
         concrete,
         req.shapeIri()
       );
-      return Response
-        .status(422)
-        .entity(
-          new ProblemJson(PT_RENDER_FAILED, "Media Render Failed", 422,
-            "media render failed for " + concrete, null,
-            Map.of("renderer", renderer.name()))
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_RENDER_FAILED, "Media Render Failed", 422,
+        "media render failed for " + concrete,
+        Map.of("renderer", renderer.name()));
     }
     return null; // renderer declined this media — JSON fallback
   }
@@ -530,15 +496,9 @@ public class ShapesRenderRest {
           renderer.name(),
           shapeIri
         );
-        return Response
-          .serverError()
-          .entity(
-            new ProblemJson(PT_INTERNAL, "Renderer Internal Error", 500,
-              "renderer '" + renderer.name() + "' returned null", null,
-              Map.of("renderer", renderer.name()))
-          )
-          .type("application/problem+json")
-          .build();
+        return ProblemResponse.problem(PT_INTERNAL, "Renderer Internal Error", 500,
+          "renderer '" + renderer.name() + "' returned null",
+          Map.of("renderer", renderer.name()));
       }
       return Response.ok(toWire(out, echoTemplateAppId, echoFocusShepardId)).build();
     } catch (RenderException ex) {
@@ -549,16 +509,10 @@ public class ShapesRenderRest {
         ex.code(),
         shapeIri
       );
-      return Response
-        .status(422)
-        .entity(
-          new ProblemJson(PT_RENDER_FAILED, "Render Failed", 422,
-            ex.getMessage(), null,
-            Map.of("code", ex.code() == null ? "render.unknown-error" : ex.code(),
-                   "renderer", renderer.name()))
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_RENDER_FAILED, "Render Failed", 422,
+        ex.getMessage(),
+        Map.of("code", ex.code() == null ? "render.unknown-error" : ex.code(),
+               "renderer", renderer.name()));
     } catch (RuntimeException ex) {
       Log.warnf(
         ex,
@@ -566,15 +520,9 @@ public class ShapesRenderRest {
         renderer.name(),
         shapeIri
       );
-      return Response
-        .serverError()
-        .entity(
-          new ProblemJson(PT_INTERNAL, "Renderer Internal Error", 500,
-            ex.getClass().getSimpleName() + ": " + ex.getMessage(), null,
-            Map.of("renderer", renderer.name()))
-        )
-        .type("application/problem+json")
-        .build();
+      return ProblemResponse.problem(PT_INTERNAL, "Renderer Internal Error", 500,
+        ex.getClass().getSimpleName() + ": " + ex.getMessage(),
+        Map.of("renderer", renderer.name()));
     }
   }
 
@@ -651,9 +599,6 @@ public class ShapesRenderRest {
   }
 
   private Response badRequest(String message) {
-    return Response.status(Response.Status.BAD_REQUEST)
-      .entity(new ProblemJson(PT_BAD_REQUEST, "Bad Request", 400, message, null))
-      .type("application/problem+json")
-      .build();
+    return ProblemResponse.problem(PT_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST, message);
   }
 }

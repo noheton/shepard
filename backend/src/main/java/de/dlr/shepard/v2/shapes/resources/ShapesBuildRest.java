@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.shapes.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
 import de.dlr.shepard.v2.shapes.io.ShapeBuildRequestIO;
@@ -103,15 +103,8 @@ public class ShapesBuildRest {
     ShapeBuildRequestIO body
   ) {
     if (body == null) {
-      return Response.status(Response.Status.BAD_REQUEST)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "/problems/shapes.build.invalid-dsl",
-          "Invalid Shape DSL",
-          400,
-          "request body required",
-          null))
-        .build();
+      return ProblemResponse.problem("/problems/shapes.build.invalid-dsl", "Invalid Shape DSL",
+        Response.Status.BAD_REQUEST, "request body required");
     }
     try {
       ShapeSpec spec = body.toSpec();
@@ -121,15 +114,8 @@ public class ShapesBuildRest {
       // Structural DSL problem the builder rejected — surface the reason
       // so the editor can highlight the offending row inline.
       Log.debugf("ShapesBuildRest: invalid DSL (%s).", ex.getMessage());
-      return Response.status(Response.Status.BAD_REQUEST)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "/problems/shapes.build.invalid-dsl",
-          "Invalid Shape DSL",
-          400,
-          ex.getMessage(),
-          null))
-        .build();
+      return ProblemResponse.problem("/problems/shapes.build.invalid-dsl", "Invalid Shape DSL",
+        Response.Status.BAD_REQUEST, ex.getMessage());
     }
   }
 

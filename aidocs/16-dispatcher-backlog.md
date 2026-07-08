@@ -4415,35 +4415,35 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/PermissionAuditEntryIO.java:20`; apisimp-sweep-fire478-2026-07-08.md §F5.
 
 ## APISIMP-MCP-SUMMARY-NUMERIC-ID — CollectionMcpTools emits numeric Neo4j id under "id" key alongside appId (size: XS, sweep: fire-481)
-- **Status:** 🔄 queued.
+- **Status:** ✅ done — PR #2414, fire-482.
 - **Why:** `collectionSummary()` (:452) and `dataObjectSummary()` (:462) in `CollectionMcpTools.java` each call `m.put("id", c.getShepardId())` / `m.put("id", d.getShepardId())`, emitting the raw Neo4j numeric `Long` alongside the correct `"appId"` UUID. These helpers back four MCP tools: `create_collection` (:263), `update_collection` (:302), `create_data_object` (:361), `update_data_object` (:420). An AI agent that reads `"id"` from any of these tool responses gets a numeric internal ID that fails on every `/v2/` endpoint.
 - **Fix:** Remove `m.put("id", c.getShepardId())` at line 452 and `m.put("id", d.getShepardId())` at line 462; `"appId"` is the stable cross-substrate identifier.
 - **AC:** `create_collection`, `update_collection`, `create_data_object`, `update_data_object` tool responses contain no `"id"` key — only `"appId"`; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/CollectionMcpTools.java:452,462`; `aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md §F1`.
 
 ## APISIMP-MCP-TS-CHANNEL-KEY — list_timeseries_channels puts channel UUID under "shepardId" instead of "appId" (size: XS, sweep: fire-481)
-- **Status:** 🔄 queued.
+- **Status:** ✅ done — PR #2414, fire-482.
 - **Why:** `TimeseriesMcpTools.java:280` calls `ch.put("shepardId", row.getShepardId() == null ? null : row.getShepardId().toString())`. The value IS a UUID v7 (not a numeric id), but the key name `"shepardId"` diverges from every other MCP tool response, which use `"appId"`. An MCP client that follows the `list_timeseries_channels` → `get_channel_data` flow expects `appId` and silently gets null.
 - **Fix:** Change `ch.put("shepardId", ...)` → `ch.put("appId", row.getShepardId() == null ? null : row.getShepardId().toString())` at line 280. One character of key rename.
 - **AC:** Each row in the `list_timeseries_channels` tool response uses key `"appId"`, not `"shepardId"`; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/TimeseriesMcpTools.java:280`; `aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md §F2`.
 
 ## APISIMP-SHAPES-DEDUP-MISSED — ShapesRenderRest + ShapesBuildRest missed in PROBLEM-DEDUP; 12 inline ProblemJson constructions remain (size: S, sweep: fire-481)
-- **Status:** 🔄 queued.
+- **Status:** ✅ done — PR #2414, fire-482.
 - **Why:** APISIMP-PROBLEM-DEDUP (PR #2413, fire-481) covered 74 in-tree and plugin REST classes. `ShapesRenderRest` and `ShapesBuildRest` were not in scope. `ShapesRenderRest` has a narrow `badRequest(String)` helper for HTTP 400 only, plus 10 inline `new ProblemJson(...)` constructions at lines 209, 219, 285, 295, 452, 471, 536, 555, 572, 655 for 404, 422, and 500 responses. `ShapesBuildRest` has no helper at all — 2 inline 400s at lines 108, 126. 12 total bypass sites.
 - **Fix:** Add `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` to both files; replace all 12 inline `new ProblemJson(...)` chains with `ProblemResponse.problem(...)` calls using the matching overload (status-only, or full type+title+status+detail).
 - **AC:** Zero `new ProblemJson(` expressions in either file; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesRenderRest.java:209,219,285,295,452,471,536,555,572,655`; `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesBuildRest.java:108,126`; `aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md §F3`.
 
 ## APISIMP-PROBLEM-HELPER-BYPASS — 3 REST files define problem() but bypass it with 7 inline ProblemJson constructions for custom-type URIs (size: S, sweep: fire-481)
-- **Status:** 🔄 queued.
+- **Status:** ✅ done — PR #2414, fire-482. Also covered ContainerPublicationStateRest (3 additional sites, same pattern).
 - **Why:** Three files define a `problem()` helper but use inline `new ProblemJson(...)` for errors that need a custom type URI the helper's fixed dispatch cannot express: `CollectionPublicationStateRest.java:104–110, 146–152, 167–173` (3 sites); `plugins/spatiotemporal/.../SpatialPromoteRest.java:101–109, 131–141` (2 sites); `plugins/wiki-writer/.../WikiWriterRest.java:114–121, 131–141` (2 sites). 7 bypass sites total.
 - **Fix:** Add an overloaded `problem(Response.Status, String typeUri, String detail)` variant to each file's helper (matching the `ProblemResponse.problem(Response.Status, String)` signature that derives type+title from status, with a custom type override); migrate the 7 inline sites to call it.
 - **AC:** No file that defines `problem()` also directly constructs `new ProblemJson`; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/CollectionPublicationStateRest.java:104`; `plugins/spatiotemporal/src/main/java/de/dlr/shepard/v2/spatial/promote/SpatialPromoteRest.java:101`; `plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterRest.java:114`; `aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md §F4`.
 
 ## APISIMP-PREFER-PARAM-UNDOC — @QueryParam("prefer") on GET /v2/references/{appId}/content has no @Parameter annotation (size: XS, sweep: fire-481)
-- **Status:** 🔄 queued.
+- **Status:** ✅ done — PR #2414, fire-482.
 - **Why:** `ReferencesV2Rest.java:423` accepts `@QueryParam("prefer")` but has no `@Parameter` annotation. The `prefer=source` hint (overrides browser-friendly proxy for video references per `ReferenceKindHandler.java:226–229`) is invisible in the generated OpenAPI spec. Callers have no documented path to discover this parameter.
 - **Fix:** Add `@Parameter(name = "prefer", description = "Download preference. 'source' returns original bytes; 'proxy' (default) returns a browser-friendly transcode. Only honoured by the video plugin; other kinds ignore it.")` immediately before `@QueryParam("prefer")` at line 423.
 - **AC:** `prefer` appears as a documented optional string query parameter in the OpenAPI spec for `GET /v2/references/{appId}/content`; `mvn verify -pl backend` green.

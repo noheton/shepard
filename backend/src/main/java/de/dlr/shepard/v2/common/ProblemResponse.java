@@ -31,6 +31,12 @@ public final class ProblemResponse {
         .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null, ext)).build();
   }
 
+  public static Response problem(String type, String title, int status, String detail,
+      Map<String, Object> ext) {
+    return Response.status(status).type(PROBLEM_JSON)
+        .entity(new ProblemJson(type, title, status, detail, null, ext)).build();
+  }
+
   /** Derives {@code type} and {@code title} from the HTTP status. */
   public static Response problem(Response.Status status, String detail) {
     String type = switch (status) {
