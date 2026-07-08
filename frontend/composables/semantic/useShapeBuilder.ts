@@ -80,10 +80,10 @@ export function useShapeBuilder() {
         headers: jsonHeaders(),
         body: JSON.stringify(dsl),
       });
-      const body = (await res.json()) as ShapeBuildResult;
+      const body = (await res.json()) as ShapeBuildResult & { detail?: string };
       if (!res.ok) {
-        // 400 carries an error message in the body.error field.
-        compileError.value = body?.error ?? `${res.status} ${res.statusText}`;
+        // 400 is RFC 7807 ProblemJson: read .detail; fall back for legacy callers.
+        compileError.value = body?.detail ?? body?.error ?? `${res.status} ${res.statusText}`;
         compiledTurtle.value = null;
         compiledShapeIri.value = null;
         return { shapeIri: null, shapeGraph: null, error: compileError.value };

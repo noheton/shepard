@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.shapes.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder;
 import de.dlr.shepard.v2.shapes.io.ShapeBuildRequestIO;
 import de.dlr.shepard.v2.shapes.io.ShapeBuildRequestIO.InMemberIO;
@@ -118,9 +119,11 @@ class ShapesBuildRestTest {
     Response r = rest.build(null);
 
     assertThat(r.getStatus()).isEqualTo(400);
-    var io = (ShapeBuildResponseIO) r.getEntity();
-    assertThat(io.error()).isNotNull();
-    assertThat(io.shapeGraph()).isNull();
+    var problem = (ProblemJson) r.getEntity();
+    assertThat(problem.type()).isEqualTo("/problems/shapes.build.invalid-dsl");
+    assertThat(problem.title()).isEqualTo("Invalid Shape DSL");
+    assertThat(problem.status()).isEqualTo(400);
+    assertThat(problem.detail()).isNotNull();
   }
 
   @Test
@@ -135,9 +138,10 @@ class ShapesBuildRestTest {
     Response r = rest.build(body);
 
     assertThat(r.getStatus()).isEqualTo(400);
-    var io = (ShapeBuildResponseIO) r.getEntity();
-    assertThat(io.error()).isNotNull();
-    assertThat(io.shapeGraph()).isNull();
+    var problem = (ProblemJson) r.getEntity();
+    assertThat(problem.type()).isEqualTo("/problems/shapes.build.invalid-dsl");
+    assertThat(problem.status()).isEqualTo(400);
+    assertThat(problem.detail()).isNotNull();
   }
 
   @Test
