@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.shapes.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
