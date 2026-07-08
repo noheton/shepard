@@ -1011,7 +1011,7 @@ public class ContainersV2Rest {
       @PathParam("channelShepardId") String channelShepardId,
       @Parameter(description = "Zero-based page index (default 0).",
         schema = @Schema(minimum = "0", defaultValue = "0"))
-        @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+        @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(description = "Items per page, capped at 500 (default 200).",
         schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
         @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
@@ -1127,7 +1127,7 @@ public class ContainersV2Rest {
       @PathParam("appId") String appId,
       @Parameter(description = "Zero-based page index (default 0).",
         schema = @Schema(minimum = "0", defaultValue = "0"))
-        @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+        @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(description = "Items per page, capped at 500 (default 200).",
         schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
         @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,

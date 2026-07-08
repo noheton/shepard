@@ -130,7 +130,7 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response listGroups(
     @PathParam("bundleAppId") String bundleAppId,
-    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
