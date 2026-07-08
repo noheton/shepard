@@ -255,6 +255,21 @@ class ReferencesV2RestTest {
     assertEquals(400, r.getStatus());
   }
 
+  @Test
+  void list_returnsXTotalCountHeader() {
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(referencesService.countByDataObject(eq("file"), eq(DO_APP_ID), eq(null))).thenReturn(7);
+    when(referencesService.listByDataObject(eq("file"), eq(DO_APP_ID), eq(null), eq(0), eq(50)))
+      .thenReturn(List.of());
+
+    var r = resource.list("file", DO_APP_ID, null, 0, 50, securityContext);
+    assertEquals(200, r.getStatus());
+    assertTrue(r.getHeaders().containsKey("X-Total-Count"),
+      "X-Total-Count header must be present (APISIMP-REFS-LIST-NO-XTOTALCOUNT)");
+    assertEquals("7", String.valueOf(r.getHeaders().getFirst("X-Total-Count")));
+  }
+
   // ─── uploadContent ─────────────────────────────────────────────────────────
 
   @Test
