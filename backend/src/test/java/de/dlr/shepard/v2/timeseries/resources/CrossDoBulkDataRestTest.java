@@ -20,6 +20,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoBulkDataRequestIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoSeriesIO;
 import de.dlr.shepard.v2.timeseries.services.CrossDoChannelResolver;
@@ -125,7 +126,7 @@ public class CrossDoBulkDataRestTest {
 
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
+    List<CrossDoSeriesIO> body = ((PagedResponseIO<CrossDoSeriesIO>) resp.getEntity()).items();
     assertEquals(1, body.size());
     CrossDoSeriesIO s = body.get(0);
     assertEquals(DO_A, s.dataObjectAppId());
@@ -151,7 +152,7 @@ public class CrossDoBulkDataRestTest {
 
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
+    List<CrossDoSeriesIO> body = ((PagedResponseIO<CrossDoSeriesIO>) resp.getEntity()).items();
     assertEquals(1, body.size());
     CrossDoSeriesIO s = body.get(0);
     assertEquals(DO_B, s.dataObjectAppId());
@@ -178,7 +179,7 @@ public class CrossDoBulkDataRestTest {
 
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
+    List<CrossDoSeriesIO> body = ((PagedResponseIO<CrossDoSeriesIO>) resp.getEntity()).items();
     assertEquals(1, body.size(), "forbidden DO must be dropped silently, allowed DO kept");
     assertEquals(DO_A, body.get(0).dataObjectAppId());
   }
@@ -199,7 +200,7 @@ public class CrossDoBulkDataRestTest {
 
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
+    List<CrossDoSeriesIO> body = ((PagedResponseIO<CrossDoSeriesIO>) resp.getEntity()).items();
     assertTrue(body.isEmpty());
     verify(resolverMock, never()).resolveChannelsByPredicate(eq(DO_UNKNOWN), any());
     verify(serviceMock, never()).getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt());
@@ -235,7 +236,7 @@ public class CrossDoBulkDataRestTest {
 
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<CrossDoSeriesIO> body = (List<CrossDoSeriesIO>) resp.getEntity();
+    List<CrossDoSeriesIO> body = ((PagedResponseIO<CrossDoSeriesIO>) resp.getEntity()).items();
     // 2 rows: A (data), B (no channel). Forbidden and unknown DOs silently dropped.
     assertEquals(2, body.size());
     assertEquals(DO_A, body.get(0).dataObjectAppId());
