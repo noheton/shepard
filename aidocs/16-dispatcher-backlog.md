@@ -4471,7 +4471,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:183`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F2`.
 
 ## APISIMP-LABJOURNALHISTORY-UNDOC-PARAMS — @QueryParam page/pageSize in LabJournalHistoryRest have no @Parameter annotation (size: XS, sweep: fire-483)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-flight — PR #2416, fire-483.
 - **Why:** `LabJournalHistoryRest.java:118–119` uses `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations. The sibling `CollectionLabJournalEntriesRest.java:114–117` already documents these params and is the template to copy from.
 - **Fix:** Add `@Parameter(description = "Zero-based page index (default 0).")` and `@Parameter(description = "Page size, 1–200 (default 50).")` before the two `@QueryParam` lines in `LabJournalHistoryRest`. Two-liner.
 - **AC:** `GET /v2/lab-journal/{entryAppId}/history` lists `page` and `pageSize` as documented optional integer parameters in the generated OpenAPI spec; `mvn verify -pl backend` green.
