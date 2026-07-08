@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 129 |
+| `deployed` | 130 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **544** |
+| **total docs** | **545** |
 | **UNTAGGED** | **0** |
 
 ## fragment (87)
@@ -444,7 +444,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-07-07 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-07-07 |
 
-## deployed (129)
+## deployed (130)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -456,7 +456,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-07-07 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-07-07 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-07-07 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-07-07 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-07-08 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-07-07 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire15.md`](agent-findings/apisimp-sweep-2026-06-13-fire15.md) | APISIMP Sweep — 2026-06-13 (fire #N+15) | 2026-06-13 | 2026-07-07 |
@@ -513,6 +513,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire470-2026-07-08.md`](agent-findings/apisimp-sweep-fire470-2026-07-08.md) | APISIMP Sweep — fire-470 · 2026-07-08 | 2026-07-08 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-fire471-2026-07-08.md`](agent-findings/apisimp-sweep-fire471-2026-07-08.md) | APISIMP Sweep — fire-471 · 2026-07-08 | 2026-07-08 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-fire472-2026-07-08.md`](agent-findings/apisimp-sweep-fire472-2026-07-08.md) | APISIMP Sweep — fire-472 · 2026-07-08 | 2026-07-08 | 2026-07-08 |
+| [`aidocs/agent-findings/apisimp-sweep-fire474-2026-07-08.md`](agent-findings/apisimp-sweep-fire474-2026-07-08.md) | APISIMP Sweep — fire-474 — 2026-07-08 | 2026-07-08 | — |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-07-07 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-07-07 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-07-07 |
