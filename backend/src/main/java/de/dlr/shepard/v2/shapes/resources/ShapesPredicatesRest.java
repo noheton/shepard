@@ -8,6 +8,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -98,7 +99,7 @@ public class ShapesPredicatesRest {
     @Parameter(description = "Maximum entries per page (1–500). Default 200.", required = false)
     @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
     @Parameter(description = "Zero-based page index. Default 0.", required = false)
-    @QueryParam("page") @DefaultValue("0") @Min(0) int page
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page
   ) {
     int skip = page * pageSize;
     long total;

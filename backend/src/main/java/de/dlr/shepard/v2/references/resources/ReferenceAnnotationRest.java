@@ -12,6 +12,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -160,7 +161,7 @@ public class ReferenceAnnotationRest {
   @APIResponse(responseCode = "404", description = "No reference with that appId, or kind does not support annotations.")
   public Response list(
     @PathParam("appId") String appId,
-    @Parameter(description = "Zero-based page index (default 0).") @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @Parameter(description = "Zero-based page index (default 0).") @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Items per page (1–1000). Default 200.") @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
     @Context SecurityContext sc
   ) {

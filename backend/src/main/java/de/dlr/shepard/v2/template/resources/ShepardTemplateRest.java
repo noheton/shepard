@@ -15,6 +15,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
@@ -89,7 +90,7 @@ public class ShepardTemplateRest {
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
     @Parameter(description = "Set true to include retired rows. Only meaningful for admins.")
     @DefaultValue("false") @QueryParam("includeRetired") boolean includeRetired,
-    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @Min(0) int page,
+    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @PositiveOrZero int page,
     @Parameter(description = "Page size (1–200). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
@@ -299,7 +300,7 @@ public class ShepardTemplateRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response tags(
     @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
-    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @Min(0) int page,
+    @Parameter(description = "Zero-based page index.") @DefaultValue("0") @QueryParam("page") @PositiveOrZero int page,
     @Parameter(description = "Page size (1–500). Default 50.") @DefaultValue("50") @QueryParam("pageSize") @Min(1) @Max(500) int pageSize,
     @Context SecurityContext securityContext
   ) {
