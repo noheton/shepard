@@ -4362,7 +4362,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:160,312`; apisimp-sweep-fire475-2026-07-08.md §F6
 
 ## APISIMP-SHAPES-BUILD-400-NOTRFC7807 — ShapesBuildRest 400 uses bespoke ShapeBuildResponseIO instead of ProblemJson (size: S, sweep: fire-475)
-- **Status:** 🔄 in-flight (fire-477, PR APISIMP-SHAPES-BUILD-400-NOTRFC7807).
+- **Status:** 🔄 in-flight (fire-477, PR #2407).
 - **Why:** `POST /v2/shapes/build` returns HTTP 400 with `Content-Type: application/problem+json` but the body is a `ShapeBuildResponseIO` record (`{shapeIri, shapeGraph, error}`) — not a RFC7807 Problem Detail (`{type, title, status, detail, instance}`). Clients that parse `application/problem+json` expecting the standard fields receive `null` for all of them. The 200 response body also uses `ShapeBuildResponseIO` — the single-shape approach conflates success and failure bodies.
 - **Fix shape:** on 400, return a proper `ProblemJson(type="/problems/shapes.invalid-dsl", title="Invalid Shape DSL", status=400, detail=ex.getMessage(), instance=null)`; on 200, keep `ShapeBuildResponseIO` for the success body (only `shapeIri` + `shapeGraph` needed). Update `@APIResponse` schema annotations accordingly.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesBuildRest.java:105-120`; `backend/src/main/java/de/dlr/shepard/v2/shapes/io/ShapeBuildResponseIO.java`; apisimp-sweep-fire475-2026-07-08.md §F7
