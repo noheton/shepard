@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.shapes.resources;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.shapes.builder.ShaclShapeBuilder;
 import de.dlr.shepard.v2.shapes.builder.ShapeSpec;
 import de.dlr.shepard.v2.shapes.io.ShapeBuildRequestIO;
@@ -90,7 +91,7 @@ public class ShapesBuildRest {
   @APIResponse(
     responseCode = "400",
     description = "Request body missing, or the DSL was structurally invalid.",
-    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ShapeBuildResponseIO.class))
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response build(
@@ -104,7 +105,12 @@ public class ShapesBuildRest {
     if (body == null) {
       return Response.status(Response.Status.BAD_REQUEST)
         .type("application/problem+json")
-        .entity(ShapeBuildResponseIO.invalid("request body required"))
+        .entity(new ProblemJson(
+          "/problems/shapes.build.invalid-dsl",
+          "Invalid Shape DSL",
+          400,
+          "request body required",
+          null))
         .build();
     }
     try {
@@ -117,7 +123,12 @@ public class ShapesBuildRest {
       Log.debugf("ShapesBuildRest: invalid DSL (%s).", ex.getMessage());
       return Response.status(Response.Status.BAD_REQUEST)
         .type("application/problem+json")
-        .entity(ShapeBuildResponseIO.invalid(ex.getMessage()))
+        .entity(new ProblemJson(
+          "/problems/shapes.build.invalid-dsl",
+          "Invalid Shape DSL",
+          400,
+          ex.getMessage(),
+          null))
         .build();
     }
   }
