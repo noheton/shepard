@@ -4379,7 +4379,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:733`; `backend/src/main/java/de/dlr/shepard/v2/containers/handlers/TimeseriesContainerKindHandler.java:323`; apisimp-sweep-fire475-2026-07-08.md §A2 (filed fire-476).
 
 ## APISIMP-ADMIN-CONFIG-NO-XCOUNT — AdminConfigRest listFeatures returns bare list without X-Total-Count header (size: XS, sweep: fire-477)
-- **Status:** 🔄 in-flight (fire-477, PR to be opened).
+- **Status:** ✅ shipped (fire-478, PR #2409, SHA `8642a17d`, 2026-07-08).
 - **Why:** `GET /v2/admin/config` (`AdminConfigRest.listFeatures()` at line 90) returns `Response.ok(rows).build()` — a bare `List<ConfigFeatureIO>` with no `X-Total-Count` header. Every other v2 list endpoint (post-APISIMP-XCOUNT-BATCH-2) carries `X-Total-Count`; this one was missed because it is a tiny admin-only surface that rarely has more than ~10 entries (one per registered feature). The fix is one-liner: chain `.header("X-Total-Count", (long) rows.size())`.
 - **Fix:** `AdminConfigRest.java:90` → `return Response.ok(rows).header("X-Total-Count", (long) rows.size()).build();`. Also add/update `@APIResponse` `@Header` annotation for `X-Total-Count` on the 200 response. Add a test asserting the header is present.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:90`; apisimp-sweep-fire477-2026-07-08.md §F1.
