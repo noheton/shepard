@@ -715,7 +715,7 @@ public class ContainersV2Rest {
     description = "Data points for the channel.",
     content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
   )
-  @APIResponse(responseCode = "400", description = "start or end missing / negative.")
+  @APIResponse(responseCode = "400", description = "start or end missing / negative, or maxPoints out of range [1–5000].")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container or channel with that id.")
@@ -729,8 +729,8 @@ public class ContainersV2Rest {
     @QueryParam("end")   @NotNull @PositiveOrZero Long end,
     @Parameter(description = "Downsampling algorithm. Only 'lttb' (Largest Triangle Three Buckets) is supported; any other value disables downsampling.")
     @QueryParam("downsample") String downsample,
-    @Parameter(description = "Maximum number of data points to return when downsample=lttb is active. Ignored when downsample is absent or unrecognised.")
-    @QueryParam("maxPoints") Integer maxPoints,
+    @Parameter(description = "Maximum number of data points to return when downsample=lttb is active (1–5000). Ignored when downsample is absent or unrecognised. Absent or null uses the server default (2000).")
+    @QueryParam("maxPoints") @Min(1) @Max(5000) Integer maxPoints,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
