@@ -29,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * V2e — {@code GET /v2/snapshots/{aAppId}/diff/{bAppId}}.
@@ -82,11 +83,6 @@ public class SnapshotDiffRest {
 
   private static final String PT_UNAUTH = "/problems/snapshots.unauthorized";
   private static final String PT_NOT_FOUND = "/problems/snapshots.not-found";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   /**
    * Diff two snapshots.

@@ -70,6 +70,7 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * L2d Phase A.2 — {@code /v2/collections/{collectionAppId}/data-objects}.
@@ -990,11 +991,6 @@ public class DataObjectV2Rest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Permission denied", Response.Status.FORBIDDEN, "Caller lacks the required permission on this DataObject");
     }
     return null;
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   /**

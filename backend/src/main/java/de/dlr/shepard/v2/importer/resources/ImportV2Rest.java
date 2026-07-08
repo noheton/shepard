@@ -44,6 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * IMP1 — {@code /v2/import}: dry-run import validation and plan inspection.
@@ -287,11 +288,6 @@ public class ImportV2Rest {
     String commitId = "INVALIDATED".equals(plan.getStatus()) ? null : plan.getCommitId();
 
     return new ImportPlanIO(commitId, plan.getStatus(), expiresAt, summary, warnings, errors);
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private static String caller(SecurityContext sc) {

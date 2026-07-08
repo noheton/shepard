@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * APISIMP-GIT-REF-PATH — domain-specific action endpoints for GitReferences
@@ -183,17 +184,4 @@ public class GitReferenceActionsRest {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
   }
 
-  private static Response problem(Response.Status status, String detail) {
-    String type = switch (status) {
-      case UNAUTHORIZED -> "urn:shepard:error:unauthorized";
-      case FORBIDDEN -> "urn:shepard:error:forbidden";
-      case BAD_REQUEST -> "urn:shepard:error:validation";
-      case NOT_FOUND -> "urn:shepard:error:not-found";
-      default -> "urn:shepard:error:internal";
-    };
-    return Response.status(status)
-      .type("application/problem+json")
-      .entity(new ProblemJson(type, status.getReasonPhrase(), status.getStatusCode(), detail, null))
-      .build();
-  }
 }

@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * V2CONV-A3 — in-tree {@link ContainerKindHandler} for {@code kind=timeseries}.
@@ -78,12 +79,6 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   private static final String PT_NOT_FOUND =
       "/problems/timeseries-container-annotations.not-found";
-
-  private static Response problem(
-      String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   @Inject
   TimeseriesContainerService service;

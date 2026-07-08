@@ -39,6 +39,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * {@code /v2/provenance/...} read endpoints per
@@ -605,11 +606,6 @@ public class ProvenanceRest {
   /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
   private static long clampToNonNegative(long v) {
     return Math.max(0L, v);
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
   }
 
   private static Response badTimestamp(String raw) {

@@ -41,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * Admin-only CRUD over {@code :ShepardTemplate} per
@@ -332,14 +333,4 @@ public class ShepardTemplateRest {
 
   // ─── helpers ───────────────────────────────────────────────────────────────
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
-
-  private static Response problem(String type, String title, Response.Status status, String detail,
-      java.util.Map<String, Object> ext) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null, ext)).build();
-  }
 }

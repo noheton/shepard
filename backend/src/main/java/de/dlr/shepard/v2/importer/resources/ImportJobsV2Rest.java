@@ -35,6 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * IMP2 — {@code POST /v2/import/jobs}: execute a previously-validated import plan.
@@ -251,16 +252,6 @@ public class ImportJobsV2Rest {
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
-
-  private static Response problem(String type, String title, int status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status, detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   private static String caller(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;

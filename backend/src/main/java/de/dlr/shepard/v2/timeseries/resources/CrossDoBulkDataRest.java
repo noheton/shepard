@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * TS-CROSS-DO-VIEW-1 — cross-DataObject timeseries bulk-data endpoint.
@@ -62,11 +63,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class CrossDoBulkDataRest {
 
   private static final String PT_UNAUTHORIZED = "/problems/timeseries-cross-do.unauthorized";
-
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 
   /** Default LTTB target rows per series (per request body), per the GAP-2 brief. */
   static final int DEFAULT_DOWNSAMPLE_TO = 500;

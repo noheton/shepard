@@ -4385,9 +4385,9 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:90`; apisimp-sweep-fire477-2026-07-08.md §F1.
 
 ## APISIMP-PROBLEM-DEDUP — 76 v2 REST classes each copy an identical `problem()` helper; no shared utility (size: M, sweep: fire-478)
-- **Status:** 🔄 queued.
+- **Status:** ✅ shipped (fire-480, PR #2413, branch `APISIMP-PROBLEM-DEDUP-1`).
 - **Why:** Every v2 REST class defines the same private `static Response problem(String type, String title, Response.Status status, String detail)` three-liner that calls `new ProblemJson(...)` and sets `application/problem+json`. There is no shared utility at `de.dlr.shepard.v2.common`. 76 independent copies found via grep. This is pure duplication with no semantic variation — all copies call `new ProblemJson(type, title, status.getStatusCode(), detail)` and `.type(MediaType.APPLICATION_JSON)`.
-- **Fix:** Create `de.dlr.shepard.v2.common.ProblemResponse.java` with a `public static Response problem(String type, String title, Response.Status status, String detail)` method. Replace each of the 76 copies with `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` and delete the local method. Batch PR touching 76 files but each diff is trivially small (+1 import, -4 lines).
+- **Fix:** Created `de.dlr.shepard.v2.common.ProblemResponse.java` with 5 overloads covering all variant signatures found in the codebase (4-arg `(String,String,Status,String)`, `(Status,String,String,String)`, `(String,String,int,String)`, 5-arg with `Map<String,Object> ext`, and 2-arg `(Status,String)` with status→type switch). Replaced 74 files (71 in-tree + 6 plugins; 3 files had 2 problem() methods) with `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` and deleted all local methods.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:115`; apisimp-sweep-fire478-2026-07-08.md §F1.
 
 ## APISIMP-XCOUNT-OPENAPI-HEADER — 37 list endpoints emit X-Total-Count but omit the formal @Header OpenAPI declaration (size: M, sweep: fire-478)

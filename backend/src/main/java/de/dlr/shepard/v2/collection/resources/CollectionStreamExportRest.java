@@ -22,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * EXPORT-V2-STREAM — {@code GET /v2/collections/{appId}/export}.
@@ -112,8 +113,4 @@ public class CollectionStreamExportRest {
     return name.replaceAll("[^a-zA-Z0-9_-]", "_");
   }
 
-  private static Response problem(String type, String title, Response.Status status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status.getStatusCode(), detail, null)).build();
-  }
 }

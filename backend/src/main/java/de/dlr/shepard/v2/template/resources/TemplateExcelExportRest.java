@@ -31,6 +31,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * {@code GET /v2/templates/{templateAppId}/export?dataObjectAppId=…} —
@@ -225,8 +226,4 @@ public class TemplateExcelExportRest {
     return slug + "-" + dataObject.getAppId() + ".xlsx";
   }
 
-  private static Response problem(String type, String title, int status, String detail) {
-    return Response.status(status).type("application/problem+json")
-      .entity(new ProblemJson(type, title, status, detail, null)).build();
-  }
 }

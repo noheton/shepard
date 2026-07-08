@@ -27,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
  * FAIR7 — {@code GET /v2/collections/{appId}/dmp-snippet}.
@@ -158,8 +159,4 @@ public class DmpSnippetV2Rest {
     return Response.ok(io.getSnippet(), "text/markdown").build();
   }
 
-  private static Response problem(Response.Status status, String type, String title, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }
