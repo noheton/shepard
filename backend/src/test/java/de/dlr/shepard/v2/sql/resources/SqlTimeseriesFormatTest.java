@@ -427,7 +427,7 @@ class SqlTimeseriesFormatTest {
         "timeseries_data_points",
         new SqlQuerySpec.WhereClause(
             new SqlQuerySpec.TimeBetween("2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z"),
-            List.of(1L),
+            null,
             null,
             null),
         null, null, null);
@@ -442,14 +442,19 @@ class SqlTimeseriesFormatTest {
 
   // --- Stubs ---
 
-  /** Allows all container IDs through the permission filter. */
+  /**
+   * Always returns a non-empty allowed set — format tests don't test permission logic,
+   * they just need the executor to be called. With the tombstone removing containerIdIn
+   * and minimalSpec() passing no containerAppIdIn, requestedIds is empty; returning a
+   * fixed set here ensures the streaming path (not the emptyResponse fast path) is taken.
+   */
   static class AllowAllPermissionsService extends PermissionsService {
     AllowAllPermissionsService() { super(); }
 
     @Override
     public Set<Long> filterAllowedForUser(Collection<Long> entityIds, AccessType accessType,
         String username) {
-      return Set.copyOf(entityIds);
+      return Set.of(99L);
     }
   }
 
