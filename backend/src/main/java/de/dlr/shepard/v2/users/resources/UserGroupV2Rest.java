@@ -36,7 +36,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.StreamSupport;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -92,7 +91,7 @@ public class UserGroupV2Rest {
     responseCode = "200",
     description = "Paged list of user groups (`PagedResponseIO<UserGroupV2IO>`). " +
       "When `q` is set, `total=items.size(), page=0, pageSize=items.size()`.",
-    content = @Content(schema = @Schema(implementation = UserGroupV2IO.class, type = SchemaType.ARRAY))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = "q", description = "Optional name filter. When set, returns a PagedResponseIO with all matching groups; ordering and pagination are ignored.")
