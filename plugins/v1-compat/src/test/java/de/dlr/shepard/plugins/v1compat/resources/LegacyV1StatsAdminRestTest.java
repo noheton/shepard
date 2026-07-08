@@ -33,7 +33,9 @@ class LegacyV1StatsAdminRestTest {
     LegacyV1StatsIO snap = new LegacyV1StatsIO(0L, List.of(), List.of(), null, null);
     when(stats.snapshot(LegacyV1StatsService.DEFAULT_TOP_N)).thenReturn(snap);
 
-    Response response = rest.getStats(null);
+    // JAX-RS injects @DefaultValue("50") when topN is absent from the HTTP request;
+    // the method receives the resolved int and delegates straight to the service.
+    Response response = rest.getStats(LegacyV1StatsService.DEFAULT_TOP_N);
 
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.getEntity()).isSameAs(snap);
@@ -51,31 +53,33 @@ class LegacyV1StatsAdminRestTest {
   }
 
   @Test
-  void getStats_topNTooLarge_clampedToMax() {
+  void getStats_maxTopN_passesThrough() {
+    // Clamping of out-of-range values is enforced by @Min/@Max Bean Validation at
+    // the JAX-RS layer. The method body receives a valid value and delegates directly.
     LegacyV1StatsIO snap = new LegacyV1StatsIO(0L, List.of(), List.of(), null, null);
     when(stats.snapshot(LegacyV1StatsAdminRest.MAX_TOP_N)).thenReturn(snap);
 
-    rest.getStats(100_000);
+    rest.getStats(LegacyV1StatsAdminRest.MAX_TOP_N);
 
     verify(stats).snapshot(LegacyV1StatsAdminRest.MAX_TOP_N);
   }
 
   @Test
-  void getStats_topNZeroOrNegative_clampedToOne() {
+  void getStats_minTopN_passesThrough() {
+    // @Min(1) enforced at the JAX-RS layer; the method receives 1 and delegates directly.
     LegacyV1StatsIO snap = new LegacyV1StatsIO(0L, List.of(), List.of(), null, null);
     when(stats.snapshot(1)).thenReturn(snap);
 
-    rest.getStats(0);
-    rest.getStats(-5);
+    rest.getStats(1);
 
-    verify(stats, org.mockito.Mockito.times(2)).snapshot(1);
+    verify(stats).snapshot(1);
   }
 
   // ─── APISIMP-V1COMPAT-STATS-TOPN-PARAM regression ───────────────────────
 
   @Test
   void getStats_topNParamIsDocumented() throws NoSuchMethodException {
-    Method method = LegacyV1StatsAdminRest.class.getMethod("getStats", Integer.class);
+    Method method = LegacyV1StatsAdminRest.class.getMethod("getStats", int.class);
     String desc = Arrays.stream(method.getParameters())
       .filter(p -> p.getAnnotation(QueryParam.class) != null
         && "topN".equals(p.getAnnotation(QueryParam.class).value()))
