@@ -4450,8 +4450,36 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:423`; `aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md §F5`.
 
 ## APISIMP-PROBLEM-HELPER-BYPASS-3 — 15 v2 REST files still inline-construct ProblemJson after wave-1/2 sweeps (size: M, sweep: fire-484)
-- **Status:** 🚧 in-flight — branch `APISIMP-PROBLEM-HELPER-BYPASS-3`, stash ready; blocked on PR #2414 merge (needs `ProblemResponse.java` on main).
+- **Status:** ✅ done — PR #2415, fire-483 (SHA b38a81b). Wave-3 replaced private `problem()` helper bodies or static imports in 15 files; PR net: −110 +46 lines.
 - **Why:** Wave-1 (PR #2413) and wave-2 (PR #2414) replaced `new ProblemJson(...)` in 86 sites. 15 REST files remain with either inline constructions or private helper bodies that duplicate the factory logic. Files: `PersonalVocabularyRest.java` (helper deleted; static import), `ReferenceAnnotationRest.java` (helper deleted), `SemanticTermSearchRest.java` (Status-first static sig), `SemanticSparqlRest.java` (Status-first static sig), `VocabularyBrowseRest.java` (notFound delegate), `SemanticPredicateStatsRest.java` (badIri delegate), `CollectionSceneGraphRest.java` (two helpers delegated), `ProjectsRest.java` (two helpers delegated), `ContainersV2Rest.java` (helper body + 3 remaining inline sites), `AdminConfigRest.java` (helper body replaced), `SemanticAdminRest.java` (helper body replaced), `OntologyGitSourceRest.java` (helper deleted), `MffdProcessChainMappingRest.java` (helper body replaced), `PluginsAdminRest.java` (helper body replaced), `NotificationTransportRest.java` (helper body replaced, kept ProblemJson for @Schema).
 - **Fix:** Pop stash on `APISIMP-PROBLEM-HELPER-BYPASS-3`, rebase onto post-#2414 main, compile + verify, push, open PR.
 - **AC:** Zero private `problem()` helpers that inline `new ProblemJson(...)` in any of the 15 files; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/vocabularies/resources/PersonalVocabularyRest.java`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java`; `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java`.
+
+## APISIMP-PROBLEM-HELPER-BYPASS-4 — 31 remaining new ProblemJson() inline constructions in 22 files across v2+plugins (size: M, sweep: fire-483)
+- **Status:** ⏳ queued.
+- **Why:** Waves 1–3 (PRs #2413/#2414/#2415) cleared 86 + 22 + 15 = 123 bypass sites. 31 inline `new ProblemJson(...)` constructions remain across 22 files: `TemplatePortabilityRest.java` (4 sites), `TemplateInstantiationRest.java` (1), `StructuredDataContainerStatsRest.java` (1), `FileContainerStatsRest.java` (1), `FileBundleReferenceRest.java` (1), `MirroredUserRest.java` (1), `AdminUserOrcidRest.java` (1), `AdminFeaturesRest.java` (1), `FileContainerKindHandler.java` (1), `SemanticAnnotationV2Rest.java` (1), `DataObjectV2Rest.java` (1), `MappingsMaterializeRest.java` (2 — inside delegating helper bodies), `ProvenanceRest.java` (1 — inside delegating helper body), `WikiWriterTombstoneRest.java` (1), `GitReferenceRest.java` (1), `GitReferenceActionsRest.java` (2), `EpicAdminRest.java` (2), `HdfAdminRest.java` (1 — inside delegating helper), `VideoTranscodeBackfillRest.java` (1), `DataciteAdminRest.java` (2), `AasShellsRest.java` (1), `AasAdminRest.java` (2).
+- **Fix:** Replace each `new ProblemJson(type, title, statusCode, detail, null)` with `ProblemResponse.problem(type, title, Status.fromStatusCode(statusCode), detail)` or the matching factory overload; delete helpers whose bodies only contain `new ProblemJson(...)`. For `MappingsMaterializeRest` add `problem(StatusType, String, String)` + `problem(int, String, String)` overloads to `ProblemResponse`.
+- **AC:** `grep -rn "new ProblemJson(" backend/src/main/java/de/dlr/shepard/v2/ plugins/` returns zero lines outside `ProblemResponse.java`; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplatePortabilityRest.java:132`; `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasAdminRest.java:70`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F1`.
+
+## APISIMP-PROBLEM-HELPER-RESIDUAL — 9 v2/plugin REST files carry private problem() helpers that now only delegate to ProblemResponse.problem() (size: S, sweep: fire-483)
+- **Status:** ⏳ queued.
+- **Why:** PR #2415 converted helper bodies to delegation calls (`return ProblemResponse.problem(...)`) but did not delete the helpers. 9 files have one-line delegating wrappers that add no value: `AdminConfigRest.java:183`, `SemanticAdminRest.java:598`, `MffdProcessChainMappingRest.java:167`, `PluginsAdminRest.java:236`, `NotificationTransportRest.java:255`, `MappingsMaterializeRest.java:265,271` (2 non-standard-sig overloads), `UnhideFeedRest.java:200`, `HdfAdminRest.java:243`.
+- **Fix:** Delete the 7 standard-signature helpers; add `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` to each. For `MappingsMaterializeRest` add matching overloads to `ProblemResponse` then delete the two local helpers. Can be batched in one PR with APISIMP-PROBLEM-HELPER-BYPASS-4.
+- **AC:** `grep -rn "private.*Response problem" backend/src/main/java/de/dlr/shepard/v2/ plugins/` returns zero results; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:183`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F2`.
+
+## APISIMP-LABJOURNALHISTORY-UNDOC-PARAMS — @QueryParam page/pageSize in LabJournalHistoryRest have no @Parameter annotation (size: XS, sweep: fire-483)
+- **Status:** ⏳ queued.
+- **Why:** `LabJournalHistoryRest.java:118–119` uses `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations. The sibling `CollectionLabJournalEntriesRest.java:114–117` already documents these params and is the template to copy from.
+- **Fix:** Add `@Parameter(description = "Zero-based page index (default 0).")` and `@Parameter(description = "Page size, 1–200 (default 50).")` before the two `@QueryParam` lines in `LabJournalHistoryRest`. Two-liner.
+- **AC:** `GET /v2/lab-journal/{entryAppId}/history` lists `page` and `pageSize` as documented optional integer parameters in the generated OpenAPI spec; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/LabJournalHistoryRest.java:118`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F3`.
+
+## APISIMP-SCHEMA-MISSING-IO — 37 v2 IO response classes lack class-level @Schema(description) annotation (size: M, sweep: fire-483)
+- **Status:** ⏳ queued.
+- **Why:** 37 of ~175 IO classes in `de.dlr.shepard.v2.*.io` have no `@Schema(description = "...")` at the class level, leaving generated OpenAPI output incomplete for those types. Examples: `DQRIO.java`, `AutosweepConfigIO.java`, `InstanceRegistryIO.java`, and 34 others across quality, admin, and plugin packages.
+- **Fix:** Add `@Schema(description = "<one-line description>")` to each of the 37 IO classes; descriptions from class name and existing endpoint docs. Batch as XS PRs per domain package.
+- **AC:** `find . -path '*/v2/*/io/*.java' | xargs grep -L '@Schema'` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/io/DQRIO.java`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F4`.
