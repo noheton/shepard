@@ -107,14 +107,12 @@ public record SqlQuerySpec(
    * The {@code where} clause. {@code timeBetween} is required; the rest are optional.
    *
    * <p>Container filtering: use {@code container_app_id_in} (UUID v7 strings).
-   * {@code container_id_in} (numeric Neo4j IDs) is deprecated; when both are supplied,
-   * {@code container_app_id_in} takes precedence.
+   * {@code container_id_in} is removed — passing it returns HTTP 400.
    */
   public record WhereClause(
       @NotNull @Valid @JsonProperty("time_between") TimeBetween timeBetween,
       @Schema(deprecated = true,
-              description = "Deprecated — use container_app_id_in (UUID v7 strings) instead. " +
-                            "Numeric Neo4j container IDs; silently ignored when container_app_id_in is also present.")
+              description = "Removed — passing this field returns HTTP 400. Use container_app_id_in (UUID v7 strings) instead.")
       @JsonProperty("container_id_in") List<Long> containerIdIn,
       @Schema(description = "Timeseries container appIds (UUID v7) to include. " +
                             "Unknown or unauthorised appIds are silently excluded.")
