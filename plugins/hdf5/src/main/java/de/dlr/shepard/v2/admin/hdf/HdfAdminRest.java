@@ -7,7 +7,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
@@ -237,12 +237,6 @@ public class HdfAdminRest {
     HdfRebuildAclsResultIO result = new HdfRebuildAclsResultIO(processed, synced, errors);
     Log.infof("HSDS rebuild-acls completed: processed=%d synced=%d errors=%d", processed, synced, errors.size());
     return Response.ok(result).build();
-  }
-
-  // ─── helpers ────────────────────────────────────────────────────────────
-
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
   }
 
   private static String safeMessage(Throwable t) {

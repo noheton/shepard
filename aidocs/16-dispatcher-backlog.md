@@ -4464,14 +4464,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplatePortabilityRest.java:132`; `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/v2/resources/AasAdminRest.java:70`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F1`.
 
 ## APISIMP-PROBLEM-HELPER-RESIDUAL — 9 v2/plugin REST files carry private problem() helpers that now only delegate to ProblemResponse.problem() (size: S, sweep: fire-483)
-- **Status:** ⏳ queued.
-- **Why:** PR #2415 converted helper bodies to delegation calls (`return ProblemResponse.problem(...)`) but did not delete the helpers. 8 files have delegating wrappers (fire-484 deleted the `UnhideFeedRest.java:200` helper): `AdminConfigRest.java:183`, `SemanticAdminRest.java:598`, `MffdProcessChainMappingRest.java:167`, `PluginsAdminRest.java:236`, `NotificationTransportRest.java:255`, `MappingsMaterializeRest.java` (2 non-standard-sig overloads), `HdfAdminRest.java`.
-- **Fix:** Delete the 7 standard-signature helpers; add `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` to each. For `MappingsMaterializeRest` add matching overloads to `ProblemResponse` then delete the two local helpers. Can be batched in one PR with APISIMP-PROBLEM-HELPER-BYPASS-4.
+- **Status:** 🚧 in-flight — fire-484. 6 standard-signature helpers deleted; 2 MappingsMaterializeRest overloads kept (non-trivial domain logic — type-URL derivation from code param).
+- **Why:** PR #2415 converted helper bodies to delegation calls (`return ProblemResponse.problem(...)`) but did not delete the helpers. 8 files had delegating wrappers (fire-484 PR #2417 deleted the `UnhideFeedRest.java:200` helper): `AdminConfigRest.java:183`, `SemanticAdminRest.java:598`, `MffdProcessChainMappingRest.java:167`, `PluginsAdminRest.java:236`, `NotificationTransportRest.java:255`, `MappingsMaterializeRest.java` (2 non-standard-sig overloads — kept), `HdfAdminRest.java`.
+- **Fix:** Deleted the 6 pure delegating helpers; added `import static de.dlr.shepard.v2.common.ProblemResponse.problem;` to each. `MappingsMaterializeRest` overloads kept (they compute type URL from code param — not pure delegation).
 - **AC:** `grep -rn "private.*Response problem" backend/src/main/java/de/dlr/shepard/v2/ plugins/` returns zero results; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:183`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F2`.
 
 ## APISIMP-LABJOURNALHISTORY-UNDOC-PARAMS — @QueryParam page/pageSize in LabJournalHistoryRest have no @Parameter annotation (size: XS, sweep: fire-483)
-- **Status:** 🚧 in-flight — PR #2416, fire-483.
+- **Status:** ✓ shipped — PR #2416, fire-483/484 (merged by operator).
 - **Why:** `LabJournalHistoryRest.java:118–119` uses `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations. The sibling `CollectionLabJournalEntriesRest.java:114–117` already documents these params and is the template to copy from.
 - **Fix:** Add `@Parameter(description = "Zero-based page index (default 0).")` and `@Parameter(description = "Page size, 1–200 (default 50).")` before the two `@QueryParam` lines in `LabJournalHistoryRest`. Two-liner.
 - **AC:** `GET /v2/lab-journal/{entryAppId}/history` lists `page` and `pageSize` as documented optional integer parameters in the generated OpenAPI spec; `mvn verify -pl backend` green.

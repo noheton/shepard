@@ -3,7 +3,7 @@ package de.dlr.shepard.v2.admin.config.resources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.config.spi.ConfigDescriptor;
 import de.dlr.shepard.v2.admin.config.spi.ConfigPatchException;
@@ -180,7 +180,4 @@ public class AdminConfigRest {
     );
   }
 
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
-  }
 }
