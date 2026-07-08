@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.semantic.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.context.semantic.daos.PredicateDAO;
 import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.Predicate;
@@ -256,16 +256,7 @@ public class VocabularyBrowseRest {
   // ─── helpers ──────────────────────────────────────────────────────────────
 
   private static Response notFound(String vocabId) {
-    ProblemJson body = new ProblemJson(
-      PROBLEM_TYPE_NOT_FOUND,
-      "Vocabulary not found",
-      Status.NOT_FOUND.getStatusCode(),
-      "No :Vocabulary node with appId='" + (vocabId == null ? "" : vocabId) + "'.",
-      null
-    );
-    return Response.status(Status.NOT_FOUND)
-      .type("application/problem+json")
-      .entity(body)
-      .build();
+    return ProblemResponse.problem(PROBLEM_TYPE_NOT_FOUND, "Vocabulary not found",
+        Status.NOT_FOUND, "No :Vocabulary node with appId='" + (vocabId == null ? "" : vocabId) + "'.");
   }
 }

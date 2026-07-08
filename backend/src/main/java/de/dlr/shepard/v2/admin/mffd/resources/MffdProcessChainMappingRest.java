@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.mffd.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
@@ -164,7 +165,6 @@ public class MffdProcessChainMappingRest {
   // ─── helpers ─────────────────────────────────────────────────────────────
 
   private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
+    return ProblemResponse.problem(type, title, status, detail);
   }
 }

@@ -3,7 +3,7 @@ package de.dlr.shepard.v2.vocabularies.resources;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.context.semantic.daos.VocabularyDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
@@ -213,10 +213,4 @@ public class PersonalVocabularyRest {
       .build();
   }
 
-  // ─── helpers ──────────────────────────────────────────────────────────────
-
-  private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

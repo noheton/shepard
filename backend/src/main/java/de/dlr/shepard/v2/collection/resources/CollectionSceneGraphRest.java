@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
@@ -231,7 +231,6 @@ public class CollectionSceneGraphRest {
 
   /** For status codes not in the JAX-RS 3.1 Status enum (e.g. 422 Unprocessable Entity). */
   private static Response problem422(String type, String title, String detail) {
-    ProblemJson body = new ProblemJson(type, title, 422, detail, null);
-    return Response.status(422).type("application/problem+json").entity(body).build();
+    return ProblemResponse.problem(type, title, 422, detail);
   }
 }

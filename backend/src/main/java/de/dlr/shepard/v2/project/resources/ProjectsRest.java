@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.project.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.project.io.ProjectByAnnotationIO;
 import de.dlr.shepard.v2.project.io.ProjectIO;
@@ -270,7 +270,6 @@ public class ProjectsRest {
 
   /** 422 Unprocessable Entity — not a standard {@link Response.Status} enum value. */
   private static Response problem422(String title, String detail) {
-    ProblemJson body = new ProblemJson(PROBLEM_TYPE_UNPROCESSABLE, title, 422, detail, null);
-    return Response.status(422).type("application/problem+json").entity(body).build();
+    return ProblemResponse.problem(PROBLEM_TYPE_UNPROCESSABLE, title, 422, detail);
   }
 }

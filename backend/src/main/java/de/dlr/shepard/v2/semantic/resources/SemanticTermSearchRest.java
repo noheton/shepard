@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.semantic.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
 import io.quarkus.logging.Log;
@@ -345,10 +345,4 @@ public class SemanticTermSearchRest {
     }
   }
 
-  // ─── helpers ──────────────────────────────────────────────────────────────
-
-  static Response problem(Status status, String type, String title, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

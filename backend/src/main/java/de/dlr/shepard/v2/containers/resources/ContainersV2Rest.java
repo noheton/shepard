@@ -5,7 +5,7 @@ import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.v2.filecontainer.io.PresignedDownloadUrlIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
@@ -519,14 +519,10 @@ public class ContainersV2Rest {
 
     var versionsOpt = resolved.get().handler().listVersions(appId, fileName);
     if (versionsOpt.isEmpty()) {
-      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/containers.versioning-unsupported",
+      return problem("/problems/containers.versioning-unsupported",
           "Container kind does not support payload versioning",
-          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
-          "Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning",
-          null))
-        .build();
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning");
     }
     List<PayloadVersionIO> versionList = versionsOpt.get();
     return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())).build();
@@ -564,14 +560,10 @@ public class ContainersV2Rest {
 
     var statsOpt = resolved.get().handler().getStats(appId);
     if (statsOpt.isEmpty()) {
-      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/containers.stats-unsupported",
+      return problem("/problems/containers.stats-unsupported",
           "Container kind does not support stats",
-          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
-          "Container kind '" + resolved.get().handler().kind() + "' has no stats concept",
-          null))
-        .build();
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no stats concept");
     }
     return Response.ok(statsOpt.get()).build();
   }
@@ -608,14 +600,10 @@ public class ContainersV2Rest {
 
     var linkedOpt = resolved.get().handler().listLinkedDataObjects(appId);
     if (linkedOpt.isEmpty()) {
-      return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-        .type("application/problem+json")
-        .entity(new ProblemJson("/problems/containers.linked-data-objects-unsupported",
+      return problem("/problems/containers.linked-data-objects-unsupported",
           "Container kind does not support linked DataObjects",
-          Response.Status.UNSUPPORTED_MEDIA_TYPE.getStatusCode(),
-          "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept",
-          null))
-        .build();
+          Response.Status.UNSUPPORTED_MEDIA_TYPE,
+          "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept");
     }
     List<DataObjectIO> linkedList = linkedOpt.get();
     return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())).build();
@@ -1612,15 +1600,7 @@ public class ContainersV2Rest {
   }
 
   private Response unsupportedKind(String capability) {
-    return Response.status(Response.Status.UNSUPPORTED_MEDIA_TYPE)
-      .type("application/problem+json")
-      .entity(new ProblemJson(
-        PROBLEM_TYPE_UNSUPPORTED,
-        "Unsupported container kind",
-        415,
-        "This container kind does not support " + capability + ".",
-        null
-      ))
-      .build();
+    return problem(PROBLEM_TYPE_UNSUPPORTED, "Unsupported container kind",
+        Response.Status.UNSUPPORTED_MEDIA_TYPE, "This container kind does not support " + capability + ".");
   }
 }

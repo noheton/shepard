@@ -2,7 +2,7 @@ package de.dlr.shepard.v2.admin.semantic;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.context.semantic.daos.OntologyGitSourceDAO;
@@ -322,8 +322,4 @@ public class OntologyGitSourceRest {
     return (n == null || n.isBlank()) ? null : n;
   }
 
-  private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }
