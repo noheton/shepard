@@ -128,7 +128,9 @@ public class PluginsAdminRest {
     for (PluginEntry entry : entries) {
       rows.add(PluginEntryIO.from(entry, registry.isEnabled(entry.id())));
     }
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size())).build();
+    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size()))
+        .header("X-Total-Count", (long) rows.size())
+        .build();
   }
 
   @PATCH

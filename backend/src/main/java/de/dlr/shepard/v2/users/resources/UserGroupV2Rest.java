@@ -110,7 +110,9 @@ public class UserGroupV2Rest {
       List<UserGroupV2IO> items = searchService.searchByText(q).stream()
         .map(UserGroupV2IO::new)
         .toList();
-      return Response.ok(new PagedResponseIO<>(items, (long) items.size(), 0, items.size())).build();
+      return Response.ok(new PagedResponseIO<>(items, (long) items.size(), 0, items.size()))
+          .header("X-Total-Count", (long) items.size())
+          .build();
     }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
@@ -118,7 +120,9 @@ public class UserGroupV2Rest {
     List<UserGroupV2IO> items = service.getAllUserGroups(params).stream()
       .map(UserGroupV2IO::new)
       .toList();
-    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @GET

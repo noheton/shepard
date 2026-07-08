@@ -85,7 +85,9 @@ public class NotificationTransportRest {
         .stream()
         .map(NotificationTransportReadIO::from)
         .toList();
-    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size())).build();
+    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size()))
+        .header("X-Total-Count", (long) items.size())
+        .build();
   }
 
   // ─── NTF1-BACKEND-CRUD: POST / PATCH / DELETE ───────────────────────────

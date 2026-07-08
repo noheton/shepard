@@ -120,7 +120,9 @@ public class InstanceAdminRest {
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size())).build();
+    return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size()))
+        .header("X-Total-Count", (long) grants.size())
+        .build();
   }
 
   @POST
