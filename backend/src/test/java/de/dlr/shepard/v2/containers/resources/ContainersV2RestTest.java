@@ -11,6 +11,8 @@ import static org.mockito.Mockito.never;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
@@ -1167,6 +1169,38 @@ class ContainersV2RestTest {
     org.junit.jupiter.api.Assertions.assertFalse(
         desc.isBlank(),
         "listTemporalAnnotations page @Parameter description must be present — got: '" + desc + "'");
+  }
+
+  // ─── APISIMP-MAXPOINTS-BOXED regression ──────────────────────────────────
+
+  @Test
+  void getChannelData_maxPointsParamHasMinConstraint() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    Min min = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "maxPoints".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Min.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(min,
+        "maxPoints must have @Min on the REST param — got null");
+    assertEquals(1L, min.value(), "maxPoints @Min must be 1");
+  }
+
+  @Test
+  void getChannelData_maxPointsParamHasMaxConstraint() throws NoSuchMethodException {
+    Method method = ContainersV2Rest.class.getMethod(
+        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
+    Max max = Arrays.stream(method.getParameters())
+        .filter(p -> p.getAnnotation(QueryParam.class) != null
+            && "maxPoints".equals(p.getAnnotation(QueryParam.class).value()))
+        .map(p -> p.getAnnotation(Max.class))
+        .findFirst().orElse(null);
+    org.junit.jupiter.api.Assertions.assertNotNull(max,
+        "maxPoints must have @Max on the REST param — got null");
+    assertEquals(5000L, max.value(), "maxPoints @Max must be 5000");
   }
 
   @Test
