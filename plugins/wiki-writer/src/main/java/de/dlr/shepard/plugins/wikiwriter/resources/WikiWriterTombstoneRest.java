@@ -1,6 +1,6 @@
 package de.dlr.shepard.plugins.wikiwriter.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.POST;
@@ -45,15 +45,10 @@ public class WikiWriterTombstoneRest {
     String newLocation = UriBuilder.fromPath("/v2/data-objects/{appId}/wiki-write")
       .build(dataObjectAppId)
       .toString();
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder(
+        "urn:shepard:error:gone", "Gone", Response.Status.GONE.getStatusCode(),
+        "This path has been retired. Use POST " + newLocation + " instead.")
       .header("Location", newLocation)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        "This path has been retired. Use POST " + newLocation + " instead.",
-        null))
       .build();
   }
 }

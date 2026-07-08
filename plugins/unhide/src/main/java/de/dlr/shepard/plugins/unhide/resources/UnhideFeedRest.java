@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.unhide.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
@@ -197,8 +198,4 @@ public class UnhideFeedRest {
   /** Plain JSON fallback for clients that don't negotiate ld+json. */
   static final String MediaType_APPLICATION_JSON = "application/json";
 
-  private Response problem(String type, String title, Status status, String detail) {
-    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
-  }
 }

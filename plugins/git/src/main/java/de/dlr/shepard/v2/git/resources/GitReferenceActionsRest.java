@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.git.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.git.adapters.GitAdapterException;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
@@ -108,15 +107,9 @@ public class GitReferenceActionsRest {
 
     GitArtifactPreviewIO out = gitReferenceService.previewArtifact(gr, caller);
     if (!out.isAvailable() && "unsupported-host".equals(out.getReason())) {
-      return Response.status(Response.Status.NOT_IMPLEMENTED)
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "/problems/git.adapter.unsupported-host",
-          "No GitAdapter is registered for this host.",
-          501,
-          "Adapters: GitLab (G1b), GitHub + Gitea (G1d). Ensure the plugin is enabled and the host is listed.",
-          null))
-        .build();
+      return problem("/problems/git.adapter.unsupported-host",
+          "No GitAdapter is registered for this host.", 501,
+          "Adapters: GitLab (G1b), GitHub + Gitea (G1d). Ensure the plugin is enabled and the host is listed.");
     }
     return Response.ok(out).build();
   }
@@ -166,15 +159,7 @@ public class GitReferenceActionsRest {
       return Response.ok(result).build();
     } catch (GitAdapterException e) {
       LOG.debugf("check-update failed for GitReference %s: %s", appId, e.getMessage());
-      return Response.status(e.getStatus())
-        .type("application/problem+json")
-        .entity(new ProblemJson(
-          "urn:shepard:error:upstream",
-          "Git adapter error",
-          e.getStatus(),
-          e.getMessage(),
-          null))
-        .build();
+      return problem("urn:shepard:error:upstream", "Git adapter error", e.getStatus(), e.getMessage());
     }
   }
 

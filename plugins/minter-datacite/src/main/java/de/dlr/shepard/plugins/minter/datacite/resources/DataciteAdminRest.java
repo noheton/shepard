@@ -1,6 +1,6 @@
 package de.dlr.shepard.plugins.minter.datacite.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.datacite.daos.DataciteHttpClient;
 import de.dlr.shepard.plugins.minter.datacite.daos.DataciteHttpClient.DataciteHttpResponse;
@@ -68,15 +68,9 @@ public class DataciteAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-datacite.")
   public Response setCredential(DataciteCredentialIO body, @Context SecurityContext security) {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder("urn:shepard:error:gone", "Gone",
+        Response.Status.GONE.getStatusCode(), GONE_MSG)
       .header("Location", GONE_LOCATION)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        GONE_MSG,
-        null))
       .build();
   }
 
@@ -91,15 +85,9 @@ public class DataciteAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-datacite.")
   public Response clearCredential(@Context SecurityContext security) {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder("urn:shepard:error:gone", "Gone",
+        Response.Status.GONE.getStatusCode(), GONE_MSG)
       .header("Location", GONE_LOCATION)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        GONE_MSG,
-        null))
       .build();
   }
 

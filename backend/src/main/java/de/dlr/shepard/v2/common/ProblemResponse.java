@@ -37,6 +37,17 @@ public final class ProblemResponse {
         .entity(new ProblemJson(type, title, status, detail, null, ext)).build();
   }
 
+  /**
+   * Returns a {@code ResponseBuilder} pre-seeded with RFC 7807 content-type and entity,
+   * so callers can chain extra headers (e.g. {@code Location}, {@code Retry-After}) before
+   * calling {@code .build()}.
+   */
+  public static Response.ResponseBuilder problemBuilder(
+      String type, String title, int status, String detail) {
+    return Response.status(status).type(PROBLEM_JSON)
+        .entity(new ProblemJson(type, title, status, detail, null));
+  }
+
   /** Derives {@code type} and {@code title} from the HTTP status. */
   public static Response problem(Response.Status status, String detail) {
     String type = switch (status) {

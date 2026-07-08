@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.bundle.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -170,15 +170,9 @@ public class FileBundleReferenceRest {
   // ─── helper ───────────────────────────────────────────────────────────────
 
   private static Response gone(String replacement) {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder("urn:shepard:error:gone", "Endpoint retired", 410,
+        "This path has been retired by APISIMP-BUNDLE-REF-KIND-UNIFY. Use: " + replacement)
       .header("Location", replacement)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Endpoint retired",
-        410,
-        "This path has been retired by APISIMP-BUNDLE-REF-KIND-UNIFY. Use: " + replacement,
-        null))
       .build();
   }
 }

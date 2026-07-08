@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.filecontainer.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -38,15 +38,10 @@ public class FileContainerStatsRest {
     String newLocation = UriBuilder.fromPath("/v2/containers/{appId}/stats")
       .build(containerAppId)
       .toString();
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder(
+        "urn:shepard:error:gone", "Gone", Response.Status.GONE.getStatusCode(),
+        "This path has been removed. Use GET " + newLocation + " instead.")
       .header("Location", newLocation)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        "This path has been removed. Use GET " + newLocation + " instead.",
-        null))
       .build();
   }
 }

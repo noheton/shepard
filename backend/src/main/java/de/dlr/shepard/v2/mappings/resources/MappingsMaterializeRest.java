@@ -12,7 +12,7 @@ import de.dlr.shepard.spi.transform.TransformRequest;
 import de.dlr.shepard.spi.transform.TransformResult;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.mappings.io.MaterializeRequestIO;
 import de.dlr.shepard.v2.mappings.io.MaterializeResponseIO;
 import io.quarkus.logging.Log;
@@ -264,13 +264,11 @@ public class MappingsMaterializeRest {
 
   private Response problem(Response.StatusType status, String error, String code) {
     String type = code != null ? "/problems/" + code : "/problems/transform.error";
-    ProblemJson body = new ProblemJson(type, error, status.getStatusCode(), error, null);
-    return Response.status(status.getStatusCode()).type("application/problem+json").entity(body).build();
+    return ProblemResponse.problem(type, error, status.getStatusCode(), error);
   }
 
   private Response problem(int status, String error, String code) {
     String type = code != null ? "/problems/" + code : "/problems/transform.error";
-    ProblemJson body = new ProblemJson(type, error, status, error, null);
-    return Response.status(status).type("application/problem+json").entity(body).build();
+    return ProblemResponse.problem(type, error, status, error);
   }
 }

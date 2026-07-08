@@ -1,6 +1,6 @@
 package de.dlr.shepard.plugins.minter.epic.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient;
 import de.dlr.shepard.plugins.minter.epic.daos.EpicHttpClient.EpicHttpResponse;
@@ -68,15 +68,9 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response setCredential(EpicCredentialIO body, @Context SecurityContext security) {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder("urn:shepard:error:gone", "Gone",
+        Response.Status.GONE.getStatusCode(), GONE_MSG)
       .header("Location", GONE_LOCATION)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        GONE_MSG,
-        null))
       .build();
   }
 
@@ -91,15 +85,9 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response clearCredential(@Context SecurityContext security) {
-    return Response.status(Response.Status.GONE)
-      .type("application/problem+json")
+    return ProblemResponse.problemBuilder("urn:shepard:error:gone", "Gone",
+        Response.Status.GONE.getStatusCode(), GONE_MSG)
       .header("Location", GONE_LOCATION)
-      .entity(new ProblemJson(
-        "urn:shepard:error:gone",
-        "Gone",
-        Response.Status.GONE.getStatusCode(),
-        GONE_MSG,
-        null))
       .build();
   }
 
