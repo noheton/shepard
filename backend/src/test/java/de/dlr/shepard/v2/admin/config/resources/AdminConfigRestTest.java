@@ -97,6 +97,24 @@ class AdminConfigRestTest {
   }
 
   @Test
+  void listFeaturesEmitsXTotalCountHeader() {
+    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
+    Response resp = rest.listFeatures();
+    assertEquals(200, resp.getStatus());
+    Object header = resp.getHeaders().getFirst("X-Total-Count");
+    assertNotNull(header, "X-Total-Count header must be present on GET /v2/admin/config");
+    assertEquals(2L, header);
+  }
+
+  @Test
+  void listFeaturesXTotalCountIsZeroWhenRegistryEmpty() {
+    Mockito.when(registry.all()).thenReturn(List.of());
+    Response resp = rest.listFeatures();
+    assertEquals(200, resp.getStatus());
+    assertEquals(0L, resp.getHeaders().getFirst("X-Total-Count"));
+  }
+
+  @Test
   void getKnownFeatureDelegatesToDescriptor() {
     Mockito.when(registry.resolve("fake")).thenReturn(Optional.of(new FakeDescriptor()));
     Response resp = rest.getConfig("fake");
