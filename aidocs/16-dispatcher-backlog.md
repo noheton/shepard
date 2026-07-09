@@ -4515,7 +4515,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mappings/resources/MappingsMaterializeRest.java:80,98,106–115`; `aidocs/agent-findings/apisimp-sweep-2026-07-09.md §F4`.
 
 ## APISIMP-DMP-FQN-SCHEMATYPE — `DmpSnippetV2Rest` has one remaining inline FQN `SchemaType.STRING` in annotation body (size: XS, sweep: fire-494)
-- **Status:** ⏳ queued.
+- **Status:** 🔄 in-flight — PR #2426 opened fire-494 on branch `APISIMP-DMP-FQN-SCHEMATYPE-1`.
 - **Why:** `DmpSnippetV2Rest.java:118` contains `@Content(mediaType = "text/markdown", schema = @Schema(type = org.eclipse.microprofile.openapi.annotations.enums.SchemaType.STRING))` — a fully-qualified `SchemaType` reference inside the annotation body, without an `import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;` statement. This is the only FQN usage remaining in v2 + plugin REST after APISIMP-MAPPINGS-FQN-ANNOTATIONS (PR #2425) and APISIMP-PLUGIN-IO-SCHEMA-MISSING (PR #2424). The FQN style diverges from the codebase norm and prevents tooling from resolving the schema type without classpath inspection.
 - **Fix:** Add `import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;` to `DmpSnippetV2Rest.java` and replace the inline FQN with `SchemaType.STRING`. One import + one substitution; zero logic change.
 - **AC:** `grep -n "org.eclipse.microprofile.openapi.annotations.enums.SchemaType" backend/src/main/java/de/dlr/shepard/v2/fair/resources/DmpSnippetV2Rest.java` returns zero body usages (import line only); `mvn -q test-compile` passes.
