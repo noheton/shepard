@@ -506,7 +506,7 @@
             "nullable" : true
           },
           "mode" : {
-            "description" : "Use-mode (aidocs/38 §2). LOOSE_LINK (default) renders as a clickable URL; TRACKED_ARTIFACT enables the server-side inline preview via GET /v2/data-objects/{do}/git-references/{appId}/preview; PINNED_SNAPSHOT is reserved for G1c.",
+            "description" : "Use-mode (aidocs/38 §2). LOOSE_LINK (default) renders as a clickable URL; TRACKED_ARTIFACT enables the server-side inline preview via GET /v2/references/{appId}/preview; PINNED_SNAPSHOT is reserved for G1c.",
             "type" : "string",
             "allOf" : [ {
               "$ref" : "#/components/schemas/GitReferenceMode"
@@ -11429,35 +11429,6 @@
     "description" : "Check the health of the application"
   } ],
   "paths" : {
-    "/v2/data-objects/{dataObjectAppId}/git-references/{appId}/preview" : {
-      "get" : {
-        "summary" : "[v2] [GONE] Preview endpoint moved — use GET /v2/references/{appId}/preview.",
-        "description" : "APISIMP-GIT-REF-PATH: this path is retired. Use GET /v2/references/{appId}/preview.",
-        "operationId" : "previewGitReference",
-        "tags" : [ "Git references" ],
-        "parameters" : [ {
-          "name" : "appId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "dataObjectAppId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "410" : {
-            "description" : "Endpoint retired. Use GET /v2/references/{appId}/preview."
-          }
-        }
-      },
-      "x-shepard-shelf" : "v2"
-    },
     "/v2/aas/shells" : {
       "get" : {
         "summary" : "[v2] List Collections as IDTA AAS v3 Shells (AAS1a).",
@@ -32273,35 +32244,6 @@
         "security" : [ {
           "bearer" : [ ]
         } ]
-      },
-      "x-shepard-shelf" : "v2"
-    },
-    "/v2/data-objects/{dataObjectAppId}/git-references/{appId}/check-update" : {
-      "post" : {
-        "summary" : "[v2] [GONE] Check-update endpoint moved — use POST /v2/references/{appId}/check-update.",
-        "description" : "APISIMP-GIT-REF-PATH: this path is retired. Use POST /v2/references/{appId}/check-update.",
-        "operationId" : "checkGitReferenceUpdate",
-        "tags" : [ "Git references" ],
-        "parameters" : [ {
-          "name" : "appId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "dataObjectAppId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "410" : {
-            "description" : "Endpoint retired. Use POST /v2/references/{appId}/check-update."
-          }
-        }
       },
       "x-shepard-shelf" : "v2"
     },

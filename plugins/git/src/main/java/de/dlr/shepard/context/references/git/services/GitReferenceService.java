@@ -29,7 +29,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  *   <li>{@code shepard.git.preview.max-bytes} truncation.</li>
  * </ol>
  *
- * <p>Permission checks live in {@code GitReferenceRest} (the parent
+ * <p>Permission checks live in {@code GitReferenceActionsRest} (the parent
  * DataObject's Read gate); this service trusts its caller and operates
  * on an already-loaded {@link GitReference}.
  *

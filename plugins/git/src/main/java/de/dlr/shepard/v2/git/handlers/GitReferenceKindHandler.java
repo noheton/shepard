@@ -25,16 +25,14 @@ import java.util.Map;
  *
  * <p>Discovered via CDI {@code @Any Instance<ReferenceKindHandler>} by the
  * {@code ReferencesV2Service} dispatcher. Delegates to the existing
- * {@link GitReferenceDAO} (mirroring the {@code GitReferenceRest} create
- * pattern).
+ * {@link GitReferenceDAO}.
  *
  * <p>Payload key set: {@code repoUrl, ref, path, mode, sha, resolvedSha,
  * resolvedAtMillis}.
  *
- * <p>Mutable fields via PATCH: {@code name, repoUrl, ref, path, mode}
- * (same field set as the per-kind PATCH in {@code GitReferenceRest}).
+ * <p>Mutable fields via PATCH: {@code name, repoUrl, ref, path, mode}.
  * Complex mode transitions (PINNED_SNAPSHOT SHA resolution) are deferred
- * to the per-kind {@code GitReferenceRest} endpoint; the handler only
+ * to action endpoints in {@code GitReferenceActionsRest}; the handler only
  * applies the simple field set.
  */
 @RequestScoped
@@ -96,7 +94,7 @@ public class GitReferenceKindHandler implements ReferenceKindHandler {
     GitReference gr = new GitReference(repoUrl, asString(body.get("ref")), asString(body.get("path")));
     GitReferenceMode mode = parseMode(asString(body.get("mode")));
     gr.setMode(mode);
-    // TRACKED_ARTIFACT requires ref + path (mirrors GitReferenceRest validation).
+    // TRACKED_ARTIFACT requires ref + path.
     if (mode == GitReferenceMode.TRACKED_ARTIFACT) {
       if (gr.getRef() == null || gr.getRef().isBlank() ||
           gr.getPath() == null || gr.getPath().isBlank()) {
@@ -104,12 +102,12 @@ public class GitReferenceKindHandler implements ReferenceKindHandler {
       }
     }
     // PINNED_SNAPSHOT SHA resolution requires a git adapter + PAT — defer to the
-    // per-kind GitReferenceRest endpoint; the unified create path supports only
+    // action endpoints in GitReferenceActionsRest; the unified create path supports only
     // LOOSE_LINK and TRACKED_ARTIFACT modes.
     if (mode == GitReferenceMode.PINNED_SNAPSHOT) {
       throw new BadRequestException(
         "PINNED_SNAPSHOT mode requires SHA resolution via a git adapter — " +
-        "use POST /v2/data-objects/{appId}/git-references instead"
+        "use POST /v2/references/{appId}/check-update after creating the reference"
       );
     }
     if (body.containsKey("name")) {
