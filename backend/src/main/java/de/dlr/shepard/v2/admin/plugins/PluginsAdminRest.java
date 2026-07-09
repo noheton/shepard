@@ -142,7 +142,7 @@ public class PluginsAdminRest {
   }
 
   @PATCH
-  @jakarta.ws.rs.Path("/{id}")
+  @Path("/{id}")
   @Operation(
     operationId = "patchPlugin",
     summary = "RFC 7396 merge-patch a plugin's enabled toggle.",

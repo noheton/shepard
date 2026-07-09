@@ -18,6 +18,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
@@ -478,9 +479,9 @@ public class ReferencesV2Rest {
     @Parameter(name = "fileKind", description = "Optional sub-type filter; only meaningful when kind=file. Narrows results to FileReferences whose fileKind matches (e.g. \"urdf\", \"hdf5\"). Ignored for all other kinds.")
     @QueryParam("fileKind") String fileKind,
     @Parameter(name = "page", description = "Zero-based page index. Defaults to 0. Returns 400 when negative.")
-    @QueryParam("page") @jakarta.ws.rs.DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(name = "pageSize", description = "Maximum items per page. Range [1, 200]. Defaults to 50.")
-    @QueryParam("pageSize") @jakarta.ws.rs.DefaultValue("50") @Min(1) @Max(200) int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
