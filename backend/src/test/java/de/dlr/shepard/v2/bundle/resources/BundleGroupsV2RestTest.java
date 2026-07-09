@@ -43,7 +43,7 @@ import org.mockito.MockitoAnnotations;
 /**
  * Plain-Mockito unit tests for {@link BundleGroupsV2Rest} (APISIMP-BUNDLE-REF-KIND-UNIFY slice 1).
  * Exercises all 7 group endpoints and their 401 / 403 / 404 / 400 branches.
- * Mirrors {@link FileBundleReferenceRestTest} style.
+ * Mirrors the deleted {@code FileBundleReferenceRestTest} style.
  */
 class BundleGroupsV2RestTest {
 

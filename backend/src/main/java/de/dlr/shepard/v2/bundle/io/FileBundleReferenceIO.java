@@ -30,8 +30,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *       via existing GridFS routes.</li>
  * </ul>
  *
- * <p>Consumed by {@link
- * de.dlr.shepard.v2.bundle.resources.FileBundleReferenceRest}.
+ * <p>Consumed by {@link de.dlr.shepard.v2.bundle.resources.BundleGroupsV2Rest}
+ * (the canonical replacement after APISIMP-BUNDLE-TOMBSTONE-DELETE).
  */
 @Data
 @NoArgsConstructor

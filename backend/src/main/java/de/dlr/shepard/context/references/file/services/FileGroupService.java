@@ -24,7 +24,7 @@ import java.util.Map;
  * {@link FileBundleReference} (FR1a, see {@code aidocs/53 §1.4}).
  *
  * <p>Permissions are enforced at the REST layer
- * ({@code FileBundleReferenceRest}) against the parent DataObject —
+ * ({@code BundleGroupsV2Rest}) against the parent DataObject —
  * this service trusts its callers.
  */
 @RequestScoped
