@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.sqltimeseries.io;
 
 import de.dlr.shepard.v2.admin.sqltimeseries.entities.SqlTimeseriesConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * P10c / FTOGGLE-SQL-ENABLE-1 — JSON shape returned by
@@ -19,6 +20,7 @@ import de.dlr.shepard.v2.admin.sqltimeseries.entities.SqlTimeseriesConfig;
  *       stored as {@code maxDurationIso} in the entity to avoid confusion)</li>
  * </ul>
  */
+@Schema(description = "Runtime configuration for the SQL timeseries backend; returned by GET/PATCH /v2/admin/config/sql-timeseries.")
 public record SqlTimeseriesConfigIO(
   boolean enabled,
   long maxRows,

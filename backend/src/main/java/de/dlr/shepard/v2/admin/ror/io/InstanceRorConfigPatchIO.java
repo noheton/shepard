@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.admin.ror.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * ROR1 — request body for {@code PATCH /v2/admin/instance/ror}
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * <p>Validation of {@code rorId} is done by the REST resource: must
  * match {@code [A-Za-z0-9]{1,9}} when non-null/non-blank.
  */
+@Schema(description = "RFC 7396 merge-patch body for PATCH /v2/admin/instance/ror.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class InstanceRorConfigPatchIO {
 

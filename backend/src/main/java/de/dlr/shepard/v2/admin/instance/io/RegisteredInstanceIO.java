@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.instance.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * FE-PROV-INSTANCE-REGISTRY — a single registered peer Shepard instance.
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *       Not validated; purely informational.</li>
  * </ul>
  */
+@Schema(description = "A single registered peer Shepard instance entry in the instance registry.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record RegisteredInstanceIO(
   String instanceId,

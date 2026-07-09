@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.qualityscoring.io;
 
 import de.dlr.shepard.v2.admin.qualityscoring.entities.TimeseriesQualityScoringConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * FTOGGLE-QS-1 — JSON shape for
@@ -19,6 +20,7 @@ import de.dlr.shepard.v2.admin.qualityscoring.entities.TimeseriesQualityScoringC
  * is deploy-time-only and is not exposed here — changing it requires a
  * restart; see CLAUDE.md "Pre-startup ordering invariants" exception.
  */
+@Schema(description = "Runtime configuration for the AI-powered timeseries quality-scoring background job.")
 public record TimeseriesQualityScoringConfigIO(
   boolean enabled,
   int batchSize

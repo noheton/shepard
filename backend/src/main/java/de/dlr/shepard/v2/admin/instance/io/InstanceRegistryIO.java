@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.instance.io;
 
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * FE-PROV-INSTANCE-REGISTRY — response shape for
@@ -16,6 +17,7 @@ import java.util.List;
  * unchanged. No element-level merge is performed; the entire list is
  * replaced atomically.
  */
+@Schema(description = "Registry of peer Shepard instances for cross-instance provenance attribution.")
 public record InstanceRegistryIO(
   List<RegisteredInstanceIO> instances
 ) {}

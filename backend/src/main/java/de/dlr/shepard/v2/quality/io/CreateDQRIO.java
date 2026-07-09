@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * TPL10 — request body for creating a new Data Quality Requirement.
  *
  * <p>Submitted as JSON to {@code POST /v2/collections/{appId}/dqr}.
  */
+@Schema(description = "Request body for creating a Data Quality Requirement on a Collection.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CreateDQRIO(
 

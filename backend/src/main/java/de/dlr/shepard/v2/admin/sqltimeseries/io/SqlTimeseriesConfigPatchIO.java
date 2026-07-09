@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * P10c — request body for {@code PATCH /v2/admin/sql-timeseries/config}
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * {@code maxRows} must be {@literal >} 0 when non-null;
  * {@code maxDuration} must be parseable by {@link java.time.Duration#parse} when non-null.
  */
+@Schema(description = "RFC 7396 merge-patch body for PATCH /v2/admin/sql-timeseries/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class SqlTimeseriesConfigPatchIO {
 

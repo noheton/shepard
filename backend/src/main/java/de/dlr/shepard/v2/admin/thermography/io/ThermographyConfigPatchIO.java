@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.admin.thermography.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * MFFD-NDT-ADMIN-CONFIG-1 — request body for
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * {@code @JsonSetter(nulls = SET)} to distinguish "absent" (leave alone)
  * from "explicit null" (revert to deploy-time default).
  */
+@Schema(description = "RFC 7396 merge-patch body for PATCH /v2/admin/thermography/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class ThermographyConfigPatchIO {
 

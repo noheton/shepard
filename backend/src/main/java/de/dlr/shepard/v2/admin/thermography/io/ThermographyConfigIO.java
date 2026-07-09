@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.thermography.io;
 
 import de.dlr.shepard.v2.admin.thermography.entities.ThermographyConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * MFFD-NDT-ADMIN-CONFIG-1 — JSON shape returned by
@@ -20,6 +21,7 @@ import de.dlr.shepard.v2.admin.thermography.entities.ThermographyConfig;
  *   <li>{@link #gridHeight} — effective plate-grid row count</li>
  * </ul>
  */
+@Schema(description = "Runtime configuration for the MFFD thermography NDT analysis; returned by GET/PATCH /v2/admin/thermography/config.")
 public record ThermographyConfigIO(
   String appId,
   double thresholdC,
