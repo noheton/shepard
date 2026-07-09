@@ -4641,7 +4641,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/users/resources/UserGroupV2Rest.java:319,326`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F7`.
 
 ## APISIMP-BUNDLE-PATHPARAM — rename `{bundleAppId}` → `{appId}` path-param in `BundleGroupsV2Rest` (size: XS, sweep: fire-501)
-- **Status:** queued.
+- **Status:** shipped (fire-506).
 - **Why:** `BundleGroupsV2Rest.java:82` declares `@Path("/v2/references/{bundleAppId}/groups")` and every method binds `@PathParam("bundleAppId")`. All other sub-resources mounted under `/v2/references/{...}` use `{appId}` as the variable name (e.g. `GitReferenceActionsRest:92`). OpenAPI therefore emits `bundleAppId` as the path-parameter name for this group, breaking the single-name convention SDK consumers rely on.
 - **Fix:** Rename the path-param variable from `bundleAppId` to `appId` in: the class-level `@Path`, and all 7 `@PathParam("bundleAppId")` bindings in `listGroups`, `createGroup`, `getGroup`, `patchGroup`, `deleteGroup`, `listFiles`, `addFilesToGroup`. No URL change; no migration needed.
 - **AC:** `grep -n "bundleAppId" BundleGroupsV2Rest.java` returns 0 results; OpenAPI spec uses `appId` for the path segment; `mvn verify -pl backend` green.
