@@ -142,53 +142,52 @@ public class DbConnectivityWarmerTest {
   // ── parallelism timing test ──────────────────────────────────────────────
 
   /**
-   * Three pingers each sleeping ~300 ms.  If sequential, total ≥ 900 ms.
-   * If truly parallel, total ≤ ~600 ms (generous margin for CI load).
+   * Three pingers each sleeping ~300 ms.  Parallelism is proven via a
+   * CountDownLatch: each thread counts down and then awaits the full count,
+   * so all three must be running concurrently before any can proceed.
+   * If they were sequential the latch would time out (5 s gate).
+   * Wall-clock timing is intentionally NOT asserted — it is inherently
+   * flaky on shared CI runners where thread scheduling can stall arbitrarily.
    */
   @Test
   public void multipleSlowPingers_runInParallel() throws Exception {
     final long delayMs = 300L;
     final int pingerCount = 3;
-    // latch so all virtual threads start their sleep before any finishes
+    // latch so all virtual threads reach the sleep() before any finishes
     CountDownLatch allStarted = new CountDownLatch(pingerCount);
     AtomicBoolean latchTimedOut = new AtomicBoolean(false);
 
+    DbHealthState[] states = new DbHealthState[pingerCount];
     DbPinger[] ps = new DbPinger[pingerCount];
     for (int i = 0; i < pingerCount; i++) {
-      final String dbName = "db-" + i;
-      DbHealthState st = new DbHealthState();
+      final int idx = i;
+      states[i] = new DbHealthState();
       DbPinger p = mock(DbPinger.class);
-      when(p.name()).thenReturn(dbName);
+      when(p.name()).thenReturn("db-" + i);
       when(p.isRequired()).thenReturn(true);
-      when(p.state()).thenReturn(st);
+      when(p.state()).thenReturn(states[i]);
       when(p.ping()).thenAnswer(inv -> {
         allStarted.countDown();
         // wait for all threads to start (proves concurrency), then sleep
         boolean ok = allStarted.await(5, TimeUnit.SECONDS);
         if (!ok) latchTimedOut.set(true);
         Thread.sleep(delayMs);
-        st.recordSuccess(delayMs);
+        states[idx].recordSuccess(delayMs);
         return true;
       });
       ps[i] = p;
     }
 
     DbConnectivityWarmer w = warmer(instanceOf(ps), noOpController());
-    long t0 = System.currentTimeMillis();
     w.onStart(new StartupEvent());
     w.warmingFuture().get(10, TimeUnit.SECONDS);
-    long elapsed = System.currentTimeMillis() - t0;
 
+    // latch-based proof: all three threads ran concurrently
     assertFalse(latchTimedOut.get(), "All virtual threads should have started before the latch timed out");
-
-    long sumMs = delayMs * pingerCount;
-    long maxMs = delayMs;
-    // Generous upper bound: allow up to 1.5× the max single-probe latency for CI overhead
-    long upperBoundMs = maxMs * 3 / 2 + 500;
-    assertTrue(
-      elapsed < upperBoundMs,
-      "Parallel warm should complete in < " + upperBoundMs + " ms (sum would be " + sumMs + " ms), but took " + elapsed + " ms"
-    );
+    // completeness proof: every pinger recorded success
+    for (int i = 0; i < pingerCount; i++) {
+      assertTrue(states[i].hasEverBeenUp(), "Pinger db-" + i + " should have completed successfully");
+    }
   }
 
   // ── request-context activation ───────────────────────────────────────────
