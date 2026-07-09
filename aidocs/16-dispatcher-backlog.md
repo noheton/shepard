@@ -4478,8 +4478,10 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/LabJournalHistoryRest.java:118`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F3`.
 
 ## APISIMP-SCHEMA-MISSING-IO — 37 v2 IO response classes lack class-level @Schema(description) annotation (size: M, sweep: fire-483)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-flight — wave 1 (admin+quality, 19 files) dispatched in PR #2420 (fire-486); wave 2 (remaining packages, ~18 files) queued for next fire.
 - **Why:** 37 of ~175 IO classes in `de.dlr.shepard.v2.*.io` have no `@Schema(description = "...")` at the class level, leaving generated OpenAPI output incomplete for those types. Examples: `DQRIO.java`, `AutosweepConfigIO.java`, `InstanceRegistryIO.java`, and 34 others across quality, admin, and plugin packages.
 - **Fix:** Add `@Schema(description = "<one-line description>")` to each of the 37 IO classes; descriptions from class name and existing endpoint docs. Batch as XS PRs per domain package.
-- **AC:** `find . -path '*/v2/*/io/*.java' | xargs grep -L '@Schema'` returns empty; `mvn verify -pl backend` green.
+- **Wave 1 (fire-486, PR #2420):** 15 admin IO + 4 quality IO classes annotated. `IndependenceProofQuery` excluded — it is a Cypher-constants utility class, not a wire response type.
+- **Wave 2 (next fire):** Remaining ~18 IO classes in other packages (mappings, importer, file, timeseries, etc.).
+- **AC:** `find . -path '*/v2/*/io/*.java' | xargs grep -L '@Schema'` returns empty (excluding utility constants classes); `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/io/DQRIO.java`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F4`.

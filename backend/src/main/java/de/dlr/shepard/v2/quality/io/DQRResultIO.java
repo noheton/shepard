@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.quality.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * TPL10 — a single evaluation result for one DQR × DataObject pair.
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * that DataObject. A result where {@code passed == false} means the rule was
  * violated; {@code message} carries a human-readable explanation.
  */
+@Schema(description = "Single DQR evaluation result for one rule-DataObject pair.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DQRResultIO(
   /** AppId of the evaluated DQR. */

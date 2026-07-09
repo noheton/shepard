@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.admin.ror.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * ROR1 — JSON shape returned by {@code GET/PATCH /v2/admin/instance/ror}.
@@ -15,6 +16,7 @@ import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
  * ({@code rorId}, {@code organizationName}, {@code rorUrl}) are
  * omitted when not configured.
  */
+@Schema(description = "ROR (Research Organization Registry) identity configuration for this Shepard instance.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record InstanceRorConfigIO(
   String rorId,

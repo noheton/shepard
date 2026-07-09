@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.admin.instance.io;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * FE-PROV-INSTANCE-REGISTRY — request body for
@@ -19,6 +20,7 @@ import java.util.List;
  * The {@code instancesTouched} flag distinguishes "absent" from "explicit
  * null" so the REST layer can apply the correct RFC 7396 action.
  */
+@Schema(description = "RFC 7396 merge-patch body for PATCH /v2/admin/instances; replaces the registered peer-instance list atomically.")
 public final class InstanceRegistryPatchIO {
 
   private List<RegisteredInstanceIO> instances;

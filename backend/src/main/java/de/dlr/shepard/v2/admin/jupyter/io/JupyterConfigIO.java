@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.admin.jupyter.io;
 
 import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * J1e — JSON shape returned by {@code GET/PATCH /v2/admin/jupyter/config}.
@@ -17,6 +18,7 @@ import de.dlr.shepard.v2.admin.jupyter.entities.JupyterConfig;
  *   <li>{@link #hubUrl} — serialises as {@code "hubUrl"}</li>
  * </ul>
  */
+@Schema(description = "Runtime configuration for the JupyterHub integration; returned by GET/PATCH /v2/admin/jupyter/config.")
 public record JupyterConfigIO(
   boolean enabled,
   String hubUrl
