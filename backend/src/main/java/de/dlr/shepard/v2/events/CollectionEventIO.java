@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.events;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * P13 — wire-format record for a single Collection change-feed event.
@@ -13,6 +14,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * {@code eventType} and {@code timestamp}; all entity-level fields
  * are null and omitted from serialisation via {@code @JsonInclude}.
  */
+@Schema(
+    name = "CollectionEvent",
+    description =
+        "SSE wire-format record for a single Collection change-feed event (P13). "
+            + "Sent as the JSON payload of an SSE data: line on "
+            + "GET /v2/collections/{appId}/events. "
+            + "HEARTBEAT events carry only eventType and timestamp; all entity fields are null.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CollectionEventIO(
   /**

@@ -4,6 +4,7 @@ import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Response body for {@code POST /v2/collections/{appId}/export/regulatory-evidence}
@@ -12,6 +13,14 @@ import lombok.NoArgsConstructor;
  * <p>TPL14 — Regulatory Evidence Pack (REP) export. Designed in
  * {@code aidocs/16-dispatcher-backlog.md §TPL14}.
  */
+@Schema(
+    name = "RepExport",
+    description =
+        "Response body for POST /v2/collections/{appId}/export/regulatory-evidence "
+            + "and GET /v2/collections/{appId}/export/regulatory-evidence/latest "
+            + "(TPL14 — Regulatory Evidence Pack). "
+            + "Contains an export artefact identifier, status, and either inline "
+            + "base64-encoded ZIP bytes or a download URL.")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
