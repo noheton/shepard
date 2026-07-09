@@ -4,6 +4,7 @@ import de.dlr.shepard.v2.importer.entities.ImportLock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP-LOCK — request / response shapes for lock REST endpoints.
@@ -23,6 +24,7 @@ public final class ImportLockIO {
    * @param lastHeartbeatAt      ISO-8601 UTC timestamp of the last heartbeat, or {@code null}
    * @param errorMessage         set on FAILED; {@code null} otherwise
    */
+  @Schema(description = "Current status of the collection-level import lock, including timing and error information.")
   public record LockStatusIO(
     String lockId,
     String status,
@@ -58,6 +60,7 @@ public final class ImportLockIO {
    *
    * @param targetCollectionAppId appId of the collection being imported into; required
    */
+  @Schema(description = "Request body for acquiring the collection import lock before starting an import run.")
   public record AcquireRequestIO(
     String targetCollectionAppId
   ) {}
@@ -67,6 +70,7 @@ public final class ImportLockIO {
    *
    * @param errorMessage human-readable error description; required
    */
+  @Schema(description = "Request body for abandoning (error-terminating) the current import lock with an error message.")
   public record AbandonRequestIO(
     String errorMessage
   ) {}

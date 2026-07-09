@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Wire shape for {@code GET / PATCH /v2/containers/{appId}/chart-view}.
@@ -13,6 +14,7 @@ import java.util.List;
  * list — PATCH replaces the whole list (RFC 7396 doesn't have per-element
  * patch semantics for arrays).
  */
+@Schema(description = "Curated channel selection and metadata for the chart view of a timeseries container.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record TimeseriesContainerChartViewIO(
   /**

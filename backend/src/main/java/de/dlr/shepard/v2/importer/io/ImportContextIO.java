@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.io;
 
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP1 — response body for {@code GET /v2/import/context}.
@@ -27,6 +28,7 @@ import java.util.List;
  *                              so agents annotate consistently with existing
  *                              vocabulary rather than inventing duplicate terms.
  */
+@Schema(description = "Snapshot of a collection's current state used by importers and AI agents to generate consistent manifests.")
 public record ImportContextIO(
   String collectionAppId,
   long dataObjectCount,

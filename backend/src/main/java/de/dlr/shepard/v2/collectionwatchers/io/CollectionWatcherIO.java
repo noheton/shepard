@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.collectionwatchers.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * CW1 — wire shape for collection-watcher records.
@@ -9,6 +10,7 @@ import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
  * <p>Returned by GET /v2/collections/{collectionAppId}/watches and
  * GET /v2/collections/{collectionAppId}/watches/me.
  */
+@Schema(description = "A user who is watching a collection for change notifications.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CollectionWatcherIO(
   String watcherAppId,
