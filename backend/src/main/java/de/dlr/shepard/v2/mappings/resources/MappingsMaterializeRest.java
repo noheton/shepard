@@ -32,6 +32,9 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
  * V2CONV-B3 — {@code POST /v2/mappings/{templateAppId}/materialize} — the
@@ -77,7 +80,7 @@ import java.util.Optional;
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/v2/mappings")
 @RequestScoped
-@org.eclipse.microprofile.openapi.annotations.tags.Tag(name = "Mappings")
+@Tag(name = "Mappings")
 public class MappingsMaterializeRest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -95,7 +98,7 @@ public class MappingsMaterializeRest {
   @POST
   @Path("/{templateAppId}/materialize")
   @RolesAllowed("authenticated")
-  @org.eclipse.microprofile.openapi.annotations.Operation(
+  @Operation(
     operationId = "materialize",
     summary = "Materialize a MAPPING_RECIPE template into a derived output.",
     description = "Binds the supplied input reference appIds through the recipe's shape and runs the " +
@@ -103,13 +106,13 @@ public class MappingsMaterializeRest {
     "404 when the template/executor is absent; 422 when templateKind != MAPPING_RECIPE or the body " +
     "declares no mappingRecipeShape."
   )
-  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "200", description = "Materialization succeeded.")
-  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "401", description = "Authentication required.")
-  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(
+  @APIResponse(responseCode = "200", description = "Materialization succeeded.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(
     responseCode = "404",
     description = "Template not found, or no TransformExecutor is registered for the recipe's shape IRI."
   )
-  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(
+  @APIResponse(
     responseCode = "422",
     description = "Template found but not a MAPPING_RECIPE, or the body declares no mappingRecipeShape."
   )
