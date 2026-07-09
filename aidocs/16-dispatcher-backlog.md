@@ -4585,7 +4585,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/FileBundleReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F1-1`.
 
 ## APISIMP-WIKI-TOMBSTONE-DELETE — delete `WikiWriterTombstoneRest` (single 410 stub, client migration complete) (size: XS, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-503, PR #2434).
 - **Why:** `WikiWriterTombstoneRest.java` exposes one `POST` at `/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write` returning 410 Gone with a correct `Location` header pointing to the canonical `/v2/data-objects/{dataObjectAppId}/wiki-write`. The tombstone has existed long enough that client migration is complete. No `collectionAppId` path in `frontend/`.
 - **Fix:** Verify `grep -r "collections/.*/data-objects/.*/wiki-write" frontend/` returns zero hits, then delete `WikiWriterTombstoneRest.java` and its test. Confirm canonical `POST /v2/data-objects/{dataObjectAppId}/wiki-write` is still live in `WikiWriterRest.java`.
 - **AC:** `WikiWriterTombstoneRest.java` and its test absent; `POST /v2/collections/*/data-objects/*/wiki-write` → 404; canonical endpoint unaffected; `mvn verify -pl plugins/wiki-writer` green.

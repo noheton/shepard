@@ -5,8 +5,7 @@ import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Request body for
- * {@code POST /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write}.
+ * Request body for {@code POST /v2/data-objects/{dataObjectAppId}/wiki-write}.
  *
  * <p>All fields are optional. When absent the service uses sensible defaults.
  */
