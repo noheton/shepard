@@ -22,7 +22,7 @@ export function useFetchAdminActivities() {
         agent: filterAgent.value || undefined,
         targetKind: filterTargetKind.value || undefined,
         targetAppId: filterTargetAppId.value || undefined,
-        limit: limit.value,
+        pageSize: limit.value,
       });
       activities.value = Array.isArray(paged) ? paged : ((paged as unknown as { items?: Activity[] })?.items ?? []);
       hasMore.value = (Array.isArray(paged) ? paged.length : ((paged as unknown as { items?: Activity[] })?.items?.length ?? 0)) >= limit.value;
