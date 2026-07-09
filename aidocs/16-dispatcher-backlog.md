@@ -4578,7 +4578,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/sql/resources/SqlTimeseriesRest.java:74`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.3`.
 
 ## APISIMP-BUNDLE-TOMBSTONE-DELETE — delete `FileBundleReferenceRest` (8-method 410 tombstone, no live callers) (size: XS, sweep: fire-500)
-- **Status:** shipped (fire-502, PR #TBD).
+- **Status:** shipped (fire-502, PR #2433).
 - **Why:** APISIMP-BUNDLE-REF-KIND-UNIFY (fire-457) migrated all CRUD to `/v2/references?kind=file-bundle` and left eight 410-Gone stubs in `FileBundleReferenceRest.java`. Every method body is `Response.status(GONE).build()` plus a `LOG.debugf`. No frontend callers remain (`grep -r "v2/bundles" frontend/` returns only comment lines). The class adds noise to OpenAPI and inflates WAR deploy time.
 - **Fix:** Delete `FileBundleReferenceRest.java` and its test class. Verify `mvn verify -pl backend` green and OpenAPI spec no longer lists the `/v2/bundles/{bundleAppId}/…` paths.
 - **AC:** `FileBundleReferenceRest.java` and its test absent from tree; `GET /v2/bundles/*/files` → 404; `mvn verify -pl backend` green; OpenAPI spec size reduced.
