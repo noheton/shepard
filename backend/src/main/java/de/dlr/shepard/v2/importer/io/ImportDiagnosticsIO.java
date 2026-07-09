@@ -7,6 +7,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP-DIAG — request/response shapes for the diagnostic REST surface.
@@ -26,6 +27,7 @@ public final class ImportDiagnosticsIO {
    * @param message     human-readable description
    * @param attributes  structured key-value context
    */
+  @Schema(description = "A single import diagnostic event (INFO/WARN/ERROR) logged during an import run.")
   public record EventIO(
     String runId,
     String timestamp,
@@ -62,6 +64,7 @@ public final class ImportDiagnosticsIO {
    * @param lastEventAt  ISO-8601 UTC timestamp of the most recent event
    * @param lastLevel    most-severe level seen ({@code INFO / WARN / ERROR})
    */
+  @Schema(description = "Summary metadata for a completed or in-progress import run.")
   public record RunSummaryIO(
     String runId,
     String startedAt,
@@ -97,6 +100,7 @@ public final class ImportDiagnosticsIO {
    * @param message     required: human-readable description
    * @param attributes  optional: structured context key-value pairs
    */
+  @Schema(description = "Request body for posting a single diagnostic event from an external importer process.")
   public record IngestEventIO(
     String level,
     String phase,
@@ -113,6 +117,7 @@ public final class ImportDiagnosticsIO {
    *
    * @param events list of events to append; must not be empty
    */
+  @Schema(description = "Request body for posting a batch of diagnostic events from an external importer process in a single call.")
   public record BatchIngestIO(
     List<IngestEventIO> events
   ) {}

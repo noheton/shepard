@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.watches.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.watches.entities.Watch;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Wire shape for GET /v2/collections/{collectionAppId}/watched-containers
@@ -21,6 +22,7 @@ import de.dlr.shepard.v2.watches.entities.Watch;
  *   <li>{@code "error"} — fetch failed for another reason.</li>
  * </ul>
  */
+@Schema(description = "A watched-container subscription entry, including the container kind, appId, resolved name, and availability status.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WatchIO(
   String watchAppId,

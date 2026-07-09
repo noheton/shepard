@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.notifications.transport.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * NTF1-BACKEND-LIST — read-side wire shape for
@@ -22,6 +23,7 @@ import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
  * prevents a future refactor from accidentally exposing credentials via
  * the read path.
  */
+@Schema(description = "Read-only representation of a notification transport configuration; credential fields are omitted by design.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record NotificationTransportReadIO(
     String appId,

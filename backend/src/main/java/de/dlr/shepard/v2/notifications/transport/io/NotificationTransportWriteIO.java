@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.notifications.transport.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * NTF1-BACKEND-CRUD — request body for
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * about is set by Jackson and the REST layer treats them as
  * "set the value to whatever was on the wire (or null)".
  */
+@Schema(description = "Request body for creating or patching a notification transport; includes write-only credential fields (smtpPassword, matrixAccessToken).")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class NotificationTransportWriteIO {
 

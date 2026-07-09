@@ -4,8 +4,10 @@ import de.dlr.shepard.v2.notifications.entities.Notification;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /** Wire shape for a single notification returned by {@code GET /v2/notifications}. */
+@Schema(description = "A single in-app notification for the current user, including category, source, and read status.")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

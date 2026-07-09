@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.io;
 
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP2 — response body for {@code POST /v2/import/jobs}.
@@ -20,6 +21,7 @@ import java.util.List;
  * @param errors     Human-readable error messages for any failures;
  *                   empty list on full success.
  */
+@Schema(description = "Result of a completed import job execution, including per-entity creation status and any errors.")
 public record ImportJobResultIO(
   String jobAppId,
   String planCommitId,
@@ -42,5 +44,6 @@ public record ImportJobResultIO(
    *                  {@code "StructuredDataContainer"}, {@code "FileReference"},
    *                  {@code "TimeseriesReference"}, {@code "StructuredDataReference"}.
    */
+  @Schema(description = "Summary of one entity created (or attempted) during the import execution.")
   public record CreatedEntityIO(String localRef, String appId, String kind) {}
 }

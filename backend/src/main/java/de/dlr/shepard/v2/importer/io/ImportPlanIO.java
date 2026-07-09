@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.io;
 
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IMP1 — response body for {@code POST /v2/import/validate} and
@@ -23,6 +24,7 @@ import java.util.List;
  * @param warnings  soft issues (non-blocking)
  * @param errors    hard errors that prevented a commitId from being issued
  */
+@Schema(description = "Validated import plan with a commit ID for execution, or validation errors when the manifest is rejected.")
 public record ImportPlanIO(
   String commitId,
   String status,
@@ -40,6 +42,7 @@ public record ImportPlanIO(
    * @param wouldCreateReferences   number of new DataObject-Container links to be created
    * @param wouldSkipDataObjects    number of DataObjects skipped because a name already exists in the collection
    */
+  @Schema(description = "Counts of entities that would be created or skipped if the import plan is executed.")
   public record ImportSummaryIO(
     int wouldCreateDataObjects,
     int wouldCreateContainers,
