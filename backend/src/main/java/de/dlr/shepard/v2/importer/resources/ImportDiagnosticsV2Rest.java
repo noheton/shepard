@@ -132,7 +132,7 @@ public class ImportDiagnosticsV2Rest {
     @QueryParam("phase") String phase,
     @Parameter(description = "Maximum number of events to return (1–10000, default 10000). " +
                "When the full result exceeds this cap the response carries X-Truncated: true.")
-    @QueryParam("limit") @DefaultValue("10000") @Min(1) @Max(10000) int limit,
+    @QueryParam("maxItems") @DefaultValue("10000") @Min(1) @Max(10000) int maxItems,
     @Context SecurityContext sc
   ) {
     if (caller(sc) == null) return unauthorized();
@@ -149,8 +149,8 @@ public class ImportDiagnosticsV2Rest {
         .map(EventIO::from)
         .toList();
 
-    boolean truncated = all.size() > limit;
-    List<EventIO> events = truncated ? all.subList(0, limit) : all;
+    boolean truncated = all.size() > maxItems;
+    List<EventIO> events = truncated ? all.subList(0, maxItems) : all;
 
     var builder = Response.ok(events);
     if (truncated) {

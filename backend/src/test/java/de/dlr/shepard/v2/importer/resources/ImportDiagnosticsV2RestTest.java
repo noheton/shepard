@@ -13,13 +13,13 @@ import org.junit.jupiter.api.Test;
  * APISIMP-IMPORT-DIAGNOSTICS-FILTER-PARAMS + APISIMP-IMPORT-DIAG-EVENTS-BARE-LIST
  * regression tests.
  *
- * <p>Verifies that the {@code ?level=}, {@code ?phase=}, and {@code ?limit=} query
+ * <p>Verifies that the {@code ?level=}, {@code ?phase=}, and {@code ?maxItems=} query
  * parameters on {@link ImportDiagnosticsV2Rest#getEvents} carry the expected
  * annotations.
  */
 class ImportDiagnosticsV2RestTest {
 
-  /** Resolve the getEvents method with its updated signature (includes int limit). */
+  /** Resolve the getEvents method with its updated signature (includes int maxItems). */
   private static Method getEventsMethod() throws NoSuchMethodException {
     return ImportDiagnosticsV2Rest.class.getMethod(
         "getEvents",
@@ -83,22 +83,22 @@ class ImportDiagnosticsV2RestTest {
   }
 
   @Test
-  void limitParam_hasQueryParamAndParameterAnnotation() throws NoSuchMethodException {
+  void maxItemsParam_hasQueryParamAndParameterAnnotation() throws NoSuchMethodException {
     Method method = getEventsMethod();
 
     Parameter param = Arrays.stream(method.getParameters())
         .filter(p -> {
           QueryParam qp = p.getAnnotation(QueryParam.class);
-          return qp != null && "limit".equals(qp.value());
+          return qp != null && "maxItems".equals(qp.value());
         })
         .findFirst()
         .orElse(null);
 
-    assertNotNull(param, "limit must carry @QueryParam(\"limit\")");
+    assertNotNull(param, "maxItems must carry @QueryParam(\"maxItems\")");
     var ann = param.getAnnotation(
         org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
-    assertNotNull(ann, "limit must carry @Parameter annotation");
+    assertNotNull(ann, "maxItems must carry @Parameter annotation");
     assertTrue(ann.description() != null && ann.description().contains("X-Truncated"),
-        "@Parameter.description for limit must mention X-Truncated header");
+        "@Parameter.description for maxItems must mention X-Truncated header");
   }
 }
