@@ -2,7 +2,9 @@ package de.dlr.shepard.data.spatialdata.io;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+@Schema(name = "FilterCondition", description = "A single attribute-based filter condition (key, operator, value) for spatial data queries.")
 @Data
 public class FilterCondition {
 

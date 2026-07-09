@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * KIP1d — request body for
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * {@code minters.datacite.config.read-only-field}. Operators set
  * credentials via {@code POST .../credential}.
  */
+@Schema(name = "DataciteMinterConfigPatchIO", description = "RFC 7396 merge-patch body for PATCH /v2/admin/minters/datacite/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class DataciteMinterConfigPatchIO {
 

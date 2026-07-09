@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.wikiwriter.io;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Request body for
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>All fields are optional. When absent the service uses sensible defaults.
  */
+@Schema(name = "WikiWriteRequestIO", description = "Request body for POST /v2/data-objects/{dataObjectAppId}/wiki-write — optional LLM generation hints.")
 @Data
 @NoArgsConstructor
 public class WikiWriteRequestIO {

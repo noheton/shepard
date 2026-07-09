@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.ai.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.ai.entities.AiCapabilityConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AI1 — JSON request/response shape for one capability slot config.
@@ -17,6 +18,7 @@ import de.dlr.shepard.plugins.ai.entities.AiCapabilityConfig;
  * omitted from GET responses so clients can distinguish "not set" from
  * "explicitly set to null".
  */
+@Schema(name = "AiCapabilityConfigIO", description = "AI capability slot config returned by GET /v2/admin/ai/capabilities/{capability}.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AiCapabilityConfigIO {
 

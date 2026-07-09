@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+@Schema(name = "SpatialDataQueryParams", description = "Query parameters for POST /v2/spatial-data-containers/{appId}/query — geometry + attribute filters with pagination.")
 @Data
 public class SpatialDataQueryParams {
 

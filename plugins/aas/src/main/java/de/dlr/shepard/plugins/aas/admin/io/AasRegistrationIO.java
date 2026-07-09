@@ -2,11 +2,13 @@ package de.dlr.shepard.plugins.aas.admin.io;
 
 import de.dlr.shepard.plugins.aas.entities.AasRegistration;
 import de.dlr.shepard.plugins.aas.entities.AasRegistration.Status;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AAS1-reg Commit 3 — wire shape for a single {@link AasRegistration} outbox row,
  * returned by {@code GET /v2/admin/aas/registrations}.
  */
+@Schema(name = "AasRegistrationIO", description = "AAS registry outbox row returned by GET /v2/admin/aas/registrations.")
 public record AasRegistrationIO(
   String appId,
   String shellAppId,

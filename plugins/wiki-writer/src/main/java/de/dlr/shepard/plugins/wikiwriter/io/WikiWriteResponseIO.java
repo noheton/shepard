@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * Response body for
  * {@code POST /v2/data-objects/{dataObjectAppId}/wiki-write}.
  */
+@Schema(name = "WikiWriteResponseIO", description = "Response body for POST /v2/data-objects/{dataObjectAppId}/wiki-write — created LabJournalEntry reference.")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

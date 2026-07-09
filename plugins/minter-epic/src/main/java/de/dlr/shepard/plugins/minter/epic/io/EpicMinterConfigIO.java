@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
 import java.util.Date;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * KIP1c — JSON shape returned by
@@ -16,6 +17,7 @@ import java.util.Date;
  * can use the fingerprint to confirm "yes that's the credential I
  * just set" without exposing material that could help an attacker.
  */
+@Schema(name = "EpicMinterConfigIO", description = "ePIC minter runtime config returned by GET /v2/admin/minters/epic/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EpicMinterConfigIO(
   boolean enabled,

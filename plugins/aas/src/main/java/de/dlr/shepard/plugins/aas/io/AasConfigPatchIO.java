@@ -3,6 +3,7 @@ package de.dlr.shepard.plugins.aas.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AAS1l — request body for {@code PATCH /v2/admin/aas/config}
@@ -30,6 +31,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * <p>{@code registryApiKey} is also tri-state: absent (leave alone),
  * explicit-null (clear/revoke), explicit-string (set new key).
  */
+@Schema(name = "AasConfigPatchIO", description = "RFC 7396 merge-patch body for PATCH /v2/admin/aas/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class AasConfigPatchIO {
 

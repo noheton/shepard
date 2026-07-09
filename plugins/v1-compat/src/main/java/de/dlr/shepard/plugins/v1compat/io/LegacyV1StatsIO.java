@@ -3,6 +3,7 @@ package de.dlr.shepard.plugins.v1compat.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Date;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * V1COMPAT.0 — JSON shape returned by
@@ -24,6 +25,7 @@ import java.util.List;
  * @param mostRecentHitAt  wall-clock time of the most recent v1
  *                          hit; null when zero hits seen
  */
+@Schema(name = "LegacyV1StatsIO", description = "In-process v1 hit counters returned by GET /v2/admin/legacy/v1/stats.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LegacyV1StatsIO(
   long totalHits,

@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.v2.io;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * IDTA AAS Registry {@code ShellDescriptor} payload per IDTA-01002 §3.2.
@@ -14,6 +15,7 @@ import java.util.List;
  * {@code AAS-3.1} only (the full AAS Repository interface). Submodel
  * descriptors are out of scope for AAS1-reg.
  */
+@Schema(name = "AasShellDescriptorIO", description = "IDTA AAS Registry ShellDescriptor payload per IDTA-01002 §3.2 posted to a registry.")
 public record AasShellDescriptorIO(
   String id,
   String idShort,

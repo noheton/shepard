@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.references.git.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * G1d — body returned by {@code POST /v2/data-objects/{do}/git-references/{ref}/check-update}.
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * {@code resolvedSha} for the first time and the IO returns
  * {@code updated: false}.
  */
+@Schema(name = "CheckUpdateResultIO", description = "Result of POST /v2/data-objects/{do}/git-references/{ref}/check-update — whether the upstream SHA changed.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record CheckUpdateResultIO(
   /** The SHA the upstream is at right now. */

@@ -3,6 +3,7 @@ package de.dlr.shepard.plugins.video.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * VID1c — request body for {@code PATCH /v2/admin/video/config}
@@ -28,6 +29,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * the explicit {@code maxFileSizeMbTouched} flag set by Jackson via
  * the {@code @JsonSetter(nulls=SET)} on the property setter.
  */
+@Schema(name = "VideoConfigPatchIO", description = "RFC 7396 merge-patch body for PATCH /v2/admin/video/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class VideoConfigPatchIO {
 

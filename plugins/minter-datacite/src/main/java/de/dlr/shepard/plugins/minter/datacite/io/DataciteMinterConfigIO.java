@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
 import java.util.Date;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * KIP1d — JSON shape returned by
@@ -16,6 +17,7 @@ import java.util.Date;
  * can use the fingerprint to confirm "yes that's the password I
  * just set" without exposing material that could help an attacker.
  */
+@Schema(name = "DataciteMinterConfigIO", description = "DataCite minter runtime config returned by GET /v2/admin/minters/datacite/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DataciteMinterConfigIO(
   boolean enabled,

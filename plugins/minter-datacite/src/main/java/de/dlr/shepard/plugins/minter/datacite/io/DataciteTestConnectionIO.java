@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.minter.datacite.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * KIP1d — response body for
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * round-trip latency in millis. Useful for operators to verify
  * their config before enabling the minter.
  */
+@Schema(name = "DataciteTestConnectionIO", description = "Response body for POST /v2/admin/minters/datacite/test-connection — DataCite API reachability result.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DataciteTestConnectionIO(
   boolean reachable,

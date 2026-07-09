@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1a — request body for {@code PATCH /v2/admin/unhide/config}
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.annotation.Nulls;
  * {@code unhide.config.read-only-field}. Operators rotate via
  * {@code POST /v2/admin/unhide/harvest-key/rotate}.
  */
+@Schema(name = "UnhideConfigPatchIO", description = "RFC 7396 merge-patch body for PATCH /v2/admin/unhide/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class UnhideConfigPatchIO {
 
