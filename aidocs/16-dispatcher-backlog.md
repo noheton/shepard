@@ -4655,7 +4655,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mappings/resources/MappingsMaterializeRest.java:99,120`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F2`.
 
 ## APISIMP-GIT-TOMBSTONE-DELETE — delete `GitReferenceRest.java` 410 tombstone (size: XS, sweep: fire-501)
-- **Status:** queued.
+- **Status:** shipped (fire-504).
 - **Why:** `plugins/git/.../GitReferenceRest.java` is a 2-method class where every method returns HTTP 410 Gone with a `Location` header (added by APISIMP-TOMBSTONE-REMOVAL-WINDOW, fire-201, PR #2075 `80b0c8d`). All migrations are complete: CRUD migrated by PLUGIN-PERKIND-CRUD-CLEANUP; action sub-paths (preview, check-update) migrated by APISIMP-GIT-REF-PATH to `GitReferenceActionsRest` at `/v2/references/{appId}/...`. The class adds 2 JAX-RS routes to the OpenAPI doc and classpath scan with no live functionality. Sister deletion rows `APISIMP-WIKI-TOMBSTONE-DELETE` and `APISIMP-BUNDLE-TOMBSTONE-DELETE` are already queued (fire-500).
 - **Fix:** Delete `GitReferenceRest.java` and its test counterpart (if any — `GitReferenceRestTest.java` likely only covers the ✅-done CRUD which was already removed). Verify no other class imports it. `mvn verify -pl plugins/git` must be green.
 - **AC:** `find plugins/git -name "GitReferenceRest.java"` returns empty; no 410-only git endpoint group in OpenAPI; `mvn verify -pl plugins/git` green.

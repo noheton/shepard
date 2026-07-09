@@ -13,7 +13,7 @@ import java.util.Optional;
  * file shipped alongside this class.
  *
  * <p>The plugin's CDI beans — {@code GitReferenceService},
- * {@code GitReferenceRest}, {@code MeCredentialsRest},
+ * {@code GitReferenceActionsRest}, {@code MeCredentialsRest},
  * {@code GitAdapterRegistry}, {@code GitArtifactCache} — are
  * discovered by Quarkus's build-time CDI scanner via the backend's
  * classpath. This manifest exists so the {@code PluginRegistry}
@@ -43,7 +43,7 @@ public final class GitPluginManifest implements PluginManifest {
 
   private static final String DESCRIPTION =
     "Git reference payload kind. Provides GitReference Neo4j context nodes, " +
-    "REST endpoints (/v2/data-objects/{id}/git-references/*, /v2/me/git-credentials/*), " +
+    "REST endpoints (/v2/references?kind=git, /v2/references/{appId}/preview, /v2/references/{appId}/check-update, /v2/me/git-credentials/*), " +
     "GitLab/GitHub/Gitea adapters, and the per-user PAT-authenticated file-artifact fetch cache. " +
     "GitCredential entity and service remain in backend (auth perimeter). " +
     "Fixes the latent OGM-gap where GitReference's package was previously unregistered in NeoConnector.";

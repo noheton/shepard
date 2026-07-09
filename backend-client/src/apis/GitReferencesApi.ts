@@ -25,18 +25,8 @@ import {
     GitArtifactPreviewToJSON,
 } from '../models/index';
 
-export interface CheckGitReferenceUpdateRequest {
-    appId: string;
-    dataObjectAppId: string;
-}
-
 export interface CheckGitReferenceUpdateV2Request {
     appId: string;
-}
-
-export interface PreviewGitReferenceRequest {
-    appId: string;
-    dataObjectAppId: string;
 }
 
 export interface PreviewGitReferenceV2Request {
@@ -47,59 +37,6 @@ export interface PreviewGitReferenceV2Request {
  * 
  */
 export class GitReferencesApi extends runtime.BaseAPI {
-
-    /**
-     * APISIMP-GIT-REF-PATH: this path is retired. Use POST /v2/references/{appId}/check-update.
-     * [v2] [GONE] Check-update endpoint moved — use POST /v2/references/{appId}/check-update.
-     */
-    async checkGitReferenceUpdateRaw(requestParameters: CheckGitReferenceUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['appId'] == null) {
-            throw new runtime.RequiredError(
-                'appId',
-                'Required parameter "appId" was null or undefined when calling checkGitReferenceUpdate().'
-            );
-        }
-
-        if (requestParameters['dataObjectAppId'] == null) {
-            throw new runtime.RequiredError(
-                'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling checkGitReferenceUpdate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/data-objects/{dataObjectAppId}/git-references/{appId}/check-update`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"dataObjectAppId"}}`, encodeURIComponent(String(requestParameters['dataObjectAppId']))),
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * APISIMP-GIT-REF-PATH: this path is retired. Use POST /v2/references/{appId}/check-update.
-     * [v2] [GONE] Check-update endpoint moved — use POST /v2/references/{appId}/check-update.
-     */
-    async checkGitReferenceUpdate(requestParameters: CheckGitReferenceUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.checkGitReferenceUpdateRaw(requestParameters, initOverrides);
-    }
 
     /**
      * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, updated, checkedAtMillis}. Requires Write permission on the parent DataObject.
@@ -146,59 +83,6 @@ export class GitReferencesApi extends runtime.BaseAPI {
     async checkGitReferenceUpdateV2(requestParameters: CheckGitReferenceUpdateV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CheckUpdateResultIO> {
         const response = await this.checkGitReferenceUpdateV2Raw(requestParameters, initOverrides);
         return await response.value();
-    }
-
-    /**
-     * APISIMP-GIT-REF-PATH: this path is retired. Use GET /v2/references/{appId}/preview.
-     * [v2] [GONE] Preview endpoint moved — use GET /v2/references/{appId}/preview.
-     */
-    async previewGitReferenceRaw(requestParameters: PreviewGitReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters['appId'] == null) {
-            throw new runtime.RequiredError(
-                'appId',
-                'Required parameter "appId" was null or undefined when calling previewGitReference().'
-            );
-        }
-
-        if (requestParameters['dataObjectAppId'] == null) {
-            throw new runtime.RequiredError(
-                'dataObjectAppId',
-                'Required parameter "dataObjectAppId" was null or undefined when calling previewGitReference().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.apiKey) {
-            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
-        }
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("bearer", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-        const response = await this.request({
-            path: `/v2/data-objects/{dataObjectAppId}/git-references/{appId}/preview`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"dataObjectAppId"}}`, encodeURIComponent(String(requestParameters['dataObjectAppId']))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.VoidApiResponse(response);
-    }
-
-    /**
-     * APISIMP-GIT-REF-PATH: this path is retired. Use GET /v2/references/{appId}/preview.
-     * [v2] [GONE] Preview endpoint moved — use GET /v2/references/{appId}/preview.
-     */
-    async previewGitReference(requestParameters: PreviewGitReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.previewGitReferenceRaw(requestParameters, initOverrides);
     }
 
     /**

@@ -33,9 +33,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * on the unified {@code /v2/references} surface.
  *
  * <p>CRUD (list / create / read / delete / patch) is handled by
- * {@code ReferencesV2Rest} + {@code GitReferenceKindHandler}. The per-kind
- * per-DataObject path {@code /v2/data-objects/{dataObjectAppId}/git-references}
- * ({@code GitReferenceRest}) retains only 410 stubs after this migration.
+ * {@code ReferencesV2Rest} + {@code GitReferenceKindHandler}.
  *
  * <p>These action sub-paths follow the same path pattern used by video download
  * ({@code /v2/references/{appId}/content}) — the reference is addressed by its

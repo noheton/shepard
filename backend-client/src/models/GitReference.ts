@@ -33,7 +33,7 @@ export interface GitReference {
      */
     readonly appId?: string | null;
     /**
-     * Use-mode (aidocs/38 §2). LOOSE_LINK (default) renders as a clickable URL; TRACKED_ARTIFACT enables the server-side inline preview via GET /v2/data-objects/{do}/git-references/{appId}/preview; PINNED_SNAPSHOT is reserved for G1c.
+     * Use-mode (aidocs/38 §2). LOOSE_LINK (default) renders as a clickable URL; TRACKED_ARTIFACT enables the server-side inline preview via GET /v2/references/{appId}/preview; PINNED_SNAPSHOT is reserved for G1c.
      * @type {GitReferenceMode}
      * @memberof GitReference
      */
