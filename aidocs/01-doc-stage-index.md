@@ -490,7 +490,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30.md`](agent-findings/apisimp-sweep-2026-06-30.md) | API Simplification Sweep — fire-313 (2026-06-30) | 2026-06-30 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-01.md`](agent-findings/apisimp-sweep-2026-07-01.md) | APISIMP sweep — 2026-07-01 (fire-338) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md`](agent-findings/apisimp-sweep-2026-07-08-fire481.md) | APISIMP sweep — fire-481 (2026-07-08) | 2026-07-08 | 2026-07-08 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-07-09.md`](agent-findings/apisimp-sweep-2026-07-09.md) | APISIMP Sweep — fire-488 (2026-07-09) | 2026-07-09 | — |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-09.md`](agent-findings/apisimp-sweep-2026-07-09.md) | APISIMP Sweep — fire-488 (2026-07-09) | 2026-07-09 | 2026-07-09 |
 | [`aidocs/agent-findings/apisimp-sweep-fire341-2026-07-01.md`](agent-findings/apisimp-sweep-fire341-2026-07-01.md) | API Simplification Sweep — fire-341 (2026-07-01) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-fire342-2026-07-01.md`](agent-findings/apisimp-sweep-fire342-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-342) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-fire353-2026-07-01.md`](agent-findings/apisimp-sweep-fire353-2026-07-01.md) | APISIMP Sweep — fire-353 (2026-07-01) | 2026-07-01 | 2026-07-07 |

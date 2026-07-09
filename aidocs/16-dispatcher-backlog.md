@@ -4487,7 +4487,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/io/DQRIO.java`; `aidocs/agent-findings/apisimp-sweep-fire483-2026-07-08.md §F4`.
 
 ## APISIMP-LIST-XCOUNT-RESIDUAL — 6 list/batch endpoints emit PagedResponseIO but omit X-Total-Count response header (size: XS, sweep: fire-488)
-- **Status:** ⏳ queued — next fire (fire-489) dispatches this row.
+- **Status:** 🔄 in-flight — PR opened fire-489 on branch `APISIMP-LIST-XCOUNT-RESIDUAL`.
 - **Why:** `ContainersV2Rest` (3 endpoints), `CrossDoBulkDataRest` (1 endpoint), and `DataObjectV2Rest` (2 endpoints) each return `PagedResponseIO` in the body but never chain `.header("X-Total-Count", (long) size)` on the `Response` builder, and their `@APIResponse(responseCode="200")` annotations lack the formal `headers = @Header(name="X-Total-Count", ...)` declaration. Every other post-APISIMP-XCOUNT-OPENAPI-HEADER list endpoint carries both; these 6 were missed because they are non-standard list shapes (file-version list, linked-DO list, bulk channel-data POST, cross-DO bulk POST, predecessor-chain, successor-chain).
 - **Fix:** For each of the 6 endpoints: (1) chain `.header("X-Total-Count", (long) <size-var>)` before `.build()`; (2) add `headers = @Header(name = "X-Total-Count", description = "Total number of items.", schema = @Schema(type = SchemaType.INTEGER))` to the `@APIResponse(responseCode = "200")` annotation. Import `Header`, `Schema`, `SchemaType` from MicroProfile OpenAPI where needed.
 - **AC:** All 6 endpoints return `X-Total-Count` in their response headers; generated OpenAPI spec declares the header for each; `mvn verify -pl backend` green. No runtime behaviour change beyond the added header.

@@ -499,7 +499,8 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Version list (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total version count.", schema = @Schema(type = SchemaType.INTEGER))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -525,7 +526,9 @@ public class ContainersV2Rest {
           "Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning");
     }
     List<PayloadVersionIO> versionList = versionsOpt.get();
-    return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())).build();
+    return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size()))
+        .header("X-Total-Count", (long) versionList.size())
+        .build();
   }
 
   // ─── stats ───────────────────────────────────────────────────────────────
@@ -584,7 +587,8 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "List of linked DataObjects (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total linked DataObject count.", schema = @Schema(type = SchemaType.INTEGER))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -606,7 +610,9 @@ public class ContainersV2Rest {
           "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept");
     }
     List<DataObjectIO> linkedList = linkedOpt.get();
-    return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())).build();
+    return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size()))
+        .header("X-Total-Count", (long) linkedList.size())
+        .build();
   }
 
   // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
@@ -763,7 +769,8 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Raw data for all resolved channels.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Number of resolved channel series returned.", schema = @Schema(type = SchemaType.INTEGER))
   )
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -789,7 +796,9 @@ public class ContainersV2Rest {
           "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
     }
     var out = result.get();
-    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size())).build();
+    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
+        .header("X-Total-Count", (long) out.size())
+        .build();
   }
 
   @POST
