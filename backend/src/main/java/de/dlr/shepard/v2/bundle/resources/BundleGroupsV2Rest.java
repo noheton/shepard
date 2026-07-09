@@ -72,10 +72,10 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *   <li>{@code POST   /v2/references/{bundleAppId}/groups/{groupAppId}/files} — upload file.</li>
  * </ul>
  *
- * <p>The legacy paths at {@code /v2/bundles/{bundleAppId}/groups} remain active
- * in {@link FileBundleReferenceRest} until the APISIMP-BUNDLE-REF-KIND-UNIFY
- * tombstone slice ships. Auth: same {@link PermissionsService} permission check
- * as the legacy surface — walks from the bundle to its parent DataObject.
+ * <p>The legacy {@code /v2/bundles/{bundleAppId}/groups} paths were retired by
+ * APISIMP-BUNDLE-TOMBSTONE-DELETE (tombstone deleted). Auth: same
+ * {@link PermissionsService} permission check — walks from the bundle to its
+ * parent DataObject.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)

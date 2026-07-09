@@ -34,7 +34,7 @@ import java.util.Objects;
  * singleton-FileReference path
  * ({@link de.dlr.shepard.context.references.file.services.SingletonFileReferenceService})
  * and the bundle-upload path
- * ({@code de.dlr.shepard.v2.bundle.resources.FileBundleReferenceRest})
+ * ({@code de.dlr.shepard.v2.bundle.resources.BundleGroupsV2Rest})
  * called {@link FileService#createFile} <em>directly</em>, hardcoding
  * the GridFS write and bypassing {@link FileStorageRegistry#activeStorage()}.
  * That made {@code shepard.storage.provider=s3} a no-op for those two
