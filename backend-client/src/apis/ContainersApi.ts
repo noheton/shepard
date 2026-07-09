@@ -221,6 +221,9 @@ export interface ListContainerChannelsRequest {
 
 export interface ListContainersRequest {
     kind: string;
+    /** Optional substring filter on container name. Case-sensitive. Replaces the deprecated `name` param. */
+    q?: string;
+    /** @deprecated Use `q` instead. Accepted for one release cycle; produces `Deprecation: true` response header. */
     name?: string;
     page?: number;
     pageSize?: number;
@@ -1662,8 +1665,8 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all containers. `X-Total-Count` header carries the total before paging.  Auth: authenticated; per-container Read is enforced by the underlying list query.
-     * [v2] List containers of a kind, optionally filtered by name.
+     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. Use `q` for a substring filter (case-sensitive). Legacy `name` param still accepted but produces `Deprecation: true` response header — migrate to `q`.  Pagination: supply both `page` (0-based) and `pageSize` (1–200). `X-Total-Count` header carries the total.  Auth: authenticated.
+     * [v2] List containers of a kind, optionally filtered by text (q).
      */
     async listContainersRaw(requestParameters: ListContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         if (requestParameters['kind'] == null) {
@@ -1677,6 +1680,10 @@ export class ContainersApi extends runtime.BaseAPI {
 
         if (requestParameters['kind'] != null) {
             queryParameters['kind'] = requestParameters['kind'];
+        }
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
         }
 
         if (requestParameters['name'] != null) {
@@ -1716,8 +1723,8 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. An optional `name` query param narrows by substring.  Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` (1–200) to slice the result. Omitting either returns all containers. `X-Total-Count` header carries the total before paging.  Auth: authenticated; per-container Read is enforced by the underlying list query.
-     * [v2] List containers of a kind, optionally filtered by name.
+     * Returns every container of `kind` the caller may read, as ContainerV2IO[]. Use `q` for a substring filter (case-sensitive). Legacy `name` param still accepted but produces `Deprecation: true` response header — migrate to `q`.  Pagination: supply both `page` (0-based) and `pageSize` (1–200). `X-Total-Count` header carries the total.  Auth: authenticated.
+     * [v2] List containers of a kind, optionally filtered by text (q).
      */
     async listContainers(requestParameters: ListContainersRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
         const response = await this.listContainersRaw(requestParameters, initOverrides);

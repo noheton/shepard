@@ -4606,10 +4606,10 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:354`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F3`.
 
 ## APISIMP-CONTAINERS-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/containers` (size: S, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-509).
 - **Why:** `ContainersV2Rest.java` line 455: `GET /v2/containers?kind=…&name=…` uses `?name=` as the substring filter. The established v2 convention for a generic text filter is `?q=` (set by `GET /v2/user-groups?q=`). SDK consumers must check the correct param name per endpoint instead of applying the same convention.
-- **Fix:** Add `@QueryParam("q")` alias; deprecate `@QueryParam("name")` for one release cycle; remove `?name=` in the following release. Update frontend composables and OpenAPI spec.
-- **AC:** `GET /v2/containers?q=foo` returns same result as `GET /v2/containers?name=foo`; `?name=` logs a deprecation warning; frontend composable uses `?q=`; `mvn verify -pl backend` green.
+- **Fix:** `@QueryParam("q")` is primary; `@QueryParam("name")` (deprecated) falls back to `q` + adds `Deprecation: true` response header. Frontend composable uses `?q=`. OpenAPI spec updated. 3 new tests (q-filter, legacy-alias, q-takes-precedence). Backend client interface: `q` primary, `name` deprecated field.
+- **AC:** `GET /v2/containers?q=foo` returns same result as `GET /v2/containers?name=foo`; `?name=` produces `Deprecation: true` header; frontend composable uses `?q=`; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:455`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F4-1`.
 
 ## APISIMP-DO-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/data-objects` (size: S, sweep: fire-500)
