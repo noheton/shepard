@@ -379,11 +379,10 @@ public class BundleGroupsV2Rest {
     if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
 
     long total = fileGroupService.countFiles(groupAppId);
-    int totalPages = (int) ((total + pageSize - 1) / pageSize);
     int skip = page * pageSize;
     List<ShepardFile> items = skip < total ? fileGroupService.listFiles(groupAppId, skip, pageSize) : List.of();
 
-    return Response.ok(new PagedFilesIO(items, page, pageSize, total, totalPages)).build();
+    return Response.ok(new PagedFilesIO(items, page, pageSize, total)).build();
   }
 
   // ─── upload file into a group ─────────────────────────────────────────────

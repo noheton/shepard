@@ -43,19 +43,13 @@ export interface PagedFiles {
      * @type {number}
      * @memberof PagedFiles
      */
-    size?: number;
+    pageSize?: number;
     /**
      * Total number of files in the group (across all pages).
      * @type {number}
      * @memberof PagedFiles
      */
-    totalElements?: number;
-    /**
-     * Total number of pages at the current `size`.
-     * @type {number}
-     * @memberof PagedFiles
-     */
-    totalPages?: number;
+    total?: number;
 }
 
 /**
@@ -77,9 +71,8 @@ export function PagedFilesFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         
         'items': json['items'] == null ? undefined : ((json['items'] as Array<any>).map(ShepardFileFromJSON)),
         'page': json['page'] == null ? undefined : json['page'],
-        'size': json['size'] == null ? undefined : json['size'],
-        'totalElements': json['totalElements'] == null ? undefined : json['totalElements'],
-        'totalPages': json['totalPages'] == null ? undefined : json['totalPages'],
+        'pageSize': json['pageSize'] == null ? undefined : json['pageSize'],
+        'total': json['total'] == null ? undefined : json['total'],
     };
 }
 
@@ -91,9 +84,8 @@ export function PagedFilesToJSON(value?: PagedFiles | null): any {
         
         'items': value['items'] == null ? undefined : ((value['items'] as Array<any>).map(ShepardFileToJSON)),
         'page': value['page'],
-        'size': value['size'],
-        'totalElements': value['totalElements'],
-        'totalPages': value['totalPages'],
+        'pageSize': value['pageSize'],
+        'total': value['total'],
     };
 }
 

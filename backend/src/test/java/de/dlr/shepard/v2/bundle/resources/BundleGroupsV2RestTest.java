@@ -285,7 +285,7 @@ class BundleGroupsV2RestTest {
     var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
     var envelope = (PagedFilesIO) r.getEntity();
-    assertEquals(3L, envelope.getTotalElements());
+    assertEquals(3L, envelope.getTotal());
     assertEquals(1, envelope.getItems().size());
   }
 
@@ -300,7 +300,7 @@ class BundleGroupsV2RestTest {
     var r = resource.listGroupFiles(BUNDLE_APP_ID, GROUP_APP_ID, 0, BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE, securityContext);
     assertEquals(200, r.getStatus());
     var envelope = (PagedFilesIO) r.getEntity();
-    assertEquals(BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE, envelope.getSize());
+    assertEquals(BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE, envelope.getPageSize());
   }
 
   @Test
@@ -417,7 +417,7 @@ class BundleGroupsV2RestTest {
     assertEquals(200, r.getStatus());
     var envelope = (PagedFilesIO) r.getEntity();
     assertEquals(0, envelope.getItems().size());
-    assertEquals(5L, envelope.getTotalElements());
+    assertEquals(5L, envelope.getTotal());
   }
 
   @Test

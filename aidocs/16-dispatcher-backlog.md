@@ -4592,7 +4592,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterTombstoneRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F1-2`.
 
 ## APISIMP-PAGEDFILES-SPRING-NAMING — align `PagedFilesIO` field names with `PagedResponseIO` standard (`size`→`pageSize`, `totalElements`→`total`, drop `totalPages`) (size: S, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-508). PR #2439.
 - **Why:** `PagedFilesIO.java` — the response envelope for `GET /v2/references/{bundleAppId}/groups/{groupAppId}/files` — uses Spring Data conventions (`size`, `totalElements`, `totalPages`) instead of the standard v2 fields used by `PagedResponseIO` everywhere else (`pageSize`, `total`). A JS client must branch its deserialiser: `body.total` for every other list endpoint, `body.totalElements` for bundle files. The `totalPages` field is also redundant — clients compute it from `total / pageSize`.
 - **Fix:** Rename `size` → `pageSize`, `totalElements` → `total`; remove `totalPages`. Update all callers in `BundleGroupsV2Rest` and any frontend composables that read these fields. Add `@Schema(description)` on `PagedFilesIO` if missing.
 - **AC:** `PagedFilesIO` has fields `pageSize`, `total`, `page`, `items`; `totalElements` and `totalPages` absent; frontend composable reads `body.pageSize` and `body.total`; `mvn verify -pl backend` green; `npm run typecheck` green.
