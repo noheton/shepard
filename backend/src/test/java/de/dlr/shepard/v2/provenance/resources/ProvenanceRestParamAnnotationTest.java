@@ -43,7 +43,7 @@ class ProvenanceRestParamAnnotationTest {
       "listActivitiesProvJson",
       String.class, String.class, String.class, String.class, String.class,
       int.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listActivitiesProvJson.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listActivitiesProvJson.pageSize");
   }
 
   @Test
@@ -52,7 +52,7 @@ class ProvenanceRestParamAnnotationTest {
       "listActivitiesJsonLd",
       String.class, String.class, String.class, String.class, String.class,
       int.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listActivitiesJsonLd.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listActivitiesJsonLd.pageSize");
   }
 
   @Test
@@ -70,7 +70,7 @@ class ProvenanceRestParamAnnotationTest {
       "listEntityActivitiesProvJson",
       String.class, String.class, String.class, int.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesProvJson.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivitiesProvJson.pageSize");
   }
 
   @Test
@@ -88,7 +88,7 @@ class ProvenanceRestParamAnnotationTest {
       "listEntityActivitiesJsonLd",
       String.class, String.class, String.class, int.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesJsonLd.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivitiesJsonLd.pageSize");
   }
 
   @Test
@@ -97,7 +97,7 @@ class ProvenanceRestParamAnnotationTest {
       "listEntityActivities",
       String.class, String.class, String.class, int.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivities.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivities.pageSize");
   }
 
   @Test

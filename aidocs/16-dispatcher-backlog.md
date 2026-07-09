@@ -4543,7 +4543,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:145`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:223`; `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:481,483`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F4.1–F4.3`.
 
 ## APISIMP-PROV-CURSOR-PAGENAME — `ProvenanceRest` cursor-pagination endpoints use `?limit=` instead of v2 standard `?pageSize=` (size: S, sweep: fire-496)
-- **Status:** queued.
+- **Status:** in-flight — branch `APISIMP-PROV-CURSOR-PAGENAME-1`, fire-498.
 - **Why:** `ProvenanceRest.java` at lines 134, 202, 248, 301, 347, 382 declares `@QueryParam("limit")` for its cursor-pagination window across six cursor-backed list endpoints (`GET /v2/provenance/activities`, `/v2/provenance/activities/{appId}/predecessors`, etc.). Every other v2 list endpoint that accepts a page-size param uses `?pageSize=`. Cursor pagination is intentional and correct; the naming divergence is the issue — a caller who reads one v2 endpoint's docs expects `pageSize` and will silently get defaults when they pass `pageSize=` to a provenance endpoint.
 - **Fix:** Rename `@QueryParam("limit")` → `@QueryParam("pageSize")` (and update `@Parameter(description)` strings) at all 6 sites in `ProvenanceRest.java`. Update any existing callers in the frontend composables (`useProvenance*.ts`) to use `pageSize=` instead of `limit=`.
 - **AC:** `grep -n '"limit"' backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java` returns zero `@QueryParam` usages; `grep -rn "limit=" frontend/composables/provenance/` returns zero; `mvn verify -pl backend` green; `npm run test` green.
