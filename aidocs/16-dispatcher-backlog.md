@@ -4599,7 +4599,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/io/PagedFilesIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F2`.
 
 ## APISIMP-BUNDLES-FILES-PAGESIZE-UNCLAMPED — add `@Min(1) @Max(1000)` to `BundleGroupsV2Rest.listFiles()` `pageSize` (size: XS, sweep: fire-500)
-- **Status:** queued.
+- **Status:** done (fire-505, self-resolved — `@Min(1) @Max(1000)` already present in `BundleGroupsV2Rest.java` line 369 with matching `@Schema(minimum="1",maximum="1000")` on the `listGroupFiles` method; row pre-dates the fix).
 - **Why:** `BundleGroupsV2Rest.java` lines 354–359: `listFiles()` declares `@QueryParam("pageSize") @DefaultValue("200") Integer pageSize` and clamps via `Math.min(MAX, Math.max(1, pageSize))` in Java, emitting no OpenAPI constraint. The sibling `listGroups()` endpoint correctly carries `@Min(1) @Max(200)`. OpenAPI consumers (generated SDK, Swagger UI) see an unconstrained integer on the files endpoint.
 - **Fix:** Add `@Min(1) @Max(1000)` (or whatever `MAX` constant is in scope) to the `pageSize` parameter declaration; add the corresponding `@Schema` constraint in the `@Operation` if needed.
 - **AC:** `grep "@Min" BundleGroupsV2Rest.java` matches on both `listGroups` and `listFiles` pageSize params; OpenAPI spec shows `minimum: 1, maximum: 1000` for the files endpoint; `mvn verify -pl backend` green.
@@ -4620,7 +4620,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:203`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F4-2`.
 
 ## APISIMP-PUBLICATIONS-KIND-410 — tombstone `GET /v2/{kind}/{appId}/publications` with 410 → `Location: /v2/publications` (size: XS, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-505).
 - **Why:** `PublicationsListRest.java` exposes `GET /v2/{kind}/{appId}/publications`, already marked `deprecated = true` in the OpenAPI operation. The canonical surface is `GET /v2/publications` via `FlatPublicationsRest`. Despite APISIMP-PUBS-ALIAS-HARDCODED-LIMIT (fire-461) adding pagination to the canonical endpoint, this deprecated alias still returns live data — old callers never discover the migration path.
 - **Fix:** Replace the live `PagedResponseIO` response with a 410 Gone + `Location: /v2/publications` (ProblemResponse pattern). Verify no frontend caller still uses the per-kind path.
 - **AC:** `GET /v2/containers/{appId}/publications` → 410 with `Location: /v2/publications`; `GET /v2/publications` → 200; frontend composables use only the canonical path; `mvn verify -pl backend` green.
