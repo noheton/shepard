@@ -4576,3 +4576,66 @@ picks these up. Terse by design.
 - **Fix:** (deferred) Re-root to `POST /v2/containers/query?kind=timeseries`; route via `ContainerQueryKindPlugin` SPI; delete `de.dlr.shepard.v2.sql` package. Unblock after container kind surface (V2CONV-CONTAINERS-KIND-SURFACE) ships.
 - **AC:** `POST /v2/sql/timeseries` → 404; `POST /v2/containers/query?kind=timeseries` → 200; `de.dlr.shepard.v2.sql` package deleted; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/sql/resources/SqlTimeseriesRest.java:74`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.3`.
+
+## APISIMP-BUNDLE-TOMBSTONE-DELETE — delete `FileBundleReferenceRest` (8-method 410 tombstone, no live callers) (size: XS, sweep: fire-500)
+- **Status:** queued.
+- **Why:** APISIMP-BUNDLE-REF-KIND-UNIFY (fire-457) migrated all CRUD to `/v2/references?kind=file-bundle` and left eight 410-Gone stubs in `FileBundleReferenceRest.java`. Every method body is `Response.status(GONE).build()` plus a `LOG.debugf`. No frontend callers remain (`grep -r "v2/bundles" frontend/` returns only comment lines). The class adds noise to OpenAPI and inflates WAR deploy time.
+- **Fix:** Delete `FileBundleReferenceRest.java` and its test class. Verify `mvn verify -pl backend` green and OpenAPI spec no longer lists the `/v2/bundles/{bundleAppId}/…` paths.
+- **AC:** `FileBundleReferenceRest.java` and its test absent from tree; `GET /v2/bundles/*/files` → 404; `mvn verify -pl backend` green; OpenAPI spec size reduced.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/FileBundleReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F1-1`.
+
+## APISIMP-WIKI-TOMBSTONE-DELETE — delete `WikiWriterTombstoneRest` (single 410 stub, client migration complete) (size: XS, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `WikiWriterTombstoneRest.java` exposes one `POST` at `/v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}/wiki-write` returning 410 Gone with a correct `Location` header pointing to the canonical `/v2/data-objects/{dataObjectAppId}/wiki-write`. The tombstone has existed long enough that client migration is complete. No `collectionAppId` path in `frontend/`.
+- **Fix:** Verify `grep -r "collections/.*/data-objects/.*/wiki-write" frontend/` returns zero hits, then delete `WikiWriterTombstoneRest.java` and its test. Confirm canonical `POST /v2/data-objects/{dataObjectAppId}/wiki-write` is still live in `WikiWriterRest.java`.
+- **AC:** `WikiWriterTombstoneRest.java` and its test absent; `POST /v2/collections/*/data-objects/*/wiki-write` → 404; canonical endpoint unaffected; `mvn verify -pl plugins/wiki-writer` green.
+- **First refs:** `plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterTombstoneRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F1-2`.
+
+## APISIMP-PAGEDFILES-SPRING-NAMING — align `PagedFilesIO` field names with `PagedResponseIO` standard (`size`→`pageSize`, `totalElements`→`total`, drop `totalPages`) (size: S, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `PagedFilesIO.java` — the response envelope for `GET /v2/references/{bundleAppId}/groups/{groupAppId}/files` — uses Spring Data conventions (`size`, `totalElements`, `totalPages`) instead of the standard v2 fields used by `PagedResponseIO` everywhere else (`pageSize`, `total`). A JS client must branch its deserialiser: `body.total` for every other list endpoint, `body.totalElements` for bundle files. The `totalPages` field is also redundant — clients compute it from `total / pageSize`.
+- **Fix:** Rename `size` → `pageSize`, `totalElements` → `total`; remove `totalPages`. Update all callers in `BundleGroupsV2Rest` and any frontend composables that read these fields. Add `@Schema(description)` on `PagedFilesIO` if missing.
+- **AC:** `PagedFilesIO` has fields `pageSize`, `total`, `page`, `items`; `totalElements` and `totalPages` absent; frontend composable reads `body.pageSize` and `body.total`; `mvn verify -pl backend` green; `npm run typecheck` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/io/PagedFilesIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F2`.
+
+## APISIMP-BUNDLES-FILES-PAGESIZE-UNCLAMPED — add `@Min(1) @Max(1000)` to `BundleGroupsV2Rest.listFiles()` `pageSize` (size: XS, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `BundleGroupsV2Rest.java` lines 354–359: `listFiles()` declares `@QueryParam("pageSize") @DefaultValue("200") Integer pageSize` and clamps via `Math.min(MAX, Math.max(1, pageSize))` in Java, emitting no OpenAPI constraint. The sibling `listGroups()` endpoint correctly carries `@Min(1) @Max(200)`. OpenAPI consumers (generated SDK, Swagger UI) see an unconstrained integer on the files endpoint.
+- **Fix:** Add `@Min(1) @Max(1000)` (or whatever `MAX` constant is in scope) to the `pageSize` parameter declaration; add the corresponding `@Schema` constraint in the `@Operation` if needed.
+- **AC:** `grep "@Min" BundleGroupsV2Rest.java` matches on both `listGroups` and `listFiles` pageSize params; OpenAPI spec shows `minimum: 1, maximum: 1000` for the files endpoint; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:354`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F3`.
+
+## APISIMP-CONTAINERS-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/containers` (size: S, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `ContainersV2Rest.java` line 455: `GET /v2/containers?kind=…&name=…` uses `?name=` as the substring filter. The established v2 convention for a generic text filter is `?q=` (set by `GET /v2/user-groups?q=`). SDK consumers must check the correct param name per endpoint instead of applying the same convention.
+- **Fix:** Add `@QueryParam("q")` alias; deprecate `@QueryParam("name")` for one release cycle; remove `?name=` in the following release. Update frontend composables and OpenAPI spec.
+- **AC:** `GET /v2/containers?q=foo` returns same result as `GET /v2/containers?name=foo`; `?name=` logs a deprecation warning; frontend composable uses `?q=`; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:455`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F4-1`.
+
+## APISIMP-DO-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/data-objects` (size: S, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `DataObjectV2Rest.java` line 203: `GET /v2/data-objects?name=…` uses `Constants.QP_NAME` ("name") as the substring filter. Same inconsistency as APISIMP-CONTAINERS-NAME-TO-Q — forces SDK consumers to remember a per-endpoint param name instead of the `?q=` convention.
+- **Fix:** Add `@QueryParam("q")` alias (reading from `Constants.QP_Q` or inline); deprecate `Constants.QP_NAME` usage on this endpoint for one release cycle. Update frontend composables and OpenAPI spec.
+- **AC:** `GET /v2/data-objects?q=foo` works; `?name=` still accepted with deprecation warning; `mvn verify -pl backend` green; `npm run typecheck` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:203`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F4-2`.
+
+## APISIMP-PUBLICATIONS-KIND-410 — tombstone `GET /v2/{kind}/{appId}/publications` with 410 → `Location: /v2/publications` (size: XS, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `PublicationsListRest.java` exposes `GET /v2/{kind}/{appId}/publications`, already marked `deprecated = true` in the OpenAPI operation. The canonical surface is `GET /v2/publications` via `FlatPublicationsRest`. Despite APISIMP-PUBS-ALIAS-HARDCODED-LIMIT (fire-461) adding pagination to the canonical endpoint, this deprecated alias still returns live data — old callers never discover the migration path.
+- **Fix:** Replace the live `PagedResponseIO` response with a 410 Gone + `Location: /v2/publications` (ProblemResponse pattern). Verify no frontend caller still uses the per-kind path.
+- **AC:** `GET /v2/containers/{appId}/publications` → 410 with `Location: /v2/publications`; `GET /v2/publications` → 200; frontend composables use only the canonical path; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F5`.
+
+## APISIMP-ANOMALY-5TUPLE-ADD-UUID — add `channelAppId` as alternative channel selector in `AnomalyDetectRequestIO` (size: M, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `AnomalyDetectRequestIO.java` — the request body for `POST /v2/anomaly-detection/detect` — accepts a channel selector exclusively as the 5-tuple (`measurement`, `device`, `location`, `symbolicName`, `field`). The live-window endpoint already supports both the 5-tuple AND `channelAppId` as alternatives (per APISIMP-TIMESERIES-APPID-MIGRATION). Clients that hold a channel `appId` must expand it into 5 fields before calling detect — a round-trip the endpoint should absorb. Note: APISIMP-ANOMALY-ACTION-PATH (fire-496) covers the path routing; this row is strictly about the body schema.
+- **Fix:** Add `@Nullable UUID channelAppId` to `AnomalyDetectRequestIO`. In the handler, if `channelAppId` is non-null, resolve to the 5-tuple via `TimeseriesChannelService.findByAppId()`; validate that exactly one of (5-tuple, channelAppId) is provided. Return 422 if both or neither are present.
+- **AC:** `POST /v2/anomaly-detection/detect` with only `channelAppId` → 200; with full 5-tuple → 200; with both → 422; with neither → 422; `mvn verify -pl backend` green; OpenAPI spec shows `channelAppId` as an alternative.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/AnomalyDetectRequestIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F6`.
+
+## APISIMP-USERGROUP-NUMERIC-PERMS-BLOCK — add 400 block for numeric `readerGroupIds`/`writerGroupIds` in `UserGroupV2Rest` (size: S, sweep: fire-500)
+- **Status:** queued.
+- **Why:** `UserGroupV2Rest.java` lines 319, 326: when `readerGroupIds`/`writerGroupIds` are in a PATCH body, the handler calls `Long.parseLong(v.toString())` and persists numeric Neo4j IDs without complaint. `ContainersV2Rest` (lines 1379–1385) already returns 400 with an informative message directing callers to use `readerGroupAppIds`/`writerGroupAppIds` (UUID v7). The `UserGroupV2Rest` gap means callers hit silent data corruption (numeric ID stored, later rejected by the permissions graph) instead of a clear error.
+- **Fix:** Add validation matching `ContainersV2Rest` lines 1379–1385: detect numeric-only strings via `v.toString().matches("\\d+")`, return 400 with message directing to `readerGroupAppIds`/`writerGroupAppIds`.
+- **AC:** `PATCH /v2/user-groups/{appId}` with numeric `readerGroupIds` → 400 with message "use readerGroupAppIds"; with UUID `readerGroupAppIds` → 200; `mvn verify -pl backend` green; unit test covering both branches.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/users/resources/UserGroupV2Rest.java:319,326`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F7`.
