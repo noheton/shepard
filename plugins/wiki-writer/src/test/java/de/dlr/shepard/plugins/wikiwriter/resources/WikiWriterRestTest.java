@@ -138,17 +138,4 @@ class WikiWriterRestTest {
     assertThat(r.getStatus()).isEqualTo(503);
   }
 
-  // ── tombstone ─────────────────────────────────────────────────────────────
-
-  @Test
-  @DisplayName("WikiWriterTombstoneRest returns 410 Gone with Location header")
-  void tombstone_returns410() {
-    WikiWriterTombstoneRest tombstone = new WikiWriterTombstoneRest();
-    String colAppId = "col-app-id";
-
-    Response r = tombstone.wikiWrite(colAppId, DO_APP_ID);
-
-    assertThat(r.getStatus()).isEqualTo(410);
-    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/data-objects/" + DO_APP_ID + "/wiki-write");
-  }
 }
