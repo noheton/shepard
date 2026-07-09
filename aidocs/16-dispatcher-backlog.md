@@ -4639,3 +4639,24 @@ picks these up. Terse by design.
 - **Fix:** Add validation matching `ContainersV2Rest` lines 1379–1385: detect numeric-only strings via `v.toString().matches("\\d+")`, return 400 with message directing to `readerGroupAppIds`/`writerGroupAppIds`.
 - **AC:** `PATCH /v2/user-groups/{appId}` with numeric `readerGroupIds` → 400 with message "use readerGroupAppIds"; with UUID `readerGroupAppIds` → 200; `mvn verify -pl backend` green; unit test covering both branches.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/users/resources/UserGroupV2Rest.java:319,326`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F7`.
+
+## APISIMP-BUNDLE-PATHPARAM — rename `{bundleAppId}` → `{appId}` path-param in `BundleGroupsV2Rest` (size: XS, sweep: fire-501)
+- **Status:** queued.
+- **Why:** `BundleGroupsV2Rest.java:82` declares `@Path("/v2/references/{bundleAppId}/groups")` and every method binds `@PathParam("bundleAppId")`. All other sub-resources mounted under `/v2/references/{...}` use `{appId}` as the variable name (e.g. `GitReferenceActionsRest:92`). OpenAPI therefore emits `bundleAppId` as the path-parameter name for this group, breaking the single-name convention SDK consumers rely on.
+- **Fix:** Rename the path-param variable from `bundleAppId` to `appId` in: the class-level `@Path`, and all 7 `@PathParam("bundleAppId")` bindings in `listGroups`, `createGroup`, `getGroup`, `patchGroup`, `deleteGroup`, `listFiles`, `addFilesToGroup`. No URL change; no migration needed.
+- **AC:** `grep -n "bundleAppId" BundleGroupsV2Rest.java` returns 0 results; OpenAPI spec uses `appId` for the path segment; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:82,140,180,226,227,266,267,312,313,358,359,413,414`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F1`.
+
+## APISIMP-MAPPINGS-PATHPARAM — rename `{templateAppId}` → `{appId}` path-param in `MappingsMaterializeRest` (size: XS, sweep: fire-501)
+- **Status:** queued.
+- **Why:** `MappingsMaterializeRest.java:99` uses `@Path("/v2/mappings/{templateAppId}/materialize")` with `@PathParam("templateAppId")`. The v2 convention is bare `{appId}` when the resource type is already implied by the path prefix (`/v2/mappings/`). `ShepardTemplateRest` (the sibling mapping-template CRUD resource) uses `{appId}` correctly.
+- **Fix:** Rename `{templateAppId}` → `{appId}` in the `@Path` annotation and the `@PathParam("templateAppId")` binding in `materialize()`. No URL change; no migration needed.
+- **AC:** `grep -n "templateAppId" MappingsMaterializeRest.java` returns 0 results; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mappings/resources/MappingsMaterializeRest.java:99,120`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F2`.
+
+## APISIMP-GIT-TOMBSTONE-DELETE — delete `GitReferenceRest.java` 410 tombstone (size: XS, sweep: fire-501)
+- **Status:** queued.
+- **Why:** `plugins/git/.../GitReferenceRest.java` is a 2-method class where every method returns HTTP 410 Gone with a `Location` header (added by APISIMP-TOMBSTONE-REMOVAL-WINDOW, fire-201, PR #2075 `80b0c8d`). All migrations are complete: CRUD migrated by PLUGIN-PERKIND-CRUD-CLEANUP; action sub-paths (preview, check-update) migrated by APISIMP-GIT-REF-PATH to `GitReferenceActionsRest` at `/v2/references/{appId}/...`. The class adds 2 JAX-RS routes to the OpenAPI doc and classpath scan with no live functionality. Sister deletion rows `APISIMP-WIKI-TOMBSTONE-DELETE` and `APISIMP-BUNDLE-TOMBSTONE-DELETE` are already queued (fire-500).
+- **Fix:** Delete `GitReferenceRest.java` and its test counterpart (if any — `GitReferenceRestTest.java` likely only covers the ✅-done CRUD which was already removed). Verify no other class imports it. `mvn verify -pl plugins/git` must be green.
+- **AC:** `find plugins/git -name "GitReferenceRest.java"` returns empty; no 410-only git endpoint group in OpenAPI; `mvn verify -pl plugins/git` green.
+- **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/git/resources/GitReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F3`.
