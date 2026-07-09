@@ -79,7 +79,7 @@ class MappingsMaterializeRestTest {
   // ─── input validation ───────────────────────────────────────────────────
 
   @Test
-  void returns400OnBlankTemplateAppId() {
+  void returns400OnBlankAppId() {
     Response r = rest.materialize("  ", null, securityContext, requestContext);
     assertThat(r.getStatus()).isEqualTo(400);
   }
