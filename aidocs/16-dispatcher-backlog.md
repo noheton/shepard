@@ -4613,7 +4613,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:455`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F4-1`.
 
 ## APISIMP-DO-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/data-objects` (size: S, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-510).
 - **Why:** `DataObjectV2Rest.java` line 203: `GET /v2/data-objects?name=…` uses `Constants.QP_NAME` ("name") as the substring filter. Same inconsistency as APISIMP-CONTAINERS-NAME-TO-Q — forces SDK consumers to remember a per-endpoint param name instead of the `?q=` convention.
 - **Fix:** Add `@QueryParam("q")` alias (reading from `Constants.QP_Q` or inline); deprecate `Constants.QP_NAME` usage on this endpoint for one release cycle. Update frontend composables and OpenAPI spec.
 - **AC:** `GET /v2/data-objects?q=foo` works; `?name=` still accepted with deprecation warning; `mvn verify -pl backend` green; `npm run typecheck` green.
