@@ -40,6 +40,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
@@ -220,7 +221,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no single-file payload.")
   public Response downloadFile(
     @PathParam("appId") String appId,
-    @jakarta.ws.rs.HeaderParam("Range") String rangeHeader,
+    @HeaderParam("Range") String rangeHeader,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
