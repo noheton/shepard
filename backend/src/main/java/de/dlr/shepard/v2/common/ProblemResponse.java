@@ -38,6 +38,26 @@ public final class ProblemResponse {
   }
 
   /**
+   * Builds a {@code /problems/<code>} type URI from the supplied {@code typeCode} string
+   * and returns an RFC 7807 problem response. Intended for domain-specific typed errors
+   * where the caller controls the code (e.g. {@code "transform.error"},
+   * {@code "transform.executor.not-registered"}). Does not accept null — callers must supply
+   * an explicit code.
+   */
+  public static Response problem(Response.StatusType status, String detail, String typeCode) {
+    String type = "/problems/" + typeCode;
+    return Response.status(status.getStatusCode()).type(PROBLEM_JSON)
+        .entity(new ProblemJson(type, detail, status.getStatusCode(), detail, null)).build();
+  }
+
+  /** Int-status variant of {@link #problem(Response.StatusType, String, String)}. */
+  public static Response problem(int status, String detail, String typeCode) {
+    String type = "/problems/" + typeCode;
+    return Response.status(status).type(PROBLEM_JSON)
+        .entity(new ProblemJson(type, detail, status, detail, null)).build();
+  }
+
+  /**
    * Returns a {@code ResponseBuilder} pre-seeded with RFC 7807 content-type and entity,
    * so callers can chain extra headers (e.g. {@code Location}, {@code Retry-After}) before
    * calling {@code .build()}.

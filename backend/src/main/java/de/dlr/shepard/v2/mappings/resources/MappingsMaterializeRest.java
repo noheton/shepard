@@ -12,7 +12,7 @@ import de.dlr.shepard.spi.transform.TransformRequest;
 import de.dlr.shepard.spi.transform.TransformResult;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.v2.mappings.io.MaterializeRequestIO;
 import de.dlr.shepard.v2.mappings.io.MaterializeResponseIO;
 import io.quarkus.logging.Log;
@@ -120,19 +120,19 @@ public class MappingsMaterializeRest {
     @Context ContainerRequestContext requestContext
   ) {
     if (templateAppId == null || templateAppId.isBlank()) {
-      return badRequest("templateAppId path parameter is required");
+      return problem(Response.Status.BAD_REQUEST, "templateAppId path parameter is required", "transform.error");
     }
 
     ShepardTemplate template = templateDAO.findByAppId(templateAppId).orElse(null);
     if (template == null) {
-      return problem(Response.Status.NOT_FOUND, "template not found: " + templateAppId, null);
+      return problem(Response.Status.NOT_FOUND, "template not found: " + templateAppId, "transform.error");
     }
 
     if (!MAPPING_RECIPE_KIND.equals(template.getTemplateKind())) {
       return problem(
         422,
         "materialize requires a MAPPING_RECIPE template; templateKind=" + template.getTemplateKind(),
-        null
+        "transform.error"
       );
     }
 
@@ -141,7 +141,7 @@ public class MappingsMaterializeRest {
       return problem(
         422,
         "MAPPING_RECIPE body declares no `mappingRecipeShape` IRI — cannot resolve a TransformExecutor",
-        null
+        "transform.error"
       );
     }
 
@@ -258,17 +258,4 @@ public class MappingsMaterializeRest {
     };
   }
 
-  private Response badRequest(String message) {
-    return problem(Response.Status.BAD_REQUEST, message, null);
-  }
-
-  private Response problem(Response.StatusType status, String error, String code) {
-    String type = code != null ? "/problems/" + code : "/problems/transform.error";
-    return ProblemResponse.problem(type, error, status.getStatusCode(), error);
-  }
-
-  private Response problem(int status, String error, String code) {
-    String type = code != null ? "/problems/" + code : "/problems/transform.error";
-    return ProblemResponse.problem(type, error, status, error);
-  }
 }
