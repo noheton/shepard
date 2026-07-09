@@ -4648,9 +4648,10 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:82,140,180,226,227,266,267,312,313,358,359,413,414`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F1`.
 
 ## APISIMP-MAPPINGS-PATHPARAM — rename `{templateAppId}` → `{appId}` path-param in `MappingsMaterializeRest` (size: XS, sweep: fire-501)
-- **Status:** queued.
+- **Status:** shipped (fire-507).
+- **PR:** #2438.
 - **Why:** `MappingsMaterializeRest.java:99` uses `@Path("/v2/mappings/{templateAppId}/materialize")` with `@PathParam("templateAppId")`. The v2 convention is bare `{appId}` when the resource type is already implied by the path prefix (`/v2/mappings/`). `ShepardTemplateRest` (the sibling mapping-template CRUD resource) uses `{appId}` correctly.
-- **Fix:** Rename `{templateAppId}` → `{appId}` in the `@Path` annotation and the `@PathParam("templateAppId")` binding in `materialize()`. No URL change; no migration needed.
+- **Fix:** Renamed `{templateAppId}` → `{appId}` in `@Path`, `@PathParam`, method parameter, and all variable usages in `materialize()`. No URL structure change; no migration needed.
 - **AC:** `grep -n "templateAppId" MappingsMaterializeRest.java` returns 0 results; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mappings/resources/MappingsMaterializeRest.java:99,120`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F2`.
 

@@ -37,7 +37,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * V2CONV-B3 — {@code POST /v2/mappings/{templateAppId}/materialize} — the
+ * V2CONV-B3 — {@code POST /v2/mappings/{appId}/materialize} — the
  * generic MAPPING_RECIPE materialization endpoint.
  *
  * <p><b>Endpoint-shape decision.</b> A dedicated {@code /v2/mappings/*} resource
@@ -96,7 +96,7 @@ public class MappingsMaterializeRest {
   ProvenanceService provenanceService;
 
   @POST
-  @Path("/{templateAppId}/materialize")
+  @Path("/{appId}/materialize")
   @RolesAllowed("authenticated")
   @Operation(
     operationId = "materialize",
@@ -117,18 +117,18 @@ public class MappingsMaterializeRest {
     description = "Template found but not a MAPPING_RECIPE, or the body declares no mappingRecipeShape."
   )
   public Response materialize(
-    @PathParam("templateAppId") String templateAppId,
+    @PathParam("appId") String appId,
     MaterializeRequestIO body,
     @Context SecurityContext securityContext,
     @Context ContainerRequestContext requestContext
   ) {
-    if (templateAppId == null || templateAppId.isBlank()) {
-      return problem(Response.Status.BAD_REQUEST, "templateAppId path parameter is required", "transform.error");
+    if (appId == null || appId.isBlank()) {
+      return problem(Response.Status.BAD_REQUEST, "appId path parameter is required", "transform.error");
     }
 
-    ShepardTemplate template = templateDAO.findByAppId(templateAppId).orElse(null);
+    ShepardTemplate template = templateDAO.findByAppId(appId).orElse(null);
     if (template == null) {
-      return problem(Response.Status.NOT_FOUND, "template not found: " + templateAppId, "transform.error");
+      return problem(Response.Status.NOT_FOUND, "template not found: " + appId, "transform.error");
     }
 
     if (!MAPPING_RECIPE_KIND.equals(template.getTemplateKind())) {
@@ -171,7 +171,7 @@ public class MappingsMaterializeRest {
       : securityContext.getUserPrincipal().getName();
 
     TransformExecutor executor = match.get();
-    TransformRequest req = new TransformRequest(templateAppId, shapeIri, inputs, username, template.getBody());
+    TransformRequest req = new TransformRequest(appId, shapeIri, inputs, username, template.getBody());
 
     try {
       TransformResult result = executor.materialize(req);
@@ -180,7 +180,7 @@ public class MappingsMaterializeRest {
         return problem(Response.Status.INTERNAL_SERVER_ERROR, "executor '" + executor.name() + "' returned null", "transform.internal-error");
       }
       recordMaterializeActivity(template, executor, result, username, requestContext);
-      return Response.ok(MaterializeResponseIO.from(templateAppId, result)).build();
+      return Response.ok(MaterializeResponseIO.from(appId, result)).build();
     } catch (TransformException ex) {
       Log.debugf(ex, "V2CONV-B3: executor '%s' threw TransformException %s for shape <%s>", executor.name(), ex.code(), shapeIri);
       int status = statusForCode(ex.code());
