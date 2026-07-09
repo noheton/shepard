@@ -38,9 +38,8 @@ interface ShepardFile {
 interface PagedFiles {
   items: ShepardFile[];
   page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
+  pageSize: number;
+  total: number;
 }
 
 const props = defineProps<{
@@ -122,7 +121,7 @@ async function ensurePageFor(frameIndex: number): Promise<void> {
   if (!needsRefetch(cachedPage.value, plan)) return;
   const paged = await fetchPage(plan.page, plan.pageSize);
   if (!paged) return;
-  totalFrames.value = Number(paged.totalElements) || 0;
+  totalFrames.value = Number(paged.total) || 0;
   cachedPage.value = paged.page;
   cachedItems.value = paged.items;
 }

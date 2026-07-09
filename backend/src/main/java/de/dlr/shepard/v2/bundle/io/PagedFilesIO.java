@@ -10,7 +10,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * MFFD-IMAGEBUNDLE-PAGINATE-1 — paged envelope for
- * {@code GET /v2/bundles/{bundleAppId}/groups/{groupAppId}/files}.
+ * {@code GET /v2/references/{appId}/groups/{groupAppId}/files}.
  *
  * <p>An ImageBundle for the MFFD TPS raw-data shape can hold up to 38
  * PNG frames per group today, but the upper bound is operator-controlled
@@ -19,9 +19,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * higher still). Loading the entire {@code files[]} list into the UI
  * stalls past ~200 entries on a 4K viewport.
  *
- * <p>The envelope is the small generic shape — `items[]` + pagination
- * metadata — rather than a bare array, so a client knows how to fetch
- * the next page without re-reading the docs.
+ * <p>Field names are aligned with {@link de.dlr.shepard.v2.common.io.PagedResponseIO}
+ * (APISIMP-PAGEDFILES-SPRING-NAMING): {@code pageSize} instead of {@code size},
+ * {@code total} instead of {@code totalElements}.
  */
 @Getter
 @Setter
@@ -37,11 +37,9 @@ public class PagedFilesIO {
   private int page;
 
   @Schema(description = "Maximum items per page that was honoured by the server.")
-  private int size;
+  private int pageSize;
 
   @Schema(description = "Total number of files in the group (across all pages).")
-  private long totalElements;
+  private long total;
 
-  @Schema(description = "Total number of pages at the current `size`.")
-  private int totalPages;
 }
