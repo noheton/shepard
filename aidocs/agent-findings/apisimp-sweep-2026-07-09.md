@@ -1,11 +1,12 @@
 ---
-stage: deployed
+stage: feature-defined
 last-stage-change: 2026-07-09
 ---
 
-# APISIMP Sweep — fire-488 (2026-07-09)
+# APISIMP Sweep — fire-488 + fire-491 (2026-07-09)
 
-Triggered because all named `APISIMP-*` rows in `aidocs/16` are ✅ shipped or ⛔ deferred.
+fire-488 triggered because all named `APISIMP-*` rows in `aidocs/16` were ✅ shipped or ⛔ deferred.
+fire-491 (second pass, same day) extended the plugin IO @Schema check that fire-488 missed.
 Previous fire (fire-487) merged PR #2421 (APISIMP-SCHEMA-MISSING-IO wave 2, 15 IO classes).
 
 ## Scope
@@ -85,10 +86,51 @@ path allows deleting both bespoke REST classes and their associated tests.
 
 ---
 
-## What was clean
+---
+
+## F3 — 34 plugin wire-IO classes missing class-level `@Schema(description)` (fire-491)
+
+**Severity:** MINOR — OpenAPI spec gap for plugin endpoints; same class as APISIMP-SCHEMA-MISSING-IO (waves 1+2) which was scoped to `de.dlr.shepard.v2.*.io` only  
+**Size:** M (34 files across 10 plugins)  
+**Filed as:** `APISIMP-PLUGIN-IO-SCHEMA-MISSING`
+
+The fire-488 "What was clean" section stated "Zero IO classes missing `@Schema`" — that assertion was correct for `de.dlr.shepard.v2.*.io` (the scope of APISIMP-SCHEMA-MISSING-IO waves 1+2, PRs #2420/#2421), but the prior sweep explicitly excluded `plugins/`. The fire-491 pass extended coverage to `plugins/*/src/main/java/*/io/` and found 44 files missing `@Schema`, of which 10 are CLI-only types (not wire response types) and 34 are genuine wire IO types appearing in the plugin OpenAPI spec.
+
+**Total plugin IO files (main only, excluding test):** 66  
+**Already annotated:** 22  
+**Missing @Schema:** 44  
+**Excluded as CLI-only (not wire types):** 10  
+**Genuine wire types needing @Schema:** 34
+
+**CLI-only exclusions** (not wire types — no @Schema required):  
+`HdfCliConfig.java`, `DataciteConfig.java`, `DataciteCredentialSet.java`, `DataciteTestConnection.java`, `EpicConfig.java`, `EpicCredentialSet.java`, `EpicTestConnection.java`, `HarvestKeyMinted.java` (cli/io), `UnhideConfig.java` (cli/io), `VideoConfigCli.java`
+
+**Wire types missing @Schema by plugin:**
+
+| Plugin | Files |
+|--------|-------|
+| `aas` | `AasRegistrationIO`, `AasSyncResultIO`, `AasConfigIO`, `AasConfigPatchIO`, `AasShellDescriptorIO` (5) |
+| `ai` | `AiCapabilityConfigIO` (1) |
+| `git` | `CheckUpdateResultIO` (1) |
+| `hdf5` | `HdfConfigIO` (1) |
+| `minter-datacite` | `DataciteCredentialIO`, `DataciteCredentialSetIO`, `DataciteMinterConfigIO`, `DataciteMinterConfigPatchIO`, `DataciteTestConnectionIO` (5) |
+| `minter-epic` | `EpicCredentialIO`, `EpicCredentialSetIO`, `EpicMinterConfigIO`, `EpicMinterConfigPatchIO`, `EpicTestConnectionIO` (5) |
+| `spatiotemporal` | `FilterCondition`, `Operator`, `SpatialDataQueryParams` (3 — frozen v1 surface, lowest priority) |
+| `unhide` | `FeedEntryIO`, `FeedIO`, `HarvestKeyMintedIO`, `UnhideConfigIO`, `UnhideConfigPatchIO`, `UnhideValidationReportIO` (6) |
+| `v1-compat` | `LegacyV1ConfigIO`, `LegacyV1ConfigPatchIO`, `LegacyV1StatsIO` (3) |
+| `video` | `VideoConfigIO`, `VideoConfigPatchIO` (2) |
+| `wiki-writer` | `WikiWriteRequestIO`, `WikiWriteResponseIO` (2) |
+
+**Fix:** Apply the same pattern as APISIMP-SCHEMA-MISSING-IO: add `@Schema(description = "<one-liner>")` at the class level on each of the 34 files. Batch as XS PRs per plugin. The 3 `spatiotemporal` files are on the frozen v1 surface — annotate for spec completeness but treat as lowest priority; they do not break anything unannotated.
+
+**AC:** `find plugins -path "*/io/*.java" -not -path "*/test/*" -not -path "*/cli/*"  | xargs grep -L '@Schema'` returns only the 10 excluded CLI-only files; plugin OpenAPI specs declare `description` on all wire types; `mvn verify` green.
+
+---
+
+## What was clean (fire-488)
 
 - Zero `new ProblemJson(` constructions outside `ProblemResponse.java` — APISIMP-PROBLEM-DEDUP waves complete
-- Zero IO classes missing `@Schema` — APISIMP-SCHEMA-MISSING-IO waves complete
+- Zero **v2** IO classes missing `@Schema` — APISIMP-SCHEMA-MISSING-IO waves complete (`de.dlr.shepard.v2.*.io` scope; plugin IO was out of scope, now filed as F3)
 - Zero v2 endpoints with `@QueryParam("size")` — APISIMP-PAGINATION-UNIFY-RECREATE complete
 - Zero missing `operationId` on v2/plugin REST resources (only frozen spatiotemporal v1 compat surface, allowlisted)
 - Zero bespoke `*ConfigRest` classes — V2CONV-A4 complete
@@ -96,9 +138,10 @@ path allows deleting both bespoke REST classes and their associated tests.
 
 ## Filed rows
 
-| Row | Size | Status |
-|-----|------|--------|
-| `APISIMP-LIST-XCOUNT-RESIDUAL` | XS | queued |
-| `APISIMP-STATS-PERKIND-COLLAPSE` | S | queued |
+| Row | Size | Status | Fire |
+|-----|------|--------|------|
+| `APISIMP-LIST-XCOUNT-RESIDUAL` | XS | 🔄 PR open (fire-489) | fire-488 |
+| `APISIMP-STATS-PERKIND-COLLAPSE` | S | 🔄 PR open (fire-490) | fire-488 |
+| `APISIMP-PLUGIN-IO-SCHEMA-MISSING` | M | queued | fire-491 |
 
-Next fire dispatches `APISIMP-LIST-XCOUNT-RESIDUAL` (XS).
+Next fire dispatches `APISIMP-PLUGIN-IO-SCHEMA-MISSING` wave 1 (highest-value plugins first: unhide, minter-*, wiki-writer, v1-compat, ai).

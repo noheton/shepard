@@ -33,11 +33,11 @@ section and the `upgrade-overlay` section.
 | `fragment` | 87 |
 | `concept` | 41 |
 | `idea` | 13 |
-| `feature-defined` | 134 |
+| `feature-defined` | 135 |
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 137 |
+| `deployed` | 136 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
 | **total docs** | **552** |
@@ -199,13 +199,14 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-07-07 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-07-07 |
 
-## feature-defined (134)
+## feature-defined (135)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/43-reverse-engineered-requirements.md`](43-reverse-engineered-requirements.md) | 43 — Reverse-engineered requirements (to be challenged) | 2026-05-24 | 2026-07-07 |
 | [`aidocs/agent-findings/185-v5-survey-bundle.md`](agent-findings/185-v5-survey-bundle.md) | v5 Survey Bundle (v15.10) | 2026-05-26 | 2026-07-07 |
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-07-07 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-09.md`](agent-findings/apisimp-sweep-2026-07-09.md) | APISIMP Sweep — fire-488 + fire-491 (2026-07-09) | 2026-07-09 | 2026-07-09 |
 | [`aidocs/agent-findings/backend-jandex-hang-investigation-2026-05-28.md`](agent-findings/backend-jandex-hang-investigation-2026-05-28.md) | Backend rebuild — Quarkus/Jandex infinite-loop investigation (2026-05-28) | 2026-05-28 | 2026-07-07 |
 | [`aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`](agent-findings/btkvs-docket-showcase-2026-05-29.md) | BT-KVS docket showcase — C/C and C/SiC fabrication tracking | 2026-05-29 | 2026-07-07 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-07-07 |
@@ -444,7 +445,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-07-07 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-07-07 |
 
-## deployed (137)
+## deployed (136)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -490,7 +491,6 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30.md`](agent-findings/apisimp-sweep-2026-06-30.md) | API Simplification Sweep — fire-313 (2026-06-30) | 2026-06-30 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-01.md`](agent-findings/apisimp-sweep-2026-07-01.md) | APISIMP sweep — 2026-07-01 (fire-338) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-08-fire481.md`](agent-findings/apisimp-sweep-2026-07-08-fire481.md) | APISIMP sweep — fire-481 (2026-07-08) | 2026-07-08 | 2026-07-08 |
-| [`aidocs/agent-findings/apisimp-sweep-2026-07-09.md`](agent-findings/apisimp-sweep-2026-07-09.md) | APISIMP Sweep — fire-488 (2026-07-09) | 2026-07-09 | 2026-07-09 |
 | [`aidocs/agent-findings/apisimp-sweep-fire341-2026-07-01.md`](agent-findings/apisimp-sweep-fire341-2026-07-01.md) | API Simplification Sweep — fire-341 (2026-07-01) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-fire342-2026-07-01.md`](agent-findings/apisimp-sweep-fire342-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-342) | 2026-07-01 | 2026-07-07 |
 | [`aidocs/agent-findings/apisimp-sweep-fire353-2026-07-01.md`](agent-findings/apisimp-sweep-fire353-2026-07-01.md) | APISIMP Sweep — fire-353 (2026-07-01) | 2026-07-01 | 2026-07-07 |
