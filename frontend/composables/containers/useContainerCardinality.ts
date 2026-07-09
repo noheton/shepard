@@ -1,11 +1,12 @@
 /**
- * UI21-SIZEBAR-DATA — per-kind cardinality fetch for the /containers list sizebar.
+ * APISIMP-STATS-PERKIND-COLLAPSE — unified cardinality fetch for the /containers list sizebar.
  *
- * Replaces the CC1e referenced-by proxy with domain-meaningful counts:
- *   - TIMESERIES  → channelCount from GET /v2/timeseries-containers/{id}/stats
- *   - FILE        → fileCount   from GET /v2/file-containers/{id}/stats
- *   - STRUCTUREDDATA → entryCount from GET /v2/structured-data-containers/{id}/stats
- *   - Other types → null (no cardinality endpoint available)
+ * All three supported kinds (TIMESERIES, FILE, STRUCTUREDDATA) use the single dispatcher:
+ *   GET /v2/containers/{appId}/stats
+ * which returns a ContainerStats JSON with kind-specific fields (channelCount / fileCount /
+ * entryCount). Per-kind bespoke stats paths (/v2/file-containers/.../stats,
+ * /v2/structured-data-containers/.../stats) were removed; the timeseries-containers path
+ * was never registered on the v2 surface — the kind-dispatcher is the only correct URL.
  *
  * The fetch is lazy and fire-and-forget: callers mount per-row so the 20 concurrent
  * requests on one page do not block the table render. Errors return null so the
@@ -31,16 +32,8 @@ function getV2BaseUrl(): string {
 }
 
 function statsUrlFor(containerAppId: string, type: string): string | null {
-  switch (type) {
-    case "TIMESERIES":
-      return `${getV2BaseUrl()}/v2/timeseries-containers/${containerAppId}/stats`;
-    case "FILE":
-      return `${getV2BaseUrl()}/v2/file-containers/${containerAppId}/stats`;
-    case "STRUCTUREDDATA":
-      return `${getV2BaseUrl()}/v2/structured-data-containers/${containerAppId}/stats`;
-    default:
-      return null;
-  }
+  if (!SUPPORTED_KINDS.has(type)) return null;
+  return `${getV2BaseUrl()}/v2/containers/${containerAppId}/stats`;
 }
 
 function extractCardinality(type: string, body: Record<string, unknown>): number {

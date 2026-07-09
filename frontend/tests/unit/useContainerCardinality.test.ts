@@ -1,8 +1,8 @@
 /**
- * APISIMP-STATS-NUMERIC-ID — useContainerCardinality appId-keyed stats fetch.
+ * APISIMP-STATS-PERKIND-COLLAPSE — useContainerCardinality unified stats fetch.
  *
- * Proves: (1) null/undefined appId skips the fetch; (2) supported kinds build
- * the correct URL from the appId string; (3) unsupported kinds return null
+ * Proves: (1) null/undefined appId skips the fetch; (2) all supported kinds build
+ * the unified /v2/containers/{appId}/stats URL; (3) unsupported kinds return null
  * without fetching; (4) cardinalityLabel returns correct singular/plural forms.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -71,7 +71,7 @@ describe("useContainerCardinality — unsupported kind", () => {
 });
 
 describe("useContainerCardinality — FILE kind", () => {
-  it("fetches from the file-containers stats URL using appId", async () => {
+  it("fetches from the unified containers stats URL using appId", async () => {
     fetchMock.mockResolvedValueOnce(jsonOk({ fileCount: 7 }));
 
     const { cardinality } = useContainerCardinality(APP_ID, "FILE");
@@ -79,7 +79,7 @@ describe("useContainerCardinality — FILE kind", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const url = fetchMock.mock.calls[0]![0] as string;
-    expect(url).toBe(`https://example.test/v2/file-containers/${APP_ID}/stats`);
+    expect(url).toBe(`https://example.test/v2/containers/${APP_ID}/stats`);
     expect(cardinality.value).toBe(7);
   });
 
@@ -92,27 +92,27 @@ describe("useContainerCardinality — FILE kind", () => {
 });
 
 describe("useContainerCardinality — TIMESERIES kind", () => {
-  it("fetches from the timeseries-containers stats URL using appId", async () => {
+  it("fetches from the unified containers stats URL using appId", async () => {
     fetchMock.mockResolvedValueOnce(jsonOk({ channelCount: 12 }));
 
     const { cardinality } = useContainerCardinality(APP_ID, "TIMESERIES");
     await flush();
 
     const url = fetchMock.mock.calls[0]![0] as string;
-    expect(url).toBe(`https://example.test/v2/timeseries-containers/${APP_ID}/stats`);
+    expect(url).toBe(`https://example.test/v2/containers/${APP_ID}/stats`);
     expect(cardinality.value).toBe(12);
   });
 });
 
 describe("useContainerCardinality — STRUCTUREDDATA kind", () => {
-  it("fetches from the structured-data-containers stats URL using appId", async () => {
+  it("fetches from the unified containers stats URL using appId", async () => {
     fetchMock.mockResolvedValueOnce(jsonOk({ entryCount: 3 }));
 
     const { cardinality } = useContainerCardinality(APP_ID, "STRUCTUREDDATA");
     await flush();
 
     const url = fetchMock.mock.calls[0]![0] as string;
-    expect(url).toBe(`https://example.test/v2/structured-data-containers/${APP_ID}/stats`);
+    expect(url).toBe(`https://example.test/v2/containers/${APP_ID}/stats`);
     expect(cardinality.value).toBe(3);
   });
 });
