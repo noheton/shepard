@@ -64,7 +64,7 @@ export async function createV2Container(
 
 /**
  * V2CONV-A3 — list containers of a kind via
- * `GET /v2/containers?kind={kind}[&name=…]`. Returns the unified envelope
+ * `GET /v2/containers?kind={kind}[&q=…]`. Returns the unified envelope
  * array (possibly empty). Same hand-written-fetch rationale as
  * {@link createV2Container}.
  */
@@ -79,7 +79,7 @@ export async function listV2Containers(
     if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const q =
       `kind=${encodeURIComponent(kind)}` +
-      (nameFilter ? `&name=${encodeURIComponent(nameFilter)}` : "");
+      (nameFilter ? `&q=${encodeURIComponent(nameFilter)}` : "");
     const resp = await fetch(`${v2BaseUrl()}/v2/containers?${q}`, {
       method: "GET",
       headers,
