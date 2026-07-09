@@ -127,6 +127,42 @@ The fire-488 "What was clean" section stated "Zero IO classes missing `@Schema`"
 
 ---
 
+## F4 — `MappingsMaterializeRest` uses FQN OpenAPI annotation names (fire-493)
+
+**Severity:** MINOR — cosmetic consistency; doesn't break compilation or runtime, but diverges from every other REST class in the v2 surface  
+**Size:** XS (add 3 imports; replace ~7 FQN annotation references with short names)  
+**Filed as:** `APISIMP-MAPPINGS-FQN-ANNOTATIONS`
+
+`MappingsMaterializeRest.java` uses fully-qualified annotation names without import statements — the only REST class in the entire v2 surface with this pattern:
+
+```java
+// Current state:
+@org.eclipse.microprofile.openapi.annotations.tags.Tag(name = "Mappings")
+public class MappingsMaterializeRest {
+  @org.eclipse.microprofile.openapi.annotations.Operation(...)
+  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "200", ...)
+  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "401", ...)
+  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "404", ...)
+  @org.eclipse.microprofile.openapi.annotations.responses.APIResponse(responseCode = "422", ...)
+  public Response materialize(...) { ... }
+}
+```
+
+Every other `*Rest.java` in `de.dlr.shepard.v2.*` imports `Tag`, `Operation`, and `APIResponse` from `org.eclipse.microprofile.openapi.annotations.*` and uses short names. This is purely a style divergence introduced when `MappingsMaterializeRest` was added (V2CONV-B3); the FQN workaround avoids any import name shadowing concern but is now inconsistent.
+
+**Fix:** Add three imports and switch to short names:
+```java
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+```
+
+Replace all 7 FQN usages with `@Tag`, `@Operation`, `@APIResponse`.
+
+**AC:** `grep -n "org.eclipse.microprofile.openapi.annotations" backend/src/main/java/de/dlr/shepard/v2/mappings/resources/MappingsMaterializeRest.java` returns zero lines; `mvn -q test-compile` passes; no `import` conflicts (no other `Tag`, `Operation`, or `APIResponse` in the class imports).
+
+---
+
 ## What was clean (fire-488)
 
 - Zero `new ProblemJson(` constructions outside `ProblemResponse.java` — APISIMP-PROBLEM-DEDUP waves complete
@@ -143,5 +179,6 @@ The fire-488 "What was clean" section stated "Zero IO classes missing `@Schema`"
 | `APISIMP-LIST-XCOUNT-RESIDUAL` | XS | 🔄 PR open (fire-489) | fire-488 |
 | `APISIMP-STATS-PERKIND-COLLAPSE` | S | 🔄 PR open (fire-490) | fire-488 |
 | `APISIMP-PLUGIN-IO-SCHEMA-MISSING` | M | queued | fire-491 |
+| `APISIMP-MAPPINGS-FQN-ANNOTATIONS` | XS | queued | fire-493 |
 
-Next fire dispatches `APISIMP-PLUGIN-IO-SCHEMA-MISSING` wave 1 (highest-value plugins first: unhide, minter-*, wiki-writer, v1-compat, ai).
+Next fire dispatches `APISIMP-MAPPINGS-FQN-ANNOTATIONS` (XS — 3 imports, 7 FQN replacements in one file) then begins `APISIMP-PLUGIN-IO-SCHEMA-MISSING` wave 1.
