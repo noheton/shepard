@@ -203,15 +203,15 @@ public class CollectionDQRRest {
   public Response evaluate(
     @PathParam("collectionAppId") String collectionAppId,
     @Parameter(description = "Maximum results to return, 1–5000 (default 5000).")
-    @QueryParam("limit") @DefaultValue("5000") @Min(1) @Max(5000) int limit,
+    @QueryParam("maxItems") @DefaultValue("5000") @Min(1) @Max(5000) int maxItems,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
     List<DQRResultIO> all = service.evaluate(collectionAppId, caller);
     long total = all.size();
-    boolean truncated = total > limit;
-    List<DQRResultIO> results = truncated ? all.subList(0, limit) : all;
+    boolean truncated = total > maxItems;
+    List<DQRResultIO> results = truncated ? all.subList(0, maxItems) : all;
     return Response.ok(new DQRResultsIO(results, truncated, total)).build();
   }
 
