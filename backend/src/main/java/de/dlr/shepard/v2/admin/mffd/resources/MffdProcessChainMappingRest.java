@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.admin.mffd.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
 import de.dlr.shepard.provenance.services.ProvenanceService;
@@ -162,9 +162,4 @@ public class MffdProcessChainMappingRest {
     }
   }
 
-  // ─── helpers ─────────────────────────────────────────────────────────────
-
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
-  }
 }

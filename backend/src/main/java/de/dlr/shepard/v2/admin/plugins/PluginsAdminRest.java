@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.admin.plugins;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginRegistry;
@@ -231,9 +231,4 @@ public class PluginsAdminRest {
     return n == null || n.isBlank() ? null : n;
   }
 
-  // ─── helpers ────────────────────────────────────────────────────────────
-
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
-  }
 }

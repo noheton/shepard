@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.OntologyRefreshService;
 import de.dlr.shepard.context.semantic.OntologyRefreshService.BundleError;
@@ -595,7 +595,4 @@ public class SemanticAdminRest {
     return v.isTextual() ? v.asText() : v.toString();
   }
 
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
-  }
 }

@@ -1,7 +1,7 @@
 package de.dlr.shepard.v2.notifications.transport.resources;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.v2.common.ProblemResponse;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import de.dlr.shepard.v2.notifications.transport.entities.TransportKind;
@@ -252,7 +252,4 @@ public class NotificationTransportRest {
     }
   }
 
-  private Response problem(String type, String title, Status status, String detail) {
-    return ProblemResponse.problem(type, title, status, detail);
-  }
 }
