@@ -4522,7 +4522,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/fair/resources/DmpSnippetV2Rest.java:118`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire494.md §F1`.
 
 ## APISIMP-V2-IO-SCHEMA-RESIDUAL — 2 v2 wire-IO classes lack class-level `@Schema(name,description)` annotation (size: XS, sweep: fire-494)
-- **Status:** ⏳ queued.
+- **Status:** 🔄 in-flight — branch `APISIMP-V2-IO-SCHEMA-RESIDUAL-1`, PR #TBD (fire-495).
 - **Why:** The APISIMP-SCHEMA-MISSING-IO sweep (fire-483, waves 1+2 in PRs #2420/#2421) covered `de.dlr.shepard.v2.*.io` but missed two wire-IO classes introduced later: `CollectionEventIO` (SSE event payload for `GET /v2/collections/{appId}/events`, P13) and `RepExportIO` (response body for `POST /v2/collections/{appId}/export/regulatory-evidence`, TPL14). Both are serialized onto the wire and appear in the OpenAPI spec without schema names or descriptions, making the generated client less discoverable than the rest of the v2 surface.
 - **Fix:** Add `@Schema(name = "CollectionEvent", description = "SSE event payload for the Collection change-feed (P13).")` to `CollectionEventIO` and `@Schema(name = "RepExport", description = "Response body for the Regulatory Evidence Pack export (TPL14).")` to `RepExportIO`. Import `org.eclipse.microprofile.openapi.annotations.media.Schema` in each file.
 - **AC:** `find backend/src/main/java/de/dlr/shepard/v2 -name "*IO.java" | xargs grep -L "@Schema" | grep -v "Filter\|Customizer\|Query"` returns empty; `mvn -q test-compile` passes.
