@@ -483,7 +483,7 @@ public class ContainersV2Rest {
       List<ContainerV2IO> pageItems = containersService.list(kind, filter, skip, pageSize);
       Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
           .header("X-Total-Count", total);  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
-      if (nameLegacy != null) rb = rb.header("Deprecation", "true");
+      if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
       return rb.build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());

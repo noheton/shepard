@@ -85,7 +85,7 @@ describe("listV2Containers", () => {
     const out = await listV2Containers("file", "a");
     const [url, init] = fetchMock.mock.calls[0]!;
     expect(url).toContain("kind=file");
-    expect(url).toContain("name=a");
+    expect(url).toContain("q=a");
     expect(init.method).toBe("GET");
     expect(out).toHaveLength(2);
   });
