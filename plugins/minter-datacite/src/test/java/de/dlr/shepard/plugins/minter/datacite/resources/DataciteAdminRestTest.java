@@ -65,23 +65,26 @@ class DataciteAdminRestTest {
   // ─── POST /credential (tombstoned) ──────────────────────────────────────
 
   @Test
-  void setCredential_returnsGone() {
+  void setCredential_returnsGoneWithLocationHeader() {
     Response r = rest.setCredential(new DataciteCredentialIO("the-password"), security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-datacite");
   }
 
   @Test
   void setCredential_nullBodyAlsoReturnsGone() {
     Response r = rest.setCredential(null, security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-datacite");
   }
 
   // ─── DELETE /credential (tombstoned) ────────────────────────────────────
 
   @Test
-  void clearCredential_returnsGone() {
+  void clearCredential_returnsGoneWithLocationHeader() {
     Response r = rest.clearCredential(security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-datacite");
   }
 
   // ─── POST /test-connection ──────────────────────────────────────────────

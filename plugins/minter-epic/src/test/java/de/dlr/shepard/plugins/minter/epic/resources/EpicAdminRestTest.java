@@ -65,23 +65,26 @@ class EpicAdminRestTest {
   // ─── POST /credential (tombstoned) ──────────────────────────────────────
 
   @Test
-  void setCredential_returnsGone() {
+  void setCredential_returnsGoneWithLocationHeader() {
     Response r = rest.setCredential(new EpicCredentialIO("user:the-credential"), security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-epic");
   }
 
   @Test
   void setCredential_nullBodyAlsoReturnsGone() {
     Response r = rest.setCredential(null, security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-epic");
   }
 
   // ─── DELETE /credential (tombstoned) ────────────────────────────────────
 
   @Test
-  void clearCredential_returnsGone() {
+  void clearCredential_returnsGoneWithLocationHeader() {
     Response r = rest.clearCredential(security);
     assertThat(r.getStatus()).isEqualTo(410);
+    assertThat(r.getHeaderString("Location")).isEqualTo("/v2/admin/config/minter-epic");
   }
 
   // ─── POST /test-connection ──────────────────────────────────────────────

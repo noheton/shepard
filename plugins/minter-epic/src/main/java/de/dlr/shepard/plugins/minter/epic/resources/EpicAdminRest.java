@@ -66,7 +66,9 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response setCredential(EpicCredentialIO body, @Context SecurityContext security) {
-    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
+    return Response.status(Response.Status.GONE)
+      .header("Location", "/v2/admin/config/minter-epic")
+      .entity(GONE_MSG).build();
   }
 
   // ─── DELETE /credential (tombstoned) ────────────────────────────
@@ -80,7 +82,9 @@ public class EpicAdminRest {
   )
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use PATCH /v2/admin/config/minter-epic.")
   public Response clearCredential(@Context SecurityContext security) {
-    return Response.status(Response.Status.GONE).entity(GONE_MSG).build();
+    return Response.status(Response.Status.GONE)
+      .header("Location", "/v2/admin/config/minter-epic")
+      .entity(GONE_MSG).build();
   }
 
   // ─── POST /test-connection ──────────────────────────────────────

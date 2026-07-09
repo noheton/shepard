@@ -16,6 +16,7 @@ import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredenti
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialListItemIO;
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialResultIO;
 import de.dlr.shepard.v2.admin.users.AdminUserGitCredentialRest.AdminGitCredentialRotateIO;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.Date;
@@ -80,8 +81,10 @@ class AdminUserGitCredentialRestTest {
     when(dao.findAllByUser(USER)).thenReturn(List.of());
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    List<AdminGitCredentialListItemIO> body = (List<AdminGitCredentialListItemIO>) r.getEntity();
-    assertThat(body).isEmpty();
+    PagedResponseIO<AdminGitCredentialListItemIO> body =
+        (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
+    assertThat(body.items()).isEmpty();
+    assertThat(body.total()).isEqualTo(0);
   }
 
   @SuppressWarnings("unchecked")
@@ -93,9 +96,11 @@ class AdminUserGitCredentialRestTest {
 
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    List<AdminGitCredentialListItemIO> body = (List<AdminGitCredentialListItemIO>) r.getEntity();
-    assertThat(body).hasSize(1);
-    var item = body.get(0);
+    PagedResponseIO<AdminGitCredentialListItemIO> body =
+        (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
+    assertThat(body.total()).isEqualTo(1);
+    assertThat(body.items()).hasSize(1);
+    var item = body.items().get(0);
     assertThat(item.appId()).isEqualTo(CRED_APP_ID);
     assertThat(item.host()).isEqualTo("gitlab.com");
     assertThat(item.username()).isEqualTo("alice");
@@ -116,8 +121,9 @@ class AdminUserGitCredentialRestTest {
     when(dao.findAllByUser(USER)).thenReturn(List.of(legacy));
     Response r = rest.list(USER);
     assertThat(r.getStatus()).isEqualTo(200);
-    List<AdminGitCredentialListItemIO> body = (List<AdminGitCredentialListItemIO>) r.getEntity();
-    assertThat(body.get(0).lastRotatedAt()).isNull();
+    PagedResponseIO<AdminGitCredentialListItemIO> body =
+        (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
+    assertThat(body.items().get(0).lastRotatedAt()).isNull();
   }
 
   @Test
