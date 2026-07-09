@@ -103,8 +103,8 @@ public class ShapesPredicatesRest {
       required = false
     )
     @QueryParam("substrate") String substrate,
-    @Parameter(description = "Maximum entries per page (1–500). Default 200.", required = false)
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+    @Parameter(description = "Maximum entries per page (1–200). Default 200.", required = false)
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
     @Parameter(description = "Zero-based page index. Default 0.", required = false)
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page
   ) {
