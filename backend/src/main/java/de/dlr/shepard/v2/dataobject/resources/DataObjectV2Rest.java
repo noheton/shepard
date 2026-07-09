@@ -891,7 +891,8 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total chain length returned.", schema = @Schema(type = SchemaType.INTEGER))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -912,7 +913,9 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findPredecessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+        .header("X-Total-Count", (long) result.size())
+        .build();
   }
 
   @GET
@@ -932,7 +935,8 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total chain length returned.", schema = @Schema(type = SchemaType.INTEGER))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -953,7 +957,9 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findSuccessorChain(dataObjectAppId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size())).build();
+    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+        .header("X-Total-Count", (long) result.size())
+        .build();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────
