@@ -101,7 +101,7 @@ class BundleGroupsV2RestTest {
     return g;
   }
 
-  // ─── GET /v2/references/{bundleAppId}/groups ──────────────────────────────
+  // ─── GET /v2/references/{appId}/groups ───────────────────────────────────
 
   @Test
   void listGroups_returns200WithPagedEnvelope() {
@@ -141,7 +141,7 @@ class BundleGroupsV2RestTest {
     assertEquals(403, resource.listGroups(BUNDLE_APP_ID, 0, 50, securityContext).getStatus());
   }
 
-  // ─── POST /v2/references/{bundleAppId}/groups ─────────────────────────────
+  // ─── POST /v2/references/{appId}/groups ──────────────────────────────────
 
   @Test
   void createGroup_returns201() {
@@ -188,7 +188,7 @@ class BundleGroupsV2RestTest {
     assertEquals(403, resource.createGroup(BUNDLE_APP_ID, body, securityContext).getStatus());
   }
 
-  // ─── GET /v2/references/{bundleAppId}/groups/{groupAppId} ─────────────────
+  // ─── GET /v2/references/{appId}/groups/{groupAppId} ──────────────────────
 
   @Test
   void getGroup_returns200() {
@@ -216,7 +216,7 @@ class BundleGroupsV2RestTest {
     assertEquals(404, resource.getGroup(BUNDLE_APP_ID, GROUP_APP_ID, securityContext).getStatus());
   }
 
-  // ─── PATCH /v2/references/{bundleAppId}/groups/{groupAppId} ──────────────
+  // ─── PATCH /v2/references/{appId}/groups/{groupAppId} ───────────────────
 
   @Test
   void patchGroup_returns200() throws Exception {
@@ -247,7 +247,7 @@ class BundleGroupsV2RestTest {
     assertEquals(404, resource.patchGroup(BUNDLE_APP_ID, GROUP_APP_ID, body, securityContext).getStatus());
   }
 
-  // ─── DELETE /v2/references/{bundleAppId}/groups/{groupAppId} ─────────────
+  // ─── DELETE /v2/references/{appId}/groups/{groupAppId} ──────────────────
 
   @Test
   void deleteGroup_returns204() {
@@ -272,7 +272,7 @@ class BundleGroupsV2RestTest {
     assertEquals(404, resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext).getStatus());
   }
 
-  // ─── GET /v2/references/{bundleAppId}/groups/{groupAppId}/files ───────────
+  // ─── GET /v2/references/{appId}/groups/{groupAppId}/files ────────────────
 
   @Test
   void listGroupFiles_returns200WithPagedFiles() {
