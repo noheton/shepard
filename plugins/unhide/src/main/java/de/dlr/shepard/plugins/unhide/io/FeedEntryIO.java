@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.Date;
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1a / UH1b / UH1c — single feed entry in
@@ -71,6 +72,7 @@ import java.util.List;
   "m4i:hasIdentifier",
   "m4i:hasProcessingStep"
 })
+@Schema(name = "FeedEntryIO", description = "Single JSON-LD feed entry in GET /v2/unhide/feed.jsonld representing one Shepard Collection.")
 public record FeedEntryIO(
   @JsonProperty("@id") String id,
   @JsonProperty("@type") List<String> type,

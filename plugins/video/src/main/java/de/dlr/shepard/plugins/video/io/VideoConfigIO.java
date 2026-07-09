@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.video.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.video.entities.VideoConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * VID1c — JSON shape returned by {@code GET /v2/admin/video/config}.
@@ -10,6 +11,7 @@ import de.dlr.shepard.plugins.video.entities.VideoConfig;
  * ({@code maxFileSizeMb}) are dropped from the response when unset
  * (= no cap configured).
  */
+@Schema(name = "VideoConfigIO", description = "Video plugin runtime config returned by GET /v2/admin/video/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record VideoConfigIO(
   boolean ffprobeEnabled,

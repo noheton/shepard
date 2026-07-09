@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.v1compat.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * V1COMPAT.0/V1C1 — RFC 7396 merge-patch body for
@@ -15,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * @param enabled                    flip the master toggle; null = leave alone
  * @param suppressDeprecationHeaders flip header suppression; null = leave alone
  */
+@Schema(name = "LegacyV1ConfigPatchIO", description = "RFC 7396 merge-patch body for PATCH /v2/admin/legacy/v1/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LegacyV1ConfigPatchIO(Boolean enabled, Boolean suppressDeprecationHeaders) {
 

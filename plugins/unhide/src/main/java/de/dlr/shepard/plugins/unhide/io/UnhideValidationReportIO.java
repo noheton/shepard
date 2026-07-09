@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.unhide.io;
 
 import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1e — response shape for {@code GET /v2/unhide/feed.jsonld?validate=true}.
@@ -37,6 +38,7 @@ import java.util.List;
  *                   {@code "[index=N] <what is missing>"}; never {@code null}
  *                   (empty list when valid).
  */
+@Schema(name = "UnhideValidationReportIO", description = "Response body for GET /v2/unhide/feed.jsonld?validate=true — structural feed validation report.")
 public record UnhideValidationReportIO(
   boolean valid,
   int errorCount,

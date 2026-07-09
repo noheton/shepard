@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1a — top-level shape of {@code GET /v2/unhide/feed.jsonld}.
@@ -26,6 +27,7 @@ import java.util.Map;
  * processing-step trail once PROV1h's content-negotiated render
  * endpoint exists.
  */
+@Schema(name = "FeedIO", description = "Top-level shape of GET /v2/unhide/feed.jsonld — JSON-LD @context + @graph of FeedEntryIO items.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "@context", "@graph", "_meta" })
 public record FeedIO(

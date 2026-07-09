@@ -3,6 +3,7 @@ package de.dlr.shepard.plugins.v1compat.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.v1compat.entities.LegacyV1Config;
 import java.util.Date;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * V1COMPAT.0/V1C1 — JSON shape returned by
@@ -28,6 +29,7 @@ import java.util.Date;
  * @param updatedBy                  most recent PATCH actor sub; null until first
  *                                   flip
  */
+@Schema(name = "LegacyV1ConfigIO", description = "Legacy v1 compat plugin runtime config returned by GET /v2/admin/legacy/v1/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LegacyV1ConfigIO(
   boolean enabled,

@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.aas.entities.AasConfig;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * AAS1l — JSON shape returned by {@code GET /v2/admin/aas/config}.
@@ -15,6 +16,7 @@ import de.dlr.shepard.plugins.aas.entities.AasConfig;
  * <p>{@code @JsonInclude(NON_NULL)} so optional fields
  * ({@code registryUrl}, {@code baseUrl}) are dropped when unset.
  */
+@Schema(name = "AasConfigIO", description = "AAS plugin runtime config returned by GET /v2/admin/aas/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AasConfigIO(
   boolean enabled,

@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.unhide.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Date;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1a — response body for
@@ -23,6 +24,7 @@ import java.util.Date;
  * later-returned masked fingerprint on {@code GET .../config}
  * matches what they just received.
  */
+@Schema(name = "HarvestKeyMintedIO", description = "Response body for POST /v2/admin/unhide/harvest-key/rotate — newly minted harvest API key (shown once).")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record HarvestKeyMintedIO(
   String harvestApiKey,

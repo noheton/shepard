@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.services.UnhideConfigService;
 import java.util.Date;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * UH1a — JSON shape returned by {@code GET /v2/admin/unhide/config}.
@@ -20,6 +21,7 @@ import java.util.Date;
  * ({@code contactEmail}, {@code harvestApiKeyMintedAt},
  * {@code harvestApiKeyFingerprint}) are dropped when unset.
  */
+@Schema(name = "UnhideConfigIO", description = "Helmholtz Unhide plugin runtime config returned by GET /v2/admin/unhide/config.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record UnhideConfigIO(
   boolean enabled,
