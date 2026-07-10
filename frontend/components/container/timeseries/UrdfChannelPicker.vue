@@ -23,6 +23,7 @@ import {
   initialBinding,
   isBindingReady,
 } from "~/utils/urdfChannelPicker";
+import { naturalSort } from "~/utils/naturalSort";
 
 const props = defineProps<{
   containerId: number;
@@ -47,11 +48,15 @@ const movableJoints = computed(() =>
   props.joints.filter(j => j.jointType !== "fixed"),
 );
 
+// UIRULE-DROPDOWN-SEARCH-SORT: naturally ordered (numeric-aware) channel list.
 const channelItems = computed(() =>
-  props.channels.map(ch => ({
-    title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · ") || ch.shepardId,
-    value: ch.shepardId,
-  })),
+  naturalSort(
+    props.channels.map(ch => ({
+      title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · ") || ch.shepardId,
+      value: ch.shepardId,
+    })),
+    i => i.title,
+  ),
 );
 
 // ── public API ────────────────────────────────────────────────────────────────
@@ -123,9 +128,10 @@ watch(canConfirm, v => emit("update:canConfirm", v), { immediate: true });
     >
       <code class="text-caption" style="min-width:140px">{{ joint.name }}</code>
       <v-chip size="x-small" variant="tonal">{{ joint.jointType }}</v-chip>
-      <v-select
+      <v-autocomplete
         :model-value="binding[joint.name] ?? null"
         :items="channelItems"
+        auto-select-first
         :label="`Channel for ${joint.name}`"
         density="compact"
         variant="outlined"

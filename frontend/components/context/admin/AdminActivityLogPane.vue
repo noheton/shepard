@@ -12,6 +12,7 @@
  */
 import { AdminFragments } from "./adminMenuItems";
 import { useFetchAdminActivities } from "~/composables/context/admin/useFetchAdminActivities";
+import { naturalSort } from "~/utils/naturalSort";
 
 const {
   activities,
@@ -98,7 +99,8 @@ function formatRelative(ms: number): string {
   return new Date(ms).toLocaleDateString();
 }
 
-const TARGET_KIND_OPTIONS = [
+// UIRULE-DROPDOWN-SEARCH-SORT: entity-kind names in natural order.
+const TARGET_KIND_OPTIONS = naturalSort([
   "Collection",
   "DataObject",
   "FileBundle",
@@ -109,7 +111,7 @@ const TARGET_KIND_OPTIONS = [
   "GitReference",
   "LabJournalEntry",
   "Annotation",
-];
+]);
 </script>
 
 <template>

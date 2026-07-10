@@ -81,6 +81,9 @@ const body = ref("This is a test notification sent from the admin panel.");
 const actionUrl = ref("");
 const successOpen = ref(false);
 
+// UIRULE-DROPDOWN-SEARCH-SORT exception: tiny (3-option) enums with a deliberate
+// order (audience scope; category severity Info→Warning→Action) — kept as
+// v-select, not natural-sorted.
 const audienceOptions: { label: string; value: NotificationAudience }[] = [
   { label: "Instance admins", value: "INSTANCE_ADMIN" },
   { label: "Specific user", value: "USER" },

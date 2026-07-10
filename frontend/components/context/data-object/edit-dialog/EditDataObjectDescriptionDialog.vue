@@ -46,6 +46,8 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
         </v-row>
         <v-row class="pt-4">
           <v-col>
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: status lifecycle ladder
+                 (DRAFT→IN_REVIEW→READY→…), order meaningful — kept as v-select. -->
             <v-select
               v-model="updatedDataObject.status"
               label="Status"

@@ -8,6 +8,10 @@ import {
   type ReferenceData,
   type URIReferenceData,
 } from "../../display-components/relationships/add-dialog/relationshipTypes";
+import { naturalSort } from "~/utils/naturalSort";
+
+// UIRULE-DROPDOWN-SEARCH-SORT: relationship-target kinds in natural order.
+const customRelationshipTypeItems = naturalSort(Object.values(CustomRelationshipType));
 
 const props = defineProps<{
   collectionId: number;
@@ -146,7 +150,7 @@ watch(relationshipType, newType => {
         label="Add Relationship To...*"
         density="compact"
         variant="outlined"
-        :items="Object.values(CustomRelationshipType)"
+        :items="customRelationshipTypeItems"
       />
     </v-row>
 

@@ -31,6 +31,9 @@ const localValue = computed({
 </script>
 
 <template>
+  <!-- UIRULE-DROPDOWN-SEARCH-SORT: searchable (v-autocomplete); SPDX_LICENSES is a
+       deliberately curated common-first list (Creative Commons first, then
+       permissive, then copyleft) — NOT natural-sorted. -->
   <v-autocomplete
     v-model="localValue"
     :items="items"

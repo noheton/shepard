@@ -12,6 +12,7 @@ import {
 } from "~/composables/context/useTermSearch";
 import { useSkosRelated } from "~/composables/semantic/useSkosRelated";
 import { symbolicNameToSearchToken } from "~/utils/symbolicNameToSearchToken";
+import { naturalSort } from "~/utils/naturalSort";
 
 interface AddAnnotationDialogProps {
   annotated: Annotated;
@@ -96,6 +97,14 @@ const mapToAutocompleteItem = (r: SemanticRepository): AutoCompleteItem => ({
   title: `${r.name} (ID ${r.id})`,
   value: r,
 });
+
+// UIRULE-DROPDOWN-SEARCH-SORT: semantic repositories in natural order by title.
+// (The property/value term v-comboboxes above are search-native and their
+//  suggestion lists are relevance-ranked ontology matches — deliberately NOT
+//  re-sorted here.)
+const repositoryItems = computed(() =>
+  naturalSort(repositories.value.map(mapToAutocompleteItem), o => o.title ?? ""),
+);
 
 let propertyDebounce: ReturnType<typeof setTimeout> | null = null;
 let valueDebounce: ReturnType<typeof setTimeout> | null = null;
@@ -373,7 +382,7 @@ const onSubmit = async () => {
               <div class="text-caption text-medium-emphasis mb-1">Property repository</div>
               <v-autocomplete
                 v-model="propertyRepository"
-                :items="repositories.map(mapToAutocompleteItem)"
+                :items="repositoryItems"
                 color="primary"
                 density="compact"
                 label="Repository"
@@ -387,7 +396,7 @@ const onSubmit = async () => {
               <div class="text-caption text-medium-emphasis mb-1">Value repository</div>
               <v-autocomplete
                 v-model="valueRepository"
-                :items="repositories.map(mapToAutocompleteItem)"
+                :items="repositoryItems"
                 color="primary"
                 density="compact"
                 label="Repository"

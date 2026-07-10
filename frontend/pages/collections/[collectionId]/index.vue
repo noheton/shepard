@@ -491,6 +491,8 @@ useHead({
               />
               <DescriptionDisplay v-else :entity="collection" />
               <div v-if="descEditActive" class="d-flex align-center ga-2 mt-3">
+                <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: status lifecycle ladder
+                     (DRAFT→IN_REVIEW→READY→…), order meaningful — kept as v-select. -->
                 <v-select
                   v-model="descStatusDraft"
                   label="Status"

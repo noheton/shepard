@@ -16,6 +16,7 @@
  *   saved({ name, start, end }) — on successful PATCH; caller refreshes as needed.
  */
 import type { Timeseries } from "@dlr-shepard/backend-client";
+import { naturalSort } from "~/utils/naturalSort";
 
 const props = defineProps<{
   /** UUID v7 appId of the TimeseriesReference to edit. */
@@ -84,7 +85,8 @@ const allChannelOptions = computed<Timeseries[]>(() => {
       result.push(ch);
     }
   }
-  return result;
+  // UIRULE-DROPDOWN-SEARCH-SORT: natural order by the same label the picker shows.
+  return naturalSort(result, channelLabel);
 });
 
 // ── datetime helpers ──────────────────────────────────────────────────────────

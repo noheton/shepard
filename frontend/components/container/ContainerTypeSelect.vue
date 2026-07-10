@@ -6,6 +6,7 @@ import {
   type ContainerFilterType,
 } from "./containerTypeFilter";
 import { useContainerListQueryParams } from "./useContainerListQueryParams";
+import { naturalSort } from "~/utils/naturalSort";
 
 const router = useRouter();
 const { queryParams } = useContainerListQueryParams();
@@ -18,10 +19,14 @@ const selectedFilterParam = computed(() => {
   return selectedFilter.value;
 });
 
-const filters = Object.values(ContainerFilterTypes).map(containerType => ({
-  title: ContainerTypeName[containerType],
-  value: containerType,
-}));
+// UIRULE-DROPDOWN-SEARCH-SORT: container type filters in natural order by name.
+const filters = naturalSort(
+  Object.values(ContainerFilterTypes).map(containerType => ({
+    title: ContainerTypeName[containerType],
+    value: containerType,
+  })),
+  o => o.title,
+);
 
 function onSelectUpdate() {
   router.push({

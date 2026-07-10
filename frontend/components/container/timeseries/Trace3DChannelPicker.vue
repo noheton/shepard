@@ -8,6 +8,7 @@
  *       "save as annotation" snackbar (TS-AXIS-AUTO principle).
  */
 import type { ColormapName } from "~/utils/colormap";
+import { naturalSort } from "~/utils/naturalSort";
 
 export interface Channel5Tuple {
   measurement: string;
@@ -65,11 +66,16 @@ const keyToChannel = computed<Map<string, ChannelV2>>(() => {
   return m;
 });
 
+// UIRULE-DROPDOWN-SEARCH-SORT: naturally ordered so "area0" < "area10" and
+// "TapeActForce[1]" < "TapeActForce[10]" (the ~190-channel TPS container).
 const channelItems = computed(() =>
-  props.channels.map(ch => ({
-    title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · "),
-    value: tupleKey(ch),
-  })),
+  naturalSort(
+    props.channels.map(ch => ({
+      title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · "),
+      value: tupleKey(ch),
+    })),
+    i => i.title,
+  ),
 );
 
 // ── axis state ────────────────────────────────────────────────────────────────
@@ -209,36 +215,40 @@ watch(canConfirm, v => emit("update:canConfirm", v), { immediate: true });
 
 <template>
   <div class="d-flex flex-column ga-3">
-    <v-select
+    <v-autocomplete
       v-model="xKey"
       :items="channelItems"
+      auto-select-first
       label="X axis"
       density="compact"
       variant="outlined"
       clearable
       @update:model-value="onAxisChange"
     />
-    <v-select
+    <v-autocomplete
       v-model="yKey"
       :items="channelItems"
+      auto-select-first
       label="Y axis"
       density="compact"
       variant="outlined"
       clearable
       @update:model-value="onAxisChange"
     />
-    <v-select
+    <v-autocomplete
       v-model="zKey"
       :items="channelItems"
+      auto-select-first
       label="Z axis"
       density="compact"
       variant="outlined"
       clearable
       @update:model-value="onAxisChange"
     />
-    <v-select
+    <v-autocomplete
       v-model="valueKey"
       :items="channelItems"
+      auto-select-first
       label="Color value (optional)"
       density="compact"
       variant="outlined"
@@ -255,27 +265,30 @@ watch(canConfirm, v => emit("update:canConfirm", v), { immediate: true });
     <div class="text-caption text-medium-emphasis">
       Tool orientation — KUKA Euler A/B/C (optional)
     </div>
-    <v-select
+    <v-autocomplete
       v-model="rotAKey"
       :items="channelItems"
+      auto-select-first
       label="Euler A  (rot around world Z)"
       density="compact"
       variant="outlined"
       clearable
       @update:model-value="onAxisChange"
     />
-    <v-select
+    <v-autocomplete
       v-model="rotBKey"
       :items="channelItems"
+      auto-select-first
       label="Euler B  (rot around world Y)"
       density="compact"
       variant="outlined"
       clearable
       @update:model-value="onAxisChange"
     />
-    <v-select
+    <v-autocomplete
       v-model="rotCKey"
       :items="channelItems"
+      auto-select-first
       label="Euler C  (rot around world X)"
       density="compact"
       variant="outlined"

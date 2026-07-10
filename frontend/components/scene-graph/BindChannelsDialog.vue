@@ -13,6 +13,7 @@
  */
 import { useChannelsFromTimeseriesRef } from "~/composables/useChannelsFromTimeseriesRef";
 import { usePatchSceneGraphBindings } from "~/composables/useSceneGraphPlay";
+import { naturalSort } from "~/utils/naturalSort";
 
 interface JointDef {
   name: string;
@@ -52,11 +53,15 @@ const movableJoints = computed(() =>
   props.joints.filter(j => j.type !== "fixed"),
 );
 
+// UIRULE-DROPDOWN-SEARCH-SORT: naturally ordered (numeric-aware) channel list.
 const channelItems = computed(() =>
-  channels.value.map(ch => ({
-    title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · ") || ch.shepardId,
-    value: ch.shepardId,
-  })),
+  naturalSort(
+    channels.value.map(ch => ({
+      title: [ch.device, ch.symbolicName, ch.field].filter(Boolean).join(" · ") || ch.shepardId,
+      value: ch.shepardId,
+    })),
+    i => i.title,
+  ),
 );
 
 function resetState() {

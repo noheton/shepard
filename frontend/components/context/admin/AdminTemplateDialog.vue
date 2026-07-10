@@ -6,6 +6,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { editorStateFromTemplateBody } from "~/utils/templateShapeDsl";
+import { naturalSort } from "~/utils/naturalSort";
 import TemplateShapeEditor from "~/components/shapes/TemplateShapeEditor.vue";
 
 const props = defineProps<{
@@ -31,11 +32,15 @@ const emit = defineEmits<{
   (e: "saved"): void;
 }>();
 
-const TEMPLATE_KINDS = [
-  { title: "DataObject Recipe", value: "DATAOBJECT_RECIPE" },
-  { title: "Collection Recipe", value: "COLLECTION_RECIPE" },
-  { title: "Experiment Recipe", value: "EXPERIMENT_RECIPE" },
-];
+// UIRULE-DROPDOWN-SEARCH-SORT: template kinds in natural order by label.
+const TEMPLATE_KINDS = naturalSort(
+  [
+    { title: "DataObject Recipe", value: "DATAOBJECT_RECIPE" },
+    { title: "Collection Recipe", value: "COLLECTION_RECIPE" },
+    { title: "Experiment Recipe", value: "EXPERIMENT_RECIPE" },
+  ],
+  o => o.title,
+);
 
 const isSaving = ref(false);
 const saveError = ref<string | null>(null);
@@ -95,7 +100,7 @@ const forbiddenParentAppIds = computed<Set<string>>(() => {
 /** Candidate parents: same-kind, non-retired, not self/descendant. */
 const parentCandidates = computed(() => {
   const all = props.allTemplates ?? [];
-  return all
+  const mapped = all
     .filter(
       (t) =>
         t.templateKind === templateKind.value &&
@@ -106,6 +111,8 @@ const parentCandidates = computed(() => {
       title: `${t.name} (v${t.version})`,
       value: t.appId,
     }));
+  // UIRULE-DROPDOWN-SEARCH-SORT: parent template candidates, natural order by title.
+  return naturalSort(mapped, o => o.title);
 });
 
 /** Pretty-printed inherited field set for the read-only preview. */

@@ -19,6 +19,7 @@ import {
   type QueryFilter,
   type SearchProperty,
 } from "~/utils/searchQueryBuilder";
+import { naturalSort } from "~/utils/naturalSort";
 
 const jsonQuery = defineModel<string>("jsonQuery", { required: true });
 
@@ -27,10 +28,14 @@ const filters = ref<QueryFilter[]>([
 ]);
 const combine = ref<CombineMode>("AND");
 
-const propertyOptions = SEARCH_PROPERTIES.map(p => ({
-  title: p.label,
-  value: p.value,
-}));
+// UIRULE-DROPDOWN-SEARCH-SORT: property names in natural order.
+const propertyOptions = naturalSort(
+  SEARCH_PROPERTIES.map(p => ({
+    title: p.label,
+    value: p.value,
+  })),
+  o => o.title,
+);
 
 function operatorOptions(prop: SearchProperty) {
   return operatorsForProperty(prop).map(o => ({ title: o.label, value: o.value }));
@@ -77,9 +82,11 @@ watch(
       :key="idx"
       class="d-flex flex-wrap ga-2 align-center"
     >
-      <v-select
+      <!-- UIRULE-DROPDOWN-SEARCH-SORT: property list — searchable + natural order. -->
+      <v-autocomplete
         v-model="f.property"
         :items="propertyOptions"
+        auto-select-first
         density="compact"
         variant="outlined"
         label="Property"
@@ -87,6 +94,8 @@ watch(
         style="min-width: 200px"
         @update:model-value="onPropertyChange(idx)"
       />
+      <!-- Operators are a tiny per-property set (=, contains, <, >, …) whose order
+           is meaningful; left as a plain v-select, not sorted. -->
       <v-select
         v-model="f.operator"
         :items="operatorOptions(f.property)"

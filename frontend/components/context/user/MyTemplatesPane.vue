@@ -42,6 +42,8 @@ const { collections: recentCollections, loading: collectionsLoading } =
   useFetchRecentCollections();
 
 /** Collections that carry a v2 appId (needed for instantiation route). */
+// UIRULE-DROPDOWN-SEARCH-SORT: searchable (v-autocomplete); order is deliberately
+// the source recency order (recentCollections), NOT natural-sorted.
 const pickableCollections = computed(() =>
   recentCollections.value.filter(c => !!readCollectionAppId(c)),
 );

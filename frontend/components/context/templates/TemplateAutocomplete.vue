@@ -18,6 +18,7 @@ import {
   type TemplateListItem,
   templatesUrl,
 } from "~/utils/templateAutocomplete";
+import { naturalSort } from "~/utils/naturalSort";
 
 const props = withDefaults(
   defineProps<{ kind?: string; label?: string }>(),
@@ -72,7 +73,10 @@ onMounted(() => void fetchTemplates());
 // Format each option as "Name (8-char appId snippet)". Pure helper kept
 // in `utils/templateAutocomplete.ts` so a Vitest unit covers it without
 // mounting Vue.
-const options = computed(() => items.value.map(t => formatOption(t, props.kind)));
+// UIRULE-DROPDOWN-SEARCH-SORT: template options in natural order by title.
+const options = computed(() =>
+  naturalSort(items.value.map(t => formatOption(t, props.kind)), o => o.title),
+);
 </script>
 
 <template>

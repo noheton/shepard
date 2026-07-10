@@ -203,6 +203,9 @@ watch(selectedMember, newMember => {
         </v-row>
         <v-row>
           <v-col>
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT: searchable via shared <Select>; a
+                 3-option visibility set (Private/PublicReadable/Public) whose enum
+                 order is meaningful — NOT natural-sorted. -->
             <Select
               v-model="shepardObjectPermissions.permissionType"
               :items="Object.values(PermissionType)"
@@ -250,6 +253,8 @@ watch(selectedMember, newMember => {
             />
           </v-col>
           <v-col>
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT: role capability ladder
+                 (Manager→Writer→Reader) — meaningful order, NOT natural-sorted. -->
             <Select
               v-model="selectedAdditionalUserRole"
               :items="filteredRoles"

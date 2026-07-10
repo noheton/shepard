@@ -346,10 +346,14 @@ const nameRules = [
             prepend-inner-icon="mdi-alpha-a-circle-outline"
           />
 
-          <!-- Snapshot B (head — choose) -->
-          <v-select
+          <!-- Snapshot B (head — choose).
+               UIRULE-DROPDOWN-SEARCH-SORT: searchable (v-autocomplete) so a long
+               snapshot history is filterable by label; order is deliberately the
+               snapshot history's chronological order, NOT natural-sorted. -->
+          <v-autocomplete
             v-model="diffHead"
             :items="diffHeadOptions"
+            auto-select-first
             :item-title="snapshotLabel"
             item-value="appId"
             return-object

@@ -39,6 +39,10 @@ onMounted(() => {
   void fetchPage({ pageSize: 200 });
 });
 
+// UIRULE-DROPDOWN-SEARCH-SORT: already searchable (v-autocomplete). Order is
+// deliberately the snapshot list's chronological order (newest→oldest from the
+// API), NOT natural-sorted — snapshots are a time series, so time order is
+// meaningful here.
 const snapshotOptions = computed(() =>
   snapshots.value.map((s: SnapshotListItem) => ({
     value: s.appId,

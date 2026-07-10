@@ -128,6 +128,9 @@ function clearInput() {
 </script>
 
 <template>
+  <!-- UIRULE-DROPDOWN-SEARCH-SORT: results come from a server-side DataObject
+       search and arrive relevance-ranked — deliberately NOT natural-sorted,
+       which would clobber the ranking. -->
   <v-autocomplete
     :disabled="props.isDisabled"
     :hide-no-data="hideNoDataMessage"

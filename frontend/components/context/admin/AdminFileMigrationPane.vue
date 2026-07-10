@@ -2,6 +2,7 @@
 import { AdminFragments } from "./adminMenuItems";
 import { useFileMigration } from "~/composables/context/admin/useFileMigration";
 import type { StorageAdapterIO } from "~/composables/context/admin/useFileMigration";
+import { naturalSort } from "~/utils/naturalSort";
 
 const {
   storageStatus,
@@ -28,11 +29,15 @@ const sourceId = ref<string | null>(null);
 const targetId = ref<string | null>(null);
 const confirmDialogOpen = ref(false);
 
+// UIRULE-DROPDOWN-SEARCH-SORT: storage adapters in natural order by label.
 const adapterItems = computed<{ title: string; value: string }[]>(() =>
-  (storageStatus.value?.adapters ?? []).map((a: StorageAdapterIO) => ({
-    title: adapterLabel(a),
-    value: a.id,
-  })),
+  naturalSort(
+    (storageStatus.value?.adapters ?? []).map((a: StorageAdapterIO) => ({
+      title: adapterLabel(a),
+      value: a.id,
+    })),
+    o => o.title,
+  ),
 );
 
 const canTrigger = computed(() => {

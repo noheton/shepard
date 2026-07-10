@@ -123,10 +123,12 @@ function availabilityChipLabel(a?: string): string {
         Add a container to this collection's watchlist. You need Read on the target container.
       </div>
       <div class="d-flex flex-wrap ga-2 align-end">
+        <!-- UIRULE-DROPDOWN-SEARCH-SORT: 3-option type enum kept as v-select;
+             items listed in natural (alphabetical) order — no meaningful ladder. -->
         <v-select
           v-model="draftKind"
           label="Kind"
-          :items="['TIMESERIES', 'FILE', 'STRUCTURED_DATA']"
+          :items="['FILE', 'STRUCTURED_DATA', 'TIMESERIES']"
           density="compact"
           hide-details
           style="max-width: 200px"

@@ -8,6 +8,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
 import { useFileUploadProgress } from "~/composables/container/useFileUploadProgress";
+import { naturalSort } from "~/utils/naturalSort";
 import { UploadAbortError } from "~/composables/container/xhrUpload";
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 import { useFetchCollectionContainers } from "~/composables/context/useFetchCollectionContainers";
@@ -158,8 +159,12 @@ const collectionAppId = computed(
 );
 const { containers: collectionContainers, isLoading: containersLoading } =
   useFetchCollectionContainers(collectionAppId);
+// UIRULE-DROPDOWN-SEARCH-SORT: file containers in natural order by name.
 const fileContainersInCollection = computed(() =>
-  collectionContainers.value.filter(c => (c.kind ?? "").toUpperCase() === "FILE"),
+  naturalSort(
+    collectionContainers.value.filter(c => (c.kind ?? "").toUpperCase() === "FILE"),
+    c => c.name ?? "",
+  ),
 );
 
 const uploading = ref<boolean>(false);

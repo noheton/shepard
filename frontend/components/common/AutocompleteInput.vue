@@ -69,6 +69,13 @@ watch(autoCompleteModel, newVal => {
 </script>
 
 <template>
+  <!--
+    UIRULE-DROPDOWN-SEARCH-SORT: this shared wrapper is a *server-side-search*
+    autocomplete (`startSearch` + `custom-filter=() => true` delegates filtering
+    to the backend). `itemList` is caller-supplied, relevance-ranked search
+    results — deliberately NOT natural-sorted here, which would clobber the
+    server ranking. Callers over a *client-held* list sort their own :items.
+  -->
   <v-autocomplete
     ref="autocompleteRef"
     :label="label"

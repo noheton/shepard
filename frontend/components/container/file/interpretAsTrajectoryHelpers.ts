@@ -5,6 +5,7 @@
  * picker helpers are the converged successors of the deleted
  * runKrlPreviewHelpers (which fed the bespoke /v2/krl/interpret dialog).
  */
+import { naturalSort } from "~/utils/naturalSort";
 
 /** `.src` (KUKA Robot Language) / `.krl` source-file extension test. Case-insensitive. */
 export function isKrlSrcFile(name: string | undefined | null): boolean {
@@ -40,17 +41,25 @@ export function isTrajectoryFormValid(state: {
 export function urdfPickerOptions(
   refs: Array<{ name: string; appId?: string | null }>,
 ): Array<{ title: string; value: string }> {
-  return refs
-    .filter(r => r.name.toLowerCase().endsWith(".urdf"))
-    .map(r => ({ title: r.name, value: r.appId ?? "" }))
-    .filter(o => o.value !== "");
+  // UIRULE-DROPDOWN-SEARCH-SORT: natural order (numeric-aware) by file name.
+  return naturalSort(
+    refs
+      .filter(r => r.name.toLowerCase().endsWith(".urdf"))
+      .map(r => ({ title: r.name, value: r.appId ?? "" }))
+      .filter(o => o.value !== ""),
+    o => o.title,
+  );
 }
 
 export function datPickerOptions(
   refs: Array<{ name: string; appId?: string | null }>,
 ): Array<{ title: string; value: string }> {
-  return refs
-    .filter(r => r.name.toLowerCase().endsWith(".dat"))
-    .map(r => ({ title: r.name, value: r.appId ?? "" }))
-    .filter(o => o.value !== "");
+  // UIRULE-DROPDOWN-SEARCH-SORT: natural order (numeric-aware) by file name.
+  return naturalSort(
+    refs
+      .filter(r => r.name.toLowerCase().endsWith(".dat"))
+      .map(r => ({ title: r.name, value: r.appId ?? "" }))
+      .filter(o => o.value !== ""),
+    o => o.title,
+  );
 }

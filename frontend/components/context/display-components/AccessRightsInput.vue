@@ -24,6 +24,8 @@ const localValue = computed({
 </script>
 
 <template>
+  <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: access rights are an openness ladder
+       (Open→Restricted→Closed→Embargoed); kept as v-select, order preserved. -->
   <v-select
     v-model="localValue"
     :items="items"

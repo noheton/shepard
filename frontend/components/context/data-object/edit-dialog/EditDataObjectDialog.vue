@@ -78,6 +78,9 @@ const searchCollectionAppId = computed<string | undefined>(() =>
         </v-row>
         <v-row>
           <v-col>
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: DataObject status is a
+                 lifecycle ladder (DRAFT→IN_REVIEW→READY→…); order is meaningful,
+                 kept as v-select, not natural-sorted. -->
             <v-select
               v-model="updatedDataObject.status"
               label="Status"

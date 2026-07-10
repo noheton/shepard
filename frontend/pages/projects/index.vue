@@ -12,6 +12,7 @@ becomes a follow-up when the project count grows.
 -->
 <script setup lang="ts">
 import { useProjectList, type ProjectIO } from "~/composables/context/useProject";
+import { naturalSort } from "~/utils/naturalSort";
 
 useHead({ title: "Projects | shepard" });
 
@@ -69,7 +70,8 @@ const allProgrammes = computed<string[]>(() => {
     if (!p) continue;
     for (const pg of p.programmes ?? []) set.add(pg);
   }
-  return Array.from(set).sort();
+  // UIRULE-DROPDOWN-SEARCH-SORT: natural (numeric-aware) order over programme names.
+  return naturalSort(Array.from(set));
 });
 
 const filteredProjects = computed<ProjectIO[]>(() => {
@@ -108,9 +110,10 @@ function openProject(appId: string) {
 
         <!-- programme side-filter -->
         <v-col v-if="allProgrammes.length > 0" cols="12" md="auto" class="pb-4">
-          <v-select
+          <v-autocomplete
             v-model="programmeFilter"
             :items="[{ title: 'All programmes', value: null }, ...allProgrammes.map((p) => ({ title: p, value: p }))]"
+            auto-select-first
             label="Filter by programme"
             density="compact"
             variant="outlined"
