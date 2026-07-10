@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * N1f — SPARQL proxy endpoint that wraps n10s (neosemantics) and external
  * SPARQL endpoints behind shepard authentication.
  *
- * <p>Two HTTP verbs, both at {@code /v2/semantic/{repoAppId}/sparql}:
+ * <p>Two HTTP verbs, both at {@code /v2/semantic/{appId}/sparql}:
  * <ul>
  *   <li>{@code GET  ?query=<SPARQL>} — SPARQL 1.1 Protocol §2.1.2</li>
  *   <li>{@code POST} with {@code application/x-www-form-urlencoded} body
@@ -114,7 +114,7 @@ public class SemanticSparqlRest {
    * bootstrapped {@code :SemanticRepository {type: INTERNAL}} row from the
    * V49 migration via
    * {@link SemanticRepositoryDAO#findInternal()}. A literal {@code "internal"}
-   * value in the {@code repoAppId} path parameter is intercepted by
+   * value in the {@code appId} path parameter is intercepted by
    * {@link #executeSparql} before the normal {@code findByAppId} lookup.
    */
   static final String INTERNAL_ALIAS = "internal";
@@ -161,19 +161,19 @@ public class SemanticSparqlRest {
   // ─── endpoints ────────────────────────────────────────────────────────────
 
   /**
-   * {@code GET /v2/semantic/{repoAppId}/sparql?query=<SPARQL>}
+   * {@code GET /v2/semantic/{appId}/sparql?query=<SPARQL>}
    *
    * <p>SPARQL 1.1 Protocol §2.1.2 — query via HTTP GET.
    */
   @GET
-  @Path("/{repoAppId}/sparql")
+  @Path("/{appId}/sparql")
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     operationId = "queryGet",
     summary = "Execute a read-only SPARQL SELECT or ASK query (GET form).",
     description =
       "Accepts a SPARQL query via the `query` URL parameter and proxies it to the backend " +
-      "identified by `repoAppId`, following SPARQL 1.1 Protocol §2.1.2.\n\n" +
+      "identified by `appId`, following SPARQL 1.1 Protocol §2.1.2.\n\n" +
       "Only `SELECT` and `ASK` query forms are permitted. Any mutation form " +
       "(`CONSTRUCT`, `INSERT`, `DELETE`, `UPDATE`, …) is rejected with 400 before " +
       "reaching the backend.\n\n" +
@@ -204,7 +204,7 @@ public class SemanticSparqlRest {
   @APIResponse(responseCode = "502", description = "Backend SPARQL endpoint returned a non-200 HTTP status.")
   @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryGet(
-    @PathParam("repoAppId") String repoAppId,
+    @PathParam("appId") String appId,
     @Parameter(
       required = true,
       description =
@@ -217,17 +217,17 @@ public class SemanticSparqlRest {
     @QueryParam("query") String query,
     @Context SecurityContext sc
   ) {
-    return executeSparql(repoAppId, query, sc);
+    return executeSparql(appId, query, sc);
   }
 
   /**
-   * {@code POST /v2/semantic/{repoAppId}/sparql}
+   * {@code POST /v2/semantic/{appId}/sparql}
    * with {@code application/x-www-form-urlencoded} body {@code query=<SPARQL>}.
    *
    * <p>SPARQL 1.1 Protocol §2.1.3 — query via HTTP POST form.
    */
   @POST
-  @Path("/{repoAppId}/sparql")
+  @Path("/{appId}/sparql")
   @Consumes(FORM_URL_ENCODED)
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
@@ -255,11 +255,11 @@ public class SemanticSparqlRest {
   @APIResponse(responseCode = "502", description = "Backend SPARQL endpoint returned a non-200 HTTP status.")
   @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryPost(
-    @PathParam("repoAppId") String repoAppId,
+    @PathParam("appId") String appId,
     @FormParam("query") String query,
     @Context SecurityContext sc
   ) {
-    return executeSparql(repoAppId, query, sc);
+    return executeSparql(appId, query, sc);
   }
 
   // ─── core logic ───────────────────────────────────────────────────────────
