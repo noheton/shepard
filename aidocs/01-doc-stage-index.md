@@ -301,7 +301,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | 2026-05-31 |
 | [`aidocs/platform/112-v1-sunset-gains-design.md`](platform/112-v1-sunset-gains-design.md) | 112 — What we'd gain by giving up v1 compatibility | 2026-05-31 | 2026-05-31 |
 | [`aidocs/platform/191-v2-surface-convergence.md`](platform/191-v2-surface-convergence.md) | 191 — v2 surface convergence | 2026-06-10 | 2026-07-10 |
-| [`aidocs/platform/196-svdx-promotion-tps-data-plan.md`](platform/196-svdx-promotion-tps-data-plan.md) | SVDX promotion + the "missing TPS data" plan | 2026-07-10 | — |
+| [`aidocs/platform/196-svdx-promotion-tps-data-plan.md`](platform/196-svdx-promotion-tps-data-plan.md) | The "missing TPS data" + svdx (welding) plan | 2026-07-10 | 2026-07-10 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-05-29 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-05-23 |
