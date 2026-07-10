@@ -142,7 +142,7 @@ public class ReferenceAnnotationRest {
       "(nanoseconds since Unix epoch); video annotations carry `startSeconds`/`endSeconds` " +
       "(seconds from the start of the video). Common fields across all kinds: `appId`, " +
       "`label`, `description`, `aiGenerated`, `confidence`.\n\n" +
-      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 1000.\n\n" +
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 200.\n\n" +
       "Returns 404 when no reference with that appId exists, or when the reference kind " +
       "does not support annotations. Auth: Read permission on the parent DataObject."
   )
@@ -162,7 +162,7 @@ public class ReferenceAnnotationRest {
   public Response list(
     @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).") @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Items per page (1–1000). Default 200.") @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+    @Parameter(description = "Items per page (1–200). Default 200.") @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     return gateAndDispatch(appId, AccessType.Read, sc, r -> {
