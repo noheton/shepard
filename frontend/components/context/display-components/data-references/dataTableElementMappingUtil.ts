@@ -22,7 +22,18 @@ export const mapDataReferenceToDataTableElement = (
   name: ref.name,
   meta: mapContainerMetaData(ref),
   created: { createdAt: ref.createdAt, createdBy: ref.createdBy },
-  actions: { elementId: ref.id, showDetails: buildShowDetailsArgs(ref) },
+  // elementAppId carries the v2 appId so the "show" action resolves even when
+  // the reference has no numeric id — which is the case for every v2-fetched
+  // reference (useFetchDataReferences flattens id → undefined, appId → set).
+  // Without it, showDetailsId() returned undefined for TimeSeries/File/
+  // StructuredData rows and the "show" button was hidden (the row rendered but
+  // could not be opened). showDetailsId prefers elementId when present, so
+  // any still-numeric ref is unaffected. Mirrors the Video/Git/Spatial mappers.
+  actions: {
+    elementId: ref.id,
+    elementAppId: ref.appId ?? undefined,
+    showDetails: buildShowDetailsArgs(ref),
+  },
 });
 
 // ── New-kind mappers (Git / Video) ───────────────────────────────────────────
