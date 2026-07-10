@@ -89,6 +89,13 @@ allowlist + OpenAPI `OASFilter`**.
   `GET /v2/references?kind={family}&dataObjectAppId=…`. Replaces
   `timeseries-references`, `uri-references`, `video-stream-references`,
   singleton `files`, `git-references`.
+- **Generic action dispatcher** — `POST /v2/references/{appId}/actions?action=<name>`
+  dispatches a named action against the reference, routing by kind. Unknown `action`
+  → 422; action not supported by the reference's kind → 422 (distinguishes "not found"
+  from "wrong kind" via `ReferencesV2Service.resolveByAppId`). **Shipped (fire-513,
+  APISIMP-ANOMALY-ACTION-PATH):** `action=detect-anomalies` is the first registered
+  action (timeseries only); `ReferenceActionsRest` at `POST /v2/references/{appId}/actions`.
+  Old kind-specific `POST /v2/references/{appId}/detect-anomalies` is tombstoned → 410.
 - **Unified containers** — `/v2/containers?kind={family}` (+ `/{appId}`)
   replacing `file-containers`, `timeseries-containers`,
   `structured-data-containers`, hdf.

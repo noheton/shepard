@@ -132,7 +132,7 @@ export function useTimeseriesReferenceAnnotations(refAppId: Ref<string | undefin
     try {
       const headers = await authHeaders();
       const url =
-        `${v2BaseUrl()}/v2/references/${refAppId.value}/detect-anomalies`;
+        `${v2BaseUrl()}/v2/references/${refAppId.value}/actions?action=detect-anomalies`;
       const response = await fetch(url, {
         method: "POST",
         headers,

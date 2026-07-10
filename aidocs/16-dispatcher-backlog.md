@@ -4557,11 +4557,11 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportDiagnosticsV2Rest.java:135`; `backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java:206`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotDiffRest.java:133`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F6.2–F6.4`.
 
 ## APISIMP-ANOMALY-ACTION-PATH — `AnomalyDetectionRest` exposes timeseries-specific action under generic `/v2/references/{appId}/detect-anomalies` (size: M, sweep: fire-496)
-- **Status:** queued (architectural; needs design).
+- **Status:** shipped (fire-513).
 - **Why:** `AnomalyDetectionRest.java:50` registers `POST /v2/references/{appId}/detect-anomalies` under the generic `/v2/references` hierarchy, but the resolver is timeseries-only — invoking it against a non-timeseries reference kind returns 404. Per `aidocs/platform/191-v2-surface-convergence.md §2`, kind-specific operations must go through an SPI or a kind-discriminated action param, not a sub-path that silently encodes kind.
-- **Fix:** Move to `POST /v2/references/{appId}/actions?action=detect-anomalies`; dispatch via `AnomalyDetectionPlugin` SPI; return 422 for non-timeseries kinds. Requires design doc update in `aidocs/platform/191` for the `/v2/references/{appId}/actions` shape.
-- **AC:** `POST /v2/references/{appId}/detect-anomalies` → 404 (path removed); `POST /v2/references/{appId}/actions?action=detect-anomalies` → 200/202 for timeseries, 422 for other kinds; `mvn verify -pl backend` green.
-- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionRest.java:50`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.1`.
+- **Fix:** Moved to `POST /v2/references/{appId}/actions?action=detect-anomalies` via new `ReferenceActionsRest`; old `AnomalyDetectionRest` deleted; tombstone `AnomalyDetectionTombstoneRest` at old path returns 410 Gone with `Location: /v2/references/{appId}/actions?action=detect-anomalies`; returns 422 for non-timeseries kinds (via `ReferencesV2Service.resolveByAppId`). `aidocs/platform/191` updated with the `/v2/references/{appId}/actions` shape.
+- **AC:** `POST /v2/references/{appId}/detect-anomalies` → 410 Gone (tombstone); `POST /v2/references/{appId}/actions?action=detect-anomalies` → 200 for timeseries, 422 for other kinds; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceActionsRest.java`; `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionTombstoneRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.1`.
 
 ## APISIMP-CROSS-BULK-KIND-PATH — `CrossDoBulkDataRest` encodes `timeseries` kind in path segment `cross-timeseries-bulk` (size: M, sweep: fire-496)
 - **Status:** shipped (fire-512).
