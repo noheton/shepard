@@ -822,6 +822,38 @@ GitHub, w3.org, vendor docs) are fine — those are external
 resources, not Shepard data. The rule is specifically about
 Shepard-owned data.
 
+## Always: the user never types an ID — every selection is a searchable picker
+
+The frontend NEVER requires the user to type, paste, or know an identifier
+(appId/UUID, numeric id, container id, reference id, template id, …). Any field
+whose value IS an entity is a **searchable picker** over the appropriate,
+context-scoped candidate set — the user searches by human-facing name and
+selects; the appId travels invisibly.
+
+1. **No raw-ID inputs.** A free-text field that wants a UUID/appId is a bug.
+   Replace it with a `v-autocomplete` (or `common/Select.vue`) scoped to the
+   valid candidates — e.g. the URDF picker in "Visualize in 3D" lists the
+   `.urdf` FileReferences in context, it does not ask for a pasted UUID.
+2. **Scope the candidate set to context.** The picker shows only entities that
+   make sense here (URDF picker → FileReferences whose name ends `.urdf` or
+   carry the urdf role; channel picker → this container's channels; template
+   picker → templates for this entity kind). Fetch them by the appId already in
+   hand (route param / loaded entity), never make the user supply it.
+3. **Searchable + naturally ordered** per the dropdown rule below — type-to-
+   filter, numeric-aware order.
+4. **A pasted-UUID "advanced override"** may remain for ONE deprecation window
+   behind an explicit "advanced" affordance with a visible warning, but the
+   default path is always the picker. It disappears by the next minor release.
+
+This is the converse of the "UI never asks for paths/URLs" rule (backend
+resolves URLs from References) applied to identity: the UI never asks for IDs,
+it resolves them from a searchable selection. Pairs with the dropdown
+search/natural-order rule and the frontend-v2-only appId rule.
+
+**Reviewers reject** any new frontend field that accepts a raw id/appId/UUID as
+free text where a scoped picker is possible. Audit + tail live under
+`UIRULE-NO-MANUAL-IDS` in `aidocs/16`.
+
 ## Always: dropdowns are searchable and naturally ordered
 
 Every dropdown / select in the frontend (`frontend/`) MUST (a) support
