@@ -26,6 +26,8 @@ export type DataTableElement = {
     resolution?: string | null;
     /** FR1b singleton + Notebook: original upload filename (drives .ipynb detection + download). */
     filename?: string;
+    /** MP4-PROMOTE-VIDEO: file-kind discriminator on File rows (e.g. "video", "pdf", "image"); drives inline-video recognition. */
+    fileKind?: string | null;
     /** FR1b singleton + Notebook: file size in bytes (nullable for pre-FB1a uploads). */
     fileSize?: number | null;
     /** Spatial (SPATIAL-UNIFY): appId of the SpatialDataContainer behind the reference (viewer target). */

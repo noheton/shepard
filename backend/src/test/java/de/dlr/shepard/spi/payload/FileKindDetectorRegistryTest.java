@@ -119,6 +119,44 @@ class FileKindDetectorRegistryTest {
     assertEquals("pdf",   reg.resolveFileKind("pdf"));
   }
 
+  // ─── VideoFileKindDetector tests (MP4-PROMOTE-VIDEO) ──────────────────────
+
+  @Test
+  void video_claimsAllCommonVideoExtensions() {
+    FileKindDetectorRegistry reg = registryWith(new VideoFileKindDetector());
+    for (String ext : new String[] {
+      "mp4", "mov", "m4v", "avi", "mkv", "webm", "mpg", "mpeg", "wmv"
+    }) {
+      assertEquals("video", reg.resolveFileKind(ext), "extension: " + ext);
+    }
+  }
+
+  @Test
+  void video_ignoresNonVideoExtensions() {
+    VideoFileKindDetector detector = new VideoFileKindDetector();
+    assertNull(detector.fileKindFor("pdf"));
+    assertNull(detector.fileKindFor("txt"));
+    assertNull(detector.fileKindFor("urdf"));
+    assertNull(detector.fileKindFor(null));
+    FileKindDetectorRegistry reg = registryWith(detector);
+    assertNull(reg.resolveFileKind("pdf"));
+    assertNull(reg.resolveFileKind("bin"));
+  }
+
+  @Test
+  void video_coexistsWithBuiltin() {
+    FileKindDetectorRegistry reg = registryWith(
+      new BuiltinFileKindDetector(),
+      new VideoFileKindDetector()
+    );
+    // video kinds resolve
+    assertEquals("video", reg.resolveFileKind("mp4"));
+    assertEquals("video", reg.resolveFileKind("webm"));
+    // builtin kinds still resolve
+    assertEquals("pdf", reg.resolveFileKind("pdf"));
+    assertEquals("urdf", reg.resolveFileKind("urdf"));
+  }
+
   // ─── null / unknown extension ─────────────────────────────────────────────
 
   @Test

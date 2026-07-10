@@ -78,11 +78,27 @@ export const mapGitReferenceToDataTableElement = (
 export const isIpynbFilename = (filename: string | undefined | null): boolean =>
   !!filename && filename.toLowerCase().endsWith(".ipynb");
 
+/**
+ * MP4-PROMOTE-VIDEO — true when a table row is a singleton FileReference tagged
+ * fileKind="video". Such rows render the video icon and open to the inline
+ * player, while staying in the "File" row type (not the separate
+ * VideoStreamReference "Video" tab). Exported so the table component and its
+ * tests share one definition.
+ */
+export const isInlineVideoFileRow = (item: DataTableElement): boolean =>
+  item.type === "File" && item.meta.fileKind === "video";
+
 export const mapSingletonFileReferenceToDataTableElement = (
   ref: SingletonFileReferenceIO,
 ): DataTableElement => {
   const filename = ref.file?.filename;
   const isNotebook = isIpynbFilename(filename);
+  // MP4-PROMOTE-VIDEO: a singleton FileReference tagged fileKind="video" is a
+  // playable video. It stays a "File" row (NOT the separate VideoStreamReference
+  // "Video" tab), but the table renders a video icon and the row opens to the
+  // file-reference detail page, which mounts the inline VideoPlayer. Non-video
+  // File singletons keep their non-clickable behaviour (pre-existing).
+  const isVideo = ref.fileKind === "video";
   return {
     type: isNotebook ? "Notebook" : "File",
     name: ref.name,
@@ -90,6 +106,7 @@ export const mapSingletonFileReferenceToDataTableElement = (
       appId: ref.appId,
       filename: filename ?? undefined,
       fileSize: ref.file?.fileSize ?? null,
+      fileKind: ref.fileKind ?? null,
     },
     created: {
       createdAt: ref.createdAt ? new Date(ref.createdAt) : FALLBACK_DATE,
@@ -97,7 +114,9 @@ export const mapSingletonFileReferenceToDataTableElement = (
     },
     actions: {
       elementAppId: ref.appId,
-      showDetails: { enabled: false, pathFragment: "" },
+      showDetails: isVideo
+        ? { enabled: true, pathFragment: fileReferencesPathFragment }
+        : { enabled: false, pathFragment: "" },
     },
   };
 };

@@ -452,9 +452,11 @@ public class SingletonFileReferenceService {
    * {@code .krl|.src → "krl"}, {@code .svdx → "svdx"},
    * {@code .otvis → "otvis"}, {@code .urdf → "urdf"},
    * {@code .xit → "xit"}, {@code .pdf → "pdf"},
-   * {@code .urscript|.script → "urscript"}. Anything else (or a
-   * blank/extension-less name) yields {@code null} — the schema-additive
-   * "absent means unknown" contract.
+   * {@code .urscript|.script → "urscript"}; and by
+   * {@link de.dlr.shepard.spi.payload.VideoFileKindDetector} (MP4-PROMOTE-VIDEO):
+   * {@code .mp4|.mov|.m4v|.avi|.mkv|.webm|.mpg|.mpeg|.wmv → "video"}. Anything
+   * else (or a blank/extension-less name) yields {@code null} — the
+   * schema-additive "absent means unknown" contract.
    *
    * @param filename the original upload filename (may be blank/null).
    * @param file the persisted {@link ShepardFile} (reserved for a future
