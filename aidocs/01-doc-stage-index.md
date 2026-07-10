@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 88 |
+| `fragment` | 89 |
 | `concept` | 41 |
 | `idea` | 13 |
 | `feature-defined` | 135 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 139 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **556** |
+| **total docs** | **557** |
 | **UNTAGGED** | **0** |
 
-## fragment (88)
+## fragment (89)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -82,6 +82,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-02.md`](agent-findings/apisimp-sweep-2026-07-02.md) | APISIMP Sweep — 2026-07-02 (fire-360) | 2026-07-02 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-07.md`](agent-findings/apisimp-sweep-2026-07-07.md) | APISIMP Sweep — 2026-07-07 | 2026-07-07 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md`](agent-findings/apisimp-sweep-2026-07-09-fire500.md) | APISIMP sweep — fire-500 (2026-07-09) | 2026-07-09 | 2026-07-09 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-10.md`](agent-findings/apisimp-sweep-2026-07-10.md) | APISIMP sweep — fire-515 (2026-07-10) | 2026-07-10 | — |
 | [`aidocs/agent-findings/apisimp-sweep-fire355-2026-07-02.md`](agent-findings/apisimp-sweep-fire355-2026-07-02.md) | APISIMP REST Surface Sweep — fire-355 (2026-07-02) | 2026-07-02 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-fire367-2026-07-02.md`](agent-findings/apisimp-sweep-fire367-2026-07-02.md) | APISIMP REST Surface Sweep — fire-367 (2026-07-02) | 2026-07-02 | 2026-07-08 |
 | [`aidocs/agent-findings/apisimp-sweep-fire373-2026-07-02.md`](agent-findings/apisimp-sweep-fire373-2026-07-02.md) | APISIMP REST Surface Sweep — fire-373 (2026-07-02) | 2026-07-02 | 2026-07-08 |
@@ -298,7 +299,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/platform/109-tpl6-network-shaped-data-organisation.md`](platform/109-tpl6-network-shaped-data-organisation.md) | 109 — TPL6: Network-shaped data organisation | 2026-05-26 | 2026-07-08 |
 | [`aidocs/platform/111-tb1-tablecontainer-design.md`](platform/111-tb1-tablecontainer-design.md) | 111 — TB1: TableContainer plugin (`shepard-plugin-tables`) design | 2026-05-31 | 2026-07-08 |
 | [`aidocs/platform/112-v1-sunset-gains-design.md`](platform/112-v1-sunset-gains-design.md) | 112 — What we'd gain by giving up v1 compatibility | 2026-05-31 | 2026-07-08 |
-| [`aidocs/platform/191-v2-surface-convergence.md`](platform/191-v2-surface-convergence.md) | 191 — v2 surface convergence | 2026-06-10 | 2026-07-08 |
+| [`aidocs/platform/191-v2-surface-convergence.md`](platform/191-v2-surface-convergence.md) | 191 — v2 surface convergence | 2026-06-10 | 2026-07-10 |
 | [`aidocs/platform/24-permission-system-review.md`](platform/24-permission-system-review.md) | 24 — Permission-System Review | 2026-05-29 | 2026-07-08 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-07-08 |
 | [`aidocs/platform/51-instance-admin-role.md`](platform/51-instance-admin-role.md) | Instance-Admin Role — Design (A0 + C3 + F8) | 2026-05-23 | 2026-07-08 |
