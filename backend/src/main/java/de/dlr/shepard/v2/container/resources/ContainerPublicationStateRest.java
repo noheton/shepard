@@ -48,7 +48,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * job is to block writes against payload, not against the container's
  * own status field.
  */
-@Path("/v2/containers/{containerAppId}/publication-state")
+@Path("/v2/containers/{appId}/publication-state")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -96,12 +96,12 @@ public class ContainerPublicationStateRest {
   @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Container with that appId.")
   public Response get(
-    @PathParam("containerAppId") String containerAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext sc
   ) {
-    Long ogmId = resolveOrNull(containerAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Container not found",
-      Response.Status.NOT_FOUND, "no Container with appId '" + containerAppId + "'");
+      Response.Status.NOT_FOUND, "no Container with appId '" + appId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
@@ -109,7 +109,7 @@ public class ContainerPublicationStateRest {
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
       return problem("/problems/container-publication-state.forbidden", "Read access required",
         Response.Status.FORBIDDEN,
-        "caller lacks Read on Container '" + containerAppId + "'");
+        "caller lacks Read on Container '" + appId + "'");
     }
     String status = readContainerStatus(ogmId);
     return Response.ok(PublicationStateIO.of(status)).build();
@@ -137,7 +137,7 @@ public class ContainerPublicationStateRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Manage permission and is not an instance-admin.")
   @APIResponse(responseCode = "404", description = "No Container with that appId.")
   public Response patch(
-    @PathParam("containerAppId") String containerAppId,
+    @PathParam("appId") String appId,
     @Valid PublicationStateIO body,
     @Context SecurityContext sc
   ) {
@@ -145,9 +145,9 @@ public class ContainerPublicationStateRest {
       return problem("/problems/publication-state.invalid", "Invalid publication state",
         Response.Status.BAD_REQUEST, "state must be one of " + VALID_STATES);
     }
-    Long ogmId = resolveOrNull(containerAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Container not found",
-      Response.Status.NOT_FOUND, "no Container with appId '" + containerAppId + "'");
+      Response.Status.NOT_FOUND, "no Container with appId '" + appId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
