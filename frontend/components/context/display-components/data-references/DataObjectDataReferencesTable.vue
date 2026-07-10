@@ -57,12 +57,21 @@ function openSemaAnnotationDialog(appId: string, kind: string) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
+const currentRoute = useRoute();
 function showDetails(pathFragment: string, id: number | string) {
+  // Build the reference-detail URL from the CURRENT route's params, which are
+  // already the appId (UUID v7) segments the appId-native routes expect. The
+  // props.collectionId / props.dataObjectId are the numeric Neo4j ids, which
+  // are undefined for appId-loaded entities — using them collapsed the route to
+  // "/collections/" (the reported "timeseries opens the wrong page" bug). `id`
+  // is the reference appId (elementAppId).
+  const collSeg = currentRoute.params.collectionId ?? props.collectionId;
+  const doSeg = currentRoute.params.dataObjectId ?? props.dataObjectId;
   const route =
     collectionsPath +
-    props.collectionId +
+    collSeg +
     dataObjectsPathFragment +
-    props.dataObjectId +
+    doSeg +
     pathFragment +
     id;
   router.push(route);
