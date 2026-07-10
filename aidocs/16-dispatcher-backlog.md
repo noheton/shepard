@@ -4634,7 +4634,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/AnomalyDetectRequestIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F6`.
 
 ## APISIMP-USERGROUP-NUMERIC-PERMS-BLOCK — add 400 block for numeric `readerGroupIds`/`writerGroupIds` in `UserGroupV2Rest` (size: S, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-510).
 - **Why:** `UserGroupV2Rest.java` lines 319, 326: when `readerGroupIds`/`writerGroupIds` are in a PATCH body, the handler calls `Long.parseLong(v.toString())` and persists numeric Neo4j IDs without complaint. `ContainersV2Rest` (lines 1379–1385) already returns 400 with an informative message directing callers to use `readerGroupAppIds`/`writerGroupAppIds` (UUID v7). The `UserGroupV2Rest` gap means callers hit silent data corruption (numeric ID stored, later rejected by the permissions graph) instead of a clear error.
 - **Fix:** Add validation matching `ContainersV2Rest` lines 1379–1385: detect numeric-only strings via `v.toString().matches("\\d+")`, return 400 with message directing to `readerGroupAppIds`/`writerGroupAppIds`.
 - **AC:** `PATCH /v2/user-groups/{appId}` with numeric `readerGroupIds` → 400 with message "use readerGroupAppIds"; with UUID `readerGroupAppIds` → 200; `mvn verify -pl backend` green; unit test covering both branches.

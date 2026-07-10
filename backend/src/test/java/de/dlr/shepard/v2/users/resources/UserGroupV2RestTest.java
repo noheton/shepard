@@ -408,6 +408,60 @@ class UserGroupV2RestTest {
     assertEquals(400, r.getStatus());
   }
 
+  // ── APISIMP-USERGROUP-NUMERIC-PERMS-BLOCK — numeric group ID gate ────────
+
+  static final String GROUP_UUID = "01900000-0000-7000-8000-000000000099";
+
+  @Test
+  void patchPermissions_readerGroupIds_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.putArray("readerGroupIds").add(99);
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_writerGroupIds_returns400() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.putArray("writerGroupIds").add(99);
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_readerGroupAppIds_returns200() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    var readerGroup = stubGroup(GROUP_UUID, "reader-group", 99L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupByAppId(GROUP_UUID)).thenReturn(readerGroup);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    when(service.updateUserGroupPermissions(any(), eq(42L))).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.putArray("readerGroupAppIds").add(GROUP_UUID);
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void patchPermissions_writerGroupAppIds_returns200() {
+    var group = stubGroup(APP_ID, GROUP_NAME, 42L);
+    var writerGroup = stubGroup(GROUP_UUID, "writer-group", 99L);
+    when(service.getUserGroupByAppId(APP_ID)).thenReturn(group);
+    when(service.getUserGroupByAppId(GROUP_UUID)).thenReturn(writerGroup);
+    when(service.getUserGroupPermissions(42L)).thenReturn(stubPermissions());
+    when(service.updateUserGroupPermissions(any(), eq(42L))).thenReturn(stubPermissions());
+    ObjectNode patch = MAPPER.createObjectNode();
+    patch.putArray("writerGroupAppIds").add(GROUP_UUID);
+    Response r = resource.patchUserGroupPermissions(APP_ID, patch);
+    assertEquals(200, r.getStatus());
+  }
+
   // ── APISIMP-USERGROUP-ORDERBY — reflection regression tests ─────────────
 
   @Test
