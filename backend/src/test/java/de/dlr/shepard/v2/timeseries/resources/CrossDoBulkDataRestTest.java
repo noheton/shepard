@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * TS-CROSS-DO-VIEW-1 — unit coverage for
- * {@code POST /v2/data-objects/cross-timeseries-bulk}.
+ * {@code POST /v2/data-objects/cross-bulk?kind=timeseries}.
  *
  * <p>Mirrors the {@code TimeseriesBulkChannelDataRestTest} mocking shape:
  * boundary mocks for DAO + service + permissions + resolver; LTTB step
@@ -85,6 +85,30 @@ public class CrossDoBulkDataRestTest {
     f.set(target, value);
   }
 
+  // ── kind discriminator: missing or unsupported kind → 400 ───────────────
+
+  @Test
+  void missingKind_returns400() {
+    Response resp = resource.getCrossDoBulkData(
+      null,
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      securityContext
+    );
+    assertEquals(400, resp.getStatus());
+    verify(permsMock, never()).filterAllowedDataObjectAppIds(any(), any(), any());
+  }
+
+  @Test
+  void unknownKind_returns400() {
+    Response resp = resource.getCrossDoBulkData(
+      "file",
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      securityContext
+    );
+    assertEquals(400, resp.getStatus());
+    verify(permsMock, never()).filterAllowedDataObjectAppIds(any(), any(), any());
+  }
+
   // ── Auth: unauthenticated caller is rejected ──────────────────────────────
 
   @Test
@@ -93,6 +117,7 @@ public class CrossDoBulkDataRestTest {
     when(anon.getUserPrincipal()).thenReturn(null);
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
       anon
     );
@@ -120,6 +145,7 @@ public class CrossDoBulkDataRestTest {
       .thenReturn(points);
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
       securityContext
     );
@@ -146,6 +172,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_B), PREDICATE, START_NS, END_NS, 500),
       securityContext
     );
@@ -173,6 +200,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_FORBIDDEN, DO_A), PREDICATE, START_NS, END_NS, 500),
       securityContext
     );
@@ -194,6 +222,7 @@ public class CrossDoBulkDataRestTest {
     when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of());
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_UNKNOWN), PREDICATE, START_NS, END_NS, 500),
       securityContext
     );
@@ -227,6 +256,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(
         List.of(DO_A, DO_B, DO_FORBIDDEN, DO_C),
         PREDICATE, START_NS, END_NS, 500
@@ -285,6 +315,7 @@ public class CrossDoBulkDataRestTest {
       .thenReturn(List.of());
 
     resource.getCrossDoBulkData(
+      "timeseries",
       new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B), PREDICATE, START_NS, END_NS, 500),
       securityContext
     );

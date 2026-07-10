@@ -2,7 +2,7 @@
  * TS-CROSS-DO-VIEW-2-FE — composable for the cross-DataObject bulk-data
  * endpoint shipped in TS-CROSS-DO-VIEW-1.
  *
- * Endpoint: POST /v2/data-objects/cross-timeseries-bulk
+ * Endpoint: POST /v2/data-objects/cross-bulk?kind=timeseries
  *
  * Used by the "Cross-track view" pane on Collection detail
  * (`CollectionCrossTrackViewPane.vue`). One predicate, many DataObjects,
@@ -62,7 +62,7 @@ export function useCrossDoBulkData() {
     error.value = null;
     try {
       const headers = await authHeaders();
-      const url = `${v2BaseUrl()}/v2/data-objects/cross-timeseries-bulk`;
+      const url = `${v2BaseUrl()}/v2/data-objects/cross-bulk?kind=timeseries`;
       const response = await fetch(url, {
         method: "POST",
         headers,
