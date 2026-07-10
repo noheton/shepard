@@ -20,6 +20,7 @@ import de.dlr.shepard.context.semantic.entities.Predicate;
 import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import de.dlr.shepard.v2.semantic.io.PredicateIO;
 import de.dlr.shepard.v2.vocabularies.io.VocabularyIO;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -340,6 +341,28 @@ class VocabularyBrowseRestTest {
     assertEquals(3L, body1.total());
     assertEquals(1, body1.items().size());
     assertEquals("v-c", body1.items().get(0).getAppId());
+  }
+
+  // ─── APISIMP-VOCABBROWSE-PATHPARAM: path-annotation regressions ──────────
+
+  @Test
+  void predicates_pathUsesAppId() throws NoSuchMethodException {
+    // {vocabId} → {appId} per APISIMP-VOCABBROWSE-PATHPARAM
+    java.lang.reflect.Method m = VocabularyBrowseRest.class.getMethod(
+        "listPredicatesForVocabulary", String.class, int.class, int.class);
+    Path p = m.getAnnotation(Path.class);
+    assertNotNull(p, "listPredicatesForVocabulary must carry @Path");
+    assertEquals("/{appId}/predicates", p.value());
+  }
+
+  @Test
+  void usedBy_pathUsesAppId() throws NoSuchMethodException {
+    // {entityAppId} → {appId} per APISIMP-VOCABBROWSE-PATHPARAM
+    java.lang.reflect.Method m = VocabularyBrowseRest.class.getMethod(
+        "listVocabulariesUsedBy", String.class, String.class, int.class, int.class);
+    Path p = m.getAnnotation(Path.class);
+    assertNotNull(p, "listVocabulariesUsedBy must carry @Path");
+    assertEquals("/used-by/{appId}", p.value());
   }
 
   // ─── APISIMP-VOCAB-BROWSE-SCOPE-UNDOCUMENTED: @Parameter regression ───────
