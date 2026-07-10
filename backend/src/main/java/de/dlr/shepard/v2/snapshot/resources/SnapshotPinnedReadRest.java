@@ -36,10 +36,10 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * V2c — {@code GET /v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects}.
+ * V2c — {@code GET /v2/collections/{collectionAppId}/snapshots/{appId}/data-objects}.
  *
  * <p>Returns the list of DataObject {@code appId} strings that were captured in
- * the snapshot identified by {@code snapshotAppId}, filtered to only those
+ * the snapshot identified by {@code appId}, filtered to only those
  * {@code entityAppId} values that resolve to a live (non-deleted) {@code :DataObject}
  * node. Collections, References, and soft-deleted entities are excluded.
  *
@@ -53,7 +53,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *   <li>401 when the caller is unauthenticated.</li>
  *   <li>404 when {@code collectionAppId} is not a known Collection.</li>
  *   <li>403 when the caller lacks Read permission on the Collection.</li>
- *   <li>404 when {@code snapshotAppId} is not a known (non-deleted) Snapshot.</li>
+ *   <li>404 when {@code appId} is not a known (non-deleted) Snapshot.</li>
  *   <li>409 when the snapshot's root Collection differs from the requested
  *       {@code collectionAppId} (ownership mismatch).</li>
  *   <li>200 with the filtered DataObject list.</li>
@@ -64,7 +64,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects")
+@Path("/v2/collections/{collectionAppId}/snapshots/{appId}/data-objects")
 @RequestScoped
 @Tag(name = "Snapshots")
 public class SnapshotPinnedReadRest {
@@ -87,7 +87,7 @@ public class SnapshotPinnedReadRest {
    * Returns the DataObject {@code appId} list captured in a snapshot.
    *
    * @param collectionAppId the application-level identifier of the root Collection.
-   * @param snapshotAppId   the application-level identifier of the snapshot.
+   * @param appId   the application-level identifier of the snapshot.
    * @param sc              the JAX-RS security context.
    * @return 200 with a {@link SnapshotDataObjectsIO} payload; 401 unauthenticated;
    *         403 forbidden; 404 unknown Collection or Snapshot; 409 when the
@@ -124,7 +124,7 @@ public class SnapshotPinnedReadRest {
   @APIResponse(responseCode = "409", description = "Snapshot does not belong to the specified Collection.")
   public Response getDataObjects(
     @PathParam("collectionAppId") String collectionAppId,
-    @PathParam("snapshotAppId") String snapshotAppId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).",
       schema = @Schema(minimum = "0", defaultValue = "0"))
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
@@ -142,9 +142,9 @@ public class SnapshotPinnedReadRest {
     if (gate != null) return gate;
 
     // Gate 4 — snapshot exists
-    Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
+    Snapshot snapshot = snapshotService.findByAppId(appId);
     if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
-        "No Snapshot with appId '" + snapshotAppId + "'.");
+        "No Snapshot with appId '" + appId + "'.");
 
     // Gate 5 — snapshot belongs to this collection (ownership check)
     if (
@@ -152,7 +152,7 @@ public class SnapshotPinnedReadRest {
       !collectionAppId.equals(snapshot.getCollection().getAppId())
     ) {
       return problem(PT_CONFLICT, "Conflict", Response.Status.CONFLICT,
-          "Snapshot '" + snapshotAppId + "' does not belong to Collection '" + collectionAppId + "'.");
+          "Snapshot '" + appId + "' does not belong to Collection '" + collectionAppId + "'.");
     }
 
     // DB-side SKIP/LIMIT: count + fetch only the requested window

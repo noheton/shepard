@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * V2b — {@code /v2/snapshots/{snapshotAppId}}.
+ * V2b — {@code /v2/snapshots/{appId}}.
  *
  * <p>Three operations on an existing snapshot:
  * <ul>
@@ -59,7 +59,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/snapshots/{snapshotAppId}")
+@Path("/v2/snapshots/{appId}")
 @RequestScoped
 @Tag(name = "Snapshots")
 public class SnapshotRest {
@@ -80,7 +80,7 @@ public class SnapshotRest {
   /**
    * Read snapshot metadata.
    *
-   * @param snapshotAppId the application-level identifier of the snapshot.
+   * @param appId the application-level identifier of the snapshot.
    * @param sc            the JAX-RS security context.
    * @return 200 with the snapshot metadata; 401 unauthenticated; 403 forbidden;
    *         404 unknown or deleted snapshot.
@@ -99,13 +99,13 @@ public class SnapshotRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the root Collection.")
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
-  public Response read(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
+  public Response read(@PathParam("appId") String appId, @Context SecurityContext sc) {
     // Auth gate
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
-    Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
+    Snapshot snapshot = snapshotService.findByAppId(appId);
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + appId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -116,7 +116,7 @@ public class SnapshotRest {
   /**
    * Read the snapshot manifest with real pagination.
    *
-   * @param snapshotAppId the application-level identifier of the snapshot.
+   * @param appId the application-level identifier of the snapshot.
    * @param page          zero-based page index (default 0).
    * @param pageSize      entries per page, 1–1000 (default 200).
    * @param sc            the JAX-RS security context.
@@ -151,15 +151,15 @@ public class SnapshotRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the root Collection.")
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
   public Response manifest(
-      @PathParam("snapshotAppId") String snapshotAppId,
+      @PathParam("appId") String appId,
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
       @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
-    Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
+    Snapshot snapshot = snapshotService.findByAppId(appId);
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + appId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Read, caller);
     if (gate != null) return gate;
@@ -183,7 +183,7 @@ public class SnapshotRest {
    * soft-deleted. The underlying entity data (VersionableEntity nodes,
    * payloads) is unaffected.
    *
-   * @param snapshotAppId the application-level identifier of the snapshot.
+   * @param appId the application-level identifier of the snapshot.
    * @param sc            the JAX-RS security context.
    * @return 204 on success; 401 unauthenticated; 403 forbidden; 404 unknown
    *         or already-deleted snapshot.
@@ -200,17 +200,17 @@ public class SnapshotRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the root Collection.")
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
-  public Response delete(@PathParam("snapshotAppId") String snapshotAppId, @Context SecurityContext sc) {
+  public Response delete(@PathParam("appId") String appId, @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
 
-    Snapshot snapshot = snapshotService.findByAppId(snapshotAppId);
-    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + snapshotAppId + "'.");
+    Snapshot snapshot = snapshotService.findByAppId(appId);
+    if (snapshot == null) return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, "No Snapshot with appId '" + appId + "'.");
 
     Response gate = checkCollectionAccess(snapshot, AccessType.Write, caller);
     if (gate != null) return gate;
 
-    snapshotService.deleteSnapshot(snapshotAppId);
+    snapshotService.deleteSnapshot(appId);
     return Response.noContent().build();
   }
 
