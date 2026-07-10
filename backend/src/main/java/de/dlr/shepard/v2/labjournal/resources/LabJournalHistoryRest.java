@@ -35,7 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * J1d — {@code GET /v2/lab-journal/{entryAppId}/history}.
+ * J1d — {@code GET /v2/lab-journal/{appId}/history}.
  *
  * <p>Returns the append-only revision history of a lab journal entry —
  * one element per edit, ordered newest revision first. Each revision
@@ -73,7 +73,7 @@ public class LabJournalHistoryRest {
   /**
    * List the edit history of a lab journal entry.
    *
-   * @param entryAppId the application-level identifier of the {@code LabJournalEntry}.
+   * @param appId the application-level identifier of the {@code LabJournalEntry}.
    * @param page       0-based page index (default 0).
    * @param pageSize   items per page, 1–200 (default 50).
    * @param sc         the JAX-RS security context providing the caller identity.
@@ -82,13 +82,13 @@ public class LabJournalHistoryRest {
    *         entry is deleted.
    */
   @GET
-  @Path("/{entryAppId}/history")
+  @Path("/{appId}/history")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
     operationId = "history",
     summary = "List the edit history of a lab journal entry.",
     description =
-      "Returns a paginated, append-only revision list for the entry identified by entryAppId. " +
+      "Returns a paginated, append-only revision list for the entry identified by appId. " +
       "Each element captures the entry's content as it existed immediately before " +
       "the corresponding update was applied. Revisions are ordered newest first " +
       "(highest revisionNumber first). An empty items array is returned when the entry " +
@@ -115,7 +115,7 @@ public class LabJournalHistoryRest {
     description = "No LabJournalEntry with that appId, or the entry is deleted."
   )
   public Response history(
-      @PathParam("entryAppId") String entryAppId,
+      @PathParam("appId") String appId,
       @Parameter(description = "Zero-based page index (default 0).")
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(description = "Page size, 1–200 (default 50).")
@@ -126,8 +126,8 @@ public class LabJournalHistoryRest {
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
     // Resolve entry — null or deleted → 404
-    LabJournalEntry entry = labJournalEntryDAO.findByAppId(entryAppId);
-    if (entry == null || entry.isDeleted()) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No LabJournalEntry with appId: " + entryAppId);
+    LabJournalEntry entry = labJournalEntryDAO.findByAppId(appId);
+    if (entry == null || entry.isDeleted()) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No LabJournalEntry with appId: " + appId);
 
     // Permission check via parent DataObject
     var dataObject = entry.getDataObject();
