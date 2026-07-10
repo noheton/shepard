@@ -104,6 +104,9 @@ public class ReferencesV2Rest {
   @Inject
   PermissionsService permissionsService;
 
+  @Inject
+  de.dlr.shepard.v2.references.services.AccessibleUrdfService accessibleUrdfService;
+
   // ─── create ────────────────────────────────────────────────────────────
 
   @POST
@@ -156,6 +159,50 @@ public class ReferencesV2Rest {
     } catch (NotFoundException nfe) {
       return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "no DataObject found with appId: " + dataObjectAppId);
     }
+  }
+
+  // ─── accessible-URDF list (searchable picker) ────────────────────────────
+
+  @GET
+  @Path("/urdf")
+  @Operation(
+    operationId = "listAccessibleUrdf",
+    summary = "List URDF singleton FileReferences the caller may read, instance-wide.",
+    description =
+      "URDF-FILEREF-PICKER-SEARCHABLE — powers the \"Visualize in 3D → URDF\" searchable " +
+      "picker. Returns every `.urdf` singleton FileReference (name ends `.urdf` " +
+      "case-insensitive OR fileKind=urdf) that the caller may Read, across ALL collections, " +
+      "permission-filtered against each reference's parent Collection. Each item carries " +
+      "`{appId, name, dataObjectAppId, collectionAppId, collectionName}` so the picker can " +
+      "render a disambiguating \"<name> — <collection>\" label.\n\n" +
+      "This complements `GET /v2/references?kind=file&fileKind=urdf&dataObjectAppId=…`, which " +
+      "is scoped to a single DataObject — the 3D dialog usually opens from a timeseries whose " +
+      "DataObject has no URDF, so a broad, permission-filtered search is required.\n\n" +
+      "Optional `q` is a case-insensitive substring name filter. Results are paged " +
+      "(`page`/`pageSize`); `total` reflects the count after permission + `q` filtering. " +
+      "Fail-soft: returns an empty page rather than 500 on backend error."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Paged envelope of accessible URDF references.",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = @Schema(implementation = PagedResponseIO.class)
+    )
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response listAccessibleUrdf(
+    @Parameter(name = "q", description = "Optional case-insensitive substring filter on the reference name (e.g. \"kr210\").")
+    @QueryParam("q") String q,
+    @Parameter(name = "page", description = "Zero-based page index. Defaults to 0.")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(name = "pageSize", description = "Maximum items per page. Range [1, 200]. Defaults to 50.")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
+    @Context SecurityContext sc
+  ) {
+    String caller = callerOrNull(sc);
+    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to list URDF references");
+    return Response.ok(accessibleUrdfService.listAccessible(caller, q, page, pageSize)).build();
   }
 
   // ─── get-one ───────────────────────────────────────────────────────────

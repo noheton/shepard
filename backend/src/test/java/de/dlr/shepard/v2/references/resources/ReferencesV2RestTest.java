@@ -455,4 +455,52 @@ class ReferencesV2RestTest {
     assertNotNull(ann, "uploadContent.filename must carry @Parameter annotation");
     assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for uploadContent.filename");
   }
+
+  // ─── accessible-URDF list (URDF-FILEREF-PICKER-SEARCHABLE) ─────────────────
+
+  @Test
+  void listAccessibleUrdf_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.listAccessibleUrdf("kr210", 0, 50, securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void listAccessibleUrdf_returns200AndDelegatesToService() {
+    resource.accessibleUrdfService = org.mockito.Mockito.mock(
+        de.dlr.shepard.v2.references.services.AccessibleUrdfService.class);
+    var io = new de.dlr.shepard.v2.references.io.AccessibleUrdfIO(
+        "ref-kr210", "kr210-r2700-urdf", "do-A", "coll-A", "MFFD RDK");
+    var envelope = new PagedResponseIO<>(List.of(io), 1L, 0, 50);
+    when(resource.accessibleUrdfService.listAccessible(eq(CALLER), eq("kr210"), eq(0), eq(50)))
+        .thenReturn(envelope);
+
+    var r = resource.listAccessibleUrdf("kr210", 0, 50, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    var body = (PagedResponseIO<de.dlr.shepard.v2.references.io.AccessibleUrdfIO>) r.getEntity();
+    assertEquals(1, body.total());
+    assertEquals("ref-kr210", body.items().get(0).appId());
+    assertEquals("MFFD RDK", body.items().get(0).collectionName());
+    verify(resource.accessibleUrdfService).listAccessible(eq(CALLER), eq("kr210"), eq(0), eq(50));
+  }
+
+  /**
+   * Pins the JAX-RS literal-vs-template contract at the source level: the
+   * accessible-URDF list is a literal {@code @Path("/urdf")} method with no path
+   * param, so RESTEasy routes {@code GET /v2/references/urdf} to it rather than
+   * to the {@code @Path("/{appId}")} get-one. If someone ever renamed the literal
+   * to a templated path, {@code /urdf} would silently be swallowed by get-one.
+   */
+  @Test
+  void listAccessibleUrdf_isMappedToLiteralUrdfPath() throws NoSuchMethodException {
+    java.lang.reflect.Method m = ReferencesV2Rest.class.getMethod(
+        "listAccessibleUrdf", String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    var path = m.getAnnotation(jakarta.ws.rs.Path.class);
+    assertNotNull(path, "listAccessibleUrdf must carry @Path");
+    assertEquals("/urdf", path.value(), "literal /urdf beats the /{appId} template");
+    assertNotNull(m.getAnnotation(jakarta.ws.rs.GET.class), "listAccessibleUrdf must be a @GET");
+  }
 }

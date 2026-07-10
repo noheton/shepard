@@ -14,8 +14,18 @@
  * any FileReference with a urn:shepard:urdf:role semantic annotation (checked
  * client-side via a name-suffix heuristic — full annotation lookup is deferred).
  *
- * Design: aidocs/platform/191 §4, backlog UI-GAP-1 slice 2 + URDF-REF-PICKER.
+ * URDF-FILEREF-PICKER-SEARCHABLE — useFetchAccessibleUrdfOptions is the
+ * instance-wide, permission-filtered, search-as-you-type variant. It calls
+ * GET /v2/references/urdf (a dedicated backend list) so the "Visualize in 3D →
+ * URDF" picker is genuinely populated even when the current DataObject has no
+ * URDF (the real robot model usually lives in another collection). The user
+ * searches by name and never pastes a UUID (the "user never types an ID" rule).
+ *
+ * Design: aidocs/platform/191 §4, backlog UI-GAP-1 slice 2 + URDF-REF-PICKER +
+ * URDF-FILEREF-PICKER-SEARCHABLE.
  */
+
+import { naturalSort } from "~/utils/naturalSort";
 
 export interface ReferenceOption {
   appId: string;
@@ -122,6 +132,104 @@ export function useFetchReferenceOptions(
 /** Filter applied to URDF file-reference picks: name must end with .urdf (case-insensitive). */
 export function isUrdfName(name: string): boolean {
   return name.toLowerCase().endsWith(".urdf");
+}
+
+// ── URDF-FILEREF-PICKER-SEARCHABLE ──────────────────────────────────────────
+
+/** One accessible-URDF row as returned by GET /v2/references/urdf. */
+export interface AccessibleUrdfItem {
+  appId: string;
+  name: string;
+  dataObjectAppId?: string;
+  collectionAppId?: string | null;
+  collectionName?: string | null;
+}
+
+/** Debounce window for search-as-you-type on the accessible-URDF picker (ms). */
+export const URDF_SEARCH_DEBOUNCE_MS = 300;
+
+/**
+ * Pure helper — maps accessible-URDF API rows to naturally-sorted picker
+ * options. The label is "<name> — <collection>" so the user disambiguates the
+ * same-named URDF across collections; when the collection is unknown the bare
+ * name is used. Exported for unit testing.
+ */
+export function mapAccessibleUrdfOptions(items: AccessibleUrdfItem[]): ReferenceOption[] {
+  const opts = items.flatMap((it): ReferenceOption[] => {
+    if (!it.appId) return [];
+    const coll = it.collectionName?.trim();
+    const label = coll ? `${it.name} — ${coll}` : it.name;
+    return [{ appId: it.appId, label, kind: "file" }];
+  });
+  // UIRULE-DROPDOWN-SEARCH-SORT: numeric-aware order so "kr210-2" precedes "kr210-10".
+  return naturalSort(opts, (o) => o.label);
+}
+
+/**
+ * Search-as-you-type composable for the instance-wide accessible-URDF picker.
+ * Debounces the query, calls GET /v2/references/urdf, and exposes the mapped +
+ * naturally-sorted options. Fail-soft: a fetch error yields an empty list (the
+ * dialog keeps its "advanced: paste appId" fallback).
+ */
+export function useFetchAccessibleUrdfOptions() {
+  const query = ref("");
+  const options = ref<ReferenceOption[]>([]);
+  const isLoading = ref(false);
+
+  // Accumulate loaded options across queries so an already-selected URDF never
+  // vanishes when a later, narrower query returns a different page (the classic
+  // remote-autocomplete "selection disappears" glitch). The set is bounded by
+  // the instance's URDF count (sparse), so growth is a non-issue.
+  const cache = new Map<string, ReferenceOption>();
+
+  let debounce: ReturnType<typeof setTimeout> | null = null;
+  let runId = 0;
+
+  async function run(q: string): Promise<void> {
+    const myRun = ++runId;
+    isLoading.value = true;
+    try {
+      const { data: session } = useAuth();
+      const accessToken = session.value?.accessToken as string | undefined;
+      const baseUrl = buildV2BaseUrl();
+      const params = new URLSearchParams({ pageSize: "50" });
+      if (q.trim().length > 0) params.set("q", q.trim());
+      const response = await fetch(`${baseUrl}/v2/references/urdf?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken ?? ""}`,
+          Accept: "application/json",
+        },
+      });
+      if (myRun !== runId) return; // superseded by a newer query
+      if (!response.ok) return; // keep whatever is already cached; fail-soft
+      const body = (await response.json()) as { items?: AccessibleUrdfItem[] };
+      if (myRun !== runId) return;
+      for (const opt of mapAccessibleUrdfOptions(Array.isArray(body.items) ? body.items : [])) {
+        cache.set(opt.appId, opt);
+      }
+      options.value = naturalSort([...cache.values()], (o) => o.label);
+    } catch {
+      // fail-soft: keep already-cached options
+    } finally {
+      if (myRun === runId) isLoading.value = false;
+    }
+  }
+
+  /** Force a fetch now (used to populate on dialog open). */
+  function refresh() {
+    void run(query.value);
+  }
+
+  watch(query, (next) => {
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => void run(next), URDF_SEARCH_DEBOUNCE_MS);
+  });
+
+  onUnmounted(() => {
+    if (debounce) clearTimeout(debounce);
+  });
+
+  return { query, options, isLoading, refresh };
 }
 
 /**
