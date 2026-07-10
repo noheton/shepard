@@ -4671,7 +4671,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/git/resources/GitReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F3`.
 
 ## APISIMP-COLL-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/collections` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** in-progress (fire-517, PR branch `APISIMP-COLL-NAME-TO-Q-1`).
 - **Why:** `CollectionV2Rest.java:172` uses `@QueryParam(Constants.QP_NAME)` (`?name=`) as its text filter. APISIMP-CONTAINERS-NAME-TO-Q (fire-510) and APISIMP-DO-NAME-TO-Q (fire-510) renamed `?name=` on containers and data-objects; collections is the third endpoint still using the non-standard param name.
 - **Fix:** Rename the param to `@QueryParam("q") String q`; add a `@Deprecated @QueryParam("name") String nameLegacy` backward-compat alias that produces `Deprecation: true` response header. Update OpenAPI description. Same pattern as the two already-merged siblings.
 - **AC:** `grep -n '"name"' backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java | grep '@QueryParam'` returns only the deprecated-alias line; `mvn verify -pl backend` green; `npm run test` green.
