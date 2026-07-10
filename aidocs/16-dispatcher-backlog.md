@@ -4627,11 +4627,11 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F5`.
 
 ## APISIMP-ANOMALY-5TUPLE-ADD-UUID — add `channelAppId` as alternative channel selector in `AnomalyDetectRequestIO` (size: M, sweep: fire-500)
-- **Status:** queued.
+- **Status:** shipped (fire-511).
 - **Why:** `AnomalyDetectRequestIO.java` — the request body for `POST /v2/anomaly-detection/detect` — accepts a channel selector exclusively as the 5-tuple (`measurement`, `device`, `location`, `symbolicName`, `field`). The live-window endpoint already supports both the 5-tuple AND `channelAppId` as alternatives (per APISIMP-TIMESERIES-APPID-MIGRATION). Clients that hold a channel `appId` must expand it into 5 fields before calling detect — a round-trip the endpoint should absorb. Note: APISIMP-ANOMALY-ACTION-PATH (fire-496) covers the path routing; this row is strictly about the body schema.
-- **Fix:** Add `@Nullable UUID channelAppId` to `AnomalyDetectRequestIO`. In the handler, if `channelAppId` is non-null, resolve to the 5-tuple via `TimeseriesChannelService.findByAppId()`; validate that exactly one of (5-tuple, channelAppId) is provided. Return 422 if both or neither are present.
-- **AC:** `POST /v2/anomaly-detection/detect` with only `channelAppId` → 200; with full 5-tuple → 200; with both → 422; with neither → 422; `mvn verify -pl backend` green; OpenAPI spec shows `channelAppId` as an alternative.
-- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/AnomalyDetectRequestIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F6`.
+- **Fix:** Added `channelAppId` String field to `AnomalyDetectRequestIO` and `hasTupleSelector()` helper. Rewrote `selectSeries()` in `AnomalyDetectionRest` to handle: (a) `channelAppId`-only → match by `ReferencedTimeseriesNodeEntity.appId`, 400 if not found; (b) both selectors → 422; (c) 5-tuple filter path unchanged; (d) auto-select when ref has exactly one series unchanged. Updated OpenAPI annotations and added 5 new unit tests in `AnomalyDetectionRestTest`. Neither requires a `TimeseriesChannelService` lookup — the reference's in-memory list is filtered directly.
+- **AC:** `POST /v2/references/{appId}/detect-anomalies` with only `channelAppId` → 200; with full 5-tuple → 200; with both → 422; with unknown `channelAppId` → 400; with neither → 400 if multiple series, 200 if exactly one; OpenAPI spec shows `channelAppId` as an alternative selector.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/AnomalyDetectRequestIO.java`; `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionRest.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire500.md §F6`.
 
 ## APISIMP-USERGROUP-NUMERIC-PERMS-BLOCK — add 400 block for numeric `readerGroupIds`/`writerGroupIds` in `UserGroupV2Rest` (size: S, sweep: fire-500)
 - **Status:** shipped (fire-510).
