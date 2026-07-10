@@ -152,4 +152,15 @@ class CollectionWatchesRestTest {
     org.junit.jupiter.api.Assertions.assertNotNull(ann, "pageSize must carry @Parameter annotation");
     assertTrue(ann.description() != null && !ann.description().isBlank());
   }
+
+  @Test
+  void classPath_usesAppId() {
+    // APISIMP-COLLWATCHES-PATHPARAM regression: class-level @Path must use {appId}, not {collectionAppId}.
+    var pathAnn = CollectionWatchesRest.class.getAnnotation(jakarta.ws.rs.Path.class);
+    org.junit.jupiter.api.Assertions.assertNotNull(pathAnn, "CollectionWatchesRest must carry @Path");
+    assertTrue(pathAnn.value().contains("{appId}"),
+        "class-level @Path must contain {appId}, got: " + pathAnn.value());
+    org.junit.jupiter.api.Assertions.assertFalse(pathAnn.value().contains("{collectionAppId}"),
+        "class-level @Path must NOT contain {collectionAppId}, got: " + pathAnn.value());
+  }
 }

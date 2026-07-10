@@ -4817,14 +4817,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:164,228`.
 
 ## APISIMP-MEROLE-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `MeRoleInRest` (size: XS, fire-526)
-- **Status:** 🔄 in-flight (fire-531, branch `APISIMP-MEROLE-PATHPARAM-1`).
+- **Status:** ✅ done (fire-532, PR #2465, sha `4c1a26206fa1ab3efaf31e48c45298ec6d974204`).
 - **Why:** `MeRoleInRest.java` declares `@Path("/v2/users/me/role-in/{collectionAppId}")` at the class level with one method `@PathParam("collectionAppId")` binding at line 88. Single-ID context — rename to `{appId}` per v2 convention.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path`, `@PathParam` binding, and local variable usage.
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java` returns empty; `mvn -q test-compile -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java:88`.
 
 ## APISIMP-COLLWATCHES-PATHPARAM — rename `{collectionAppId}` → `{appId}` class-level path-param in `CollectionWatchesRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** 🔄 in-flight (fire-532, branch `APISIMP-COLLWATCHES-PATHPARAM-1`).
 - **Why:** `CollectionWatchesRest.java` declares `@Path("/v2/collections/{collectionAppId}/watched-containers")` at the class level with method bindings at lines 109 and 160. The DELETE method at line ~198 adds a second param `{watchAppId}` — renaming the class-level param to `{appId}` introduces no JAX-RS ambiguity since the two names remain distinct.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and method bindings at lines 109, 160 plus local variable usages. Leave `{watchAppId}` unchanged (distinct secondary ID in the DELETE sub-path).
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java` returns empty; `mvn -q test-compile -pl backend` green.
