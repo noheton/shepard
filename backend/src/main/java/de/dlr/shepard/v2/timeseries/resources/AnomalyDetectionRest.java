@@ -110,8 +110,7 @@ public class AnomalyDetectionRest {
 
     // Conflict: both selectors provided
     if (hasChannelAppId && hasTuple) {
-      out[0] = problem("anomaly-detection.bad-request", "Unprocessable Entity",
-        Response.Status.fromStatusCode(422),
+      out[0] = problem("anomaly-detection.bad-request", "Unprocessable Entity", 422,
         "Provide either channelAppId or the 5-tuple fields (measurement/device/location/" +
           "symbolicName/field), not both.");
       return null;
