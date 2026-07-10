@@ -49,7 +49,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * adder — checked at create time and reflected in the
  * `containerAvailability` token at list time.
  */
-@Path("/v2/collections/{collectionAppId}/watched-containers")
+@Path("/v2/collections/{appId}/watched-containers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -66,7 +66,7 @@ public class CollectionWatchesRest {
     summary = "List containers this Collection is watching (WATCH1).",
     description =
       "Returns one `WatchIO` row per `:Watch` edge attached to the " +
-      "Collection identified by `collectionAppId`. A Watch is a link from " +
+      "Collection identified by `appId`. A Watch is a link from " +
       "a Collection to a Container the Collection does NOT own through any " +
       "DataObject reference — useful for live-data Collections that surface " +
       "containers shared from elsewhere (e.g. the home-showcase demo " +
@@ -89,7 +89,7 @@ public class CollectionWatchesRest {
       "Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
       "(1–200) to receive a slice. Omit both to return all watches. " +
       "`X-Total-Count` header carries the total before paging.\n\n" +
-      "Next step: `POST /v2/collections/{collectionAppId}/watched-containers` " +
+      "Next step: `POST /v2/collections/{appId}/watched-containers` " +
       "to add a watch, or click the target container's appId in the UI."
   )
   @APIResponse(
@@ -106,14 +106,14 @@ public class CollectionWatchesRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
-      @PathParam("collectionAppId") @NotBlank String collectionAppId,
+      @PathParam("appId") @NotBlank String appId,
       @Parameter(description = "Zero-based page index (default 0).")
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(description = "Page size, 1–200 (default 50).")
       @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize) {
-    long total = service.count(collectionAppId);
+    long total = service.count(appId);
     int skip = page * pageSize;
-    List<WatchIO> items = service.list(collectionAppId, skip, pageSize);
+    List<WatchIO> items = service.list(appId, skip, pageSize);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
@@ -125,7 +125,7 @@ public class CollectionWatchesRest {
     summary = "Add a Watch link from a Collection to a Container (WATCH1).",
     description =
       "Creates a `:Watch` edge from the Collection identified by " +
-      "`collectionAppId` to the Container identified by the body. The " +
+      "`appId` to the Container identified by the body. The " +
       "target container is NOT modified — only a new graph edge is added.\n\n" +
       "Body fields (all required):\n" +
       "  - `containerKind` (one of `TIMESERIES`, `FILE`, `STRUCTURED_DATA`).\n" +
@@ -143,7 +143,7 @@ public class CollectionWatchesRest {
       "noise).\n\n" +
       "Side effects: ProvenanceCaptureFilter records a `CREATE` Activity on " +
       "the new Watch's appId.\n\n" +
-      "Next step: `GET /v2/collections/{collectionAppId}/watched-containers` " +
+      "Next step: `GET /v2/collections/{appId}/watched-containers` " +
       "to confirm the list, or `DELETE ../watched-containers/{watchAppId}` " +
       "to remove."
   )
@@ -157,7 +157,7 @@ public class CollectionWatchesRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection, or Read on the target Container.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response create(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = CreateWatchIO.class))
@@ -168,7 +168,7 @@ public class CollectionWatchesRest {
       return problem("/problems/watches.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
           "containerKind and containerAppId are required");
     }
-    WatchIO out = service.create(collectionAppId, body.containerKind(), body.containerAppId());
+    WatchIO out = service.create(appId, body.containerKind(), body.containerAppId());
     return Response.status(Response.Status.CREATED).entity(out).build();
   }
 
@@ -179,7 +179,7 @@ public class CollectionWatchesRest {
     summary = "Remove a Watch link by its appId (WATCH1).",
     description =
       "Deletes the `:Watch` edge identified by `watchAppId` from the " +
-      "Collection identified by `collectionAppId`. The target Container is " +
+      "Collection identified by `appId`. The target Container is " +
       "untouched — only the edge is removed.\n\n" +
       "Idempotency: deleting a non-existent or already-deleted Watch " +
       "returns 204 without error.\n\n" +
@@ -194,10 +194,10 @@ public class CollectionWatchesRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
   @APIResponse(responseCode = "404", description = "Watch exists but belongs to a different Collection.")
   public Response delete(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @PathParam("watchAppId") @NotBlank String watchAppId
   ) {
-    service.delete(collectionAppId, watchAppId);
+    service.delete(appId, watchAppId);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 }
