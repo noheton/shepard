@@ -457,4 +457,12 @@ class BundleGroupsV2RestTest {
     when(fileUpload.uploadedFile()).thenReturn(Path.of("/tmp/dummy"));
     assertEquals(400, resource.uploadFileIntoGroup(BUNDLE_APP_ID, GROUP_APP_ID, fileUpload, securityContext).getStatus());
   }
+
+  // ─── pageSize cap regression (APISIMP-BUNDLEGROUPS-PAGECAP) ─────────────
+
+  @Test
+  void maxFilesPageSize_isAtMost200() {
+    assertEquals(200, BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE,
+        "APISIMP-BUNDLEGROUPS-PAGECAP: MAX_FILES_PAGE_SIZE must not exceed the v2-standard 200");
+  }
 }

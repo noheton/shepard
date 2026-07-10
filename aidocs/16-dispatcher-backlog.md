@@ -4831,8 +4831,8 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java:109,160`.
 
 ## APISIMP-BUNDLEGROUPS-PAGECAP — lower `BundleGroupsV2Rest` pageSize @Max 1000 → 200 (size: XS, fire-526)
-- **Status:** 🔲 queued.
-- **Why:** `BundleGroupsV2Rest.java:369` declares `@Max(1000)` on `pageSize` (default already 200). Standard v2 pagination cap is `@Max(200)`. The oversized cap lets a caller request 5× the intended maximum. Identical pattern to `APISIMP-REFANNOT-PAGECAP` (fire-519) and `APISIMP-SNAPSHOT-PAGECAP` (fire-524, PR #2451).
-- **Fix:** Change `@Max(1000)` → `@Max(200)` at `BundleGroupsV2Rest.java:369`. No other changes.
-- **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java | grep 'pageSize'` shows `@Max(200)`; `mvn -q test-compile -pl backend` green.
+- **Status:** ✅ shipped (fire-533, PR #2467).
+- **Why:** `BundleGroupsV2Rest.java:369` declared `@Max(1000)` on `pageSize` (default already 200). Standard v2 pagination cap is `@Max(200)`. The oversized cap let a caller request 5× the intended maximum. Identical pattern to `APISIMP-REFANNOT-PAGECAP` (fire-519) and `APISIMP-SNAPSHOT-PAGECAP` (fire-524, PR #2451).
+- **Fix:** `@Max(1000)` → `@Max(200)` at `listGroupFiles`; `MAX_FILES_PAGE_SIZE` constant corrected to 200; OpenAPI description updated; regression test `maxFilesPageSize_isAtMost200` added.
+- **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java | grep 'pageSize'` shows `@Max(200)`. ✅
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:369`.
