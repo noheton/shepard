@@ -4789,14 +4789,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java:47,83,92,98`.
 
 ## APISIMP-COLLWATCHERS-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `CollectionWatchersRest` (size: XS, fire-526)
-- **Status:** ✅ in-flight (fire-527, PR pending).
+- **Status:** ✅ shipped (fire-528, PR #2461, sha `74d8a8dc`).
 - **Why:** `CollectionWatchersRest.java` declares `@Path("/v2/collections/{collectionAppId}/watches")` at the class level with four method bindings at lines 89, 128, 157, 178. The resource type is expressed by `/v2/collections/`; only one path param per method — no JAX-RS collision.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and all four `@PathParam("collectionAppId")` bindings plus local variable usages.
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java` returns empty; `mvn -q test-compile -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java:89,128,157,178`.
 
 ## APISIMP-CONTAINERPUBSTATE-PATHPARAM — rename `{containerAppId}` → `{appId}` path-param in `ContainerPublicationStateRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** ✅ in-flight (fire-528, PR pending).
 - **Why:** `ContainerPublicationStateRest.java` declares `@Path("/v2/containers/{containerAppId}/publication-state")` with two method `@PathParam("containerAppId")` bindings at lines 99, 140. The resource type is expressed by `/v2/containers/`; only one path param per method.
 - **Fix:** Rename `{containerAppId}` → `{appId}` in the class-level `@Path` and both `@PathParam` bindings plus local variable usages.
 - **AC:** `grep -n 'containerAppId' backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java` returns empty; `mvn -q test-compile -pl backend` green.

@@ -148,6 +148,6 @@ class ContainerPublicationStateRestTest {
   void container_pathOnV2Shelf() {
     Path p = ContainerPublicationStateRest.class.getAnnotation(Path.class);
     assertNotNull(p);
-    assertEquals("/v2/containers/{containerAppId}/publication-state", p.value());
+    assertEquals("/v2/containers/{appId}/publication-state", p.value());
   }
 }
