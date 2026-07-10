@@ -49,7 +49,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * can be flipped back to READY — the guard's purpose is to block writes
  * <em>on children</em>, not on the parent's own state field.
  */
-@Path("/v2/collections/{collectionAppId}/publication-state")
+@Path("/v2/collections/{appId}/publication-state")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -90,19 +90,19 @@ public class CollectionPublicationStateRest {
   @APIResponse(responseCode = "401", description = "Request is not authenticated.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response get(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext sc
   ) {
-    Long ogmId = resolveOrNull(collectionAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found",
-      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
+      Response.Status.NOT_FOUND, "no Collection with appId '" + appId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
       Response.Status.UNAUTHORIZED, "caller identity unknown");
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
       return problem("/problems/publication-state.forbidden", "Read access required",
-        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + appId + "'");
     }
 
     String status = readCollectionStatus(ogmId);
@@ -134,7 +134,7 @@ public class CollectionPublicationStateRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Manage permission and is not an instance-admin.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response patch(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Valid PublicationStateIO body,
     @Context SecurityContext sc
   ) {
@@ -143,9 +143,9 @@ public class CollectionPublicationStateRest {
         Response.Status.BAD_REQUEST, "state must be one of " + VALID_STATES);
     }
 
-    Long ogmId = resolveOrNull(collectionAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found",
-      Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
+      Response.Status.NOT_FOUND, "no Collection with appId '" + appId + "'");
 
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",

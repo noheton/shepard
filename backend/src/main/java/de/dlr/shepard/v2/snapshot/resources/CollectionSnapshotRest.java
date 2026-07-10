@@ -38,7 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * V2b — {@code /v2/collections/{collectionAppId}/snapshots}.
+ * V2b — {@code /v2/collections/{appId}/snapshots}.
  *
  * <p>Two operations:
  * <ul>
@@ -50,14 +50,14 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>Auth model: piggybacks on the Collection's permission node — the same
  * gate used by all other {@code /v2/collections/{appId}/...} endpoints.
- * 401 unauthenticated; 404 unknown collectionAppId; 403 permission denied.
+ * 401 unauthenticated; 404 unknown appId; 403 permission denied.
  *
  * <p>Cross-references: {@code aidocs/41} §5; {@code aidocs/16} V2b;
  * API-version policy (CLAUDE.md — all new endpoints under {@code /v2/}).
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/collections/{collectionAppId}/snapshots")
+@Path("/v2/collections/{appId}/snapshots")
 @RequestScoped
 @Tag(name = "Snapshots")
 public class CollectionSnapshotRest {
@@ -79,7 +79,7 @@ public class CollectionSnapshotRest {
    * and records the current {@code revision} counter of every
    * {@code :VersionableEntity} found.
    *
-   * @param collectionAppId the application-level identifier of the root Collection.
+   * @param appId the application-level identifier of the root Collection.
    * @param body            the snapshot creation request (name + description).
    * @param sc              the JAX-RS security context.
    * @return 201 with the newly created {@link SnapshotIO}; 400 when
@@ -92,7 +92,7 @@ public class CollectionSnapshotRest {
     summary = "Create a Snapshot of a Collection's current state (V2b).",
     description =
       "Creates a point-in-time `:Snapshot` of the Collection identified by " +
-      "`collectionAppId`. The server walks the Collection subtree up to 15 " +
+      "`appId`. The server walks the Collection subtree up to 15 " +
       "hops deep and records the current `revision` counter of every " +
       "`:VersionableEntity` (DataObject, Reference, …) it reaches. The " +
       "resulting Snapshot is immutable — future writes to the underlying " +
@@ -109,7 +109,7 @@ public class CollectionSnapshotRest {
       "Side effects: a `:Snapshot` node plus one `:SnapshotEntry` per " +
       "reachable VersionableEntity. ProvenanceCaptureFilter records a " +
       "`CREATE` Activity addressable at `GET /v2/provenance/entity/{appId}`.\n\n" +
-      "Next step: `GET /v2/collections/{collectionAppId}/snapshots` to list, " +
+      "Next step: `GET /v2/collections/{appId}/snapshots` to list, " +
       "`GET /v2/snapshots/{appId}` for metadata, or " +
       "`GET /v2/snapshots/{appId}/manifest` for the per-entity entries."
   )
@@ -123,7 +123,7 @@ public class CollectionSnapshotRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response create(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     SnapshotIO body,
     @Context SecurityContext sc
   ) {
@@ -132,16 +132,16 @@ public class CollectionSnapshotRest {
           "name is required and must be non-blank");
     }
 
-    Response gate = checkAccess(collectionAppId, AccessType.Write, sc);
+    Response gate = checkAccess(appId, AccessType.Write, sc);
     if (gate != null) return gate;
 
     String caller = sc.getUserPrincipal().getName();
     Snapshot snapshot;
     try {
-      snapshot = snapshotService.createSnapshot(collectionAppId, body.name(), body.description(), caller);
+      snapshot = snapshotService.createSnapshot(appId, body.name(), body.description(), caller);
     } catch (NotFoundException nfe) {
       return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
-          "No Collection with appId '" + collectionAppId + "'.");
+          "No Collection with appId '" + appId + "'.");
     }
 
     return Response.status(Response.Status.CREATED).entity(new SnapshotIO(snapshot)).build();
@@ -150,7 +150,7 @@ public class CollectionSnapshotRest {
   /**
    * List all snapshots of a Collection, newest first.
    *
-   * @param collectionAppId the application-level identifier of the root Collection.
+   * @param appId the application-level identifier of the root Collection.
    * @param sc              the JAX-RS security context.
    * @return 200 with a (possibly empty) snapshot array; 401 unauthenticated;
    *         403 forbidden; 404 unknown Collection.
@@ -161,7 +161,7 @@ public class CollectionSnapshotRest {
     summary = "List Snapshots of a Collection, newest first (V2b).",
     description =
       "Returns one page of non-deleted `:Snapshot` entities for the " +
-      "Collection identified by `collectionAppId`, ordered by " +
+      "Collection identified by `appId`, ordered by " +
       "`snapshotCapturedAtMs` DESC (newest first).\n\n" +
       "Each `SnapshotIO` carries: `appId`, `name`, `description`, " +
       "`snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, " +
@@ -191,26 +191,26 @@ public class CollectionSnapshotRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size (default 50). Server-side cap: 200. Values below 1 are clamped to 1.")
     @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize,
     @Context SecurityContext sc
   ) {
-    Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
+    Response gate = checkAccess(appId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     List<SnapshotIO> rows = snapshotService
-      .listByCollection(collectionAppId, safePage, safeSize)
+      .listByCollection(appId, safePage, safeSize)
       .stream()
       .map(SnapshotIO::new)
       .toList();
 
-    long total = snapshotService.countByCollection(collectionAppId);
+    long total = snapshotService.countByCollection(appId);
 
     return Response.ok(new PagedResponseIO<>(rows, total, safePage, safeSize))
         .header("X-Total-Count", total)
@@ -223,17 +223,17 @@ public class CollectionSnapshotRest {
    * Returns {@code null} when access is allowed; otherwise a short-circuit
    * {@link Response} (401 / 403 / 404) to return immediately.
    */
-  private Response checkAccess(String collectionAppId, AccessType accessType, SecurityContext sc) {
+  private Response checkAccess(String appId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem("/problems/snapshots.unauthorized", "Unauthorized",
         Response.Status.UNAUTHORIZED, "Authentication required.");
 
     long ogmId;
     try {
-      ogmId = entityIdResolver.resolveLong(collectionAppId);
+      ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
       return problem("/problems/snapshots.not-found", "Not Found", Response.Status.NOT_FOUND,
-          "No Collection with appId '" + collectionAppId + "'.");
+          "No Collection with appId '" + appId + "'.");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
