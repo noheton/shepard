@@ -280,8 +280,8 @@ class ProjectsRestTest {
     var ann = param.getAnnotation(
         org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
     assertNotNull(ann, "pageSize must carry @Parameter annotation");
-    assertTrue(ann.description() != null && ann.description().contains("500"),
-        "@Parameter.description for pageSize must mention the 500 cap");
+    assertTrue(ann.description() != null && ann.description().contains("200"),
+        "@Parameter.description for pageSize must mention the 200 cap");
   }
 
   // ─── APISIMP-PROJECT-BY-ANNOTATION-IRI-PATH — predicate/value as @QueryParam ──
