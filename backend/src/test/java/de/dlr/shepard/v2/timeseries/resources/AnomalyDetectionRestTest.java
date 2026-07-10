@@ -184,6 +184,62 @@ class AnomalyDetectionRestTest {
     assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
   }
 
+  // ── channelAppId selector ─────────────────────────────────────────────────
+
+  @Test
+  void detect_returns200WhenChannelAppIdMatchesSeries() {
+    var series = makeSeries("hotfire", "vib_fuel_pump");
+    series.setAppId("channel-uuid-1");
+    ref.setReferencedTimeseriesList(List.of(
+      series,
+      makeSeries("hotfire", "vib_lox_pump")
+    ));
+    var body = new AnomalyDetectRequestIO();
+    body.setChannelAppId("channel-uuid-1");
+    assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(200);
+    verify(anomalyDetectionService).detect(any(), any(), any());
+  }
+
+  @Test
+  void detect_returns400WhenChannelAppIdNotFoundInRef() {
+    var body = new AnomalyDetectRequestIO();
+    body.setChannelAppId("channel-uuid-does-not-exist");
+    assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(400);
+  }
+
+  @Test
+  void detect_returns422WhenBothChannelAppIdAndTupleProvided() {
+    var body = new AnomalyDetectRequestIO();
+    body.setChannelAppId("channel-uuid-1");
+    body.setMeasurement("hotfire");
+    assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(422);
+  }
+
+  @Test
+  void detect_tupleSelector_stillWorksWithoutChannelAppId() {
+    ref.setReferencedTimeseriesList(List.of(
+      makeSeries("hotfire", "vib_fuel_pump"),
+      makeSeries("hotfire", "vib_lox_pump")
+    ));
+    var body = new AnomalyDetectRequestIO();
+    body.setSymbolicName("vib_lox_pump");
+    assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  void detect_channelAppIdResolvesByAppIdNotByTuple() {
+    // Two series with same measurement; channelAppId resolves the right one
+    var s1 = makeSeries("hotfire", "vib_fuel_pump");
+    s1.setAppId("uuid-s1");
+    var s2 = makeSeries("hotfire", "vib_fuel_pump"); // same tuple as s1
+    s2.setAppId("uuid-s2");
+    ref.setReferencedTimeseriesList(List.of(s1, s2));
+    var body = new AnomalyDetectRequestIO();
+    body.setChannelAppId("uuid-s2");
+    // Tuple filter would be ambiguous (2 matches), but appId is unambiguous → 200
+    assertThat(resource.detect(REF_APP_ID, body, sc).getStatus()).isEqualTo(200);
+  }
+
   // ── write permission for createAnnotations ────────────────────────────────
 
   @Test

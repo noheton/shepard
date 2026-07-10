@@ -95,28 +95,50 @@ public class AnomalyDetectionRest {
 
   /**
    * Resolve a single Timeseries from the reference according to the
-   * request's filter fields.
+   * request's selector: either {@code channelAppId} OR the 5-tuple filter
+   * fields, but not both (→ 422) and not auto-select when neither is
+   * provided but the reference holds multiple series (→ 400).
    *
    * @return the selected Timeseries, or {@code null} if selection fails;
-   *         in that case a 400 error Response is written to {@code out[0]}
+   *         in that case an error Response is written to {@code out[0]}
    */
   private Timeseries selectSeries(TimeseriesReference ref, AnomalyDetectRequestIO req, Response[] out) {
     List<ReferencedTimeseriesNodeEntity> all = ref.getReferencedTimeseriesList();
 
-    boolean hasFilters = req.getMeasurement() != null ||
-      req.getDevice() != null ||
-      req.getLocation() != null ||
-      req.getSymbolicName() != null ||
-      req.getField() != null;
+    boolean hasChannelAppId = req.getChannelAppId() != null;
+    boolean hasTuple = req.hasTupleSelector();
 
-    if (!hasFilters) {
+    // Conflict: both selectors provided
+    if (hasChannelAppId && hasTuple) {
+      out[0] = problem("anomaly-detection.bad-request", "Unprocessable Entity",
+        Response.Status.fromStatusCode(422),
+        "Provide either channelAppId or the 5-tuple fields (measurement/device/location/" +
+          "symbolicName/field), not both.");
+      return null;
+    }
+
+    if (hasChannelAppId) {
+      // Resolve by channel appId: match within the reference's linked timeseries nodes
+      var matched = all.stream()
+        .filter(e -> req.getChannelAppId().equals(e.getAppId()))
+        .findFirst();
+      if (matched.isEmpty()) {
+        out[0] = problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
+          "No channel with channelAppId '" + req.getChannelAppId() +
+            "' is linked to this TimeseriesReference.");
+        return null;
+      }
+      return matched.get().toTimeseries();
+    }
+
+    if (!hasTuple) {
       // Auto-select if exactly one series
       if (all.size() == 1) {
         return all.get(0).toTimeseries();
       }
       out[0] = problem("anomaly-detection.bad-request", "Bad Request", Response.Status.BAD_REQUEST,
         "The TimeseriesReference contains " + all.size() +
-          " series; provide measurement/device/location/symbolicName/field to select one.");
+          " series; provide channelAppId or measurement/device/location/symbolicName/field to select one.");
       return null;
     }
 
@@ -154,18 +176,23 @@ public class AnomalyDetectionRest {
       "Deviation (MAD) algorithm, and returns detected anomaly intervals as an " +
       "`AnomalyDetectResultIO` response.\n\n" +
       "Series selection rules:\n" +
-      "  - If the reference holds exactly one series and all five filter fields " +
-      "(`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the " +
-      "request body, that series is selected automatically.\n" +
-      "  - Otherwise all non-null filter fields must together resolve to exactly one " +
-      "series; 400 is returned if zero or multiple series match.\n\n" +
+      "  - `channelAppId`: supply the UUID v7 appId of the channel " +
+      "(`:Timeseries` node) linked to this reference. Mutually exclusive with the 5-tuple.\n" +
+      "  - 5-tuple (`measurement`, `device`, `location`, `symbolicName`, `field`): " +
+      "all non-null fields must together resolve to exactly one series.\n" +
+      "  - Neither: if all five filter fields and `channelAppId` are null, the " +
+      "reference must contain exactly one series (auto-selected); 400 if it contains " +
+      "multiple series.\n" +
+      "  - Both: providing `channelAppId` and any 5-tuple field together returns 422.\n\n" +
       "Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — " +
       "rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; " +
       "higher = fewer detections), `createAnnotations` (boolean, default false — when " +
       "true, each detected interval is persisted as a `TimeseriesAnnotation` with " +
-      "`aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` " +
-      "(strings — series filter keys; omit all to auto-select when there is exactly one " +
+      "`aiGenerated=true`), `channelAppId` (UUID v7 string — preferred channel selector), " +
+      "`measurement`, `device`, `location`, `symbolicName`, `field` " +
+      "(strings — alternative 5-tuple selector; omit all to auto-select when there is exactly one " +
       "series).\n\n" +
+      "Example — by channelAppId: `{\"channelAppId\": \"019xxx...\"}`. " +
       "Example — auto-select, default params: `{}`. Example — explicit series and " +
       "tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", " +
       "\"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.\n\n" +
@@ -177,10 +204,11 @@ public class AnomalyDetectionRest {
     description = "Detection completed; `AnomalyDetectResultIO` contains the list of detected intervals and, when `createAnnotations=true`, the appIds of the created annotations.",
     content = @Content(schema = @Schema(implementation = AnomalyDetectResultIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Invalid parameters (`window < 3`, `k <= 0`), or series selection failed (zero or multiple matches, or the reference's container is missing/deleted).")
+  @APIResponse(responseCode = "400", description = "Invalid parameters (`window < 3`, `k <= 0`), or series selection failed (zero or multiple matches, unknown `channelAppId`, or the reference's container is missing/deleted).")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks the required permission on the parent DataObject (Read for detection, Write when createAnnotations=true).")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
+  @APIResponse(responseCode = "422", description = "Both `channelAppId` and 5-tuple selector fields are present in the request body — provide one or the other.")
   public Response detect(
     @PathParam("appId") String appId,
     AnomalyDetectRequestIO body,

@@ -57,6 +57,23 @@ public class AnomalyDetectRequestIO {
 
   // ── series selector ──────────────────────────────────────────────────────
 
+  /**
+   * UUID v7 appId of the `:Timeseries` node (a {@code ReferencedTimeseriesNodeEntity})
+   * linked to the reference. Alternative to supplying the 5-tuple fields.
+   * Clients that already hold the channel appId (e.g. from
+   * {@code GET /v2/containers/{appId}/timeseries-channels}) can pass it here
+   * directly without expanding it back into 5 separate fields.
+   *
+   * <p>Mutually exclusive with the 5-tuple selector ({@code measurement} /
+   * {@code device} / {@code location} / {@code symbolicName} / {@code field}).
+   * Providing both returns {@code 422}.
+   */
+  @Schema(
+    description = "UUID v7 appId of the channel (ReferencedTimeseriesNodeEntity) to score. " +
+      "Mutually exclusive with the 5-tuple selector fields. Providing both returns 422."
+  )
+  private String channelAppId;
+
   @Schema(description = "Measurement tag — selects which series in the reference to score. Omit when the reference contains exactly one series.")
   private String measurement;
 
@@ -71,6 +88,15 @@ public class AnomalyDetectRequestIO {
 
   @Schema(description = "Field tag — selects which series in the reference to score.")
   private String field;
+
+  /**
+   * Returns {@code true} when at least one 5-tuple filter field is non-null.
+   * Used to detect conflicting selectors ({@code channelAppId} + 5-tuple).
+   */
+  public boolean hasTupleSelector() {
+    return measurement != null || device != null ||
+      location != null || symbolicName != null || field != null;
+  }
 
   // ── detector selector (AT1) ─────────────────────────────────────────────
 
