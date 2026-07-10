@@ -4530,7 +4530,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java`; `backend/src/main/java/de/dlr/shepard/v2/export/rep/RepExportIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire494.md §F2`.
 
 ## APISIMP-PREDICATES-PAGECAP — `ShapesPredicatesRest.predicates()` uses `@Max(500)` / "1–500" instead of the v2 standard `@Max(200)` / "1–200" (size: XS, sweep: fire-496)
-- **Status:** 🔄 in-flight (PR #2428) — retrigger commit pushed fire-515 (28e49e713) after CodeQL policy check raced Analyze java-kotlin again; awaiting next CI cycle.
+- **Status:** 🔄 in-flight (PR #2428) — CodeQL policy-check/scan race confirmed recurring: retrigger commit `28e49e713` (fire-515) still triggered the race (CodeQL policy-check FAIL at 05:40:44; Analyze java-kotlin SUCCESS at 05:48:34). Pushing retrigger commits does NOT help — the race always occurs. Operator action required: either dismiss the lingering Security alert in the GitHub Security tab, OR fix `.github/workflows/codeql.yml` to add `needs: [analyze-java-kotlin]` before the CodeQL policy check step. PR is otherwise ready (all other checks green, mergeable_state: unstable due to CodeQL). Fire-516.
 - **Why:** `ShapesPredicatesRest.java:106–107` declares `@Parameter(description = "Maximum entries per page (1–500). Default 200.")` and `@Max(500)` for the `pageSize` query param on `GET /v2/shapes/predicates`. Every other v2 list endpoint uses `@Max(200)` and the "1–200" description string — the 500 cap was introduced without justification when the endpoint was first written. Predicate vocabulary entries are lightweight (string label + URI); there is no performance or contract reason to diverge from the 200-cap standard. Same pattern as APISIMP-TPLREST-TAG-PAGECAP (fire-478, `ShepardTemplateRest.tags()`).
 - **Fix:** (1) Change `@Max(500)` → `@Max(200)` on the `pageSize` parameter in `ShapesPredicatesRest.java:107`. (2) Update the `@Parameter(description = "...")` string to replace "1–500" with "1–200". Two-character changes; zero logic change.
 - **AC:** `grep -n "Max(500)\|1.500" backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java` returns zero; `mvn -q -DnoPlugins compile` green.
@@ -4551,14 +4551,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:145`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:223`; `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:481,483`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F4.1–F4.3`.
 
 ## APISIMP-PROV-CURSOR-PAGENAME — `ProvenanceRest` cursor-pagination endpoints use `?limit=` instead of v2 standard `?pageSize=` (size: S, sweep: fire-496)
-- **Status:** in-flight — branch `APISIMP-PROV-CURSOR-PAGENAME-1`, fire-498.
+- **Status:** ✅ shipped — PR #2430, merged 2026-07-09.
 - **Why:** `ProvenanceRest.java` at lines 134, 202, 248, 301, 347, 382 declares `@QueryParam("limit")` for its cursor-pagination window across six cursor-backed list endpoints (`GET /v2/provenance/activities`, `/v2/provenance/activities/{appId}/predecessors`, etc.). Every other v2 list endpoint that accepts a page-size param uses `?pageSize=`. Cursor pagination is intentional and correct; the naming divergence is the issue — a caller who reads one v2 endpoint's docs expects `pageSize` and will silently get defaults when they pass `pageSize=` to a provenance endpoint.
 - **Fix:** Rename `@QueryParam("limit")` → `@QueryParam("pageSize")` (and update `@Parameter(description)` strings) at all 6 sites in `ProvenanceRest.java`. Update any existing callers in the frontend composables (`useProvenance*.ts`) to use `pageSize=` instead of `limit=`.
 - **AC:** `grep -n '"limit"' backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java` returns zero `@QueryParam` usages; `grep -rn "limit=" frontend/composables/provenance/` returns zero; `mvn verify -pl backend` green; `npm run test` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:134,202,248,301,347,382`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F6.1`.
 
 ## APISIMP-RESULT-CAP-NAME-UNIFY — Inconsistent result-cap query param names across `ImportDiagnosticsV2Rest`, `CollectionDQRRest`, `SnapshotDiffRest` (size: S, sweep: fire-496)
-- **Status:** in-flight (PR #2431, fire-499).
+- **Status:** ✅ shipped — PR #2431, merged fire-501.
 - **Why:** Three v2 endpoints use different names for a result-count cap: `ImportDiagnosticsV2Rest.java:135` uses `?limit=`, `CollectionDQRRest.java:206` mixes `?pageSize=` and `?limit=` in the same class, and `SnapshotDiffRest.java:133` uses `?maxItems=`. These differ from cursor-page semantics (`?pageSize=` on cursor endpoints) and from each other. Recommendation: adopt `?maxItems=` as the canonical name for non-paginated result caps (distinct from `?pageSize=` on paginated lists) — `maxItems` is self-documenting for "cap the number returned" vs. "set the page window."
 - **Fix:** (1) `ImportDiagnosticsV2Rest.java:135` — rename `?limit=` → `?maxItems=`; update `@Parameter(description)`. (2) `CollectionDQRRest.java:206` — rename the `?limit=` occurrence → `?maxItems=`; leave `?pageSize=` usages unchanged. (3) `SnapshotDiffRest.java:133` — already uses `?maxItems=`; verify description is consistent. Update any frontend composable callers (`useImportDiagnostics*.ts`, `useDQR*.ts`, `useSnapshotDiff*.ts`) to pass `maxItems=`.
 - **AC:** `grep -rn '"limit"' backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportDiagnosticsV2Rest.java backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java` returns zero `@QueryParam` usages; all three endpoints accept `?maxItems=`; `mvn verify -pl backend` green; `npm run test` green.
@@ -4669,3 +4669,52 @@ picks these up. Terse by design.
 - **Fix:** Delete `GitReferenceRest.java` and its test counterpart (if any — `GitReferenceRestTest.java` likely only covers the ✅-done CRUD which was already removed). Verify no other class imports it. `mvn verify -pl plugins/git` must be green.
 - **AC:** `find plugins/git -name "GitReferenceRest.java"` returns empty; no 410-only git endpoint group in OpenAPI; `mvn verify -pl plugins/git` green.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/git/resources/GitReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F3`.
+
+## APISIMP-COLL-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/collections` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** `CollectionV2Rest.java:172` uses `@QueryParam(Constants.QP_NAME)` (`?name=`) as its text filter. APISIMP-CONTAINERS-NAME-TO-Q (fire-510) and APISIMP-DO-NAME-TO-Q (fire-510) renamed `?name=` on containers and data-objects; collections is the third endpoint still using the non-standard param name.
+- **Fix:** Rename the param to `@QueryParam("q") String q`; add a `@Deprecated @QueryParam("name") String nameLegacy` backward-compat alias that produces `Deprecation: true` response header. Update OpenAPI description. Same pattern as the two already-merged siblings.
+- **AC:** `grep -n '"name"' backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java | grep '@QueryParam'` returns only the deprecated-alias line; `mvn verify -pl backend` green; `npm run test` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:172`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F1`.
+
+## APISIMP-COLL-PATHPARAM — rename `{collectionAppId}` → `{appId}` in 5 collection sub-resources (size: S, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** Five collection-domain REST classes use `{collectionAppId}` under `/v2/collections/`: `CollectionV2Rest.java:194`, `CollectionTimelineRest.java:64`, `CollectionContainersRest.java:49`, `CollectionPublicationStateRest.java:52`, `CollectionSnapshotRest.java:60`. Five sibling sub-resources in the same domain already use `{appId}`. The v2 standard is `{appId}` when the resource type is implied by the URL prefix. Note: `SnapshotPinnedReadRest` path `/v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects` uses two distinct appId params — rename the outer one or keep both qualified there for disambiguation.
+- **Fix:** In the five listed files rename `{collectionAppId}` → `{appId}` in both `@Path` declarations and `@PathParam` bindings; update local variable names if desired (non-breaking).
+- **AC:** `grep -rn '"collectionAppId"' backend/src/main/java/de/dlr/shepard/v2/collection/resources/ | grep '@PathParam'` returns empty (or only the `SnapshotPinnedReadRest` nested case); `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:194`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionTimelineRest.java:64`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:49`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F2`.
+
+## APISIMP-SNAPSHOT-PATHPARAM — rename `{snapshotAppId}` → `{appId}` in `SnapshotRest` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** `SnapshotRest.java:62` uses `@Path("/v2/snapshots/{snapshotAppId}")` with `@PathParam("snapshotAppId")`. The resource type is fully implied by `/v2/snapshots/` — identical pattern to the already-merged `{bundleAppId}` → `{appId}` (fire-506) and `{templateAppId}` → `{appId}` (fire-507) fixes.
+- **Fix:** Rename `{snapshotAppId}` → `{appId}` in `@Path`, all `@PathParam` binding sites, and update internal variable names.
+- **AC:** `grep -n 'snapshotAppId' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java | grep '@PathParam'` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:62`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F3`.
+
+## APISIMP-CHANNEL-PAGECAP — `ContainersV2Rest` channel/annotation list endpoints `@Max(500)` → `@Max(200)` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** Three list endpoints in `ContainersV2Rest.java` use `@Max(500)` instead of the v2-standard 200: `listChannels` (line 651), `listChannelAnnotations` (line 1033), `listTemporalAnnotations` (line 1154). APISIMP-PAGESIZE-CAP-UNDOCUMENTED (fire-444) added OpenAPI `@Schema(maximum)` annotations to document these caps but did not change the cap value. APISIMP-TS-CONT-ANNOT-IN-MEMORY-PAGING (fire-442) fixed in-memory paging without changing the cap.
+- **Fix:** Change `@Max(500)` → `@Max(200)` on all three params; update the `@Parameter` description strings from "1–500" to "1–200".
+- **AC:** `grep -n '@Max(500)' backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:651,1033,1154`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F4`.
+
+## APISIMP-SNAPSHOT-PAGECAP — snapshot manifest `@Max(1000)` and pinned-read `@Max(2000)` → `@Max(200)` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** `SnapshotRest.java:156` caps the manifest endpoint `pageSize` at `@Max(1000)` and `SnapshotPinnedReadRest.java:133` caps the pinned data-objects endpoint at `@Max(2000)`. The 1000-file bundle exception does not apply here. APISIMP-SNAPSHOT-MANIFEST-IN-MEMORY-PAGING (fire-422) fixed in-memory paging without changing the `@Max` cap; APISIMP-PAGESIZE-CAP-UNDOCUMENTED (fire-444) added OpenAPI documentation without normalising the value.
+- **Fix:** Change `@Max(1000)` → `@Max(200)` in `SnapshotRest.java:156` and `@Max(2000)` → `@Max(200)` in `SnapshotPinnedReadRest.java:133`; update description strings accordingly.
+- **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java | grep -E '1000|2000'` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:156`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java:133`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F5`.
+
+## APISIMP-REFANNOT-PAGECAP — `ReferenceAnnotationRest` `@Max(1000)` → `@Max(200)` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** `ReferenceAnnotationRest.java:165` caps `GET /v2/references/{appId}/annotations` `pageSize` at `@Max(1000)` (OpenAPI: "Items per page (1–1000). Default 200."). The 1000 exception applies only to bundle-files. APISIMP-REFANNOT-IN-MEMORY-PAGING (fire-442) fixed in-memory paging without changing the `@Max` cap.
+- **Fix:** Change `@Max(1000)` → `@Max(200)`; update `@Parameter` description to "Items per page (1–200). Default 200."
+- **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java | grep '1000'` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java:165`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F6`.
+
+## APISIMP-ADMIN-AUDIT-PAGECAP — `InstanceAdminRest` permission-audit endpoints `@Max(500)` → `@Max(200)` (size: XS, sweep: fire-516)
+- **Status:** queued (fire-516).
+- **Why:** `InstanceAdminRest.java:210,271` — both `GET /v2/admin/permission-audit` and `GET /v2/admin/permission-audit/log` use `@Max(500)` on `pageSize` with descriptions "Page size 1–500". Admin-gated endpoints (`@RolesAllowed("instance-admin")`) still participate in the v2 standard.
+- **Fix:** Change both `@Max(500)` → `@Max(200)`; update the `@Parameter` description strings from "1–500" to "1–200".
+- **AC:** `grep -n '@Max(500)' backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:210,271`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F7`.
