@@ -4531,7 +4531,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java`; `backend/src/main/java/de/dlr/shepard/v2/export/rep/RepExportIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire494.md §F2`.
 
 ## APISIMP-PREDICATES-PAGECAP — `ShapesPredicatesRest.predicates()` uses `@Max(500)` / "1–500" instead of the v2 standard `@Max(200)` / "1–200" (size: XS, sweep: fire-496)
-- **Status:** 🔄 in-flight (PR #2428) — CodeQL policy-check/scan race confirmed recurring: retrigger commit `28e49e713` (fire-515) still triggered the race (CodeQL policy-check FAIL at 05:40:44; Analyze java-kotlin SUCCESS at 05:48:34). Pushing retrigger commits does NOT help — the race always occurs. Operator action required: either dismiss the lingering Security alert in the GitHub Security tab, OR fix `.github/workflows/codeql.yml` to add `needs: [analyze-java-kotlin]` before the CodeQL policy check step. PR is otherwise ready (all other checks green, mergeable_state: unstable due to CodeQL). Fire-516.
+- **Status:** 🔄 in-flight (PR #2428) — CodeQL policy-check/scan race; rebased onto current main (fire-524) to trigger fresh CI run. All other checks green.
 - **Why:** `ShapesPredicatesRest.java:106–107` declares `@Parameter(description = "Maximum entries per page (1–500). Default 200.")` and `@Max(500)` for the `pageSize` query param on `GET /v2/shapes/predicates`. Every other v2 list endpoint uses `@Max(200)` and the "1–200" description string — the 500 cap was introduced without justification when the endpoint was first written. Predicate vocabulary entries are lightweight (string label + URI); there is no performance or contract reason to diverge from the 200-cap standard. Same pattern as APISIMP-TPLREST-TAG-PAGECAP (fire-478, `ShepardTemplateRest.tags()`).
 - **Fix:** (1) Change `@Max(500)` → `@Max(200)` on the `pageSize` parameter in `ShapesPredicatesRest.java:107`. (2) Update the `@Parameter(description = "...")` string to replace "1–500" with "1–200". Two-character changes; zero logic change.
 - **AC:** `grep -n "Max(500)\|1.500" backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java` returns zero; `mvn -q -DnoPlugins compile` green.
@@ -4707,7 +4707,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:651,1033,1154`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F4`.
 
 ## APISIMP-SNAPSHOT-PAGECAP — snapshot manifest `@Max(1000)` and pinned-read `@Max(2000)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** 🔄 PR #2451 open (fire-520) — CodeQL race; pending merge.
+- **Status:** 🔄 PR #2451 open (fire-520) — CodeQL race; rebased onto current main (fire-524); fresh CI triggered.
 - **Why:** `SnapshotRest.java:156` caps the manifest endpoint `pageSize` at `@Max(1000)` and `SnapshotPinnedReadRest.java:133` caps the pinned data-objects endpoint at `@Max(2000)`. The 1000-file bundle exception does not apply here. APISIMP-SNAPSHOT-MANIFEST-IN-MEMORY-PAGING (fire-422) fixed in-memory paging without changing the `@Max` cap; APISIMP-PAGESIZE-CAP-UNDOCUMENTED (fire-444) added OpenAPI documentation without normalising the value.
 - **Fix:** Change `@Max(1000)` → `@Max(200)` in `SnapshotRest.java:156` and `@Max(2000)` → `@Max(200)` in `SnapshotPinnedReadRest.java:133`; update description strings accordingly.
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java | grep -E '1000|2000'` returns empty; `mvn verify -pl backend` green.
@@ -4721,11 +4721,18 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java:165`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F6`.
 
 ## APISIMP-ADMIN-AUDIT-PAGECAP — `InstanceAdminRest` permission-audit endpoints `@Max(500)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** 🔄 PR #2455 open (fire-523) — CodeQL race; rebased onto current main (fire-524); fresh CI triggered.
 - **Why:** `InstanceAdminRest.java:210,271` — both `GET /v2/admin/permission-audit` and `GET /v2/admin/permission-audit/log` use `@Max(500)` on `pageSize` with descriptions "Page size 1–500". Admin-gated endpoints (`@RolesAllowed("instance-admin")`) still participate in the v2 standard.
 - **Fix:** Change both `@Max(500)` → `@Max(200)`; update the `@Parameter` description strings from "1–500" to "1–200".
 - **AC:** `grep -n '@Max(500)' backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java` returns empty; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:210,271`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F7`.
+
+## APISIMP-SPARQL-PATHPARAM — rename `{repoAppId}` → `{appId}` path-param in `SemanticSparqlRest` (size: XS, fire-524)
+- **Status:** ✅ shipped (fire-524).
+- **Why:** `SemanticSparqlRest.java:169,230` declares `@Path("/{repoAppId}/sparql")` and binds `@PathParam("repoAppId")` on both the GET and POST SPARQL proxy endpoints. The v2 convention is bare `{appId}` when the resource type is already implied by the path prefix (`/v2/semantic/`). Identical pattern to the already-merged `{bundleAppId}` (fire-506), `{templateAppId}` (fire-507), `{snapshotAppId}` (fire-518), and `{collectionAppId}` (fire-523) normalizations. Only one path param per method — no JAX-RS two-param collision.
+- **Fix:** Rename `{repoAppId}` → `{appId}` in both `@Path("/{repoAppId}/sparql")` declarations and the two `@PathParam("repoAppId") String repoAppId` bindings; update local variable usages and Javadoc/OpenAPI strings accordingly. Internal `executeSparql(String repoAppId, ...)` helper retains its parameter name (not part of the API surface).
+- **AC:** `grep -n '"repoAppId"' backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticSparqlRest.java | grep -E '@Path|@PathParam'` returns empty; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticSparqlRest.java:169,207,230,258`.
 
 ## UIRULE-DROPDOWN-SEARCH-SORT — every dropdown searchable + naturally ordered (size: M, sweep)
 
