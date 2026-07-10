@@ -39,33 +39,59 @@ graph confirms the correction — see §1. These are **two independent concerns*
 
 ## §2 `TPS-TAPELAYING-DATA-MISSING` — the ingest gap (the real fix)
 
-The tapelaying process export (per-course TIFF profile/thermography images +
-"other files") lives on the operator's source (host `/mnt/pve/unas` or the ZLP
-export), **not yet in Shepard**. The fix is an **ingest**, not a parser:
+**Source located + structure decoded (2026-07-10, live on UNAS).** The full
+tapelaying corpus is the extraction of `mffd.tar.gz` at
+`/mnt/pve/unas/dump/dataset/cube3-export/mffd-export/ts-export/tapelaying/`
+(`Z:\dump\dataset` → `/mnt/pve/unas/dump/dataset`). **354 GB**, 8251
+`Track_N__Run_N_/` folders + `collection.json` (coll 48297) + `hierarchy.json`
++ a 461 MB `manifest.json` (the v15 importer manifest). The live
+`mffd-afp-tapelaying` collection has the **tree** (8251 Track DataObjects, each
+with `attributes||run_number` + `attributes||track_number`) but **zero payloads**
+— the W2 import built the hierarchy and never attached the references.
 
-1. **Locate the source export** (operator-held). Establish the directory layout
-   and how a file maps to a `Run NNNNN` / track (filename convention or a
-   manifest). *Needs operator input — the raw export is host-only.*
-2. **Map file → track by `run_number`.** Resolve each track's `appId` from
-   `mffd-afp-tapelaying` via `attributes||run_number`; attach each source file as
-   a **singleton `FileReference`** (`POST /v2/files?parentDataObjectAppId=…`) per
-   the one-file rule (FR1b). TIFFs get `fileKind` via the detector; "other files"
-   by extension.
-3. **Completeness-non-negotiable ingest** — retry-forever with adaptive backoff,
-   never SKIP (per `feedback_completeness_nonnegotiable`); run **sequentially**,
-   not parallel with any other heavy ingest (shared-pool 504 risk). Bracket with
-   a snapshot pair once the destination is stable (PRE-MUT-SNAP is currently
-   suspended pre-reset — confirm posture before mutating).
-4. **Surface per-track.** TIFFs render inline via the image viewer (VIEWER-AS-
-   VIEW-RECIPE); the Track detail page lists them in its File panel.
+**Each `Track_N__Run_N_/` carries exactly 6 references (matching the 6
+`referenceIds` in its `metadata.json`):**
 
-**Open questions for the operator (blockers for §2):**
-- Where is the tapelaying source export, and what is its directory/filename
-  convention? What is the "other files" set beyond the TIFFs?
-- Is a track's data 1 TIFF (→ singleton) or a set (→ bundle)? Cardinality drives
-  the reference shape.
-- One-shot ingest, or does it need to be a repeatable importer (a
-  `shepard-plugin-importer` recipe) for future campaigns?
+| On disk | Kind | Contents |
+|---|---|---|
+| `ts/Timeseries.csv` | TimeseriesReference | 34 TPS channels (`DEVICE=TPS`, `fitCorrelation`, `area`, `width`…) |
+| `files/TPS raw data.{0-10}` + `.11` | FileBundle | 11 PNG (1292×964 grayscale profilometer frames) + 1 CSV |
+| `files/TPS intermediate evaluation files.{0-10}` | FileBundle | 11 **TIFF** (2048×873) — the operator's "TIFFs" |
+| `files/TPS 3D pointclouds.{0-1}` | FileBundle | 2 ASCII point clouds (`X Y Z R G B`) |
+| `files/FSD course 3D pointclouds` | **singleton** FileReference | 1 ASCII point cloud |
+| `files/Robot program` | **singleton** FileReference | 1 KRL program (`DEF PG43_PLY122_Track23…`) |
+
+The numbered `.0/.1/…` suffixes are **complete independent files** (the fileOids
+inside each bundle) — NOT split parts. Multi-file groups → `FileBundleReference`;
+the two 1-file groups → **singletons** (FR1b one-file rule).
+
+**The fix is the scripted v15 ingest, not a hand-rolled loop.** The path already
+exists: `scripts/mffd-ingest-kickoff.sh` (pre-flight + resumable v15 importer,
+worker-pooled, state-file resume) + readiness doc
+`aidocs/agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md`. It consumes
+exactly this `ts-export/tapelaying/manifest.json` and attaches the 6 refs/track
+to the existing tree by `run_number`. Re-running resumes and backfills the
+payloads onto the 8251 tracks.
+
+**Launch requirements (pre-flight gates the kickoff enforces):**
+1. **Staging dir** → point `STAGING_DIR` at
+   `/mnt/pve/unas/dump/dataset/cube3-export/mffd-export/ts-export/tapelaying`
+   (the kickoff default `…/dump/ts-export` predates the `dataset/` reorg).
+2. **Fresh dest API key** in `examples/mffd-showcase/scripts/.env.local`
+   (`SHEPARD_API_KEY` — the prior JWT from `mffd-ingest-keys-2026-05-31.txt` is
+   likely expired; must pass `GET /v2/users/me` → 200).
+3. **Capacity** — host ZFS ≥200 G, NFS ≥400 G free; **PgBouncer** pool ≥ `workers·5+10`.
+4. **Completeness-non-negotiable, sequential** — `MFFD_WORKERS=4` default; never
+   parallel with another heavy ingest (shared-pool 504 risk,
+   `feedback_no_parallel_heavy_ingests`). ~24 h wall (W2 estimate).
+5. **Snapshot bracket** once stable (PRE-MUT-SNAP suspended pre-reset — confirm
+   posture; this ATTACHES to existing tracks, doesn't delete, so lower risk).
+6. **TIFF preview** (`TIFF-PREVIEW-SUPPORT`, in flight) makes the intermediate-
+   evaluation TIFFs render inline once attached — the two land complementary.
+
+**Remaining operator decision:** approve launching the ~24 h / 354 GB sequential
+ingest + supply/confirm the fresh dest API key. No open structural questions —
+the mapping is fully decoded.
 
 ## §3 svdx = welding (separate track, data already present)
 
