@@ -107,15 +107,30 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
       "RETURN r.appId AS refAppId, r.name AS name, r.fileKind AS fileKind, " +
       "d.appId AS doAppId, c.appId AS collAppId, c.name AS collName " +
       "ORDER BY toLower(r.name) ASC";
-    var result = session.query(query, Map.of());
-    List<UrdfCandidate> out = new ArrayList<>();
-    for (var row : result) {
+    return mapRows(session.query(query, Map.of()));
+  }
+
+  /**
+   * Pure row → {@link UrdfCandidate} projection. Static + no I/O so it is
+   * unit-testable with synthetic maps (the {@code session.query} call above is
+   * the only untestable line). Drops rows with no {@code refAppId} or no
+   * reachable parent DataObject (not selectable), and de-duplicates by
+   * {@code refAppId} — a {@code :SingletonFileReference} is a
+   * {@code VersionableEntity}, so this guards against any historical version
+   * reachable through {@code has_reference} inflating the list.
+   *
+   * @param rows the raw Cypher projection rows.
+   * @return the de-duplicated candidate list, insertion-order preserved.
+   */
+  static List<UrdfCandidate> mapRows(Iterable<Map<String, Object>> rows) {
+    java.util.LinkedHashMap<String, UrdfCandidate> byAppId = new java.util.LinkedHashMap<>();
+    for (var row : rows) {
       Object refAppId = row.get("refAppId");
       Object doAppId = row.get("doAppId");
       // A candidate with no appId or no reachable parent DataObject is not selectable.
       if (!(refAppId instanceof String rid) || rid.isBlank()) continue;
       if (!(doAppId instanceof String did) || did.isBlank()) continue;
-      out.add(new UrdfCandidate(
+      byAppId.putIfAbsent(rid, new UrdfCandidate(
         rid,
         row.get("name") instanceof String n ? n : rid,
         row.get("fileKind") instanceof String fk ? fk : null,
@@ -124,7 +139,7 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
         row.get("collName") instanceof String cn ? cn : null
       ));
     }
-    return out;
+    return new ArrayList<>(byAppId.values());
   }
 
   /**
