@@ -61,7 +61,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *   <li>Status vocabulary (NCR/REJECT): AAA2 status extensions</li>
  * </ul>
  */
-@Path("/v2/collections/{collectionAppId}/timeline")
+@Path("/v2/collections/{appId}/timeline")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -121,7 +121,7 @@ public class CollectionTimelineRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response timeline(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @Parameter(
       description =
         "Histogram bin width in days. Accepted ladder values: 1, 7, 30, 90, 365. " +
@@ -139,18 +139,18 @@ public class CollectionTimelineRest {
 
     long ogmId;
     try {
-      ogmId = entityIdResolver.resolveLong(collectionAppId);
+      ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
       return problem(PT_NOT_FOUND, "Collection not found",
-        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
+        Response.Status.NOT_FOUND, "no Collection with appId '" + appId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
       return problem(PT_FORBIDDEN, "Read access required",
-        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + appId + "'");
     }
 
-    var aggregate = timelineDAO.aggregate(collectionAppId);
+    var aggregate = timelineDAO.aggregate(appId);
     CollectionTimelineIO body = CollectionTimelineBuilder.build(aggregate, binSizeDays);
 
     return Response.ok(body)

@@ -4686,7 +4686,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:172`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F1`.
 
 ## APISIMP-COLL-PATHPARAM — rename `{collectionAppId}` → `{appId}` in 5 collection sub-resources (size: S, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** ✅ shipped (fire-523).
 - **Why:** Five collection-domain REST classes use `{collectionAppId}` under `/v2/collections/`: `CollectionV2Rest.java:194`, `CollectionTimelineRest.java:64`, `CollectionContainersRest.java:49`, `CollectionPublicationStateRest.java:52`, `CollectionSnapshotRest.java:60`. Five sibling sub-resources in the same domain already use `{appId}`. The v2 standard is `{appId}` when the resource type is implied by the URL prefix. Note: `SnapshotPinnedReadRest` path `/v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects` uses two distinct appId params — rename the outer one or keep both qualified there for disambiguation.
 - **Fix:** In the five listed files rename `{collectionAppId}` → `{appId}` in both `@Path` declarations and `@PathParam` bindings; update local variable names if desired (non-breaking).
 - **AC:** `grep -rn '"collectionAppId"' backend/src/main/java/de/dlr/shepard/v2/collection/resources/ | grep '@PathParam'` returns empty (or only the `SnapshotPinnedReadRest` nested case); `mvn verify -pl backend` green.

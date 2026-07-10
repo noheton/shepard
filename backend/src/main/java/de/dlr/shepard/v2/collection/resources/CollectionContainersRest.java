@@ -38,7 +38,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>Route:
  * <ul>
- *   <li>{@code GET /v2/collections/{collectionAppId}/referenced-containers}
+ *   <li>{@code GET /v2/collections/{appId}/referenced-containers}
  *       — returns distinct containers reached via
  *       Collection → DataObject → Reference → Container.
  *       Requires Read permission on the Collection.</li>
@@ -46,7 +46,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/collections/{collectionAppId}/referenced-containers")
+@Path("/v2/collections/{appId}/referenced-containers")
 @RequestScoped
 @Tag(name = "Collections")
 public class CollectionContainersRest {
@@ -88,7 +88,7 @@ public class CollectionContainersRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size, 1–200 (default 50).")
@@ -101,20 +101,20 @@ public class CollectionContainersRest {
 
     long ogmId;
     try {
-      ogmId = entityIdResolver.resolveLong(collectionAppId);
+      ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
       return problem(PT_NOT_FOUND, "Collection not found",
-        Response.Status.NOT_FOUND, "no Collection with appId '" + collectionAppId + "'");
+        Response.Status.NOT_FOUND, "no Collection with appId '" + appId + "'");
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
       return problem(PT_FORBIDDEN, "Read access required",
-        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + collectionAppId + "'");
+        Response.Status.FORBIDDEN, "caller lacks Read on Collection '" + appId + "'");
     }
 
-    long total = containersDAO.countByCollectionAppId(collectionAppId);
+    long total = containersDAO.countByCollectionAppId(appId);
     long skip = (long) page * pageSize;
-    var items = containersDAO.findByCollectionAppId(collectionAppId, skip, pageSize);
+    var items = containersDAO.findByCollectionAppId(appId, skip, pageSize);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("X-Total-Count", total)
       .build();

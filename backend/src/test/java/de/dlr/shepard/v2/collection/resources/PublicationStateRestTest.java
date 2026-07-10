@@ -209,7 +209,7 @@ class PublicationStateRestTest {
   void collection_patchPathOnV2Shelf() {
     Path p = CollectionPublicationStateRest.class.getAnnotation(Path.class);
     assertNotNull(p);
-    assertEquals("/v2/collections/{collectionAppId}/publication-state", p.value());
+    assertEquals("/v2/collections/{appId}/publication-state", p.value());
   }
 
   // ── PublicationStateIO helper ────────────────────────────────────────────

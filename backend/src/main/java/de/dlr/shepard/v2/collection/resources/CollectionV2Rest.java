@@ -75,7 +75,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * (RFC 7396), {@code DELETE}. Deferred to Phase B:
  * <ul>
  *   <li>Permissions / roles endpoints — move to a dedicated
- *       {@code /v2/permissions/{collectionAppId}} resource alongside
+ *       {@code /v2/permissions/{appId}} resource alongside
  *       the cross-entity permissions migration.</li>
  *   <li>Export — {@code /v2/collections/{appId}/export-url} already
  *       exists ({@link de.dlr.shepard.v2.collection.resources.CollectionExportUrlRest}).</li>
@@ -152,7 +152,7 @@ public class CollectionV2Rest {
       "stable identifier; use the matching `/v2/...` endpoints for follow-up calls.\n\n" +
       "Auth: no role gate — the result is filtered server-side to entities the caller " +
       "may Read, so an unauthorised caller simply gets a smaller list (not 403).\n\n" +
-      "Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific " +
+      "Next step: `GET /v2/collections/{appId}` to fetch a specific " +
       "Collection with its DataObjects expanded."
   )
   @APIResponse(
@@ -197,22 +197,22 @@ public class CollectionV2Rest {
   }
 
   @GET
-  @Path("/{collectionAppId}")
+  @Path("/{appId}")
   @Operation(
     operationId = "getCollectionV2",
     summary = "Get a Collection by appId, with DataObjects and incoming references.",
     description =
-      "Returns the `:Collection` identified by `collectionAppId` (UUID v7) " +
+      "Returns the `:Collection` identified by `appId` (UUID v7) " +
       "in the full `CollectionIO` shape: name, description, status, attributes, " +
       "`dataObjectIds[]` (legacy long ids of contained DataObjects — use the " +
-      "matching `/v2/collections/{collectionAppId}/data-objects` endpoint when " +
+      "matching `/v2/collections/{appId}/data-objects` endpoint when " +
       "you want appIds), `incomingIds[]` (CollectionReferences pointing at this " +
       "Collection), `defaultFileContainerId` (nullable).\n\n" +
       "Auth: Read on the Collection. `404` is returned for unknown appIds " +
       "*before* the auth check — distinguishing 'doesn't exist' from " +
       "'exists but you can't see it' is intentionally not done (timing-safe).\n\n" +
-      "Next step: `GET /v2/collections/{collectionAppId}/data-objects` for " +
-      "the DataObject list, or `PATCH /v2/collections/{collectionAppId}` for " +
+      "Next step: `GET /v2/collections/{appId}/data-objects` for " +
+      "the DataObject list, or `PATCH /v2/collections/{appId}` for " +
       "an RFC 7396 merge-patch update.",
     extensions = @Extension(name = "x-agent-hint", value = "Top-level container. appId is the stable identifier for all v2 calls.")
   )
@@ -225,12 +225,12 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response get(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @Context SecurityContext sc
   ) {
-    Long ogmId = resolveOrNull(collectionAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
-        "No Collection with appId " + collectionAppId);
+        "No Collection with appId " + appId);
 
     Response gate = enforceAccess(ogmId, AccessType.Read, sc);
     if (gate != null) return gate;
@@ -270,8 +270,8 @@ public class CollectionV2Rest {
       "Side effects: `ProvenanceCaptureFilter` records a `CREATE` Activity " +
       "addressable at `GET /v2/provenance/entity/{appId}`. A `:Version` node " +
       "is created with `Constants.HEAD` as its initial version.\n\n" +
-      "Next step: `POST /v2/collections/{collectionAppId}/data-objects` to " +
-      "add DataObjects, or `PATCH /v2/collections/{collectionAppId}` to set " +
+      "Next step: `POST /v2/collections/{appId}/data-objects` to " +
+      "add DataObjects, or `PATCH /v2/collections/{appId}` to set " +
       "additional metadata."
   )
   @APIResponse(
@@ -304,7 +304,7 @@ public class CollectionV2Rest {
   }
 
   @PATCH
-  @Path("/{collectionAppId}")
+  @Path("/{appId}")
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     operationId = "patchCollectionV2",
@@ -337,7 +337,7 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response patch(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @RequestBody(
       required = true,
       description = "Partial Collection (RFC 7396). Every field is optional; absent fields are preserved.",
@@ -352,9 +352,9 @@ public class CollectionV2Rest {
       throw new InvalidBodyException("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
-    Long ogmId = resolveOrNull(collectionAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
-        "No Collection with appId " + collectionAppId);
+        "No Collection with appId " + appId);
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;
@@ -379,7 +379,7 @@ public class CollectionV2Rest {
   }
 
   @DELETE
-  @Path("/{collectionAppId}")
+  @Path("/{appId}")
   @Operation(
     operationId = "deleteCollectionV2",
     summary = "Soft-delete a Collection and cascade.",
@@ -401,12 +401,12 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response delete(
-    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("appId") @NotBlank String appId,
     @Context SecurityContext sc
   ) {
-    Long ogmId = resolveOrNull(collectionAppId);
+    Long ogmId = resolveOrNull(appId);
     if (ogmId == null) return problem(PT_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND,
-        "No Collection with appId " + collectionAppId);
+        "No Collection with appId " + appId);
 
     Response gate = enforceAccess(ogmId, AccessType.Write, sc);
     if (gate != null) return gate;

@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 class CollectionContainersRestRouteTest {
 
   /** The canonical path the frontend, generated client, and backend must agree on. */
-  static final String EXPECTED_PATH = "/v2/collections/{collectionAppId}/referenced-containers";
+  static final String EXPECTED_PATH = "/v2/collections/{appId}/referenced-containers";
 
   @Test
   void routePathIsStable() {

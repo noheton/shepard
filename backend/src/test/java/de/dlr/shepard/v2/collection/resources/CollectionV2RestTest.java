@@ -574,8 +574,8 @@ class CollectionV2RestTest {
       .getMethod("get", String.class, SecurityContext.class)
       .getAnnotation(jakarta.ws.rs.Path.class);
     assertNotNull(methodPath, "get(...) must carry an @Path annotation");
-    assertEquals("/{collectionAppId}", methodPath.value(),
-      "get(...) path is the wire contract for GET /v2/collections/{collectionAppId}");
+    assertEquals("/{appId}", methodPath.value(),
+      "get(...) path is the wire contract for GET /v2/collections/{appId}");
   }
 
   // ─── APISIMP-REMAINING-PARAMS reflection guards ────────────────────────────
