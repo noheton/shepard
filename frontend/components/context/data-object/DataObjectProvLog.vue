@@ -189,7 +189,7 @@ async function load() {
   try {
     const paged = await useV2ShepardApi(ProvenanceApi).value.listActivities({
       targetAppId: props.targetAppId,
-      limit: limit.value,
+      pageSize: limit.value,
     });
     const list: Activity[] = Array.isArray(paged)
       ? paged
