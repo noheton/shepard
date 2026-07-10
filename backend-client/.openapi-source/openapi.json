@@ -29092,8 +29092,17 @@
           },
           {
             "description": "Optional display-name filter (case-insensitive substring match). Omit to return all DataObjects.",
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Deprecated alias for `q`. Accepted for one release cycle; prefer `q`. Presence adds `Deprecation: true` response header.",
             "name": "name",
             "in": "query",
+            "deprecated": true,
             "schema": {
               "type": "string"
             }

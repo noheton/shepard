@@ -122,7 +122,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
       const identifier = appId ?? String(collectionId);
       const raw = await v2Api.value.listDataObjectsRaw({
         collectionAppId: identifier,
-        name: nameFilter,
+        q: nameFilter,
         status: statusFilter,
         annotationFilter: annotationFilter?.value || undefined,
         createdAfter: createdAfter?.value || undefined,

@@ -84,6 +84,9 @@ export interface ListDataObjectsRequest {
     createdBefore?: string;
     fields?: string;
     include?: string;
+    /** Preferred display-name filter (case-insensitive substring match). */
+    q?: string;
+    /** @deprecated Use `q` instead. Kept for one release cycle; adds `Deprecation: true` response header. */
     name?: string;
     page?: number;
     pageSize?: number;
@@ -509,6 +512,10 @@ export class DataObjectsApi extends runtime.BaseAPI {
 
         if (requestParameters['include'] != null) {
             queryParameters['include'] = requestParameters['include'];
+        }
+
+        if (requestParameters['q'] != null) {
+            queryParameters['q'] = requestParameters['q'];
         }
 
         if (requestParameters['name'] != null) {
