@@ -206,8 +206,8 @@ public class InstanceAdminRest {
     @Context SecurityContext securityContext,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Page size 1–500 (default 50).")
-    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize
+    @Parameter(description = "Page size 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     requireInstanceAdmin(securityContext);
     long total = permissionAuditService.countOrphans();
@@ -228,7 +228,7 @@ public class InstanceAdminRest {
    * @param from        ISO-8601 lower bound for occurred_at (inclusive, optional)
    * @param to          ISO-8601 upper bound for occurred_at (exclusive, optional)
    * @param page        zero-based page index (default 0)
-   * @param size        page size (default 50, max 500)
+   * @param size        page size (default 50, max 200)
    */
   @GET
   @Path("/permission-audit/log")
@@ -267,8 +267,8 @@ public class InstanceAdminRest {
     @QueryParam("to") String to,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Page size 1–500 (default 50). Server-side cap: 500 — values above 500 are rejected by bean validation.")
-    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(500) int pageSize
+    @Parameter(description = "Page size 1–200 (default 50). Server-side cap: 200 — values above 200 are rejected by bean validation.")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     requireInstanceAdmin(securityContext);
 

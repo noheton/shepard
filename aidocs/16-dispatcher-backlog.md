@@ -4721,7 +4721,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java:165`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F6`.
 
 ## APISIMP-ADMIN-AUDIT-PAGECAP — `InstanceAdminRest` permission-audit endpoints `@Max(500)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** 🔄 PR #2455 open (fire-523) — CodeQL race; rebased onto current main (fire-525); fresh CI triggered.
+- **Status:** ✅ shipped (fire-522, PR #2455 → rebased + merged fire-538).
 - **Why:** `InstanceAdminRest.java:210,271` — both `GET /v2/admin/permission-audit` and `GET /v2/admin/permission-audit/log` use `@Max(500)` on `pageSize` with descriptions "Page size 1–500". Admin-gated endpoints (`@RolesAllowed("instance-admin")`) still participate in the v2 standard.
 - **Fix:** Change both `@Max(500)` → `@Max(200)`; update the `@Parameter` description strings from "1–500" to "1–200".
 - **AC:** `grep -n '@Max(500)' backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java` returns empty; `mvn verify -pl backend` green.
