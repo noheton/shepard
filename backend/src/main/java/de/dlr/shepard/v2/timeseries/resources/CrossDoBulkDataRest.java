@@ -19,6 +19,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -40,7 +41,9 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 /**
  * TS-CROSS-DO-VIEW-1 — cross-DataObject timeseries bulk-data endpoint.
  *
- * <p>Route: {@code POST /v2/data-objects/cross-timeseries-bulk}
+ * <p>Route: {@code POST /v2/data-objects/cross-bulk?kind=timeseries}
+ * (old path {@code /v2/data-objects/cross-timeseries-bulk} is tombstoned
+ * in {@code CrossDoBulkTombstoneRest} with 410 Gone).
  *
  * <p>Takes a list of DataObject appIds + one channel-predicate IRI, and
  * returns LTTB-downsampled series — one entry per DataObject — for the
@@ -59,7 +62,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/data-objects/cross-timeseries-bulk")
+@Path("/v2/data-objects/cross-bulk")
 @RequestScoped
 @Tag(name = "Timeseries")
 public class CrossDoBulkDataRest {
@@ -99,8 +102,10 @@ public class CrossDoBulkDataRest {
       "Where a single DataObject has multiple channels matching the predicate, the first by " +
       "`symbolicName` ascending is picked (deterministic). " +
       "Timestamps are absolute UTC nanoseconds; clients render within-DO relative time on the " +
-      "frontend by subtracting each series' first timestamp.",
-    extensions = @Extension(name = "x-agent-hint", value = "Pass dataObjectAppIds + channelPredicate (urn:shepard:...). Returns one downsampled series per DO; empty points means 'no channel matched'.")
+      "frontend by subtracting each series' first timestamp.\n\n" +
+      "The `kind` query parameter discriminates the payload family. Currently only `timeseries` " +
+      "is supported; future kinds (`file`, `structured`) will extend this endpoint without a new path.",
+    extensions = @Extension(name = "x-agent-hint", value = "Pass kind=timeseries + dataObjectAppIds + channelPredicate (urn:shepard:...). Returns one downsampled series per DO; empty points means 'no channel matched'.")
   )
   @APIResponse(
     responseCode = "200",
@@ -108,12 +113,18 @@ public class CrossDoBulkDataRest {
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
     headers = @Header(name = "X-Total-Count", description = "Number of series entries returned (one per DataObject in request order).", schema = @Schema(type = SchemaType.INTEGER))
   )
-  @APIResponse(responseCode = "400", description = "Validation error on request body.")
+  @APIResponse(responseCode = "400", description = "Validation error on request body, or unsupported/missing `kind`.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getCrossDoBulkData(
+    @QueryParam("kind") String kind,
     @NotNull @Valid CrossDoBulkDataRequestIO body,
     @Context SecurityContext sc
   ) {
+    if (kind == null || !kind.equals("timeseries")) {
+      return problem("cross-bulk.bad-kind", "Bad Request", Response.Status.BAD_REQUEST,
+        "Query parameter 'kind' must be 'timeseries'; got: " + kind);
+    }
+
     final String caller = sc != null && sc.getUserPrincipal() != null
       ? sc.getUserPrincipal().getName()
       : null;

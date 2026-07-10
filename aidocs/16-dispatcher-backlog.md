@@ -4564,10 +4564,10 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionRest.java:50`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.1`.
 
 ## APISIMP-CROSS-BULK-KIND-PATH — `CrossDoBulkDataRest` encodes `timeseries` kind in path segment `cross-timeseries-bulk` (size: M, sweep: fire-496)
-- **Status:** queued (architectural; needs design).
+- **Status:** shipped (fire-512).
 - **Why:** `CrossDoBulkDataRest.java:62` registers `POST /v2/data-objects/cross-timeseries-bulk`; the path segment `cross-timeseries-bulk` hard-codes the timeseries kind. Per `aidocs/platform/191-v2-surface-convergence.md §2`, kind-specific routing belongs in a `?kind=` discriminator, not in the path — a future cross-bulk for file or structured-data containers would require a new sibling path rather than reusing the generic surface.
-- **Fix:** Rename to `POST /v2/data-objects/cross-bulk?kind=timeseries`; dispatch via `CrossDoBulkKindPlugin` SPI. Update frontend callers and OpenAPI clients.
-- **AC:** `POST /v2/data-objects/cross-timeseries-bulk` → 404 (path removed); `POST /v2/data-objects/cross-bulk?kind=timeseries` → 200; `mvn verify -pl backend` green; frontend callers updated.
+- **Fix:** Renamed `@Path` to `/v2/data-objects/cross-bulk`; added `@QueryParam("kind") String kind` to the method (returns 400 for null or unsupported values); tombstoned the old path via `CrossDoBulkTombstoneRest` (410 Gone + `Location` header). Frontend `useCrossDoBulkData.ts` updated to `?kind=timeseries`. `CrossDoBulkKindPlugin` SPI deferred — only one kind exists today; the discriminator is the structural seam.
+- **AC:** `POST /v2/data-objects/cross-timeseries-bulk` → 410 Gone; `POST /v2/data-objects/cross-bulk?kind=timeseries` → 200; `kind` missing or wrong → 400; frontend composable updated; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkDataRest.java:62`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire496.md §F1.2`.
 
 ## APISIMP-SQL-TIMESERIES-PATH — `SqlTimeseriesRest` has a dedicated `/v2/sql/timeseries` namespace for a single timeseries-only SQL endpoint (size: M, sweep: fire-496)
