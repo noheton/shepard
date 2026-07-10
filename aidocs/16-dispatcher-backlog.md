@@ -4780,3 +4780,59 @@ picks these up. Terse by design.
 - **RESOLVED DIAGNOSIS (operator + live graph, 2026-07-10):** the "missing TPS data" is an **ingest gap**, NOT an svdx/parse problem (svdx is welding — see SVDX-PROMOTE-KIND). `mffd-afp-tapelaying` is an **empty skeleton**: 8483 DataObjects forming `PlyGroup→Ply→Track (Run N)` (8251 Track leaves), carrying only structural `BasicReference`. The **only** file in the whole collection is `s3-test-marker.txt` on PlyGroup 28. **Zero** TPS TIFFs, zero data files on any track. The operator's TPS data (per-course TIFF profile/thermography images + "other files") lives on the source export (host `/mnt/pve/unas` / ZLP), **not yet imported**.
 - **Fix (ingest, per `aidocs/platform/196 §2`):** locate source export → map file→track via `attributes||run_number` on each Track → attach as **singleton FileReference** (`POST /v2/files?parentDataObjectAppId=…`), completeness-non-negotiable, sequential (no parallel heavy ingest), snapshot-bracketed. TIFFs render via the image viewer.
 - **BLOCKED on operator input:** (a) source-export location + directory/filename convention + how a file maps to `Run NNNNN`; (b) the "other files" set beyond TIFFs; (c) 1 TIFF/track (singleton) or a set (bundle); (d) one-shot vs repeatable importer recipe. First refs: `aidocs/platform/196 §2`; `mffd-afp-tapelaying` (`attributes||run_number` join key); `feedback_completeness_nonnegotiable.md`; `feedback_no_parallel_heavy_ingests.md`.
+
+## APISIMP-COLLEVENTS-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `CollectionEventsRest` (size: XS, fire-526)
+- **Status:** 🚧 in-progress (fire-526).
+- **Why:** `CollectionEventsRest.java:47` declares `@Path("/v2/collections/{collectionAppId}/events")` and binds `@PathParam("collectionAppId") String collectionAppId` at line 83. The resource type is expressed by the URL prefix `/v2/collections/`; only one path param per method — no JAX-RS two-param collision. Zero wire-shape change — only the extraction variable name changes. Identical pattern to the already-merged `{bundleAppId}` (fire-506), `{templateAppId}` (fire-507), `{snapshotAppId}` (fire-518), `{collectionAppId}` cluster (fire-523), `{repoAppId}` (fire-524), `{entryAppId}` (fire-525). CAUTION: line 73 of the class references `collectionAppId` as an SSE event *payload* field name in the `@Operation` description — that string MUST NOT be changed.
+- **Fix:** Rename `{collectionAppId}` → `{appId}` in `@Path` (line 47), `@PathParam` binding (line 83), and local variable usages (lines 92, 98). Do NOT change line 73 (OpenAPI description text for SSE event payload fields).
+- **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java | grep -E '@Path|@PathParam|String '` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java:47,83,92,98`.
+
+## APISIMP-COLLWATCHERS-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `CollectionWatchersRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `CollectionWatchersRest.java` declares `@Path("/v2/collections/{collectionAppId}/watches")` at the class level with four method bindings at lines 89, 128, 157, 178. The resource type is expressed by `/v2/collections/`; only one path param per method — no JAX-RS collision.
+- **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and all four `@PathParam("collectionAppId")` bindings plus local variable usages.
+- **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java:89,128,157,178`.
+
+## APISIMP-CONTAINERPUBSTATE-PATHPARAM — rename `{containerAppId}` → `{appId}` path-param in `ContainerPublicationStateRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `ContainerPublicationStateRest.java` declares `@Path("/v2/containers/{containerAppId}/publication-state")` with two method `@PathParam("containerAppId")` bindings at lines 99, 140. The resource type is expressed by `/v2/containers/`; only one path param per method.
+- **Fix:** Rename `{containerAppId}` → `{appId}` in the class-level `@Path` and both `@PathParam` bindings plus local variable usages.
+- **AC:** `grep -n 'containerAppId' backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java:99,140`.
+
+## APISIMP-NOTEBOOK-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` path-param in `NotebookRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `NotebookRest.java` (class `@Path("/v2/lab-journal")`) declares method-level `@Path("/{dataObjectAppId}/notebooks")`. Effective full path: `/v2/lab-journal/{dataObjectAppId}/notebooks`. Single-ID context — no JAX-RS collision. Rename per v2 convention.
+- **Fix:** Rename `{dataObjectAppId}` → `{appId}` in the method `@Path`, `@PathParam` binding (line 119), and local variable usages.
+- **AC:** `grep -n 'dataObjectAppId' backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java:95,119`.
+
+## APISIMP-VOCABBROWSE-PATHPARAM — rename `{entityAppId}` and `{vocabId}` → `{appId}` path-params in `VocabularyBrowseRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `VocabularyBrowseRest.java` (class `@Path("/v2/semantic/vocabularies")`) has two non-standard params: (1) `@PathParam("entityAppId")` at line 228, method `@Path("/{entityAppId}/vocabularies")` — full path `/v2/semantic/vocabularies/{entityAppId}/vocabularies`; (2) `@PathParam("vocabId")` at line 164, method `@Path("/{vocabId}/predicates")` — full path `/v2/semantic/vocabularies/{vocabId}/predicates`; internally calls `vocabularyDAO.findByAppId(vocabId)`, confirming it is an appId. Both are single-ID; both should be `{appId}`.
+- **Fix:** In each affected method, rename `@PathParam("entityAppId")` → `@PathParam("appId")` and `@PathParam("vocabId")` → `@PathParam("appId")`, update the method-level `@Path` segments, and update local variable usages.
+- **AC:** `grep -n 'entityAppId\|vocabId' backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:164,228`.
+
+## APISIMP-MEROLE-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `MeRoleInRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `MeRoleInRest.java` declares `@Path("/v2/users/me/role-in/{collectionAppId}")` at the class level with one method `@PathParam("collectionAppId")` binding at line 88. Single-ID context — rename to `{appId}` per v2 convention.
+- **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path`, `@PathParam` binding, and local variable usage.
+- **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java:88`.
+
+## APISIMP-COLLWATCHES-PATHPARAM — rename `{collectionAppId}` → `{appId}` class-level path-param in `CollectionWatchesRest` (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `CollectionWatchesRest.java` declares `@Path("/v2/collections/{collectionAppId}/watched-containers")` at the class level with method bindings at lines 109 and 160. The DELETE method at line ~198 adds a second param `{watchAppId}` — renaming the class-level param to `{appId}` introduces no JAX-RS ambiguity since the two names remain distinct.
+- **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and method bindings at lines 109, 160 plus local variable usages. Leave `{watchAppId}` unchanged (distinct secondary ID in the DELETE sub-path).
+- **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java:109,160`.
+
+## APISIMP-BUNDLEGROUPS-PAGECAP — lower `BundleGroupsV2Rest` pageSize @Max 1000 → 200 (size: XS, fire-526)
+- **Status:** 🔲 queued.
+- **Why:** `BundleGroupsV2Rest.java:369` declares `@Max(1000)` on `pageSize` (default already 200). Standard v2 pagination cap is `@Max(200)`. The oversized cap lets a caller request 5× the intended maximum. Identical pattern to `APISIMP-REFANNOT-PAGECAP` (fire-519) and `APISIMP-SNAPSHOT-PAGECAP` (fire-524, PR #2451).
+- **Fix:** Change `@Max(1000)` → `@Max(200)` at `BundleGroupsV2Rest.java:369`. No other changes.
+- **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java | grep 'pageSize'` shows `@Max(200)`; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:369`.
