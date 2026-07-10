@@ -2,7 +2,11 @@
 import type { Timeseries } from "@dlr-shepard/backend-client";
 import Trace3DChannelPicker from "./Trace3DChannelPicker.vue";
 import type { ChannelV2, Channel5Tuple, Trace3DChannelSelection } from "./Trace3DChannelPicker.vue";
-import { useFetchUrdfOptions, type ReferenceOption } from "~/composables/useFetchReferenceOptions";
+import {
+  useFetchUrdfOptions,
+  useFetchAccessibleUrdfOptions,
+  type ReferenceOption,
+} from "~/composables/useFetchReferenceOptions";
 
 const props = defineProps<{
   containerId: number;
@@ -33,22 +37,55 @@ const rendererKind = ref<RendererKind>("trace-3d");
 // no raw URL/path; the render page resolves bytes via GET /v2/files/{appId}/content
 // and the mesh package root from the urn:shepard:urdf:package-path annotation.
 //
-// Type is string | ReferenceOption | null because v-combobox returns the
-// full ReferenceOption when a list item is selected, but a plain string when
-// the user types free text. resolveUrdfAppId() normalises both.
-const urdfFileAppId = ref<string | ReferenceOption | null>("");
+// v-autocomplete with item-value="appId" binds a plain appId string (or null).
+const urdfFileAppId = ref<string | null>(null);
 
-// URDF-REF-PICKER: scoped to FileReferences with .urdf names for the parent
-// DataObject. v-combobox still accepts free-text appId when no context.
-const { options: urdfOptions, isLoading: urdfLoading } = useFetchUrdfOptions(
-  () => props.dataObjectAppId,
-);
+// URDF-FILEREF-PICKER-SEARCHABLE — the "advanced: paste appId" fallback. Kept
+// for ONE deprecation window per the "user never types an ID" rule; the DEFAULT
+// path is the searchable picker below. resolveUrdfAppId() prefers the picker.
+const urdfPasteAppId = ref<string>("");
+const showAdvancedPaste = ref(false);
+
+// URDF-REF-PICKER: FileReferences with .urdf names on the *current* DataObject
+// (usually empty for a timeseries's DataObject — hence the accessible search).
+const { options: urdfOptions } = useFetchUrdfOptions(() => props.dataObjectAppId);
+
+// URDF-FILEREF-PICKER-SEARCHABLE: the instance-wide, permission-filtered,
+// search-as-you-type accessible-URDF list (GET /v2/references/urdf). This is
+// what actually populates the picker when the URDF lives in another collection
+// (e.g. the kr210-r2700-urdf in "MFFD RDK → URDF Viewer Showcase").
+const {
+  query: urdfSearch,
+  options: accessibleUrdfOptions,
+  isLoading: urdfLoading,
+  refresh: refreshAccessibleUrdfs,
+} = useFetchAccessibleUrdfOptions();
+
+// Merged picker options: current-DataObject URDFs first (if any), then the
+// instance-wide accessible URDFs, de-duplicated by appId.
+const urdfPickerOptions = computed<ReferenceOption[]>(() => {
+  const seen = new Set<string>();
+  const merged: ReferenceOption[] = [];
+  for (const o of [...urdfOptions.value, ...accessibleUrdfOptions.value]) {
+    if (o.appId && !seen.has(o.appId)) {
+      seen.add(o.appId);
+      merged.push(o);
+    }
+  }
+  return merged;
+});
 
 const pickerRef = ref<InstanceType<typeof Trace3DChannelPicker> | null>(null);
 const canOpen = ref(false);
 const openCount = ref(0);
 
 watch(open, (v) => { if (v) openCount.value++; });
+
+// Populate the accessible-URDF picker when the dialog opens or the user switches
+// to the URDF renderer — so the list is filled before the user types anything.
+watch([open, rendererKind], ([isOpen, kind]) => {
+  if (isOpen && kind === "urdf") refreshAccessibleUrdfs();
+});
 
 // When v2 channels haven't loaded yet (or container predates TS-SEMANTIC-01),
 // fall back to synthesising ChannelV2 entries from the v1 channel list so the
@@ -130,12 +167,14 @@ function openTrace3D() {
 // exception (v2 timeseries-container content endpoints are still numeric
 // pending aidocs/platform/87).
 
-/** Normalises v-combobox value (ReferenceOption or free-text string) to a plain appId. */
+/**
+ * Resolve the URDF FileReference appId to open. The searchable picker wins; the
+ * "advanced: paste appId" fallback only applies when the picker is empty.
+ */
 function resolveUrdfAppId(): string {
-  const v = urdfFileAppId.value;
-  if (!v) return "";
-  if (typeof v === "string") return v.trim();
-  return (v as ReferenceOption).appId.trim();
+  const picked = urdfFileAppId.value;
+  if (picked && picked.trim().length > 0) return picked.trim();
+  return urdfPasteAppId.value.trim();
 }
 
 function openUrdf() {
@@ -223,30 +262,63 @@ const canOpenAny = computed(() =>
 
         <div v-else-if="rendererKind === 'urdf'" class="d-flex flex-column ga-3">
           <div class="text-caption text-medium-emphasis">
-            Render a robot description (URDF) in the browser. Pick a
-            <code>.urdf</code> FileReference from the list, or paste an appId
-            directly. The renderer resolves bytes and mesh paths from the
-            reference — no raw file paths needed.
+            Render a robot description (URDF) in the browser. Search for a
+            <code>.urdf</code> FileReference by name — the list spans every
+            collection you can read (e.g. type <code>kr210</code>). The renderer
+            resolves bytes and mesh paths from the reference — no raw file paths
+            needed.
           </div>
-          <!-- URDF-REF-PICKER: v-combobox backed by .urdf FileReferences on the
-               parent DataObject. Free-text fallback: the user can paste an appId
-               when no DataObject context is available or the file isn't listed. -->
-          <v-combobox
+          <!-- URDF-FILEREF-PICKER-SEARCHABLE: searchable v-autocomplete over the
+               instance-wide, permission-filtered accessible-URDF list. The user
+               searches by name; the appId travels invisibly (item-value). -->
+          <v-autocomplete
             v-model="urdfFileAppId"
-            :items="urdfOptions"
+            v-model:search="urdfSearch"
+            :items="urdfPickerOptions"
             :loading="urdfLoading"
             item-value="appId"
             item-title="label"
             label="URDF FileReference"
             density="compact"
             variant="outlined"
-            placeholder="pick a .urdf reference or paste an appId"
-            hint="Select from the list or paste the UUID of the .urdf FileReference."
+            placeholder="search a .urdf reference by name (e.g. kr210)"
+            hint="Type to search URDF references across all collections you can read."
             persistent-hint
             clearable
+            auto-select-first
             spellcheck="false"
-            data-testid="urdf-ref-combobox"
+            no-data-text="No matching URDF references"
+            data-testid="urdf-ref-autocomplete"
           />
+          <!-- Advanced escape hatch (one deprecation window): paste an appId when
+               the reference genuinely isn't listed. The picker above is the
+               default per the "user never types an ID" rule. -->
+          <div>
+            <v-btn
+              variant="text"
+              size="x-small"
+              density="compact"
+              :prepend-icon="showAdvancedPaste ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              data-testid="urdf-advanced-toggle"
+              @click="showAdvancedPaste = !showAdvancedPaste"
+            >
+              Advanced: paste an appId
+            </v-btn>
+            <v-text-field
+              v-if="showAdvancedPaste"
+              v-model="urdfPasteAppId"
+              label="URDF FileReference appId"
+              density="compact"
+              variant="outlined"
+              class="mt-2"
+              placeholder="paste the UUID of a .urdf FileReference"
+              hint="Deprecated fallback — prefer the searchable picker above."
+              persistent-hint
+              clearable
+              spellcheck="false"
+              data-testid="urdf-ref-paste"
+            />
+          </div>
         </div>
 
         <div v-else class="d-flex flex-column ga-2">

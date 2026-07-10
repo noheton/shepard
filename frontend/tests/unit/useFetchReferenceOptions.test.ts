@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   mapToReferenceOptions,
+  mapAccessibleUrdfOptions,
   MAPPING_REFERENCE_KINDS,
   isUrdfName,
   type ReferenceOption,
+  type AccessibleUrdfItem,
 } from "~/composables/useFetchReferenceOptions";
 
 describe("mapToReferenceOptions", () => {
@@ -90,5 +92,55 @@ describe("isUrdfName (URDF-REF-PICKER filter)", () => {
 
   it("handles names that are just '.urdf'", () => {
     expect(isUrdfName(".urdf")).toBe(true);
+  });
+});
+
+describe("mapAccessibleUrdfOptions (URDF-FILEREF-PICKER-SEARCHABLE)", () => {
+  it("labels each option '<name> — <collection>' and keeps kind=file", () => {
+    const items: AccessibleUrdfItem[] = [
+      {
+        appId: "ref-kr210",
+        name: "kr210-r2700-urdf",
+        dataObjectAppId: "do-A",
+        collectionAppId: "coll-A",
+        collectionName: "MFFD RDK → URDF Viewer Showcase",
+      },
+    ];
+    const opts = mapAccessibleUrdfOptions(items);
+    expect(opts).toHaveLength(1);
+    expect(opts[0]).toEqual<ReferenceOption>({
+      appId: "ref-kr210",
+      label: "kr210-r2700-urdf — MFFD RDK → URDF Viewer Showcase",
+      kind: "file",
+    });
+  });
+
+  it("falls back to the bare name when the collection is unknown", () => {
+    const opts = mapAccessibleUrdfOptions([{ appId: "r1", name: "arm.urdf" }]);
+    expect(opts[0]!.label).toBe("arm.urdf");
+  });
+
+  it("skips entries without an appId", () => {
+    const items: AccessibleUrdfItem[] = [
+      { appId: "", name: "orphan" },
+      { appId: "r-ok", name: "good.urdf", collectionName: "Lab" },
+    ];
+    const opts = mapAccessibleUrdfOptions(items);
+    expect(opts).toHaveLength(1);
+    expect(opts[0]!.appId).toBe("r-ok");
+  });
+
+  it("orders options in natural (numeric-aware) order, not lexicographic", () => {
+    const items: AccessibleUrdfItem[] = [
+      { appId: "a10", name: "kr210-10.urdf" },
+      { appId: "a2", name: "kr210-2.urdf" },
+      { appId: "a1", name: "kr210-1.urdf" },
+    ];
+    const labels = mapAccessibleUrdfOptions(items).map((o) => o.label);
+    expect(labels).toEqual(["kr210-1.urdf", "kr210-2.urdf", "kr210-10.urdf"]);
+  });
+
+  it("returns an empty array for an empty input list", () => {
+    expect(mapAccessibleUrdfOptions([])).toEqual([]);
   });
 });

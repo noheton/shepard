@@ -122,6 +122,51 @@ curl -fsS 'https://<host>/v2/references?kind=file&dataObjectAppId=<doAppId>&file
   -H 'Authorization: Bearer <token>'
 ```
 
+### Accessible URDF search — `GET /v2/references/urdf`
+
+Lists every `.urdf` singleton FileReference the caller may **Read**,
+across **all collections** (not scoped to one DataObject). This is what
+powers the searchable URDF picker in the "Visualize in 3D → URDF"
+dialog — which opens from a timeseries whose DataObject usually has no
+URDF of its own (the robot model lives in a different collection).
+
+A reference qualifies when its name ends `.urdf` (case-insensitive) **or**
+its `fileKind` is `urdf`. Results are permission-filtered against each
+reference's parent Collection, paged, and optionally name-filtered by `q`.
+
+```bash
+# find every accessible URDF whose name contains "kr210"
+curl -fsS 'https://<host>/v2/references/urdf?q=kr210&pageSize=50' \
+  -H 'Authorization: Bearer <token>'
+```
+
+→ `200` with a paged envelope:
+
+```json
+{
+  "items": [
+    {
+      "appId": "019f1479-1142-75b3-9adf-0720d84a1622",
+      "name": "kr210-r2700-urdf",
+      "dataObjectAppId": "019f1479-0752-7ee5-b709-9eff4c2b4c99",
+      "collectionAppId": "019f1472-d0af-709d-85b0-95866094d865",
+      "collectionName": "MFFD RDK → URDF Viewer Showcase"
+    }
+  ],
+  "total": 1, "page": 0, "pageSize": 50
+}
+```
+
+| Query param | Default | Meaning |
+| --- | --- | --- |
+| `q` | *(none)* | Case-insensitive substring filter on the reference name. |
+| `page` | `0` | Zero-based page index. |
+| `pageSize` | `50` | Items per page, range `[1, 200]`. |
+
+`401` when unauthenticated. Never returns `5xx` for a backend read error —
+degrades to an empty page (fail-soft) so the picker keeps its "advanced:
+paste appId" fallback.
+
 ---
 
 ## Permissions
