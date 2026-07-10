@@ -118,7 +118,7 @@ public class SnapshotRest {
    *
    * @param appId the application-level identifier of the snapshot.
    * @param page          zero-based page index (default 0).
-   * @param pageSize      entries per page, 1–1000 (default 200).
+   * @param pageSize      entries per page, 1–200 (default 200).
    * @param sc            the JAX-RS security context.
    * @return 200 with a paged {@code {items, total, page, pageSize}} envelope;
    *         401 unauthenticated; 403 forbidden; 404 unknown or deleted snapshot.
@@ -131,7 +131,7 @@ public class SnapshotRest {
     description =
       "Returns (entityAppId, revision) pairs captured at snapshot time, " +
       "ordered by entityAppId ascending for deterministic diff tooling. " +
-      "Use ?page= and ?pageSize= (default 200, max 1000) to paginate large " +
+      "Use ?page= and ?pageSize= (default 200, max 200) to paginate large " +
       "snapshots. Requires Read permission on the root Collection."
   )
   @APIResponse(
@@ -153,7 +153,7 @@ public class SnapshotRest {
   public Response manifest(
       @PathParam("appId") String appId,
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-      @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+      @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
       @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTH, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required.");
