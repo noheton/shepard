@@ -117,14 +117,19 @@ public class ShapesPredicatesRest {
     long total;
     List<PredicateVocabularyEntryIO> items;
     if (substrate != null && !substrate.isBlank()) {
-      String sub = substrate.trim();
-      if (!ALLOWED_SUBSTRATES.contains(sub)) {
+      // Re-derive from the trusted constant so CodeQL sees a clean (non-tainted) value
+      // flowing to repository calls — Set.contains() alone does not break the taint chain.
+      String cleanSub = ALLOWED_SUBSTRATES.stream()
+          .filter(substrate.trim()::equals)
+          .findFirst()
+          .orElse(null);
+      if (cleanSub == null) {
         return Response.status(Response.Status.BAD_REQUEST)
             .entity("Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")
             .build();
       }
-      total = repository.countBySubstrate(sub);
-      items = skip >= total ? List.of() : repository.findBySubstrate(sub, skip, pageSize);
+      total = repository.countBySubstrate(cleanSub);
+      items = skip >= total ? List.of() : repository.findBySubstrate(cleanSub, skip, pageSize);
     } else {
       total = repository.count();
       items = skip >= total ? List.of() : repository.findAll(skip, pageSize);
