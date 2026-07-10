@@ -4810,7 +4810,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java:95,119`.
 
 ## APISIMP-VOCABBROWSE-PATHPARAM — rename `{entityAppId}` and `{vocabId}` → `{appId}` path-params in `VocabularyBrowseRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** 🔄 in-flight (fire-530, branch `APISIMP-VOCABBROWSE-PATHPARAM-1`).
 - **Why:** `VocabularyBrowseRest.java` (class `@Path("/v2/semantic/vocabularies")`) has two non-standard params: (1) `@PathParam("entityAppId")` at line 228, method `@Path("/{entityAppId}/vocabularies")` — full path `/v2/semantic/vocabularies/{entityAppId}/vocabularies`; (2) `@PathParam("vocabId")` at line 164, method `@Path("/{vocabId}/predicates")` — full path `/v2/semantic/vocabularies/{vocabId}/predicates`; internally calls `vocabularyDAO.findByAppId(vocabId)`, confirming it is an appId. Both are single-ID; both should be `{appId}`.
 - **Fix:** In each affected method, rename `@PathParam("entityAppId")` → `@PathParam("appId")` and `@PathParam("vocabId")` → `@PathParam("appId")`, update the method-level `@Path` segments, and update local variable usages.
 - **AC:** `grep -n 'entityAppId\|vocabId' backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java` returns empty; `mvn -q test-compile -pl backend` green.

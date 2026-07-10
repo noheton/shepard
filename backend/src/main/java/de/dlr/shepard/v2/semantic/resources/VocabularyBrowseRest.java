@@ -43,9 +43,9 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
  *   <li>{@code GET /v2/semantic/vocabularies} — list all vocabularies
  *       (ordered by label ASC; includes both enabled and disabled rows so
  *       the operator can see what's hidden from autocomplete).</li>
- *   <li>{@code GET /v2/semantic/vocabularies/{vocabId}/predicates} — list
+ *   <li>{@code GET /v2/semantic/vocabularies/{appId}/predicates} — list
  *       the predicates declared by a given vocabulary, scoped by
- *       {@code :Predicate.vocabularyAppId = vocabId}.</li>
+ *       {@code :Predicate.vocabularyAppId = appId}.</li>
  * </ul>
  *
  * <p>This is the non-admin counterpart to
@@ -125,18 +125,18 @@ public class VocabularyBrowseRest {
         .build();
   }
 
-  // ─── GET /v2/semantic/vocabularies/{vocabId}/predicates ───────────────────
+  // ─── GET /v2/semantic/vocabularies/{appId}/predicates ────────────────────
 
   /**
-   * {@code GET /v2/semantic/vocabularies/{vocabId}/predicates}
+   * {@code GET /v2/semantic/vocabularies/{appId}/predicates}
    *
    * <p>Returns the predicates declared by the given vocabulary, scoped by
-   * {@code :Predicate.vocabularyAppId = vocabId}. Returns 404 when no
+   * {@code :Predicate.vocabularyAppId = appId}. Returns 404 when no
    * vocabulary with that appId exists. Returns a 200 with an empty list
    * when the vocabulary exists but has no predicates yet.
    */
   @GET
-  @Path("/{vocabId}/predicates")
+  @Path("/{appId}/predicates")
   @Operation(
     operationId = "listPredicatesForVocabulary",
     summary = "List predicates declared by one vocabulary.",
@@ -161,29 +161,29 @@ public class VocabularyBrowseRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No vocabulary with this appId.")
   public Response listPredicatesForVocabulary(
-    @PathParam("vocabId") String vocabId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size (default 50, max 200).")
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    if (vocabId == null || vocabId.isBlank()) {
-      return notFound(vocabId);
+    if (appId == null || appId.isBlank()) {
+      return notFound(appId);
     }
-    Vocabulary vocab = vocabularyDAO.findByAppId(vocabId);
+    Vocabulary vocab = vocabularyDAO.findByAppId(appId);
     if (vocab == null) {
-      return notFound(vocabId);
+      return notFound(appId);
     }
-    long total = predicateDAO.countByVocabulary(vocabId);
+    long total = predicateDAO.countByVocabulary(appId);
     long skip = Math.min((long) page * pageSize, total);
-    List<Predicate> rows = predicateDAO.listByVocabularyPaged(vocabId, skip, pageSize);
+    List<Predicate> rows = predicateDAO.listByVocabularyPaged(appId, skip, pageSize);
     List<PredicateIO> page_ = rows.stream().map(PredicateIO::from).toList();
     return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize))
         .header("X-Total-Count", total)
         .build();
   }
 
-  // ─── GET /v2/semantic/vocabularies/used-by/{entityAppId} ──────────────────
+  // ─── GET /v2/semantic/vocabularies/used-by/{appId} ───────────────────────
 
   /**
    * TOOLS-CONTEXT-VOCAB-BACKEND-1 — list the vocabularies whose terms are
@@ -201,7 +201,7 @@ public class VocabularyBrowseRest {
    * <p>Source: TOOLS-CONTEXT-VOCAB-BACKEND-1 (aidocs/16).
    */
   @GET
-  @Path("/used-by/{entityAppId}")
+  @Path("/used-by/{appId}")
   @Operation(
     operationId = "listVocabulariesUsedBy",
     summary = "List vocabularies referenced by an entity's annotations.",
@@ -225,7 +225,7 @@ public class VocabularyBrowseRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabulariesUsedBy(
-    @PathParam("entityAppId") String entityAppId,
+    @PathParam("appId") String appId,
     @Parameter(
       description =
         "Annotation walk scope. 'data-object' (default): only the entity's own " +
@@ -238,12 +238,12 @@ public class VocabularyBrowseRest {
     @Parameter(description = "Page size, 1–200 (default 50).")
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    if (entityAppId == null || entityAppId.isBlank()) {
+    if (appId == null || appId.isBlank()) {
       return Response.ok(new PagedResponseIO<>(List.<VocabularyIO>of(), 0L, page, pageSize))
           .header("X-Total-Count", 0L)
           .build();
     }
-    List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(entityAppId, scope);
+    List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(appId, scope);
     long total = used.size();
     int skip = (int) Math.min((long) page * pageSize, total);
     List<Vocabulary> slice = used.subList(skip, (int) Math.min((long) skip + pageSize, total));
@@ -255,8 +255,8 @@ public class VocabularyBrowseRest {
 
   // ─── helpers ──────────────────────────────────────────────────────────────
 
-  private static Response notFound(String vocabId) {
+  private static Response notFound(String id) {
     return ProblemResponse.problem(PROBLEM_TYPE_NOT_FOUND, "Vocabulary not found",
-        Status.NOT_FOUND, "No :Vocabulary node with appId='" + (vocabId == null ? "" : vocabId) + "'.");
+        Status.NOT_FOUND, "No :Vocabulary node with appId='" + (id == null ? "" : id) + "'.");
   }
 }
