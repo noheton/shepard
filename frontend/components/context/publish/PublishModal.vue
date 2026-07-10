@@ -18,6 +18,7 @@
  * that point this component starts forwarding it via the parent's
  * `submit` payload.
  */
+import { naturalSort } from "~/utils/naturalSort";
 
 interface PublishModalProps {
   kindLabel: string; // "Collection" | "DataObject"
@@ -41,18 +42,22 @@ const emit = defineEmits<{
 
 // Hard-coded SPDX list per the KIP1e brief; small enough to inline,
 // tracked-SPDX integration is a follow-up slice.
-const LICENCES = [
-  { value: "CC-BY-4.0", title: "CC-BY-4.0 — Creative Commons Attribution 4.0" },
-  {
-    value: "CC-BY-SA-4.0",
-    title: "CC-BY-SA-4.0 — CC Attribution-ShareAlike 4.0",
-  },
-  { value: "CC0-1.0", title: "CC0-1.0 — Public domain dedication" },
-  { value: "MIT", title: "MIT" },
-  { value: "Apache-2.0", title: "Apache License 2.0" },
-  { value: "LGPL-3.0", title: "LGPL-3.0 — GNU Lesser GPL v3" },
-  { value: "GPL-3.0", title: "GPL-3.0 — GNU GPL v3" },
-];
+// UIRULE-DROPDOWN-SEARCH-SORT: natural order over the licence titles.
+const LICENCES = naturalSort(
+  [
+    { value: "CC-BY-4.0", title: "CC-BY-4.0 — Creative Commons Attribution 4.0" },
+    {
+      value: "CC-BY-SA-4.0",
+      title: "CC-BY-SA-4.0 — CC Attribution-ShareAlike 4.0",
+    },
+    { value: "CC0-1.0", title: "CC0-1.0 — Public domain dedication" },
+    { value: "MIT", title: "MIT" },
+    { value: "Apache-2.0", title: "Apache License 2.0" },
+    { value: "LGPL-3.0", title: "LGPL-3.0 — GNU Lesser GPL v3" },
+    { value: "GPL-3.0", title: "GPL-3.0 — GNU GPL v3" },
+  ],
+  o => o.title,
+);
 
 const selectedLicence = ref<string>("CC-BY-4.0");
 
@@ -99,9 +104,12 @@ function close() {
             <strong>append-only</strong> — published metadata can be updated,
             but the PID itself stays.
           </p>
-          <v-select
+          <!-- UIRULE-DROPDOWN-SEARCH-SORT: 7 options → searchable (v-autocomplete),
+               naturally ordered by title (see LICENCES definition above). -->
+          <v-autocomplete
             v-model="selectedLicence"
             :items="LICENCES"
+            auto-select-first
             item-title="title"
             item-value="value"
             label="Licence"

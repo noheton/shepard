@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ContainerType } from "@dlr-shepard/backend-client";
 import Select from "~/components/common/Select.vue";
+import { naturalSort } from "~/utils/naturalSort";
 
 const containerTypeList = new Map<string, ContainerType>();
 containerTypeList.set("File", ContainerType.File);
 containerTypeList.set("Timeseries", ContainerType.Timeseries);
 containerTypeList.set("Structured Data", ContainerType.Structureddata);
+
+// UIRULE-DROPDOWN-SEARCH-SORT: reference type names in natural order.
+const containerTypeItems = naturalSort(Array.from(containerTypeList.keys()));
 
 const currentSelected = ref<string>("File");
 
@@ -25,7 +29,7 @@ function updateContainerType() {
 <template>
   <Select
     v-model:model-value="currentSelected"
-    :items="Array.from(containerTypeList.keys())"
+    :items="containerTypeItems"
     label="Container*"
     variant="outlined"
     density="compact"

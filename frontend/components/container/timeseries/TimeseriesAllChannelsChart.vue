@@ -95,6 +95,9 @@ const ingestMBps = computed(() => {
 });
 
 // User-tunable lists for the v-select dropdowns.
+// UIRULE-DROPDOWN-SEARCH-SORT exception: these are tiny (4-option) enums with a
+// deliberate ascending time order (100ms→30s, 1min→24h) — left as v-select, NOT
+// natural-sorted, because their order is meaningful, not alphabetical.
 const LIVE_INTERVALS = [
   { value: 100,   title: "100 ms" },
   { value: 1000,  title: "1 s" },

@@ -41,6 +41,7 @@ import {
   type ShapeEditorState,
   type PropertyRow,
 } from "~/utils/templateShapeDsl";
+import { naturalSort } from "~/utils/naturalSort";
 import { shouldFetchDataObjectRdf, buildDataObjectRdfUrl } from "~/utils/shaclPrefill";
 
 const props = defineProps<{
@@ -229,7 +230,8 @@ async function loadNodeShapeOptions(): Promise<void> {
         opts.push({ label: row.name ? `${row.name} (${iri})` : iri, shapeIri: iri });
       }
     }
-    nodeShapeOptions.value = opts;
+    // UIRULE-DROPDOWN-SEARCH-SORT: combobox is search-native; sort suggestions naturally.
+    nodeShapeOptions.value = naturalSort(opts, o => o.label);
   } catch {
     // fail-soft — combobox still allows free-text IRI input
   } finally {
@@ -439,8 +441,13 @@ defineExpose({ recompile, state });
                 />
               </v-col>
               <v-col cols="12" sm="5">
-                <v-select
+                <!-- UIRULE-DROPDOWN-SEARCH-SORT: 8 options → searchable
+                     (v-autocomplete); DATATYPE_OPTIONS is a curated common-first list
+                     (string/integer/decimal/…) whose order is deliberate, so it is
+                     NOT natural-sorted. -->
+                <v-autocomplete
                   v-model="row.datatype"
+                  auto-select-first
                   :items="DATATYPE_OPTIONS"
                   item-title="title"
                   item-value="value"
@@ -524,6 +531,7 @@ defineExpose({ recompile, state });
                   hide-details
                   data-test="in-value"
                 />
+                <!-- 2-option enum (LITERAL/IRI) — no search, no sort needed. -->
                 <v-select
                   v-model="m.kind"
                   :items="['LITERAL', 'IRI']"

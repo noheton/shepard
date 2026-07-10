@@ -17,6 +17,8 @@ import { useFetchProvenanceStats } from "~/composables/context/useFetchProvenanc
 
 const DAY_MILLIS = 24 * 60 * 60 * 1000;
 
+// UIRULE-DROPDOWN-SEARCH-SORT exception: 4-option time-range enum in deliberate
+// ascending order (7d→1y) — kept as v-select, not natural-sorted.
 const RANGES = [
   { title: "Last 7 days", days: 7 },
   { title: "Last 30 days", days: 30 },

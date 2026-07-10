@@ -11,6 +11,10 @@ const queryType = defineModel<QueryContainerType>("queryType", {
   required: true,
 });
 
+// UIRULE-DROPDOWN-SEARCH-SORT: searchable via the shared <Select> wrapper; the
+// order here is a deliberate curation (entity kinds first, then container kinds),
+// so it is NOT natural-sorted. item-title="text" == the visible label so the
+// autocomplete filters on what the user sees.
 const queryTypeUnifiedSearch = [
   { value: QueryType.Collection, text: "Collection" },
   { value: QueryType.DataObject, text: "Data Object" },

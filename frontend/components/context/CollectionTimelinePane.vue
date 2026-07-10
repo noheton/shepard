@@ -19,6 +19,7 @@ import {
   fetchCollectionsForCompare,
   type CollectionSummary,
 } from "~/composables/context/useCollectionTimeline";
+import { naturalSort } from "~/utils/naturalSort";
 import {
   binAnnotateMenuTitle,
   buildLaneOption,
@@ -92,13 +93,17 @@ async function loadSelectorItems(): Promise<void> {
 }
 
 /** Options for the autocomplete: all accessible collections except the current one. */
+// UIRULE-DROPDOWN-SEARCH-SORT: collections to compare, natural order by title.
 const compareOptions = computed(() =>
-  selectorItems.value
-    .filter((c) => c.appId !== props.collectionAppId)
-    .map((c) => ({
-      value: c.appId,
-      title: c.name ? `${c.name} (${c.appId.slice(0, 8)}…)` : c.appId,
-    })),
+  naturalSort(
+    selectorItems.value
+      .filter((c) => c.appId !== props.collectionAppId)
+      .map((c) => ({
+        value: c.appId,
+        title: c.name ? `${c.name} (${c.appId.slice(0, 8)}…)` : c.appId,
+      })),
+    (o) => o.title,
+  ),
 );
 
 // ── fetch orchestration ──────────────────────────────────────────────────────

@@ -46,6 +46,9 @@ const isValid = computed(() => {
           v-model:input-string="subscribedUrl"
           label="Subscribed URL"
         />
+        <!-- UIRULE-DROPDOWN-SEARCH-SORT: searchable via shared <Select>; a tiny
+             fixed HTTP-method enum — order not meaningful and not natural-sorted
+             (would require reshaping the [key,value] entry binding). -->
         <Select
           v-model:model-value="requestMethod"
           :items="Object.entries(RequestMethod)"

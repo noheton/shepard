@@ -8,6 +8,7 @@
 import type { TimeseriesRefItem } from "./CreateDataReferenceDialog.vue";
 import type { TimeseriesRef } from "./DataRef";
 import TimeseriesReferenceTimePicker from "./TimeseriesReferenceTimePicker.vue";
+import { naturalSort } from "~/utils/naturalSort";
 
 const { items, loading } = defineProps<{
   items: TimeseriesRefItem[] | undefined;
@@ -34,13 +35,18 @@ const endDate = ref();
 const startTime = ref();
 const endTime = ref();
 
+// UIRULE-DROPDOWN-SEARCH-SORT: naturally ordered so numeric channel suffixes
+// ("area0" < "area10", "TapeActForce[1]" < "TapeActForce[10]") sort correctly.
 const channelOptions = computed<ChannelOption[]>(() => {
   if (!items) return [];
-  return items.map(item => ({
-    title: `${item.measurement} · ${item.field}`,
-    subtitle: `${item.device} / ${item.location} / ${item.symbolicName}`,
-    value: item,
-  }));
+  return naturalSort(
+    items.map(item => ({
+      title: `${item.measurement} · ${item.field}`,
+      subtitle: `${item.device} / ${item.location} / ${item.symbolicName}`,
+      value: item,
+    })),
+    i => i.title,
+  );
 });
 
 watch(selectedChannels, () => {

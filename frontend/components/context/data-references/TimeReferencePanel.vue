@@ -208,6 +208,7 @@ async function onSave() {
     <div v-else>
       <div class="text-body-2 font-weight-medium mb-3">Time reference — edit</div>
 
+      <!-- UIRULE-DROPDOWN-SEARCH-SORT: 2-option mode enum — no search/sort needed. -->
       <v-select
         v-model="editMode"
         label="Time-base mode"

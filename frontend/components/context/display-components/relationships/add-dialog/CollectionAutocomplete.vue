@@ -65,6 +65,9 @@ function mapToSearchResultAutoCompleteItem(
 </script>
 
 <template>
+  <!-- UIRULE-DROPDOWN-SEARCH-SORT: results come from a server-side collection
+       search (useCollectionSearch) and arrive relevance-ranked — deliberately
+       NOT natural-sorted, which would clobber the ranking. -->
   <v-autocomplete
     :model-value="autoCompleteModel"
     :items="collectionSearchResults.map(mapToSearchResultAutoCompleteItem)"

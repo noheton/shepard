@@ -904,6 +904,8 @@ onMounted(() => {
           />
         </v-col>
         <v-col cols="12" md="2">
+          <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: small curated colormap list
+               (inferno/viridis/plasma) — kept as v-select, not natural-sorted. -->
           <v-select
             v-model="colormapName"
             label="Colormap"

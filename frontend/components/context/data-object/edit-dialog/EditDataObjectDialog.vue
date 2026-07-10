@@ -78,8 +78,12 @@ const searchCollectionAppId = computed<string | undefined>(() =>
         </v-row>
         <v-row>
           <v-col>
-            <v-select
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT: 10 options → searchable
+                 (v-autocomplete); order is the DataObject status lifecycle ladder
+                 (DRAFT→IN_REVIEW→READY→…), meaningful, so NOT natural-sorted. -->
+            <v-autocomplete
               v-model="updatedDataObject.status"
+              auto-select-first
               label="Status"
               :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED', 'NCR_OPEN', 'ON_HOLD', 'REJECTED', 'CERTIFIED', 'CONCESSION_PENDING']"
               clearable

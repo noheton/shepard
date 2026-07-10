@@ -40,6 +40,8 @@ const localValue = computed({
 </script>
 
 <template>
+  <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: 3-option privacy-disclosure ladder
+       (HASH_ONLY→BODY_REDACTED→BODY_RAW); kept as v-select, order preserved. -->
   <v-select
     v-model="localValue"
     :items="items"

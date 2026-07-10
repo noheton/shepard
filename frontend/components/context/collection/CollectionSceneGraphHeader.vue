@@ -18,6 +18,7 @@ import EntityNotFound from "~/components/common/EntityNotFound.vue";
 import UrdfCanvas from "~/components/shapes/UrdfCanvas.vue";
 import { materializeMapping } from "~/composables/useMaterializeMapping";
 import { useUrdfReferenceBlob } from "~/composables/useUrdfReferenceBlob";
+import { naturalSort } from "~/utils/naturalSort";
 import {
   fetchCollectionSceneGraphLink,
   linkCollectionSceneGraph,
@@ -65,10 +66,13 @@ async function loadPickerOptions(): Promise<void> {
     const accessToken = session.value?.accessToken;
     if (!accessToken) return;
     const items = await listHeroViewTemplates(accessToken);
-    pickerOptions.value = items.map((it) => ({
-      value: it.appId,
-      title: it.name ? `${it.name} (${it.appId.slice(0, 8)}…)` : it.appId,
-    }));
+    pickerOptions.value = naturalSort(
+      items.map((it) => ({
+        value: it.appId,
+        title: it.name ? `${it.name} (${it.appId.slice(0, 8)}…)` : it.appId,
+      })),
+      (o) => o.title,
+    );
   } catch {
     pickerOptions.value = [];
   } finally {
@@ -247,10 +251,12 @@ onBeforeUnmount(revokeBlob);
       <v-card>
         <v-card-title>Link a 3D view</v-card-title>
         <v-card-text>
-          <v-select
+          <!-- UIRULE-DROPDOWN-SEARCH-SORT: template list — searchable + natural order. -->
+          <v-autocomplete
             v-model="pickerTemplateId"
             :items="pickerOptions"
             :loading="pickerLoading"
+            auto-select-first
             item-title="title"
             item-value="value"
             label="MAPPING_RECIPE template (3D view)"

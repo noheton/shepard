@@ -791,8 +791,12 @@ async function saveEmbargoEdit() {
               />
               <DescriptionDisplay v-else :entity="dataObject" />
               <div v-if="descEditActive" class="d-flex align-center ga-2 mt-3">
-                <v-select
+                <!-- UIRULE-DROPDOWN-SEARCH-SORT: 5 options → searchable
+                     (v-autocomplete); status lifecycle ladder order is meaningful,
+                     so NOT natural-sorted. -->
+                <v-autocomplete
                   v-model="descStatusDraft"
+                  auto-select-first
                   label="Status"
                   :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
                   density="compact"
