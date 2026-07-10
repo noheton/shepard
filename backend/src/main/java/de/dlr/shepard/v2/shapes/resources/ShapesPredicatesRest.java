@@ -17,6 +17,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -70,6 +71,9 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 @Tag(name = "Shapes")
 public class ShapesPredicatesRest {
 
+  private static final Set<String> ALLOWED_SUBSTRATES =
+      Set.of("neo4j", "timescaledb", "postgres", "garage");
+
   @Inject
   PredicateVocabularyRepository repository;
 
@@ -95,6 +99,7 @@ public class ShapesPredicatesRest {
       schema = @Schema(type = SchemaType.INTEGER)
     )
   )
+  @APIResponse(responseCode = "400", description = "Unknown substrate value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response predicates(
     @Parameter(
@@ -113,6 +118,11 @@ public class ShapesPredicatesRest {
     List<PredicateVocabularyEntryIO> items;
     if (substrate != null && !substrate.isBlank()) {
       String sub = substrate.trim();
+      if (!ALLOWED_SUBSTRATES.contains(sub)) {
+        return Response.status(Response.Status.BAD_REQUEST)
+            .entity("Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")
+            .build();
+      }
       total = repository.countBySubstrate(sub);
       items = skip >= total ? List.of() : repository.findBySubstrate(sub, skip, pageSize);
     } else {

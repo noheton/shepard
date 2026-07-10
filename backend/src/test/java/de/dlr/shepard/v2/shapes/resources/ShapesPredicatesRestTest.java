@@ -90,6 +90,27 @@ class ShapesPredicatesRestTest {
     verify(repository).findAll(0, 200);
   }
 
+  // ─── substrate allowlist ──────────────────────────────────────────────────
+
+  @Test
+  void unknownSubstrate_returns400() {
+    Response r = rest.predicates("mongodb", 200, 0);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void unknownSubstrateWithSpaces_returns400() {
+    Response r = rest.predicates("  unknown  ", 200, 0);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void knownSubstrateWithLeadingSpace_returns200() {
+    when(repository.countBySubstrate("timescaledb")).thenReturn(0L);
+    Response r = rest.predicates(" timescaledb", 200, 0);
+    assertEquals(200, r.getStatus());
+  }
+
   // ─── substrate filter ──────────────────────────────────────────────────────
 
   @Test
