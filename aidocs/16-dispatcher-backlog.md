@@ -4530,14 +4530,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java`; `backend/src/main/java/de/dlr/shepard/v2/export/rep/RepExportIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire494.md §F2`.
 
 ## APISIMP-PREDICATES-PAGECAP — `ShapesPredicatesRest.predicates()` uses `@Max(500)` / "1–500" instead of the v2 standard `@Max(200)` / "1–200" (size: XS, sweep: fire-496)
-- **Status:** 🔄 in-flight (PR #2428) — CodeQL taint-chain fix applied fire-514; rebased onto main; awaiting CI.
+- **Status:** 🔄 in-flight (PR #2428) — retrigger commit pushed fire-515 (28e49e713) after CodeQL policy check raced Analyze java-kotlin again; awaiting next CI cycle.
 - **Why:** `ShapesPredicatesRest.java:106–107` declares `@Parameter(description = "Maximum entries per page (1–500). Default 200.")` and `@Max(500)` for the `pageSize` query param on `GET /v2/shapes/predicates`. Every other v2 list endpoint uses `@Max(200)` and the "1–200" description string — the 500 cap was introduced without justification when the endpoint was first written. Predicate vocabulary entries are lightweight (string label + URI); there is no performance or contract reason to diverge from the 200-cap standard. Same pattern as APISIMP-TPLREST-TAG-PAGECAP (fire-478, `ShepardTemplateRest.tags()`).
 - **Fix:** (1) Change `@Max(500)` → `@Max(200)` on the `pageSize` parameter in `ShapesPredicatesRest.java:107`. (2) Update the `@Parameter(description = "...")` string to replace "1–500" with "1–200". Two-character changes; zero logic change.
 - **AC:** `grep -n "Max(500)\|1.500" backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java` returns zero; `mvn -q -DnoPlugins compile` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:106–107`; fire-496 APISIMP sweep.
 
 ## APISIMP-PROJECTS-PAGECAP-DESC — `ProjectsRest.byAnnotation()` has wrong description "clamped to 500" and non-standard `@Max(500)` (size: XS, sweep: fire-514)
-- **Status:** ✓ shipped — fire-514; PR `APISIMP-PROJECTS-PAGECAP-DESC-1`.
+- **Status:** ✅ merged fire-515 (PR #2446, sha: e2dd4f92).
 - **Why:** `ProjectsRest.java:239–242` declares `@Max(500)` on the `pageSize` query param of `GET /v2/projects/{appId}/by-annotation`, with description "Maximum 500. Values above 500 are clamped to 500." Both the cap and the description are wrong: (1) bean validation `@Max(500)` rejects values >500 with 400, it does not clamp; (2) the v2 standard cap is 200 (per the convergence work). Found during fire-514 live-surface scan.
 - **Fix:** (1) Change `@Max(500)` → `@Max(200)`. (2) Update the description to "Maximum 200. Values above 200 are rejected with 400." Zero logic change.
 - **AC:** `grep -n "Max(500)\|clamped" backend/src/main/java/de/dlr/shepard/v2/project/resources/ProjectsRest.java` returns zero; description accurately reflects 400-rejection behaviour.
