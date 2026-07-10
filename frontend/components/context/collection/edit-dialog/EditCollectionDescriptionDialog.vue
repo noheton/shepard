@@ -41,10 +41,12 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
         </v-row>
         <v-row class="pt-4">
           <v-col>
-            <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: status lifecycle ladder
-                 (DRAFT→IN_REVIEW→READY→…), order meaningful — kept as v-select. -->
-            <v-select
+            <!-- UIRULE-DROPDOWN-SEARCH-SORT: 5 options → searchable
+                 (v-autocomplete); order is the status lifecycle ladder
+                 (DRAFT→IN_REVIEW→READY→…), meaningful, so NOT natural-sorted. -->
+            <v-autocomplete
               v-model="updatedCollection.status"
+              auto-select-first
               label="Status"
               :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
               clearable

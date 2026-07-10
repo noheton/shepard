@@ -104,9 +104,12 @@ function close() {
             <strong>append-only</strong> — published metadata can be updated,
             but the PID itself stays.
           </p>
-          <v-select
+          <!-- UIRULE-DROPDOWN-SEARCH-SORT: 7 options → searchable (v-autocomplete),
+               naturally ordered by title (see LICENCES definition above). -->
+          <v-autocomplete
             v-model="selectedLicence"
             :items="LICENCES"
+            auto-select-first
             item-title="title"
             item-value="value"
             label="Licence"

@@ -441,11 +441,13 @@ defineExpose({ recompile, state });
                 />
               </v-col>
               <v-col cols="12" sm="5">
-                <!-- UIRULE-DROPDOWN-SEARCH-SORT exception: DATATYPE_OPTIONS is a small
-                     curated common-first list (string/integer/decimal/…); its order is
-                     deliberate, so it stays a plain v-select and is not natural-sorted. -->
-                <v-select
+                <!-- UIRULE-DROPDOWN-SEARCH-SORT: 8 options → searchable
+                     (v-autocomplete); DATATYPE_OPTIONS is a curated common-first list
+                     (string/integer/decimal/…) whose order is deliberate, so it is
+                     NOT natural-sorted. -->
+                <v-autocomplete
                   v-model="row.datatype"
+                  auto-select-first
                   :items="DATATYPE_OPTIONS"
                   item-title="title"
                   item-value="value"

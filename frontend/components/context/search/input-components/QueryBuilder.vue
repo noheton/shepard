@@ -94,11 +94,13 @@ watch(
         style="min-width: 200px"
         @update:model-value="onPropertyChange(idx)"
       />
-      <!-- Operators are a tiny per-property set (=, contains, <, >, …) whose order
-           is meaningful; left as a plain v-select, not sorted. -->
-      <v-select
+      <!-- UIRULE-DROPDOWN-SEARCH-SORT: a string property exposes up to 8 operators
+           → searchable (v-autocomplete); the operator order (contains/equals/…/
+           comparisons) is meaningful, so it is NOT natural-sorted. -->
+      <v-autocomplete
         v-model="f.operator"
         :items="operatorOptions(f.property)"
+        auto-select-first
         density="compact"
         variant="outlined"
         label="Operator"
