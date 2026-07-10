@@ -72,7 +72,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>This resource mounts at {@code /v2/snapshots} (no path-template);
  * the existing {@link SnapshotRest} mounts at
- * {@code /v2/snapshots/{snapshotAppId}}. JAX-RS dispatches by template
+ * {@code /v2/snapshots/{appId}}. JAX-RS dispatches by template
  * specificity so there is no collision (template paths win over literal
  * paths only when they actually match — {@code GET /v2/snapshots} routes
  * here, {@code GET /v2/snapshots/abc} routes to {@link SnapshotRest}).

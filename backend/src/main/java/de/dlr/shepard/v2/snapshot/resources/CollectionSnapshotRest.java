@@ -110,8 +110,8 @@ public class CollectionSnapshotRest {
       "reachable VersionableEntity. ProvenanceCaptureFilter records a " +
       "`CREATE` Activity addressable at `GET /v2/provenance/entity/{appId}`.\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/snapshots` to list, " +
-      "`GET /v2/snapshots/{snapshotAppId}` for metadata, or " +
-      "`GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries."
+      "`GET /v2/snapshots/{appId}` for metadata, or " +
+      "`GET /v2/snapshots/{appId}/manifest` for the per-entity entries."
   )
   @APIResponse(
     responseCode = "201",
@@ -170,7 +170,7 @@ public class CollectionSnapshotRest {
       "Pagination: omit `page` / `size` to get the first 50; supply both " +
       "to paginate. `size` capped at 200 server-side.\n\n" +
       "Auth: Read on the Collection.\n\n" +
-      "Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the " +
+      "Next step: `GET /v2/snapshots/{appId}/manifest` for the " +
       "per-entity entries of a specific Snapshot, or " +
       "`GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots."
   )
