@@ -107,7 +107,7 @@ public class BundleGroupsV2Rest {
   private static final String PROBLEM_TYPE_NOT_FOUND      = "/problems/file-bundle-references.not-found";
 
   static final int DEFAULT_FILES_PAGE_SIZE = 200;
-  static final int MAX_FILES_PAGE_SIZE     = 1000;
+  static final int MAX_FILES_PAGE_SIZE     = 200;
 
   // ─── list groups ─────────────────────────────────────────────────────────
 
@@ -343,7 +343,7 @@ public class BundleGroupsV2Rest {
     description =
       "Canonical path (APISIMP-BUNDLE-REF-KIND-UNIFY). " +
       "Returns the files attached to the `:FileGroup` identified by `groupAppId`, paginated. " +
-      "`pageSize` default 200; max 1000. " +
+      "`pageSize` default 200; max 200. " +
       "Auth: Read permission on the parent DataObject."
   )
   @APIResponse(
@@ -363,10 +363,10 @@ public class BundleGroupsV2Rest {
     )
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(
-      description = "Page size, 1–1000 (default 200).",
-      schema = @Schema(minimum = "1", maximum = "1000", defaultValue = "200")
+      description = "Page size, 1–200 (default 200).",
+      schema = @Schema(minimum = "1", maximum = "200", defaultValue = "200")
     )
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
     FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
