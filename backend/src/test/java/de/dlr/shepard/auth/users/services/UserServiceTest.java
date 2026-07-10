@@ -13,6 +13,7 @@ import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import io.quarkus.test.InjectMock;
@@ -321,5 +322,39 @@ public class UserServiceTest {
     when(dao.findByEmail("ghost@nowhere.example")).thenReturn(Optional.empty());
 
     assertThrows(InvalidRequestException.class, () -> service.getCurrentUser());
+  }
+
+  /**
+   * BUG-ASSERT-CURRENT-USER-EMAIL-FALLBACK: assertCurrentUserEquals must pass for the
+   * caller's *stored* username even when the raw principal name diverges (node keyed by
+   * the OIDC sub while the token's preferred_username is "admin"). Resolving through
+   * getCurrentUser()'s email fallback is what unblocks POST /users/{sub}/apikeys.
+   */
+  @Test
+  public void assertCurrentUserEquals_passesForStoredUsername_whenRawPrincipalDiverges() {
+    var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
+    when(dao.find("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+
+    // path param = the stored username (the node key) → must NOT throw
+    service.assertCurrentUserEquals("uuid-service");
+  }
+
+  /**
+   * assertCurrentUserEquals must still reject a path param that is neither the stored
+   * username nor otherwise the caller's own identity (here: the raw preferred_username,
+   * which is not the stored node key).
+   */
+  @Test
+  public void assertCurrentUserEquals_throwsForNonStoredUsername() {
+    var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
+    when(dao.find("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+
+    assertThrows(InvalidAuthException.class, () -> service.assertCurrentUserEquals("admin"));
   }
 }

@@ -141,9 +141,22 @@ public class UserService {
 
   /**
    * @throws InvalidAuthException if the username does not match the user making the request
+   *
+   * <p>BUG-ASSERT-CURRENT-USER-EMAIL-FALLBACK: compares against the <em>resolved</em>
+   * current user (the same robust {@link #getCurrentUser()} path that falls back to the
+   * email claim), not the raw {@code principal.getUsername()}. When the stored Neo4j
+   * username diverges from the token's {@code preferred_username} (e.g. a node keyed by
+   * the OIDC {@code sub} while {@code shepard.oidc.username-claim=preferred_username}
+   * yields {@code "admin"}), the raw-principal comparison deadlocked every
+   * {@code assertCurrentUserEquals} caller — notably {@code POST /users/{username}/apikeys}:
+   * {@code {username}=sub} → 403 here, {@code {username}=preferred_username} → 404 (no such
+   * node). Resolving through {@link #getCurrentUser()} makes the self-scoped check pass
+   * for the caller's own stored username exactly as the read paths already do. Guards
+   * API-key mint, subscription writes, and every other self-scoped mutation.
    */
   public void assertCurrentUserEquals(String username) {
-    if (!authenticationContext.getCurrentUserName().equals(username)) {
+    User current = getCurrentUser();
+    if (current == null || !current.getUsername().equals(username)) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
     }
   }
