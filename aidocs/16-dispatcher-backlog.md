@@ -4699,7 +4699,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:62`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F3`.
 
 ## APISIMP-CHANNEL-PAGECAP — `ContainersV2Rest` channel/annotation list endpoints `@Max(500)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** ✅ shipped (fire-519).
 - **Why:** Three list endpoints in `ContainersV2Rest.java` use `@Max(500)` instead of the v2-standard 200: `listChannels` (line 651), `listChannelAnnotations` (line 1033), `listTemporalAnnotations` (line 1154). APISIMP-PAGESIZE-CAP-UNDOCUMENTED (fire-444) added OpenAPI `@Schema(maximum)` annotations to document these caps but did not change the cap value. APISIMP-TS-CONT-ANNOT-IN-MEMORY-PAGING (fire-442) fixed in-memory paging without changing the cap.
 - **Fix:** Change `@Max(500)` → `@Max(200)` on all three params; update the `@Parameter` description strings from "1–500" to "1–200".
 - **AC:** `grep -n '@Max(500)' backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` returns empty; `mvn verify -pl backend` green.
