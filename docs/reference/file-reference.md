@@ -102,9 +102,21 @@ should use the unified surface above.
 
 `fileKind` (V2CONV-A2) is detected at upload time from the original
 filename extension: `.krl`/`.src` → `krl`, `.svdx`, `.otvis`,
-`.urdf`, `.xit`, `.pdf`. Unrecognised extensions yield `null`. It is
-additive and nullable — singletons uploaded before V2CONV-A2 carry
-`fileKind: null`.
+`.urdf`, `.xit`, `.pdf`, and (MP4-PROMOTE-VIDEO) the common video
+containers `.mp4`/`.mov`/`.m4v`/`.avi`/`.mkv`/`.webm`/`.mpg`/`.mpeg`/`.wmv`
+→ `video`. Detection is case-insensitive. Unrecognised extensions yield
+`null`. It is additive and nullable — singletons uploaded before
+V2CONV-A2 carry `fileKind: null`.
+
+A singleton whose `fileKind` is `video` is rendered **inline as a
+playable video** on the file-reference detail page (native HTML5
+player, byte-range streaming — no whole-file download) and shows a
+video icon in the DataObject data-references table. This is separate
+from the dedicated `VideoStreamReference` kind (`video-stream-references.md`);
+a `fileKind=video` File reference stays a File reference — it is just
+recognised and played as video. Existing MP4 singletons uploaded
+before this feature are backfilled to `fileKind=video` by the
+idempotent Neo4j migration `V119__promote_video_filekind.cypher`.
 
 Permissions: every endpoint resolves the parent DataObject from the
 singleton and asks the same `PermissionsService` the upstream API

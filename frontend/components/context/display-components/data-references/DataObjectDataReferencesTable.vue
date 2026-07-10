@@ -2,7 +2,10 @@
 import DataObjectDataMetaCell from "./DataObjectDataMetaCell.vue";
 import type { DataReference } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
-import { mapDataReferenceToDataTableElement } from "./dataTableElementMappingUtil";
+import {
+  mapDataReferenceToDataTableElement,
+  isInlineVideoFileRow,
+} from "./dataTableElementMappingUtil";
 import { useManageGitReferences } from "~/composables/context/useManageGitReferences";
 import { useJupyterConfig } from "~/composables/context/admin/useJupyterConfig";
 import {
@@ -272,6 +275,19 @@ const KIND_ORDER: RefKind[] = [
   "Spatial",
 ];
 
+/**
+ * MP4-PROMOTE-VIDEO — per-row icon. A "File" singleton tagged
+ * fileKind="video" is a playable video, so it shows the video icon even though
+ * it stays in the "File" row type (not the separate VideoStreamReference
+ * "Video" tab). All other rows fall back to the kind icon.
+ */
+function iconForItem(item: DataTableElement): string {
+  if (isInlineVideoFileRow(item)) {
+    return "mdi-video-outline";
+  }
+  return kindIcons[item.type];
+}
+
 const headers = [
   {
     title: "Type",
@@ -423,11 +439,11 @@ function formatDuration(seconds: number | null | undefined): string {
           class="reference-link d-inline-flex align-center"
           @click.prevent="showDetails(item.actions.showDetails.pathFragment, showDetailsId(item)!)"
         >
-          <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
+          <v-icon :icon="iconForItem(item)" size="small" class="me-1" />
           {{ item.type }}
         </a>
         <span v-else class="d-inline-flex align-center">
-          <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
+          <v-icon :icon="iconForItem(item)" size="small" class="me-1" />
           {{ item.type }}
         </span>
       </template>
