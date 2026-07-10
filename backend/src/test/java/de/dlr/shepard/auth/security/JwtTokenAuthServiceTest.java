@@ -73,12 +73,12 @@ class JwtTokenAuthServiceTest {
     Date now = new Date();
     Date future = DateUtils.addMinutes(now, 5);
     var builder = Jwts.builder()
-      .setSubject(subject)
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(now)
-      .setId(UUID.randomUUID().toString())
+      .subject(subject)
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(now)
+      .id(UUID.randomUUID().toString())
       .claim("azp", "testcase");
     if (realmRoles != null) {
       builder.claim("realm_access", new RolesList(realmRoles));
@@ -146,11 +146,11 @@ class JwtTokenAuthServiceTest {
     var svc = service("", "groups", "shepard-admin", roleDAO);
 
     String jws = Jwts.builder()
-      .setSubject("alice")
-      .setAudience("account")
-      .setExpiration(DateUtils.addMinutes(new Date(), 5))
-      .setIssuedAt(new Date())
-      .setId(UUID.randomUUID().toString())
+      .subject("alice")
+      .audience().single("account")
+      .expiration(DateUtils.addMinutes(new Date(), 5))
+      .issuedAt(new Date())
+      .id(UUID.randomUUID().toString())
       .claim("groups", List.of("shepard-admin", "users"))
       .signWith(privateKey)
       .compact();
@@ -180,11 +180,11 @@ class JwtTokenAuthServiceTest {
     var svc = service("", "resource_access.shepard.roles", "instance-admin", roleDAO);
 
     String jws = Jwts.builder()
-      .setSubject("eve")
-      .setAudience("account")
-      .setExpiration(DateUtils.addMinutes(new Date(), 5))
-      .setIssuedAt(new Date())
-      .setId(UUID.randomUUID().toString())
+      .subject("eve")
+      .audience().single("account")
+      .expiration(DateUtils.addMinutes(new Date(), 5))
+      .issuedAt(new Date())
+      .id(UUID.randomUUID().toString())
       .claim("resource_access", java.util.Map.of("shepard", java.util.Map.of("roles", List.of("instance-admin"))))
       .signWith(privateKey)
       .compact();
@@ -199,10 +199,10 @@ class JwtTokenAuthServiceTest {
     var svc = service("", "realm_access.roles", "", mockRoleDAO());
     Date past = DateUtils.addMinutes(new Date(), -5);
     String jws = Jwts.builder()
-      .setSubject("bob")
-      .setExpiration(past)
-      .setIssuedAt(DateUtils.addMinutes(new Date(), -10))
-      .setId(UUID.randomUUID().toString())
+      .subject("bob")
+      .expiration(past)
+      .issuedAt(DateUtils.addMinutes(new Date(), -10))
+      .id(UUID.randomUUID().toString())
       .signWith(privateKey)
       .compact();
 
@@ -234,11 +234,11 @@ class JwtTokenAuthServiceTest {
 
     Date now = new Date();
     String jws = Jwts.builder()
-      .setSubject("9a176950-418c-dead-beef-000000000001") // Keycloak UUID sub
-      .setAudience("account")
-      .setExpiration(DateUtils.addMinutes(now, 5))
-      .setIssuedAt(now)
-      .setId(UUID.randomUUID().toString())
+      .subject("9a176950-418c-dead-beef-000000000001") // Keycloak UUID sub
+      .audience().single("account")
+      .expiration(DateUtils.addMinutes(now, 5))
+      .issuedAt(now)
+      .id(UUID.randomUUID().toString())
       .claim("preferred_username", "bob_display")
       .signWith(privateKey)
       .compact();
@@ -272,11 +272,11 @@ class JwtTokenAuthServiceTest {
 
     Date now = new Date();
     String jws = Jwts.builder()
-      .setSubject("some-uuid")
-      .setAudience("account")
-      .setExpiration(DateUtils.addMinutes(now, 5))
-      .setIssuedAt(now)
-      .setId(UUID.randomUUID().toString())
+      .subject("some-uuid")
+      .audience().single("account")
+      .expiration(DateUtils.addMinutes(now, 5))
+      .issuedAt(now)
+      .id(UUID.randomUUID().toString())
       .claim("upn", "carol@example.org")
       .signWith(privateKey)
       .compact();
@@ -313,12 +313,12 @@ class JwtTokenAuthServiceTest {
     // compares `iat` to `roleChangedAt`, not to `exp`.
     Date futureExp = DateUtils.addMinutes(new Date(), 60);
     return Jwts.builder()
-      .setSubject(subject)
-      .setAudience("account")
-      .setExpiration(futureExp)
-      .setNotBefore(issuedAt)
-      .setIssuedAt(issuedAt)
-      .setId(UUID.randomUUID().toString())
+      .subject(subject)
+      .audience().single("account")
+      .expiration(futureExp)
+      .notBefore(issuedAt)
+      .issuedAt(issuedAt)
+      .id(UUID.randomUUID().toString())
       .claim("realm_access", new RolesList(new String[] { "users" }))
       .signWith(privateKey)
       .compact();

@@ -181,12 +181,12 @@ public class JWTFilterTest extends BaseTestCase {
     Date future = DateUtils.addMinutes(new Date(), -5);
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(UUID.randomUUID().toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(UUID.randomUUID().toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -210,11 +210,11 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -238,11 +238,11 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -267,12 +267,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -295,12 +295,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -326,12 +326,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -354,12 +354,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("name", "MyName")
       .claim("preferred_username", "MyUserName")
@@ -385,10 +385,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -418,9 +418,9 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -445,9 +445,9 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .claim("sub", "")
       .signWith(privateKey)
       .compact();
@@ -473,10 +473,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(future)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(future)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -501,10 +501,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -522,10 +522,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -551,11 +551,11 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(now)
-      .setExpiration(future)
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(now)
+      .expiration(future)
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -582,11 +582,11 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(issued)
-      .setIssuedAt(issued)
-      .setExpiration(past)
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(issued)
+      .issuedAt(issued)
+      .expiration(past)
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -607,10 +607,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(now)
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(now)
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -634,10 +634,10 @@ public class JWTFilterTest extends BaseTestCase {
     UUID uid = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -673,12 +673,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("alice")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("alice")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("groups", java.util.List.of("shepard-admin", "users"))
       .signWith(privateKey)
       .compact();
@@ -705,12 +705,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("realm_access", new RolesList(new String[] { "users" }))
       .signWith(privateKey)
       .compact();
@@ -737,12 +737,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("carol")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("carol")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("realm_access", new RolesList(new String[] { "shepard-admin" }))
       .signWith(privateKey)
       .compact();
@@ -771,12 +771,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("dave")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("dave")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("realm_access", new RolesList(new String[] { "users" }))
       .signWith(privateKey)
       .compact();
@@ -804,12 +804,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("eve")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("eve")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim(
         "resource_access",
         java.util.Map.of("shepard", java.util.Map.of("roles", java.util.List.of("instance-admin")))
@@ -854,12 +854,12 @@ public class JWTFilterTest extends BaseTestCase {
     when(userDAO.find("Bob")).thenReturn(u);
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(DateUtils.addMinutes(new Date(), 5))
-      .setNotBefore(issuedAt)
-      .setIssuedAt(issuedAt)
-      .setId(UUID.randomUUID().toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(DateUtils.addMinutes(new Date(), 5))
+      .notBefore(issuedAt)
+      .issuedAt(issuedAt)
+      .id(UUID.randomUUID().toString())
       .claim("azp", "testcase")
       .claim("realm_access", new RolesList(new String[] { "test_role" }))
       .signWith(privateKey)
@@ -894,10 +894,10 @@ public class JWTFilterTest extends BaseTestCase {
     Date now = new Date();
     UUID uid = UUID.randomUUID();
     String jws = Jwts.builder()
-      .setSubject("MyUserName")
-      .setNotBefore(now)
-      .setIssuedAt(now)
-      .setId(uid.toString())
+      .subject("MyUserName")
+      .notBefore(now)
+      .issuedAt(now)
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -934,12 +934,12 @@ public class JWTFilterTest extends BaseTestCase {
     UUID keyId = UUID.randomUUID();
 
     String jws = Jwts.builder()
-      .setSubject("Bob")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(keyId.toString())
+      .subject("Bob")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(keyId.toString())
       .claim("azp", "testcase")
       .claim("preferred_username", "Bob")
       .claim("realm_access", new RolesList(new String[] { "test_role" }))
@@ -971,12 +971,12 @@ public class JWTFilterTest extends BaseTestCase {
     Date future = DateUtils.addMinutes(now, 5);
 
     String headerJws = Jwts.builder()
-      .setSubject("HeaderUser")
-      .setAudience("account")
-      .setExpiration(future)
-      .setNotBefore(now)
-      .setIssuedAt(new Date())
-      .setId(UUID.randomUUID().toString())
+      .subject("HeaderUser")
+      .audience().single("account")
+      .expiration(future)
+      .notBefore(now)
+      .issuedAt(new Date())
+      .id(UUID.randomUUID().toString())
       .claim("realm_access", new RolesList(new String[] { "test_role" }))
       .signWith(privateKey)
       .compact();

@@ -56,6 +56,21 @@ jobs:
           restore-keys: |
             owasp-nvd-
 
+      - name: Install in-tree plugins (scripts/install-plugins.sh)
+        # Runs from the repo root (the job default working-directory is
+        # `backend`, but install-plugins.sh + the plugin reactor live at root).
+        working-directory: ${{ github.workspace }}
+        # SECURITY-YML-PLUGIN-INSTALL (2026-07-07): the with-plugins backend
+        # install below resolves shepard-plugin-* SNAPSHOT JARs from ~/.m2 —
+        # they are never published to Maven Central, so they must be built and
+        # installed first. ci.yml and codeql.yml already run this (task #312);
+        # security.yml did not, so the OWASP job failed at dependency resolution
+        # ("Could not find artifact shepard-plugin-unhide:jar:6.0.0-SNAPSHOT")
+        # before the CVE scan ever ran — a spurious failure on every plugin-
+        # touching PR AND on main. Single source of truth shared with
+        # `make build-plugins`.
+        run: bash scripts/install-plugins.sh
+
       - name: Install project JARs into local Maven repo
         # Required so dependency-check can resolve SNAPSHOT plugin JARs that
         # aren't yet published to Maven Central (e.g. shepard-plugin-vis-ndt-grid).

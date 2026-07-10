@@ -6,6 +6,8 @@ import de.dlr.shepard.data.spatialdata.model.SpatialDataPoint;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.PersistenceUnit;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Locale;
@@ -25,8 +27,19 @@ public class SpatialDataPointRepository {
 
   private static final String[] ALL_COLUMNS_STRING = new String[] { "*" };
 
+  // Quarkus 3.37 eagerly resolves the 'spatial' persistence-unit Session at
+  // startup for any *direct* injection point; when the spatial PU is inactive
+  // (shepard.infrastructure.spatial.enabled=false — the default) that throws
+  // InactiveBeanException and aborts boot. Inject the EntityManager lazily via
+  // Instance<> (same shape as PostGisPinger) so the Session is only created on
+  // first spatial use, which only happens when the feature is enabled.
+  @Inject
   @PersistenceUnit("spatial")
-  EntityManager entityManager;
+  Instance<EntityManager> entityManagerInstance;
+
+  private EntityManager entityManager() {
+    return entityManagerInstance.get();
+  }
 
   @Timed(value = "shepard.spatial-data.insert")
   public int insert(long containerId, SpatialDataPoint data) {
@@ -56,7 +69,7 @@ public class SpatialDataPointRepository {
       )
       .build();
 
-    var query = entityManager.createNativeQuery(sql);
+    var query = entityManager().createNativeQuery(sql);
     var resultCount = query.executeUpdate();
     if (resultCount <= 0) throw new RuntimeException("SpatialData was not stored in database.");
     return resultCount;
@@ -94,7 +107,7 @@ public class SpatialDataPointRepository {
           )
         );
       }
-      var query = entityManager.createNativeQuery(sql.build());
+      var query = entityManager().createNativeQuery(sql.build());
       allResultCount += query.executeUpdate();
     }
     return allResultCount;
@@ -107,7 +120,7 @@ public class SpatialDataPointRepository {
    */
   @Timed(value = "shepard.spatial-data.delete-by-container")
   public int deleteByContainerId(long containerId) {
-    return entityManager
+    return entityManager()
       .createNativeQuery(
         "DELETE FROM %s WHERE %s=:containerId;".formatted(SPATIAL_TABLE_NAME, SPATIAL_COLUMN_CONTAINER_ID)
       )
@@ -123,7 +136,7 @@ public class SpatialDataPointRepository {
       .addWhereCondition(SPATIAL_COLUMN_CONTAINER_ID, containerId)
       .build();
 
-    return entityManager.createNativeQuery(query, SpatialDataPoint.class).getResultList();
+    return entityManager().createNativeQuery(query, SpatialDataPoint.class).getResultList();
   }
 
   @Timed(value = "shepard.spatial-data.query-by-bounding-box")
@@ -146,7 +159,7 @@ public class SpatialDataPointRepository {
       .addSkipClause(skip)
       .addLimitClause(limit);
 
-    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    var query = entityManager().createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
     queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
@@ -181,7 +194,7 @@ public class SpatialDataPointRepository {
       .addSkipClause(skip)
       .addLimitClause(limit);
 
-    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    var query = entityManager().createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
     queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
@@ -209,7 +222,7 @@ public class SpatialDataPointRepository {
       .addSkipClause(skip)
       .addLimitClause(limit);
 
-    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    var query = entityManager().createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
     queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }
@@ -239,7 +252,7 @@ public class SpatialDataPointRepository {
       .addJsonFilterConditions(SPATIAL_COLUMN_MEASUREMENTS, measurementsFilter)
       .addKNNGeometryCondition(coordinate.x, coordinate.y, coordinate.z, k);
 
-    var query = entityManager.createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
+    var query = entityManager().createNativeQuery(queryBuilder.build(), SpatialDataPoint.class);
     queryBuilder.getQueryParameters().forEach(query::setParameter);
     return query.getResultList();
   }

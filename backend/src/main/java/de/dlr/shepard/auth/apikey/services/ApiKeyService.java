@@ -288,13 +288,13 @@ public class ApiKeyService {
     pkiHelper.init();
     var currentDate = dateHelper.getDate();
     var builder = Jwts.builder()
-      .setSubject(apiKey.getBelongsTo().getUsername())
-      .setIssuer(baseUri)
-      .setNotBefore(currentDate)
-      .setIssuedAt(currentDate)
-      .setId(apiKey.getUid().toString());
+      .subject(apiKey.getBelongsTo().getUsername())
+      .issuer(baseUri)
+      .notBefore(currentDate)
+      .issuedAt(currentDate)
+      .id(apiKey.getUid().toString());
     if (apiKey.getValidUntil() != null) {
-      builder.setExpiration(apiKey.getValidUntil());
+      builder.expiration(apiKey.getValidUntil());
     }
     Set<String> roles = apiKey.getRoles();
     if (roles != null && !roles.isEmpty()) {

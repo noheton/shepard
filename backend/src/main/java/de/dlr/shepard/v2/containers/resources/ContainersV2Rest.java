@@ -647,8 +647,8 @@ public class ContainersV2Rest {
     @PathParam("appId") String appId,
     @Parameter(description = "0-based page index. Default `0`. Values past the last page return an empty items list.")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Number of channels per page. Default `200`. Must be between 1 and 500 (400 on violation).")
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+    @Parameter(description = "Number of channels per page. Default `200`. Must be between 1 and 200 (400 on violation).")
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1007,7 +1007,7 @@ public class ContainersV2Rest {
     operationId = "listChannelAnnotations",
     summary = "List semantic annotations on a timeseries channel.",
     description =
-      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 500.\n\n" +
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 200.\n\n" +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
@@ -1028,9 +1028,9 @@ public class ContainersV2Rest {
       @Parameter(description = "Zero-based page index (default 0).",
         schema = @Schema(minimum = "0", defaultValue = "0"))
         @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-      @Parameter(description = "Items per page, capped at 500 (default 200).",
-        schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
-        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+      @Parameter(description = "Items per page, capped at 200 (default 200).",
+        schema = @Schema(minimum = "1", maximum = "200", defaultValue = "200"))
+        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1129,7 +1129,7 @@ public class ContainersV2Rest {
     operationId = "listTemporalAnnotations",
     summary = "List all temporal annotations on a container.",
     description =
-      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 500.\n\n" +
+      "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 200.\n\n" +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
@@ -1149,9 +1149,9 @@ public class ContainersV2Rest {
       @Parameter(description = "Zero-based page index (default 0).",
         schema = @Schema(minimum = "0", defaultValue = "0"))
         @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-      @Parameter(description = "Items per page, capped at 500 (default 200).",
-        schema = @Schema(minimum = "1", maximum = "500", defaultValue = "200"))
-        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+      @Parameter(description = "Items per page, capped at 200 (default 200).",
+        schema = @Schema(minimum = "1", maximum = "200", defaultValue = "200"))
+        @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);

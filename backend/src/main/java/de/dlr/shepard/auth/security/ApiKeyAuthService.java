@@ -118,7 +118,7 @@ public class ApiKeyAuthService {
     JWTPrincipal principal = parsePrincipal(jws);
     if (principal == null) return null;
 
-    UUID tokenId = UUID.fromString(jws.getBody().getId());
+    UUID tokenId = UUID.fromString(jws.getPayload().getId());
 
     if (apiKeyLastSeenCache.isKeyCached(tokenId.toString())) {
       return principal;
@@ -156,8 +156,8 @@ public class ApiKeyAuthService {
       return null;
     }
     try {
-      Jws<Claims> jws = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-      Log.debugf("Valid token: %s", jws.getBody().getId());
+      Jws<Claims> jws = Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+      Log.debugf("Valid token: %s", jws.getPayload().getId());
       return jws;
     } catch (ExpiredJwtException ex) {
       throw ex;
@@ -196,7 +196,7 @@ public class ApiKeyAuthService {
 
   /** Build a principal from a validated API-key JWS (no DB check). */
   public JWTPrincipal parsePrincipal(Jws<Claims> jws) {
-    var body = jws.getBody();
+    var body = jws.getPayload();
     String subject = body.getSubject();
     String keyId = body.getId();
     if (subject == null || subject.isEmpty()) {
@@ -207,7 +207,7 @@ public class ApiKeyAuthService {
   }
 
   static Set<String> readRolesFromJws(Jws<Claims> jws) {
-    Object claim = jws.getBody().get("roles");
+    Object claim = jws.getPayload().get("roles");
     if (!(claim instanceof Collection<?> col)) return Set.of();
     Set<String> out = new LinkedHashSet<>();
     for (Object item : col) {

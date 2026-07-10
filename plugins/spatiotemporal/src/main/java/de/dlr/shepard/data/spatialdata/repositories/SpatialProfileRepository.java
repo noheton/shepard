@@ -7,6 +7,7 @@ import io.quarkus.agroal.DataSource;
 import io.quarkus.hibernate.orm.PersistenceUnit;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
@@ -53,12 +54,27 @@ public class SpatialProfileRepository {
         "CASE WHEN ?5::text IS NULL THEN NULL ELSE ST_GeomFromEWKT(?5) END, " +
         "CAST(?6 AS JSONB), CAST(?7 AS JSONB), CAST(?8 AS JSONB))";
 
+    // Quarkus 3.37 eagerly resolves the 'spatial' persistence-unit Session (and
+    // the inactive-datasource beans) at startup for any *direct* injection point;
+    // when the spatial PU/datasource is inactive (shepard.infrastructure.spatial
+    // .enabled=false — the default) that throws InactiveBeanException and aborts
+    // boot. Inject lazily via Instance<> (same shape as PostGisPinger) so the
+    // beans are only created on first spatial use (feature-gated).
     @Inject
     @DataSource("spatial")
-    AgroalDataSource spatialDataSource;
+    Instance<AgroalDataSource> spatialDataSourceInstance;
 
+    @Inject
     @PersistenceUnit("spatial")
-    EntityManager entityManager;
+    Instance<EntityManager> entityManagerInstance;
+
+    private AgroalDataSource spatialDataSource() {
+        return spatialDataSourceInstance.get();
+    }
+
+    private EntityManager entityManager() {
+        return entityManagerInstance.get();
+    }
 
     /**
      * Insert a batch of profile rows into {@code shepard_spatial.profile}.
@@ -92,7 +108,7 @@ public class SpatialProfileRepository {
             appendCsvRow(sb, row);
         }
 
-        try (Connection conn = spatialDataSource.getConnection()) {
+        try (Connection conn = spatialDataSource().getConnection()) {
             PGConnection pgConn = conn.unwrap(PGConnection.class);
             CopyManager copyManager = pgConn.getCopyAPI();
             InputStream input = new ByteArrayInputStream(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -114,7 +130,7 @@ public class SpatialProfileRepository {
             String metadataJson     = toJsonOrEmpty(row.metadata());
             String orientationJson  = toJsonOrEmpty(row.orientation());
 
-            entityManager.createNativeQuery(INSERT_SQL)
+            entityManager().createNativeQuery(INSERT_SQL)
                 .setParameter(1, row.containerId())
                 .setParameter(2, row.time())
                 .setParameter(3, row.profileKind())

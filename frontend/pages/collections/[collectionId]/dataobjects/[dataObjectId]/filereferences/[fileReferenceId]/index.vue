@@ -135,8 +135,19 @@ const inlinePdfUrl = computed<string | undefined>(() => {
   return withAccessToken(fileContentUrl.value);
 });
 
+// MP4-PROMOTE-VIDEO: singleton FileReference tagged fileKind="video" gets an
+// inline player. Unlike image/pdf we hand VideoPlayer the RAW content URL +
+// the access token separately — VideoPlayer appends `?access_token=` itself
+// (native <video> can't set an Authorization header) and does its own Range
+// requests, so we must NOT pre-append the token here (would double-append).
+const inlineVideoUrl = computed<string | undefined>(() => {
+  if (fileReference.value?.fileKind !== "video") return undefined;
+  if (!fileContentUrl.value) return undefined;
+  return fileContentUrl.value;
+});
+
 const hasInlineDefaultView = computed(
-  () => !!inlineImageUrl.value || !!inlinePdfUrl.value,
+  () => !!inlineImageUrl.value || !!inlinePdfUrl.value || !!inlineVideoUrl.value,
 );
 
 
@@ -332,6 +343,19 @@ watch(fileReference, () => {
                   :src="inlinePdfUrl"
                   style="width: 100%; height: 600px; border: 1px solid rgba(0,0,0,0.12); border-radius: 4px"
                   data-testid="inline-pdf-preview"
+                />
+              </v-col>
+            </v-row>
+
+            <!-- MP4-PROMOTE-VIDEO: inline player for fileKind="video" singleton
+                 FileReferences. VideoPlayer streams the content URL natively
+                 (Range requests) and appends the access token itself. -->
+            <v-row v-if="inlineVideoUrl">
+              <v-col cols="12">
+                <VideoPlayer
+                  :src="inlineVideoUrl"
+                  :access-token="accessToken"
+                  data-testid="inline-video-preview"
                 />
               </v-col>
             </v-row>
