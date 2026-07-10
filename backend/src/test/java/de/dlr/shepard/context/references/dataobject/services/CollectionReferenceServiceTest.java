@@ -253,7 +253,7 @@ public class CollectionReferenceServiceTest {
 
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
-    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(InvalidPathException.class);
+    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(new InvalidPathException());
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -318,7 +318,7 @@ public class CollectionReferenceServiceTest {
     };
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(InvalidPathException.class);
+    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(new InvalidPathException());
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -354,7 +354,7 @@ public class CollectionReferenceServiceTest {
 
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(InvalidAuthException.class);
+    when(collectionService.getCollection(referenced.getShepardId())).thenThrow(new InvalidAuthException());
     var ex = assertThrows(InvalidAuthException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
     );

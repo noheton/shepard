@@ -128,11 +128,11 @@ public class ApiKeyServiceTest extends BaseTestCase {
     var user = new User("bob");
     var date = new Date(30L);
     var jws = Jwts.builder()
-      .setSubject("bob")
-      .setIssuer("uri")
-      .setNotBefore(date)
-      .setIssuedAt(date)
-      .setId(uid.toString())
+      .subject("bob")
+      .issuer("uri")
+      .notBefore(date)
+      .issuedAt(date)
+      .id(uid.toString())
       .signWith(key)
       .compact();
     var input = new ApiKeyIO();
@@ -321,7 +321,8 @@ public class ApiKeyServiceTest extends BaseTestCase {
    * `quality-engineer` role and passes `@RolesAllowed("quality-engineer")`.
    */
   @Test
-  public void createApiKey_noExplicitRoles_inheritsEffectiveRoles() {
+  public void createApiKey_noExplicitRoles_inheritsEffectiveRoles()
+    throws NoSuchAlgorithmException, InvalidKeySpecException {
     var uid = UUID.randomUUID();
     var user = new User("qe");
     var date = new Date(30L);
@@ -360,11 +361,19 @@ public class ApiKeyServiceTest extends BaseTestCase {
     );
     // And the signed JWT must carry the `roles` claim the authz reads
     // (Constants.ROLES = "roles") — decode it directly from the signed JWS.
-    var claims = io.jsonwebtoken.Jwts.parserBuilder()
-      .setSigningKey(pkiHelper.getPrivateKey())
+    // jjwt 0.13's verifyWith() is typed and rejects a PrivateKey (0.11 was
+    // lenient); derive the matching RSA public key from the CRT private key.
+    var rsaPrivate = (java.security.interfaces.RSAPrivateCrtKey) key;
+    var pubSpec = new java.security.spec.RSAPublicKeySpec(
+      rsaPrivate.getModulus(),
+      rsaPrivate.getPublicExponent()
+    );
+    var publicKey = KeyFactory.getInstance("RSA").generatePublic(pubSpec);
+    var claims = io.jsonwebtoken.Jwts.parser()
+      .verifyWith(publicKey)
       .build()
-      .parseClaimsJws(actual.getJws())
-      .getBody();
+      .parseSignedClaims(actual.getJws())
+      .getPayload();
     Object rolesClaim = claims.get("roles");
     org.junit.jupiter.api.Assertions.assertTrue(
       rolesClaim instanceof java.util.Collection<?> col && col.contains("quality-engineer"),

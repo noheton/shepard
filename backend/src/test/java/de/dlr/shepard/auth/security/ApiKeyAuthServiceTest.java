@@ -109,10 +109,10 @@ class ApiKeyAuthServiceTest {
     UUID uid = UUID.randomUUID();
     Date past = DateUtils.addMinutes(new Date(), -5);
     String jws = Jwts.builder()
-      .setSubject("alice")
-      .setExpiration(past)
-      .setIssuedAt(DateUtils.addMinutes(new Date(), -10))
-      .setId(uid.toString())
+      .subject("alice")
+      .expiration(past)
+      .issuedAt(DateUtils.addMinutes(new Date(), -10))
+      .id(uid.toString())
       .signWith(privateKey)
       .compact();
 
@@ -161,10 +161,10 @@ class ApiKeyAuthServiceTest {
 
   private static String signedJws(UUID uid, String subject, Set<String> roles) {
     return Jwts.builder()
-      .setSubject(subject)
-      .setNotBefore(new Date())
-      .setIssuedAt(new Date())
-      .setId(uid.toString())
+      .subject(subject)
+      .notBefore(new Date())
+      .issuedAt(new Date())
+      .id(uid.toString())
       .claim("roles", roles)
       .signWith(privateKey)
       .compact();
