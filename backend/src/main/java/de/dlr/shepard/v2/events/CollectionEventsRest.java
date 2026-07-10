@@ -44,7 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * @see CollectionEventBus
  * @see CollectionEventProducer
  */
-@Path("/v2/collections/{collectionAppId}/events")
+@Path("/v2/collections/{appId}/events")
 @RequestScoped
 @Authenticated
 @Tag(name = "Collections")
@@ -80,7 +80,7 @@ public class CollectionEventsRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public void subscribe(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Context SseEventSink sink,
     @Context Sse sse,
     @Context SecurityContext securityContext
@@ -89,13 +89,13 @@ public class CollectionEventsRest {
     String caller = securityContext.getUserPrincipal().getName();
 
     // Throws NotFoundException (→ HTTP 404) if no Collection with this appId.
-    Long ogmId = entityIdResolver.resolveLong(collectionAppId);
+    Long ogmId = entityIdResolver.resolveLong(appId);
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
       throw new ForbiddenException();
     }
 
-    eventBus.subscribe(collectionAppId, sink, sse);
+    eventBus.subscribe(appId, sink, sse);
     // The sink stays open; the JAX-RS runtime holds the HTTP connection open
     // for the lifetime of the sink. The bus prunes closed sinks on next emit.
   }
