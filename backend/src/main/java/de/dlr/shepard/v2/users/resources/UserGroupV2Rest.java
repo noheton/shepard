@@ -267,7 +267,8 @@ public class UserGroupV2Rest {
       "RFC 7396 merge-patch the permissions for the user group at `appId`. " +
       "Only fields present in the body are applied; absent fields are left unchanged. " +
       "Mutable fields: `permissionType`, `owner`, `reader`, `writer`, `manager`, " +
-      "`readerGroupIds`, `writerGroupIds`. Requires Manage access."
+      "`readerGroupAppIds`, `writerGroupAppIds` (UUID v7). " +
+      "`readerGroupIds`/`writerGroupIds` (numeric) are rejected with 400. Requires Manage access."
   )
   @APIResponse(
     responseCode = "200",
@@ -317,19 +318,36 @@ public class UserGroupV2Rest {
       }
       current.setManager(managerList.stream().map(Object::toString).toArray(String[]::new));
     }
-    if (patch.containsKey("readerGroupIds") && patch.get("readerGroupIds") instanceof java.util.List<?> rgl) {
+    // APISIMP-USERGROUP-NUMERIC-PERMS-BLOCK: numeric group IDs are blocked; use UUID v7 appId.
+    if (patch.containsKey("readerGroupIds")) {
+      return problem(PT_BAD_REQUEST, "Deprecated field", Response.Status.BAD_REQUEST,
+          "readerGroupIds is deprecated; use readerGroupAppIds (UUID v7) to set reader groups");
+    }
+    if (patch.containsKey("writerGroupIds")) {
+      return problem(PT_BAD_REQUEST, "Deprecated field", Response.Status.BAD_REQUEST,
+          "writerGroupIds is deprecated; use writerGroupAppIds (UUID v7) to set writer groups");
+    }
+    if (patch.containsKey("readerGroupAppIds") && patch.get("readerGroupAppIds") instanceof java.util.List<?> rgl) {
       if (rgl.size() > MAX_MEMBERS) {
         return problem(PT_BAD_REQUEST, "Too many reader groups", Response.Status.BAD_REQUEST,
-            "readerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+            "readerGroupAppIds list may not exceed " + MAX_MEMBERS + " elements");
       }
-      current.setReaderGroupIds(rgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+      long[] ids = rgl.stream()
+          .map(Object::toString)
+          .mapToLong(groupAppId -> service.getUserGroupByAppId(groupAppId).getId())
+          .toArray();
+      current.setReaderGroupIds(ids);
     }
-    if (patch.containsKey("writerGroupIds") && patch.get("writerGroupIds") instanceof java.util.List<?> wgl) {
+    if (patch.containsKey("writerGroupAppIds") && patch.get("writerGroupAppIds") instanceof java.util.List<?> wgl) {
       if (wgl.size() > MAX_MEMBERS) {
         return problem(PT_BAD_REQUEST, "Too many writer groups", Response.Status.BAD_REQUEST,
-            "writerGroupIds list may not exceed " + MAX_MEMBERS + " elements");
+            "writerGroupAppIds list may not exceed " + MAX_MEMBERS + " elements");
       }
-      current.setWriterGroupIds(wgl.stream().mapToLong(v -> Long.parseLong(v.toString())).toArray());
+      long[] ids = wgl.stream()
+          .map(Object::toString)
+          .mapToLong(groupAppId -> service.getUserGroupByAppId(groupAppId).getId())
+          .toArray();
+      current.setWriterGroupIds(ids);
     }
     var updated = service.updateUserGroupPermissions(current, group.getId());
     return Response.ok(new PermissionsIO(updated)).build();
