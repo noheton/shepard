@@ -4707,14 +4707,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:651,1033,1154`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F4`.
 
 ## APISIMP-SNAPSHOT-PAGECAP — snapshot manifest `@Max(1000)` and pinned-read `@Max(2000)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** 🔄 PR #2451 open (fire-520) — CodeQL race; pending merge.
 - **Why:** `SnapshotRest.java:156` caps the manifest endpoint `pageSize` at `@Max(1000)` and `SnapshotPinnedReadRest.java:133` caps the pinned data-objects endpoint at `@Max(2000)`. The 1000-file bundle exception does not apply here. APISIMP-SNAPSHOT-MANIFEST-IN-MEMORY-PAGING (fire-422) fixed in-memory paging without changing the `@Max` cap; APISIMP-PAGESIZE-CAP-UNDOCUMENTED (fire-444) added OpenAPI documentation without normalising the value.
 - **Fix:** Change `@Max(1000)` → `@Max(200)` in `SnapshotRest.java:156` and `@Max(2000)` → `@Max(200)` in `SnapshotPinnedReadRest.java:133`; update description strings accordingly.
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java | grep -E '1000|2000'` returns empty; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:156`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java:133`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F5`.
 
 ## APISIMP-REFANNOT-PAGECAP — `ReferenceAnnotationRest` `@Max(1000)` → `@Max(200)` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** ✅ shipped (fire-521, PR #2452).
 - **Why:** `ReferenceAnnotationRest.java:165` caps `GET /v2/references/{appId}/annotations` `pageSize` at `@Max(1000)` (OpenAPI: "Items per page (1–1000). Default 200."). The 1000 exception applies only to bundle-files. APISIMP-REFANNOT-IN-MEMORY-PAGING (fire-442) fixed in-memory paging without changing the `@Max` cap.
 - **Fix:** Change `@Max(1000)` → `@Max(200)`; update `@Parameter` description to "Items per page (1–200). Default 200."
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java | grep '1000'` returns empty; `mvn verify -pl backend` green.
