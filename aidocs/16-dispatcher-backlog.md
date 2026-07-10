@@ -4789,7 +4789,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java:47,83,92,98`.
 
 ## APISIMP-COLLWATCHERS-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `CollectionWatchersRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** ✅ in-flight (fire-527, PR pending).
 - **Why:** `CollectionWatchersRest.java` declares `@Path("/v2/collections/{collectionAppId}/watches")` at the class level with four method bindings at lines 89, 128, 157, 178. The resource type is expressed by `/v2/collections/`; only one path param per method — no JAX-RS collision.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and all four `@PathParam("collectionAppId")` bindings plus local variable usages.
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java` returns empty; `mvn -q test-compile -pl backend` green.
