@@ -822,6 +822,41 @@ GitHub, w3.org, vendor docs) are fine — those are external
 resources, not Shepard data. The rule is specifically about
 Shepard-owned data.
 
+## Always: dropdowns are searchable and naturally ordered
+
+Every dropdown / select in the frontend (`frontend/`) MUST (a) support
+**search-as-you-type** and (b) order its options in **natural order**.
+
+1. **Search-as-you-type.** Use `v-autocomplete` (or the shared
+   `components/common/Select.vue`, which wraps it) — never a bare
+   `v-select` — for any dropdown whose option set is unbounded or larger
+   than a handful (channel pickers, container/collection/template/user
+   pickers, vocabulary/predicate pickers, …). The user types to filter;
+   they never scroll a 190-item list (the TPS timeseries container has
+   ~190 channels — a bare `v-select` there is unusable). A tiny fixed enum
+   (2–4 mutually-exclusive options, e.g. a mode toggle) MAY stay a
+   `v-select`, but still gets rule (2).
+2. **Natural order.** Order options with `naturalSort` /
+   `naturalCompare` (`frontend/utils/naturalSort.ts`) — numeric segments
+   compared numerically so "PlyGroup 2" precedes "PlyGroup 10" and
+   "Track 9" precedes "Track 10". Never the lexicographic default
+   ("10" < "2"). Case-insensitive, locale-aware. This is the same
+   ordering the sidebar tree already uses (`treeviewItem.ts`).
+
+**Reviewers reject** new frontend code that ships a bare `v-select` over a
+large/unbounded option set, or a dropdown whose options are lexicographically
+(not naturally) ordered.
+
+Exceptions: options that carry their own meaningful non-alphabetical order
+(a time-ordered list, a severity ladder, a deliberately-curated sequence)
+keep that order — document why at the call site. Free-text `v-combobox`
+inputs are search-native already; they only need rule (2) on their
+suggestion list.
+
+The audit + remaining per-component conversions live under
+`UIRULE-DROPDOWN-SEARCH-SORT` in `aidocs/16`; the v2conv routine grinds the
+tail and enforces the rule on new dropdowns.
+
 ## Always: the audit trail is a graph, not a log
 
 Every action in Shepard — data mutation, annotation write, AI invocation, admin
