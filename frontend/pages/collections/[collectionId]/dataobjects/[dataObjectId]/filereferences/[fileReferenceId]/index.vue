@@ -18,6 +18,7 @@ import {
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import { useFetchReferenceV2 } from "~/composables/context/useFetchReferenceV2";
 import ViewRecipePicker from "~/components/shapes/ViewRecipePicker.vue";
+import { buildInlineImageContentUrl } from "~/utils/fileRenditionUrl";
 
 definePageMeta({ layout: "collection" });
 
@@ -123,10 +124,32 @@ function withAccessToken(url: string): string {
   return `${url}${sep}access_token=${encodeURIComponent(t)}`;
 }
 
+// TIFF-PREVIEW-SUPPORT: browsers cannot render `image/tiff` natively, so a
+// TIFF-backed singleton (fileKind="image", filename ending .tif/.tiff) asks
+// the content endpoint for the `?rendition=png` transcode instead of the
+// raw bytes. Every other image format keeps requesting the raw content URL
+// unchanged — buildInlineImageContentUrl() is a no-op for non-TIFF names.
+const inlineImageFilename = computed(
+  () => fileReference.value?.file?.filename ?? fileReference.value?.name ?? null,
+);
+
 const inlineImageUrl = computed<string | undefined>(() => {
   if (fileReference.value?.fileKind !== "image") return undefined;
   if (!fileContentUrl.value) return undefined;
-  return withAccessToken(fileContentUrl.value);
+  const url = buildInlineImageContentUrl(
+    fileContentUrl.value,
+    inlineImageFilename.value,
+  );
+  return withAccessToken(url);
+});
+
+// TIFF-PREVIEW-SUPPORT: the `?rendition=png` transcode is best-effort — a
+// corrupt/unsupported TIFF or a source over the decode-size cap falls back
+// to raw TIFF bytes server-side (never a 500), which the browser then can't
+// paint either. Surface that gracefully instead of a broken-image icon.
+const inlineImagePreviewFailed = ref(false);
+watch(inlineImageUrl, () => {
+  inlineImagePreviewFailed.value = false;
 });
 
 const inlinePdfUrl = computed<string | undefined>(() => {
@@ -327,12 +350,27 @@ watch(fileReference, () => {
                  the picker below. -->
             <v-row v-if="inlineImageUrl">
               <v-col cols="12">
+                <!-- TIFF-PREVIEW-SUPPORT: the `?rendition=png` transcode is
+                     best-effort — fall back to a friendly notice (rather
+                     than a broken-image icon) if the browser can't paint
+                     what came back, e.g. a source over the decode-size cap. -->
+                <v-alert
+                  v-if="inlineImagePreviewFailed"
+                  type="warning"
+                  variant="tonal"
+                  density="comfortable"
+                  data-testid="inline-image-preview-failed"
+                >
+                  Preview unavailable for this file — use Download instead.
+                </v-alert>
                 <v-img
+                  v-else
                   :src="inlineImageUrl"
                   :alt="fileReference.name"
                   max-height="600"
                   contain
                   data-testid="inline-image-preview"
+                  @error="inlineImagePreviewFailed = true"
                 />
               </v-col>
             </v-row>

@@ -33,8 +33,12 @@ import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -298,6 +302,108 @@ class ReferenceKindHandlersTest {
     assertEquals(206, resp.getStatus());
     assertEquals("bytes 0-99/1024", resp.getHeaderString("Content-Range"));
     assertEquals("100", resp.getHeaderString("Content-Length"));
+  }
+
+  // ─── TIFF-PREVIEW-SUPPORT — downloadContent(appId, range, prefer, rendition) ─
+
+  private static byte[] tiffBytes(int w, int h) throws Exception {
+    BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+    var g = img.createGraphics();
+    g.setColor(Color.ORANGE);
+    g.fillRect(0, 0, w, h);
+    g.dispose();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    boolean wrote = ImageIO.write(img, "TIFF", baos);
+    assertTrue(wrote, "ImageIO must have a TIFF writer (TwelveMonkeys) on the test classpath");
+    return baos.toByteArray();
+  }
+
+  private static boolean looksLikePng(byte[] bytes) {
+    return bytes.length > 8
+      && (bytes[0] & 0xFF) == 0x89
+      && bytes[1] == 'P'
+      && bytes[2] == 'N'
+      && bytes[3] == 'G';
+  }
+
+  @Test
+  void file_downloadContent_renditionPng_tiffSource_transcodesToPng() throws Exception {
+    byte[] tiff = tiffBytes(64, 48);
+    var stream = new java.io.ByteArrayInputStream(tiff);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream("oid-tiff", stream, "tps_eval_0001.tiff", (long) tiff.length);
+    var ref = fileRef();
+    ref.setName("tps_eval_0001.tiff");
+    when(singletonService.getByAppId("file-1")).thenReturn(ref);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+
+    var resp = fileHandler.downloadContent("file-1", null, null, "png");
+
+    assertEquals(200, resp.getStatus());
+    assertEquals("image/png", resp.getMediaType().toString());
+    assertEquals("inline; filename=\"tps_eval_0001.png\"", resp.getHeaderString("Content-Disposition"));
+    assertTrue(looksLikePng((byte[]) resp.getEntity()));
+  }
+
+  @Test
+  void file_downloadContent_renditionPng_nonTiffSource_fallsBackToRawBytes() {
+    // fileRef() carries "robot.urdf" — not a TIFF, so rendition=png must be a
+    // no-op: same 200 + attachment shape as the plain downloadContent(2-arg) path.
+    byte[] bytes = "robot { joint1 }".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    var stream = new java.io.ByteArrayInputStream(bytes);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream("oid-x", stream, "robot.urdf", (long) bytes.length);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+    when(singletonService.getByAppId("file-1")).thenReturn(fileRef());
+
+    var resp = fileHandler.downloadContent("file-1", null, null, "png");
+
+    assertEquals(200, resp.getStatus());
+    assertEquals("attachment; filename=\"robot.urdf\"", resp.getHeaderString("Content-Disposition"));
+  }
+
+  @Test
+  void file_downloadContent_renditionUnrecognized_fallsBackToRawBytes() throws Exception {
+    byte[] tiff = tiffBytes(32, 32);
+    var stream = new java.io.ByteArrayInputStream(tiff);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream("oid-tiff2", stream, "frame.tiff", (long) tiff.length);
+    var ref = fileRef();
+    ref.setName("frame.tiff");
+    when(singletonService.getByAppId("file-1")).thenReturn(ref);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+
+    // rendition value other than "png" (or absent) must not trigger transcode.
+    var resp = fileHandler.downloadContent("file-1", null, null, "thumbnail");
+
+    assertEquals(200, resp.getStatus());
+    assertEquals("attachment; filename=\"frame.tiff\"", resp.getHeaderString("Content-Disposition"));
+  }
+
+  @Test
+  void file_downloadContent_renditionPng_corruptTiff_fallsBackToRawBytes() {
+    byte[] garbage = { 0x00, 0x01, 0x02, 0x03 };
+    var stream = new java.io.ByteArrayInputStream(garbage);
+    var nis = new de.dlr.shepard.common.mongoDB.NamedInputStream("oid-bad", stream, "broken.tiff", (long) garbage.length);
+    var ref = fileRef();
+    ref.setName("broken.tiff");
+    when(singletonService.getByAppId("file-1")).thenReturn(ref);
+    when(singletonService.getPayload("file-1")).thenReturn(nis);
+
+    // Decode failure must fail soft — 200 with the raw (garbage) bytes rather
+    // than a 500, exactly like the "?rendition=png" hint was never sent.
+    var resp = fileHandler.downloadContent("file-1", null, null, "png");
+
+    assertEquals(200, resp.getStatus());
+    assertEquals("attachment; filename=\"broken.tiff\"", resp.getHeaderString("Content-Disposition"));
+  }
+
+  @Test
+  void file_downloadContent_renditionPng_missingReference_fallsBackTo404() {
+    when(singletonService.getByAppId("missing-1")).thenReturn(null);
+    when(singletonService.getPayload("missing-1"))
+      .thenThrow(new NotFoundException("Singleton FileReference appId=missing-1 has no attached file"));
+
+    var resp = fileHandler.downloadContent("missing-1", null, null, "png");
+
+    assertEquals(404, resp.getStatus());
   }
 
   // ─── timeseries handler ────────────────────────────────────────────────────

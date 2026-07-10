@@ -157,6 +157,55 @@ class FileKindDetectorRegistryTest {
     assertEquals("urdf", reg.resolveFileKind("urdf"));
   }
 
+  // ─── ImageFileKindDetector tests (TIFF-PREVIEW-SUPPORT) ───────────────────
+
+  @Test
+  void image_claimsAllCommonImageExtensions() {
+    FileKindDetectorRegistry reg = registryWith(new ImageFileKindDetector());
+    for (String ext : new String[] {
+      "png", "jpg", "jpeg", "gif", "bmp", "webp", "tif", "tiff"
+    }) {
+      assertEquals("image", reg.resolveFileKind(ext), "extension: " + ext);
+    }
+  }
+
+  @Test
+  void image_ignoresNonImageExtensions() {
+    ImageFileKindDetector detector = new ImageFileKindDetector();
+    assertNull(detector.fileKindFor("pdf"));
+    assertNull(detector.fileKindFor("mp4"));
+    assertNull(detector.fileKindFor("heic"));
+    assertNull(detector.fileKindFor(null));
+    FileKindDetectorRegistry reg = registryWith(detector);
+    assertNull(reg.resolveFileKind("pdf"));
+    assertNull(reg.resolveFileKind("bin"));
+  }
+
+  @Test
+  void image_coexistsWithBuiltinAndVideo() {
+    FileKindDetectorRegistry reg = registryWith(
+      new BuiltinFileKindDetector(),
+      new VideoFileKindDetector(),
+      new ImageFileKindDetector()
+    );
+    // image kinds resolve
+    assertEquals("image", reg.resolveFileKind("tiff"));
+    assertEquals("image", reg.resolveFileKind("png"));
+    // video + builtin kinds still resolve — no cross-detector collision
+    assertEquals("video", reg.resolveFileKind("mp4"));
+    assertEquals("pdf", reg.resolveFileKind("pdf"));
+    assertEquals("urdf", reg.resolveFileKind("urdf"));
+  }
+
+  @Test
+  void image_tifAndTiffBothResolve() {
+    // TPS tapelaying evaluation files and stringer-welding camera frames use
+    // both spellings; both must resolve to the same "image" kind.
+    FileKindDetectorRegistry reg = registryWith(new ImageFileKindDetector());
+    assertEquals("image", reg.resolveFileKind("tif"));
+    assertEquals("image", reg.resolveFileKind("tiff"));
+  }
+
   // ─── null / unknown extension ─────────────────────────────────────────────
 
   @Test

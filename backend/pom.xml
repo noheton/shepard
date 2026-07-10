@@ -526,9 +526,33 @@
     <!-- MFFD-NDT-QUALITY-1 — TIFF reader for thermography frame analysis.
          Stock Java ImageIO does not handle 16-bit greyscale TIFFs that
          Edevis OTvis / FLIR cameras emit. TwelveMonkeys ships a self-
-         registering SPI for ImageIO.getImageReadersByFormatName("TIFF")
-         so the call sites stay vendor-free.
-         Apache-2.0 licensed; no transitive CVEs >= 7.0 as of 2026-06-02. -->
+         registering ServiceLoader SPI (javax.imageio.spi.ImageReaderSpi /
+         ImageWriterSpi under META-INF/services) for
+         ImageIO.getImageReadersByFormatName("TIFF") so the call sites stay
+         vendor-free — no explicit registration call needed; the JDK's
+         IIORegistry picks it up from the classpath the moment the jar is
+         present. Confirmed to work unmodified under Quarkus 3.37.1 JVM mode
+         (the JDK ServiceLoader scan is untouched by Quarkus in JVM builds;
+         this only becomes a concern for a future `quarkus.native.enabled`
+         build, which would need the reader/writer SPI classes + the
+         META-INF/services entries added to native-image reflection config —
+         not required today since this fork ships JVM images).
+         TIFF-PREVIEW-SUPPORT (2026-07-10) reuses this same dependency to
+         extend TIFF support from the thermography plugin's OTvis frames to
+         general-purpose FileReference/FileContainer TIFF thumbnails + the
+         `?rendition=png` full-size preview transcode — see
+         RasterImageThumbnailProvider, ImageFileKindDetector, SafeImageIO,
+         and FileReferenceKindHandler.
+         BSD 3-Clause licensed (corrected 2026-07-10 — the "Apache-2.0" note
+         below was wrong; verified against
+         https://github.com/haraldk/TwelveMonkeys and
+         https://haraldk.github.io/TwelveMonkeys/, both BSD). Latest stable
+         release as of 2026-07-10 is 3.13.1; this fork stays pinned to
+         3.10.1 (validated in production for the thermography plugin) — a
+         version bump is a deferred follow-up (TIFF-PREVIEW-SUPPORT-BUMP in
+         aidocs/16) so it gets its own regression pass across both consumers
+         rather than riding in on this feature. No transitive CVEs >= 7.0 as
+         of 2026-06-02. -->
     <dependency>
       <groupId>com.twelvemonkeys.imageio</groupId>
       <artifactId>imageio-tiff</artifactId>
