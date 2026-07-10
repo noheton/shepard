@@ -4803,7 +4803,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java:99,140`.
 
 ## APISIMP-NOTEBOOK-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` path-param in `NotebookRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** 🔄 in-flight (fire-529, PR #2463).
 - **Why:** `NotebookRest.java` (class `@Path("/v2/lab-journal")`) declares method-level `@Path("/{dataObjectAppId}/notebooks")`. Effective full path: `/v2/lab-journal/{dataObjectAppId}/notebooks`. Single-ID context — no JAX-RS collision. Rename per v2 convention.
 - **Fix:** Rename `{dataObjectAppId}` → `{appId}` in the method `@Path`, `@PathParam` binding (line 119), and local variable usages.
 - **AC:** `grep -n 'dataObjectAppId' backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java` returns empty; `mvn -q test-compile -pl backend` green.

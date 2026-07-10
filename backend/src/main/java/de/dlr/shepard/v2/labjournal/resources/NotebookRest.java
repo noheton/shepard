@@ -34,7 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * J1b — {@code GET /v2/lab-journal/{dataObjectAppId}/notebooks}.
+ * J1b — {@code GET /v2/lab-journal/{appId}/notebooks}.
  *
  * <p>Returns the list of {@code .ipynb} file references attached to a
  * DataObject — both FR1b singletons ({@link FileReference}) and files
@@ -86,13 +86,13 @@ public class NotebookRest {
   /**
    * List {@code .ipynb} file references attached to a DataObject.
    *
-   * @param dataObjectAppId the application-level identifier of the DataObject.
+   * @param appId the application-level identifier of the DataObject.
    * @param sc              the JAX-RS security context providing the caller identity.
    * @return 200 with a (possibly empty) list; 401 unauthenticated; 403 forbidden;
    *         404 when no DataObject with that appId exists.
    */
   @GET
-  @Path("/{dataObjectAppId}/notebooks")
+  @Path("/{appId}/notebooks")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
     operationId = "listNotebooks",
@@ -116,7 +116,7 @@ public class NotebookRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
-  public Response listNotebooks(@PathParam("dataObjectAppId") String dataObjectAppId, @Context SecurityContext sc) {
+  public Response listNotebooks(@PathParam("appId") String appId, @Context SecurityContext sc) {
     // Auth gate — 401 if not logged in
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
@@ -124,22 +124,22 @@ public class NotebookRest {
     // Resolve DataObject OGM id — 404 if not found
     long ogmId;
     try {
-      ogmId = entityIdResolver.resolveLong(dataObjectAppId);
+      ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject with appId: " + dataObjectAppId);
+      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject with appId: " + appId);
     }
 
     // Permission gate — DataObjects don't have their own :Permissions
     // node; access is inherited from the parent Collection. The walk
     // helper does the Cypher hop. Fail-closed if the DO has no parent.
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(appId, AccessType.Read, caller)) {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the DataObject.");
     }
 
     List<NotebookReferenceIO> result = new ArrayList<>();
 
     // ─── FR1b singletons ─────────────────────────────────────────────────────
-    List<FileReference> singletons = singletonService.listByDataObject(dataObjectAppId);
+    List<FileReference> singletons = singletonService.listByDataObject(appId);
     for (FileReference singleton : singletons) {
       if (singleton.isDeleted()) continue;
       ShepardFile file = singleton.getFile();
