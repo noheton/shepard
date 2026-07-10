@@ -23,7 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * {@code GET /v2/me/role-in/{collectionAppId}} — the data backing
+ * {@code GET /v2/me/role-in/{appId}} — the data backing
  * U1c2's "Role in current context" header chip per {@code aidocs/51 §9.4}.
  *
  * <p>Returns the caller's per-Collection roles plus a flat
@@ -42,7 +42,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * </ul>
  */
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/v2/users/me/role-in/{collectionAppId}")
+@Path("/v2/users/me/role-in/{appId}")
 @RequestScoped
 @Tag(name = "Me")
 public class MeRoleInRest {
@@ -63,7 +63,7 @@ public class MeRoleInRest {
     summary = "Caller's effective role in a Collection.",
     description =
       "Returns the caller's effective capabilities on the Collection identified by " +
-      "`collectionAppId` as four booleans: `read`, `write`, `manage`, and `isInstanceAdmin`.\n\n" +
+      "`appId` as four booleans: `read`, `write`, `manage`, and `isInstanceAdmin`.\n\n" +
       "The booleans are additive: `manage` implies `write`, and `write` implies `read`. " +
       "A caller with the Owner or Manager role gets `manage=true`; a Writer gets " +
       "`write=true`; a Reader gets only `read=true`. Instance admins get " +
@@ -79,20 +79,20 @@ public class MeRoleInRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Caller has at least one effective role or is an instance admin. Body is a MeRoleInIO with fields `collectionAppId`, `read`, `write`, `manage`, `isInstanceAdmin`.",
+    description = "Caller has at least one effective role or is an instance admin. Body is a MeRoleInIO.",
     content = @Content(schema = @Schema(implementation = MeRoleInIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Collection exists but the caller has no roles on it and is not an instance admin.")
   @APIResponse(responseCode = "404", description = "No Collection with the supplied appId.")
-  public Response roleIn(@PathParam("collectionAppId") String collectionAppId, @Context SecurityContext securityContext) {
+  public Response roleIn(@PathParam("appId") String appId, @Context SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required",
         Response.Status.UNAUTHORIZED, "Authentication is required to query role membership.");
 
-    var ogmId = collectionDAO.findCollectionIdByAppId(collectionAppId);
+    var ogmId = collectionDAO.findCollectionIdByAppId(appId);
     if (ogmId.isEmpty()) return problem(PT_NOT_FOUND, "Collection not found",
-        Response.Status.NOT_FOUND, "No Collection with appId '" + collectionAppId + "'.");
+        Response.Status.NOT_FOUND, "No Collection with appId '" + appId + "'.");
 
     Roles roles = permissionsService.getUserRolesOnEntity(ogmId.get(), caller);
     boolean isAdmin = securityContext.isUserInRole("instance-admin");
@@ -107,9 +107,9 @@ public class MeRoleInRest {
 
     if (!canRead && !canWrite && !canManage && !isAdmin) {
       return problem(PT_FORBIDDEN, "Access denied",
-          Response.Status.FORBIDDEN, "Caller has no roles on Collection '" + collectionAppId + "' and is not an instance admin.");
+          Response.Status.FORBIDDEN, "Caller has no roles on Collection '" + appId + "' and is not an instance admin.");
     }
-    return Response.ok(new MeRoleInIO(collectionAppId, canRead, canWrite, canManage, isAdmin)).build();
+    return Response.ok(new MeRoleInIO(appId, canRead, canWrite, canManage, isAdmin)).build();
   }
 
 }

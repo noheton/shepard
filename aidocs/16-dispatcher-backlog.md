@@ -4817,7 +4817,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:164,228`.
 
 ## APISIMP-MEROLE-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `MeRoleInRest` (size: XS, fire-526)
-- **Status:** 🔲 queued.
+- **Status:** 🔄 in-flight (fire-531, branch `APISIMP-MEROLE-PATHPARAM-1`).
 - **Why:** `MeRoleInRest.java` declares `@Path("/v2/users/me/role-in/{collectionAppId}")` at the class level with one method `@PathParam("collectionAppId")` binding at line 88. Single-ID context — rename to `{appId}` per v2 convention.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path`, `@PathParam` binding, and local variable usage.
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java` returns empty; `mvn -q test-compile -pl backend` green.
