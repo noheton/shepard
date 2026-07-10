@@ -44,13 +44,13 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>Endpoints:
  * <ul>
- *   <li>{@code GET  /v2/collections/{collectionAppId}/watches} — list all watchers (Read gate).</li>
- *   <li>{@code GET  /v2/collections/{collectionAppId}/watches/me} — 200 if watching, 404 if not.</li>
- *   <li>{@code POST /v2/collections/{collectionAppId}/watches} — start watching (idempotent).</li>
- *   <li>{@code DELETE /v2/collections/{collectionAppId}/watches/me} — stop watching (idempotent).</li>
+ *   <li>{@code GET  /v2/collections/{appId}/watches} — list all watchers (Read gate).</li>
+ *   <li>{@code GET  /v2/collections/{appId}/watches/me} — 200 if watching, 404 if not.</li>
+ *   <li>{@code POST /v2/collections/{appId}/watches} — start watching (idempotent).</li>
+ *   <li>{@code DELETE /v2/collections/{appId}/watches/me} — stop watching (idempotent).</li>
  * </ul>
  */
-@Path("/v2/collections/{collectionAppId}/watches")
+@Path("/v2/collections/{appId}/watches")
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 @Authenticated
@@ -86,7 +86,7 @@ public class CollectionWatchersRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size, 1–200 (default 50).")
@@ -95,9 +95,9 @@ public class CollectionWatchersRest {
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    long total = service.count(collectionAppId, caller);
+    long total = service.count(appId, caller);
     int skip = (int) Math.min((long) page * pageSize, total);
-    List<CollectionWatcherIO> items = service.list(collectionAppId, caller, skip, pageSize);
+    List<CollectionWatcherIO> items = service.list(appId, caller, skip, pageSize);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
@@ -125,14 +125,14 @@ public class CollectionWatchersRest {
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   @APIResponse(responseCode = "404", description = "The caller is not currently watching this Collection.")
   public Response getMe(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    Optional<CollectionWatcherIO> result = service.getMe(collectionAppId, caller);
+    Optional<CollectionWatcherIO> result = service.getMe(appId, caller);
     return result.map(r -> Response.ok(r).build())
-      .orElseGet(() -> notFound("caller is not watching collection " + collectionAppId));
+      .orElseGet(() -> notFound("caller is not watching collection " + appId));
   }
 
   @POST
@@ -154,12 +154,12 @@ public class CollectionWatchersRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response watch(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    CollectionWatcherIO result = service.watch(collectionAppId, caller);
+    CollectionWatcherIO result = service.watch(appId, caller);
     return Response.ok(result).build();
   }
 
@@ -175,12 +175,12 @@ public class CollectionWatchersRest {
   @APIResponse(responseCode = "204", description = "Watch removed (or was never there — idempotent).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response unwatch(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    service.unwatch(collectionAppId, caller);
+    service.unwatch(appId, caller);
     return Response.noContent().build();
   }
 
