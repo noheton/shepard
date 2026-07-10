@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import jakarta.ws.rs.Path;
+
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
@@ -147,5 +149,13 @@ class MeRoleInRestTest {
     var io = (MeRoleInIO) resource.roleIn(APP_ID, securityContext).getEntity();
     assertTrue(io.isWrite());
     assertTrue(io.isInstanceAdmin());
+  }
+
+  @Test
+  void classPath_usesAppIdSegment() {
+    // Regression: class-level @Path must use {appId}, not {collectionAppId}.
+    String classPath = MeRoleInRest.class.getAnnotation(Path.class).value();
+    assertTrue(classPath.contains("{appId}"), "Expected {appId} in class @Path but found: " + classPath);
+    assertFalse(classPath.contains("{collectionAppId}"), "Stale {collectionAppId} found in class @Path: " + classPath);
   }
 }
