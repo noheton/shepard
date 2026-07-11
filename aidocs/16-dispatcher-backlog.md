@@ -4852,7 +4852,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` (multiple lines).
 
 ## APISIMP-TEMPLATE-PATHPARAM — rename `{templateAppId}` → `{appId}` in three template REST files (size: XS, fire-535)
-- **Status:** 🔄 in-flight (fire-536, branch `APISIMP-TEMPLATE-PATHPARAM-1`).
+- **Status:** 🔄 in-flight (fire-536, branch `APISIMP-TEMPLATE-PATHPARAM-1`). PR #2470 — awaiting CI.
+
+## APISIMP-DQR-PATHPARAM — rename `{dqrAppId}` → `{appId}` in `CollectionDQRRest` DELETE endpoint (size: XS, fire-537)
+- **Status:** 🔄 in-flight (fire-537, branch `APISIMP-DQR-PATHPARAM-1`).
+- **Why:** `CollectionDQRRest.java` serves `DELETE /v2/collections/{collectionAppId}/dqr/{dqrAppId}`. The secondary entity param `{dqrAppId}` uses a bespoke name deviating from the v2-standard `{appId}`. The parent `{collectionAppId}` stays (two-entity path; no collision since `collectionAppId` ≠ `appId`). This is the same normalization shape as APISIMP-DATAOBJECT-V2REST-PATHPARAM (fire-535) and APISIMP-TEMPLATE-PATHPARAM (fire-536).
+- **Fix:** `@Path("{dqrAppId}")` → `@Path("{appId}")` (line 153); `@PathParam("dqrAppId") String dqrAppId` → `@PathParam("appId") String appId` (line 168); `service.remove(collectionAppId, dqrAppId, caller)` → `service.remove(collectionAppId, appId, caller)` (line 173); javadoc line 48 updated.
+- **AC:** `grep -n 'dqrAppId' backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java` returns empty (excluding DTO field refs in tests); CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java:48,153,168,173`.
 - **Why:** Three template resource classes use `{templateAppId}` as their primary entity param but each is single-entity (no collision): `TemplateFormRest.java` (`/v2/templates/{templateAppId}/form`, 1 method), `TemplateExcelExportRest.java` (`/v2/templates/{templateAppId}/export`, 1 method), and `TemplateInstantiationRest.java` (class `/v2/collections/{collectionAppId}/data-objects/from-template`, method `/{templateAppId}` — two-entity with `{collectionAppId}` as the parent, `{templateAppId}` as the secondary → rename to `{appId}` safe). Sweep fire-535.
 - **Fix:** Rename `{templateAppId}` → `{appId}` in class-level `@Path`, method-level `@Path`, `@PathParam` annotations, and local variable usages in all three files.
 - **AC:** `grep -rn 'templateAppId' backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateExcelExportRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateInstantiationRest.java` returns empty; CI green.
