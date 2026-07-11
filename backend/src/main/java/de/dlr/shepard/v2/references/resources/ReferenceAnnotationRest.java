@@ -146,7 +146,7 @@ public class ReferenceAnnotationRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

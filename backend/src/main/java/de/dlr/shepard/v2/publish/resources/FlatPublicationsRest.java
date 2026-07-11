@@ -76,11 +76,10 @@ public class FlatPublicationsRest {
       "Includes retired rows (digitalObjectMutability = 'retired'). " +
       "Auth: Read permission on the entity.\n\n" +
       "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
-      "`X-Total-Count` header carries the total count before paging (kept during deprecation window)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging.",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Missing or blank entityAppId parameter (RFC 7807).")

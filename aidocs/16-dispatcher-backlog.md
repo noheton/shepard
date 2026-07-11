@@ -4950,7 +4950,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:467`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:176`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:212`; apisimp-sweep-fire545-2026-07-11 §Finding3.
 
 ## APISIMP-TYPED-PRED-NEO4J-ID-DROP — remove `@JsonIgnore @Deprecated long predecessorId` from `TypedPredecessorSummaryIO` (size: XS, fire-547)
-- **Status:** 🚧 in-progress — PR #2485 (fire-548).
+- **Status:** ✅ merged — PR #2485 (fire-548).
 - **Why:** `TypedPredecessorSummaryIO.java:28-38` carries `@Deprecated @JsonIgnore long predecessorId` that is never serialized to the wire (`@JsonIgnore`) and is `@Schema(hidden=true)`. It is pure dead code — noted in fire-545 sweep but not filed. Removes the last numeric Neo4j id from the `TypedPredecessorSummaryIO` record. Sweep fire-547.
 - **Fix:** Delete the four-line component (`@Deprecated @JsonIgnore @Schema(…) long predecessorId`) from the record declaration. No callers to update.
 - **AC:** `grep -n 'predecessorId' backend/src/main/java/de/dlr/shepard/v2/dataobject/io/TypedPredecessorSummaryIO.java` returns empty; `mvn -q test-compile -pl backend` green.
@@ -4971,7 +4971,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:1453,1553`; `backend/src/main/java/de/dlr/shepard/v2/filecontainer/io/PresignedUploadUrlIO.java:26`; `backend/src/main/java/de/dlr/shepard/v2/filecontainer/io/UploadCommitIO.java:16`; apisimp-sweep-fire547-2026-07-11 §Finding3.
 
 ## APISIMP-XTOTALCOUNT-DOC-CLEANUP — remove stale X-Total-Count mentions from 17 v2 REST description strings (size: S, fire-547)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-progress — PR open (fire-548).
 - **Why:** After `APISIMP-XTOTALCOUNT-DUAL-EMIT-DROP` (fire-546) and `APISIMP-XTOTALCOUNT-LIST-DO-2` (fire-547) removed the `X-Total-Count` header from every v2 endpoint, 17 v2 REST files still carry `@APIResponse(description = "... Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE) ...")` strings. These claim the header is still emitted but it isn't. Callers reading the OpenAPI spec see a misleading claim. Sweep fire-547.
 - **Fix:** In the 17 listed files, remove or replace all `X-Total-Count` header mentions in `@APIResponse(description = ...)` and `@Operation(description = ...)` strings. Replace with "Response body `total` field carries the total count." Files: `CollectionWatchersRest`, `CollectionV2Rest`, `CollectionContainersRest`, `ContainersV2Rest`, `FlatPublicationsRest`, `NotificationRest`, `CollectionDQRRest`, `ProjectsRest`, `ReferencesV2Rest`, `ReferenceAnnotationRest`, `ShepardTemplateRest`, `VocabularyBrowseRest`, `PersonalVocabularyRest`, `CollectionLabJournalEntriesRest`, `OntologyGitSourceRest`, `CollectionWatchesRest`, plus `DataObjectDAO.java`.
 - **AC:** `grep -rn '"X-Total-Count"' backend/src/main/java/de/dlr/shepard/v2/` (excluding strings in aidocs/ and test files) returns only hits inside aidocs/16 backlog text or comments referencing the historical APISIMP rows — no live annotation strings; `mvn -q test-compile -pl backend` green.

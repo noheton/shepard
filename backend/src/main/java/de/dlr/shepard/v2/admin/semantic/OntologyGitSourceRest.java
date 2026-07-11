@@ -90,11 +90,11 @@ public class OntologyGitSourceRest {
     description = "Returns every registered OntologyGitSource (enabled and disabled), " +
     "ordered by name. Includes last-ingest status and error for quick health assessment.\n\n" +
     "Pagination (APISIMP-PAGINATION-LIST-GIT-SOURCES): `page` (0-based, default 0) and " +
-    "`pageSize` (1–200, default 50). `X-Total-Count` header carries the total count before paging."
+    "`pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")

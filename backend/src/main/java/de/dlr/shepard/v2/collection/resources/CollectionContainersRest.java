@@ -74,7 +74,7 @@ public class CollectionContainersRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count.",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
