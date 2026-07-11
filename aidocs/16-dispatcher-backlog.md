@@ -4886,8 +4886,8 @@ picks these up. Terse by design.
 - **AC:** OpenAPI spec for the bulk-data endpoint shows `kind` as a documented param with enum values; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/crossdo/resources/CrossDoBulkDataRest.java:119`.
 
-## APISIMP-SNAP-MANIFEST-PAGEPARAM — add `@Parameter` on `manifest` page/pageSize in `SnapshotRest` (size: XS, fire-544, in-flight)
-- **Status:** 🔄 in-flight (fire-544, branch `APISIMP-SNAP-MANIFEST-PAGEPARAM-1`, PR pending).
+## APISIMP-SNAP-MANIFEST-PAGEPARAM — add `@Parameter` on `manifest` page/pageSize in `SnapshotRest` (size: XS, fire-544)
+- **Status:** ✅ shipped (fire-545, PR #2478, sha `e0b775976e7661a5dc11c70d22bef4e896d42d5d`).
 - **Why:** `SnapshotRest.java:155–156` (the `manifest` endpoint) exposes `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations, inconsistent with the `list` endpoint on the same class. Sweep fire-539.
 - **Fix:** Same pattern as APISIMP-BUNDLE-LISTGROUPS-PAGEPARAM — add `@Parameter` on both pagination params in `manifest`.
 - **AC:** OpenAPI spec for the snapshot manifest endpoint shows pagination params; CI green.
@@ -4913,3 +4913,10 @@ picks these up. Terse by design.
 - **Fix:** `@Max(2000)` → `@Max(200)`; `@DefaultValue("500")` → `@DefaultValue("50")`; `@Schema(maximum = "2000", defaultValue = "500")` → `@Schema(maximum = "200", defaultValue = "50")`; `@Operation` description updated ("default 500, max 2000" → "default 50, max 200"); test `maxPageSize_isAtMost200` (reflection-based) added; `paginates_beyondLastPage_returnsEmptyList` updated to use `pageSize=50`.
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java | grep '2000\|500'` returns empty; `maxPageSize_isAtMost200` passes; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java:104,131–133`; test `SnapshotPinnedReadRestTest.java:maxPageSize_isAtMost200`.
+
+## APISIMP-PUBLICATION-GONE-PARAMS — remove vestigial pagination params from `PublicationsListRest` GONE tombstone (size: XS, fire-545)
+- **Status:** ⏳ queued.
+- **Why:** `PublicationsListRest.java:56-63` is a GONE/tombstone endpoint (`GET /v2/{kind}/{appId}/publications`) that always returns HTTP 410 immediately via `gone()`. Its `list()` method still declares `@QueryParam("page")` and `@QueryParam("pageSize")` params that are never read — the method body is a single `return gone()`. These dead params add noise to the OpenAPI spec (they appear as documented query params on a 410-only endpoint), inflate the import list (unused `@DefaultValue`, `@QueryParam`), and lack the standard `@PositiveOrZero`/`@Min(1)`/`@Max(200)` validators that every live paginated endpoint carries. Sweep fire-545.
+- **Fix:** Remove `@QueryParam("page") @DefaultValue("0") int page,` and `@QueryParam("pageSize") @DefaultValue("50") int pageSize` from `list()` method signature. Remove now-unused imports: `jakarta.ws.rs.DefaultValue`, `jakarta.ws.rs.QueryParam`.
+- **AC:** `grep -n 'QueryParam\|DefaultValue' backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java` returns empty; `mvn -q test-compile -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java:56-63`.
