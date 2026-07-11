@@ -4679,7 +4679,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/git/resources/GitReferenceRest.java`; `aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md §F3`.
 
 ## APISIMP-COLL-NAME-TO-Q — rename `?name=` → `?q=` text filter on `GET /v2/collections` (size: XS, sweep: fire-516)
-- **Status:** in-progress (fire-517, PR branch `APISIMP-COLL-NAME-TO-Q-1`).
+- **Status:** ✅ shipped (fire-517, PR #2447, sha `2eb470c`).
 - **Why:** `CollectionV2Rest.java:172` uses `@QueryParam(Constants.QP_NAME)` (`?name=`) as its text filter. APISIMP-CONTAINERS-NAME-TO-Q (fire-510) and APISIMP-DO-NAME-TO-Q (fire-510) renamed `?name=` on containers and data-objects; collections is the third endpoint still using the non-standard param name.
 - **Fix:** Rename the param to `@QueryParam("q") String q`; add a `@Deprecated @QueryParam("name") String nameLegacy` backward-compat alias that produces `Deprecation: true` response header. Update OpenAPI description. Same pattern as the two already-merged siblings.
 - **AC:** `grep -n '"name"' backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java | grep '@QueryParam'` returns only the deprecated-alias line; `mvn verify -pl backend` green; `npm run test` green.
@@ -4693,7 +4693,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:194`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionTimelineRest.java:64`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionContainersRest.java:49`; `aidocs/agent-findings/apisimp-sweep-2026-07-10-fire516.md §F2`.
 
 ## APISIMP-SNAPSHOT-PATHPARAM — rename `{snapshotAppId}` → `{appId}` in `SnapshotRest` (size: XS, sweep: fire-516)
-- **Status:** queued (fire-516).
+- **Status:** ✅ done (duplicate — covered by row at line 4667, shipped fire-518 as PR APISIMP-SNAPSHOT-PATHPARAM-1).
 - **Why:** `SnapshotRest.java:62` uses `@Path("/v2/snapshots/{snapshotAppId}")` with `@PathParam("snapshotAppId")`. The resource type is fully implied by `/v2/snapshots/` — identical pattern to the already-merged `{bundleAppId}` → `{appId}` (fire-506) and `{templateAppId}` → `{appId}` (fire-507) fixes.
 - **Fix:** Rename `{snapshotAppId}` → `{appId}` in `@Path`, all `@PathParam` binding sites, and update internal variable names.
 - **AC:** `grep -n 'snapshotAppId' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java | grep '@PathParam'` returns empty; `mvn verify -pl backend` green.
@@ -4852,10 +4852,10 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` (multiple lines).
 
 ## APISIMP-TEMPLATE-PATHPARAM — rename `{templateAppId}` → `{appId}` in three template REST files (size: XS, fire-535)
-- **Status:** 🔄 in-flight (fire-536, branch `APISIMP-TEMPLATE-PATHPARAM-1`). PR #2470 — awaiting CI.
+- **Status:** ✅ shipped (fire-538, PR #2470, sha `887610cc`).
 
 ## APISIMP-DQR-PATHPARAM — rename `{dqrAppId}` → `{appId}` in `CollectionDQRRest` DELETE endpoint (size: XS, fire-537)
-- **Status:** 🔄 in-flight (fire-537, branch `APISIMP-DQR-PATHPARAM-1`).
+- **Status:** ✅ shipped (fire-539, PR #2471, sha `3f425ae`).
 - **Why:** `CollectionDQRRest.java` serves `DELETE /v2/collections/{collectionAppId}/dqr/{dqrAppId}`. The secondary entity param `{dqrAppId}` uses a bespoke name deviating from the v2-standard `{appId}`. The parent `{collectionAppId}` stays (two-entity path; no collision since `collectionAppId` ≠ `appId`). This is the same normalization shape as APISIMP-DATAOBJECT-V2REST-PATHPARAM (fire-535) and APISIMP-TEMPLATE-PATHPARAM (fire-536).
 - **Fix:** `@Path("{dqrAppId}")` → `@Path("{appId}")` (line 153); `@PathParam("dqrAppId") String dqrAppId` → `@PathParam("appId") String appId` (line 168); `service.remove(collectionAppId, dqrAppId, caller)` → `service.remove(collectionAppId, appId, caller)` (line 173); javadoc line 48 updated.
 - **AC:** `grep -n 'dqrAppId' backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java` returns empty (excluding DTO field refs in tests); CI green.
@@ -4864,3 +4864,38 @@ picks these up. Terse by design.
 - **Fix:** Rename `{templateAppId}` → `{appId}` in class-level `@Path`, method-level `@Path`, `@PathParam` annotations, and local variable usages in all three files.
 - **AC:** `grep -rn 'templateAppId' backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateExcelExportRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateInstantiationRest.java` returns empty; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java:61,107`, `TemplateExcelExportRest.java:68,127`, `TemplateInstantiationRest.java:130,159`.
+
+## APISIMP-WIKIWRITER-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` in `WikiWriterRest` (size: XS, fire-539)
+- **Status:** 🔄 in-flight (fire-539, branch `APISIMP-WIKIWRITER-PATHPARAM-1`, PR #2472 — awaiting CI).
+- **Why:** `WikiWriterRest.java` (wiki-writer plugin) declares `@Path("/v2/data-objects/{dataObjectAppId}/wiki-write")` with `@PathParam("dataObjectAppId")`. Single-entity path — `{dataObjectAppId}` is non-standard. Rename per v2 single-entity path-param convention. Sweep fire-539.
+- **Fix:** `@Path("{dataObjectAppId}")` → `@Path("{appId}")` (line 49); `@PathParam("dataObjectAppId") String dataObjectAppId` → `@PathParam("appId") String appId` (line 95); all four body usages updated; javadoc updated.
+- **AC:** `grep -n 'dataObjectAppId' plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterRest.java` returns empty; CI green.
+- **First refs:** `plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterRest.java:49,95`.
+
+## APISIMP-BUNDLE-LISTGROUPS-PAGEPARAM — add `@Parameter` on `listGroups` page/pageSize in `BundleGroupsV2Rest` (size: XS, fire-539)
+- **Status:** queued (fire-539).
+- **Why:** `BundleGroupsV2Rest.java:141–142` exposes `@QueryParam("page")` and `@QueryParam("pageSize")` on the `listGroups` endpoint but lacks `@Parameter` OpenAPI annotations on both params. Other v2 list endpoints (e.g. `DataObjectV2Rest`, `CollectionV2Rest`) carry `@Parameter(description=..., schema=@Schema(...))` on their pagination params — missing here breaks API docs consistency. Pure annotation addition; no logic change. Sweep fire-539.
+- **Fix:** Add `@Parameter(description = "Page number (0-based)", schema = @Schema(defaultValue = "0"))` and `@Parameter(description = "Page size", schema = @Schema(defaultValue = "10", maximum = "200"))` on the two `@QueryParam` params in `listGroups`.
+- **AC:** OpenAPI spec for `GET /v2/bundle-groups` shows `page` and `pageSize` parameter descriptions; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundles/resources/BundleGroupsV2Rest.java:141–142`.
+
+## APISIMP-CROSS-BULK-KIND-PARAM — add `@Parameter` on `kind` QueryParam in `CrossDoBulkDataRest` (size: XS, fire-539)
+- **Status:** queued (fire-539).
+- **Why:** `CrossDoBulkDataRest.java:119` exposes `@QueryParam("kind")` on the bulk-data endpoint without an `@Parameter` annotation. The `kind` enum values are undiscoverable from the OpenAPI spec without it. Annotation-only addition; no logic change. Sweep fire-539.
+- **Fix:** Add `@Parameter(description = "Payload kind filter", schema = @Schema(enumeration = {...}))` on the `kind` `@QueryParam` in the relevant method.
+- **AC:** OpenAPI spec for the bulk-data endpoint shows `kind` as a documented param with enum values; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/crossdo/resources/CrossDoBulkDataRest.java:119`.
+
+## APISIMP-SNAP-MANIFEST-PAGEPARAM — add `@Parameter` on `manifest` page/pageSize in `SnapshotRest` (size: XS, fire-539, blocked)
+- **Status:** blocked — `SnapshotRest.java` is touched by PR #2451 (APISIMP-SNAPSHOT-PAGECAP, still open). Dispatch after #2451 merges.
+- **Why:** `SnapshotRest.java:155–156` (the `manifest` endpoint) exposes `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations, inconsistent with the `list` endpoint on the same class. Sweep fire-539.
+- **Fix:** Same pattern as APISIMP-BUNDLE-LISTGROUPS-PAGEPARAM — add `@Parameter` on both pagination params in `manifest`.
+- **AC:** OpenAPI spec for the snapshot manifest endpoint shows pagination params; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:155–156`.
+
+## APISIMP-IMPORT-RUNID-LOCKID-ALIAS — document `{runId}` vs `{lockId}` param naming across import resources (size: S, fire-539)
+- **Status:** queued (fire-539).
+- **Why:** The import sub-surface uses two different param names across two resources: `ImportV2Rest` uses `{runId}` for import diagnostics/status paths, while `ImportLockV2Rest` uses `{lockId}` for lock-lifecycle operations. Both refer to the same import-run entity but use different names — callers must know which resource uses which name. `{lockId}` is intentional (it refers specifically to the lock, not the run entity) but the distinction is undocumented. Fix: add explicit `@Parameter(description = ...)` on both params noting the distinction, and ensure javadoc on each resource cross-references the other. No path rename required.
+- **Fix:** `@Parameter` annotations on `{runId}` in `ImportV2Rest` and `{lockId}` in `ImportLockV2Rest`; cross-reference comments in both class-level Javadocs.
+- **AC:** OpenAPI spec clearly distinguishes `runId` (diagnostics) from `lockId` (lock lifecycle); CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportV2Rest.java`, `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportLockV2Rest.java`.
