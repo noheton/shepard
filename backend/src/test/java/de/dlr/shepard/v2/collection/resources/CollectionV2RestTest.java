@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.collection.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -97,7 +98,7 @@ class CollectionV2RestTest {
     when(collectionService.countAllCollections(any())).thenReturn(1L);
     when(collectionService.getAllCollections(any())).thenReturn(List.of(c));
 
-    Response r = resource.list(null, null, 0, 50);
+    Response r = resource.list(null, 0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -115,7 +116,7 @@ class CollectionV2RestTest {
     when(collectionService.countAllCollections(any())).thenReturn(0L);
     when(collectionService.getAllCollections(any())).thenReturn(List.of());
 
-    Response r = resource.list(null, null, 0, 50);
+    Response r = resource.list(null, 0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -125,46 +126,32 @@ class CollectionV2RestTest {
   }
 
   @Test
-  void list_qParam_noDeprecationHeader() {
+  void list_qParam_filtersResults() {
     when(collectionService.countAllCollections(any())).thenReturn(0L);
     when(collectionService.getAllCollections(any())).thenReturn(List.of());
 
-    Response r = resource.list("search-term", null, 0, 50);
+    Response r = resource.list("search-term", 0, 50);
 
     assertEquals(200, r.getStatus());
-    // ?q= is the preferred param; no Deprecation header must be emitted
-    assertNull(r.getHeaderString("Deprecation"),
-        "Deprecation header must NOT be present when using preferred ?q= param");
   }
 
+  /** Regression: ?name= must no longer be accepted — it was dropped at APISIMP-NAME-ALIAS-RETIRE. */
   @Test
-  void list_legacyNameParam_emitsDeprecationHeader() {
-    when(collectionService.countAllCollections(any())).thenReturn(0L);
-    when(collectionService.getAllCollections(any())).thenReturn(List.of());
-
-    Response r = resource.list(null, "legacy-name", 0, 50);
-
-    assertEquals(200, r.getStatus());
-    assertEquals("true", r.getHeaderString("Deprecation"),
-        "Deprecation: true must be emitted when caller uses deprecated ?name= param");
-  }
-
-  @Test
-  void list_qParamWinsOverLegacyName() {
-    when(collectionService.countAllCollections(any())).thenReturn(0L);
-    when(collectionService.getAllCollections(any())).thenReturn(List.of());
-
-    // When both are supplied ?q= wins and Deprecation header is NOT emitted
-    Response r = resource.list("preferred", "legacy", 0, 50);
-
-    assertEquals(200, r.getStatus());
-    assertNull(r.getHeaderString("Deprecation"),
-        "Deprecation header must NOT be present when ?q= overrides ?name=");
+  void list_nameParamIsGone() throws NoSuchMethodException {
+    // The list() method must have exactly one String parameter that has @QueryParam
+    // with value "q" — there must be no @QueryParam("name") on any parameter.
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
+    boolean hasNameParam = java.util.Arrays.stream(m.getParameters())
+        .anyMatch(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "name".equals(qp.value());
+        });
+    assertFalse(hasNameParam, "list() must not declare @QueryParam(\"name\") after APISIMP-NAME-ALIAS-RETIRE");
   }
 
   @Test
   void list_pageSizeParam_hasMinConstraint() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
         .findFirst().orElse(null);
@@ -175,7 +162,7 @@ class CollectionV2RestTest {
 
   @Test
   void list_pageSizeParam_hasMaxConstraint() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
         .findFirst().orElse(null);
@@ -581,7 +568,7 @@ class CollectionV2RestTest {
 
   @Test
   void list_qParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "q".equals(qp.value()); })
         .findFirst().orElse(null);
@@ -591,21 +578,11 @@ class CollectionV2RestTest {
     assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.q");
   }
 
-  @Test
-  void list_legacyNameParam_isDeprecated() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
-    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
-        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "name".equals(qp.value()); })
-        .findFirst().orElse(null);
-    assertNotNull(param, "list.name (legacy) must still carry @QueryParam(\"name\")");
-    assertNotNull(param.getAnnotation(Deprecated.class), "list.name must be annotated @Deprecated");
-  }
-
   // ─── APISIMP-COLLECTION-LIST-BUNDLE-SIZE-PAGESIZE reflection guards ────────
 
   @Test
   void list_pageParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "page".equals(qp.value()); })
         .findFirst().orElse(null);
@@ -617,7 +594,7 @@ class CollectionV2RestTest {
 
   @Test
   void list_pageSizeParam_hasParameterAnnotationWithDescription() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, String.class, int.class, int.class);
+    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
     java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
         .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "pageSize".equals(qp.value()); })
         .findFirst().orElse(null);

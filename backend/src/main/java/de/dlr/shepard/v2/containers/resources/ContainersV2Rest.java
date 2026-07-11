@@ -436,8 +436,6 @@ public class ContainersV2Rest {
     description =
       "Returns every container of `kind` the caller may read, as ContainerV2IO[]. " +
       "An optional `q` query param narrows by substring (case-sensitive).\n\n" +
-      "**Deprecated alias:** `?name=` is accepted for one release cycle and produces a " +
-      "`Deprecation: true` response header; migrate callers to `?q=`.\n\n" +
       "Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
       "(1–200) to slice the result. Omitting either returns all containers. " +
       "`X-Total-Count` header carries the total before paging.\n\nAuth: " +
@@ -458,8 +456,6 @@ public class ContainersV2Rest {
     @QueryParam("kind") String kind,
     @Parameter(description = "Optional substring filter on container name. Case-sensitive. Omit to return all containers of the given kind.")
     @QueryParam("q") String q,
-    @Parameter(description = "Deprecated alias for `q`. Accepted for one release cycle; prefer `q`. Presence adds `Deprecation: true` response header.")
-    @Deprecated @QueryParam("name") String nameLegacy,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size, 1–200 (default 50).")
@@ -472,12 +468,10 @@ public class ContainersV2Rest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing query parameter", Response.Status.BAD_REQUEST, "kind query parameter is required");
     }
     try {
-      String filter = q != null ? q : nameLegacy;
       int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
-      int total = containersService.count(kind, filter);
-      List<ContainerV2IO> pageItems = containersService.list(kind, filter, skip, pageSize);
+      int total = containersService.count(kind, q);
+      List<ContainerV2IO> pageItems = containersService.list(kind, q, skip, pageSize);
       Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize));
-      if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
       return rb.build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());

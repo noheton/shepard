@@ -706,44 +706,37 @@ class ContainersV2RestTest {
   void list_returns200WithQFilter() {
     when(containersService.count(eq("file"), eq("sca"))).thenReturn(1);
     when(containersService.list(eq("file"), eq("sca"), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO()));
-    var r = resource.list("file", "sca", null, 0, 50, securityContext);
+    var r = resource.list("file", "sca", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     verify(containersService).count("file", "sca");
     verify(containersService).list("file", "sca", 0, 50);
   }
 
+  /** Regression: ?name= must no longer be accepted — dropped at APISIMP-NAME-ALIAS-RETIRE. */
   @Test
-  void list_legacyNameParamAliasesQAndAddsDeprecationHeader() {
-    when(containersService.count(eq("file"), eq("sca"))).thenReturn(1);
-    when(containersService.list(eq("file"), eq("sca"), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO()));
-    // q=null, nameLegacy="sca" — should produce same result but with Deprecation header
-    var r = resource.list("file", null, "sca", 0, 50, securityContext);
-    assertEquals(200, r.getStatus());
-    assertEquals("true", r.getHeaderString("Deprecation"));
-    verify(containersService).count("file", "sca");
-    verify(containersService).list("file", "sca", 0, 50);
-  }
-
-  @Test
-  void list_qTakesPrecedenceOverLegacyName() {
-    when(containersService.count(eq("file"), eq("q-wins"))).thenReturn(1);
-    when(containersService.list(eq("file"), eq("q-wins"), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO()));
-    var r = resource.list("file", "q-wins", "name-ignored", 0, 50, securityContext);
-    assertEquals(200, r.getStatus());
-    org.junit.jupiter.api.Assertions.assertNull(r.getHeaderString("Deprecation"),
-        "Deprecation header must be absent when ?q= is provided");
+  void list_nameParamIsGone() {
+    var method = java.util.Arrays.stream(ContainersV2Rest.class.getMethods())
+        .filter(m -> m.getName().equals("list"))
+        .findFirst().orElseThrow();
+    boolean hasNameParam = java.util.Arrays.stream(method.getParameters())
+        .anyMatch(p -> {
+          var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class);
+          return qp != null && "name".equals(qp.value());
+        });
+    org.junit.jupiter.api.Assertions.assertFalse(hasNameParam,
+        "list() must not declare @QueryParam(\"name\") after APISIMP-NAME-ALIAS-RETIRE");
   }
 
   @Test
   void list_returns400WhenMissingKind() {
-    var r = resource.list(null, null, null, 0, 50, securityContext);
+    var r = resource.list(null, null, 0, 50, securityContext);
     assertEquals(400, r.getStatus());
   }
 
   @Test
   void list_returns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = resource.list("file", null, null, 0, 50, securityContext);
+    var r = resource.list("file", null, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
   }
 
@@ -751,7 +744,7 @@ class ContainersV2RestTest {
   void list_xTotalCountHeaderIsPresent() {
     when(containersService.count(eq("file"), isNull())).thenReturn(2);
     when(containersService.list(eq("file"), isNull(), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
-    var r = resource.list("file", null, null, 0, 50, securityContext);
+    var r = resource.list("file", null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
   }
 
@@ -760,7 +753,7 @@ class ContainersV2RestTest {
     when(containersService.count(eq("file"), isNull())).thenReturn(3);
     when(containersService.list(eq("file"), isNull(), eq(0), eq(2)))
         .thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
-    var r = resource.list("file", null, null, 0, 2, securityContext);
+    var r = resource.list("file", null, 0, 2, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
@@ -771,7 +764,7 @@ class ContainersV2RestTest {
   void list_paginationPageBeyondRangeReturnsEmptyList() {
     when(containersService.count(eq("file"), isNull())).thenReturn(1);
     when(containersService.list(eq("file"), isNull(), eq(990), eq(10))).thenReturn(List.of());
-    var r = resource.list("file", null, null, 99, 10, securityContext);
+    var r = resource.list("file", null, 99, 10, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
@@ -785,7 +778,7 @@ class ContainersV2RestTest {
         .collect(java.util.stream.Collectors.toList());
     when(containersService.count(eq("file"), isNull())).thenReturn(250);
     when(containersService.list(eq("file"), isNull(), eq(0), eq(200))).thenReturn(page0);
-    var r = resource.list("file", null, null, 0, 200, securityContext);
+    var r = resource.list("file", null, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
@@ -1006,20 +999,6 @@ class ContainersV2RestTest {
     org.junit.jupiter.api.Assertions.assertNotNull(kindAnn, "list() kind @QueryParam must have @Parameter");
     org.junit.jupiter.api.Assertions.assertTrue(kindAnn.required(), "list() kind must be required=true");
     org.junit.jupiter.api.Assertions.assertFalse(kindAnn.description().isBlank(), "list() kind description must be non-blank");
-  }
-
-  @Test
-  void list_nameParamIsDescribed() {
-    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
-        .filter(m -> m.getName().equals("list"))
-        .findFirst().orElseThrow();
-    var nameAnn = Arrays.stream(method.getParameters())
-        .filter(p -> p.getAnnotation(QueryParam.class) != null
-            && "name".equals(p.getAnnotation(QueryParam.class).value()))
-        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
-        .findFirst().orElse(null);
-    org.junit.jupiter.api.Assertions.assertNotNull(nameAnn, "list() name @QueryParam must have @Parameter");
-    org.junit.jupiter.api.Assertions.assertFalse(nameAnn.description().isBlank(), "list() name description must be non-blank");
   }
 
   // ─── APISIMP-CONTAINERS-V2-PARAMS-UNDOCUMENTED-2 regression ─────────────────

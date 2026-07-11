@@ -143,9 +143,6 @@ public class CollectionV2Rest {
       "`status`, …) with `orderDesc=true` for a sorted result.\n\n" +
       "Pagination: omit `page` / `pageSize` to get the first 50; supply both to paginate. " +
       "The server caps `pageSize` at 200 to avoid unbounded result sets.\n\n" +
-      "Filtering: `q` (preferred) or deprecated `name` — case-insensitive substring match " +
-      "on Collection name. Using `?name=` emits `Deprecation: true` response header; " +
-      "migrate callers to `?q=`.\n\n" +
       "Each returned `CollectionV2IO` carries `appId` (canonical UUID v7) as the " +
       "stable identifier; use the matching `/v2/...` endpoints for follow-up calls.\n\n" +
       "Auth: no role gate — the result is filtered server-side to entities the caller " +
@@ -163,10 +160,8 @@ public class CollectionV2Rest {
   @APIResponse(responseCode = "401",
     description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
-    @Parameter(description = "Optional case-insensitive substring filter on Collection name. Preferred over `name`.")
+    @Parameter(description = "Optional case-insensitive substring filter on Collection name.")
     @QueryParam("q") String q,
-    @Parameter(description = "Deprecated alias for `q`. Accepted for one release cycle; prefer `q`. Presence adds `Deprecation: true` response header.")
-    @Deprecated @QueryParam(Constants.QP_NAME) String nameLegacy,
     @Parameter(description = "0-based page index. Default 0. Negative values are rejected (400).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size. Default 50. Must be between 1 and 200 inclusive (400 otherwise).")
@@ -174,18 +169,16 @@ public class CollectionV2Rest {
   ) {
 
     var params = new QueryParamHelper();
-    String nameFilter = q != null ? q : nameLegacy;
-    if (nameFilter != null) params = params.withName(nameFilter);
+    if (q != null) params = params.withName(q);
 
     long total = collectionService.countAllCollections(params);
     var items = collectionService.getAllCollections(params.withPageAndSize(page, pageSize)).stream()
         .map(CollectionV2IO::new)
         .toList();
 
-    Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-      .header("Cache-Control", "max-age=300, must-revalidate");
-    if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
-    return rb.build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @GET
