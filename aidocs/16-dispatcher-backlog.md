@@ -4880,7 +4880,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundles/resources/BundleGroupsV2Rest.java:141–142`.
 
 ## APISIMP-CROSS-BULK-KIND-PARAM — add `@Parameter` on `kind` QueryParam in `CrossDoBulkDataRest` (size: XS, fire-539)
-- **Status:** queued (fire-539).
+- **Status:** ✅ shipped (fire-541, PR #2474).
 - **Why:** `CrossDoBulkDataRest.java:119` exposes `@QueryParam("kind")` on the bulk-data endpoint without an `@Parameter` annotation. The `kind` enum values are undiscoverable from the OpenAPI spec without it. Annotation-only addition; no logic change. Sweep fire-539.
 - **Fix:** Add `@Parameter(description = "Payload kind filter", schema = @Schema(enumeration = {...}))` on the `kind` `@QueryParam` in the relevant method.
 - **AC:** OpenAPI spec for the bulk-data endpoint shows `kind` as a documented param with enum values; CI green.
