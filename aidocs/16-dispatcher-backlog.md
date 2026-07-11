@@ -4873,7 +4873,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterRest.java:49,95`.
 
 ## APISIMP-BUNDLE-LISTGROUPS-PAGEPARAM — add `@Parameter` on `listGroups` page/pageSize in `BundleGroupsV2Rest` (size: XS, fire-539)
-- **Status:** queued (fire-539).
+- **Status:** ✅ shipped (fire-540, PR #2473).
 - **Why:** `BundleGroupsV2Rest.java:141–142` exposes `@QueryParam("page")` and `@QueryParam("pageSize")` on the `listGroups` endpoint but lacks `@Parameter` OpenAPI annotations on both params. Other v2 list endpoints (e.g. `DataObjectV2Rest`, `CollectionV2Rest`) carry `@Parameter(description=..., schema=@Schema(...))` on their pagination params — missing here breaks API docs consistency. Pure annotation addition; no logic change. Sweep fire-539.
 - **Fix:** Add `@Parameter(description = "Page number (0-based)", schema = @Schema(defaultValue = "0"))` and `@Parameter(description = "Page size", schema = @Schema(defaultValue = "10", maximum = "200"))` on the two `@QueryParam` params in `listGroups`.
 - **AC:** OpenAPI spec for `GET /v2/bundle-groups` shows `page` and `pageSize` parameter descriptions; CI green.
