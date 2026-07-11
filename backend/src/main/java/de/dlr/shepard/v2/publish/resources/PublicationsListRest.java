@@ -2,12 +2,10 @@ package de.dlr.shepard.v2.publish.resources;
 
 import de.dlr.shepard.v2.common.ProblemResponse;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -55,9 +53,7 @@ public class PublicationsListRest {
   @APIResponse(responseCode = "410", description = "Endpoint removed. Use GET /v2/publications?entityAppId={appId}.")
   public Response list(
     @PathParam("kind") String kind,
-    @PathParam("appId") String appId,
-    @QueryParam("page") @DefaultValue("0") int page,
-    @QueryParam("pageSize") @DefaultValue("50") int pageSize
+    @PathParam("appId") String appId
   ) {
     return gone();
   }

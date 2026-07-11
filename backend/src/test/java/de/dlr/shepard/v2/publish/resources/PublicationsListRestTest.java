@@ -25,19 +25,19 @@ class PublicationsListRestTest {
 
   @Test
   void anyCallReturns410Gone() {
-    Response r = rest.list("data-objects", "01HF-A", 0, 50);
+    Response r = rest.list("data-objects", "01HF-A");
     assertEquals(410, r.getStatus());
   }
 
   @Test
   void responseHasLocationHeader() {
-    Response r = rest.list("data-objects", "01HF-A", 0, 50);
+    Response r = rest.list("data-objects", "01HF-A");
     assertEquals("/v2/publications", r.getHeaderString("Location"));
   }
 
   @Test
   void responseIsApplicationProblemJson() {
-    Response r = rest.list("data-objects", "01HF-A", 0, 50);
+    Response r = rest.list("data-objects", "01HF-A");
     assertNotNull(r.getMediaType());
     assertTrue(r.getMediaType().toString().contains("problem+json"),
       "Response media type should be application/problem+json");
@@ -45,14 +45,14 @@ class PublicationsListRestTest {
 
   @Test
   void differentKindAndAppIdStillReturns410() {
-    Response r = rest.list("collections", "01COLL-A", 0, 50);
+    Response r = rest.list("collections", "01COLL-A");
     assertEquals(410, r.getStatus());
     assertEquals("/v2/publications", r.getHeaderString("Location"));
   }
 
   @Test
   void problemBodyContainsGoneType() {
-    Response r = rest.list("data-objects", "01HF-A", 0, 50);
+    Response r = rest.list("data-objects", "01HF-A");
     String body = r.getEntity().toString();
     assertTrue(body.contains("urn:shepard:error:gone"), "Problem body should contain gone type");
   }
