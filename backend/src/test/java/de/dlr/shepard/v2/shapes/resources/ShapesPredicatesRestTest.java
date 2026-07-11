@@ -25,9 +25,9 @@ import org.mockito.MockitoAnnotations;
  * <p>Verifies:
  * <ol>
  *   <li>No substrate filter → {@link PredicateVocabularyRepository#count()} +
- *       {@link PredicateVocabularyRepository#findAll(int, int)} called</li>
+ *       {@link PredicateVocabularyRepository#findAll(long, int)} called</li>
  *   <li>Substrate filter → {@link PredicateVocabularyRepository#countBySubstrate(String)} +
- *       {@link PredicateVocabularyRepository#findBySubstrate(String, int, int)} called</li>
+ *       {@link PredicateVocabularyRepository#findBySubstrate(String, long, int)} called</li>
  *   <li>Blank substrate filter treated as absent (calls count/findAll)</li>
  *   <li>Empty result set → 200 with empty items list</li>
  *   <li>Endpoint is @RolesAllowed("authenticated")</li>

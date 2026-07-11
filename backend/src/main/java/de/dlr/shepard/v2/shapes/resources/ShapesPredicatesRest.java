@@ -113,7 +113,7 @@ public class ShapesPredicatesRest {
     @Parameter(description = "Zero-based page index. Default 0.", required = false)
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page
   ) {
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     long total;
     List<PredicateVocabularyEntryIO> items;
     if (substrate != null && !substrate.isBlank()) {
