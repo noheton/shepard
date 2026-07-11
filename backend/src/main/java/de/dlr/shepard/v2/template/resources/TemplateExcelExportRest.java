@@ -34,7 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * {@code GET /v2/templates/{templateAppId}/export?dataObjectAppId=…} —
+ * {@code GET /v2/templates/{appId}/export?dataObjectAppId=…} —
  * shape-driven Excel export (BTKVS-C1-EXCEL-EXPORT, doc 125 §6/D5).
  *
  * <p><b>Seam reasoning (BTKVS-C1 reconciliation, aidocs/platform/191).</b>
@@ -65,7 +65,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * descriptor's contract).
  */
 @Produces(CellMappingExcelExporter.XLSX_MEDIA_TYPE)
-@Path("/v2/templates/{templateAppId}/export")
+@Path("/v2/templates/{appId}/export")
 @RequestScoped
 @Tag(name = "Templates")
 public class TemplateExcelExportRest {
@@ -124,7 +124,7 @@ public class TemplateExcelExportRest {
     description = "Template is not form-renderable: no shapeGraph in the flattened body, unparseable Turtle, or a non-data templateKind."
   )
   public Response exportExcel(
-    @PathParam("templateAppId") String templateAppId,
+    @PathParam("appId") String appId,
     @Parameter(
       description = "appId of the focused DataObject whose attributes fill the mapped cells.",
       required = true
@@ -136,16 +136,16 @@ public class TemplateExcelExportRest {
     }
     String caller = securityContext.getUserPrincipal().getName();
 
-    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(templateAppId);
+    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(appId);
     if (templateOpt.isEmpty()) {
       return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND.getStatusCode(),
-        "No template with appId " + templateAppId);
+        "No template with appId " + appId);
     }
     ShepardTemplate template = templateOpt.get();
 
     if (template.isRetired()) {
       return problem(PT_CONFLICT, "Template retired", Response.Status.CONFLICT.getStatusCode(),
-        "Template " + templateAppId + " is retired; pick a non-retired version");
+        "Template " + appId + " is retired; pick a non-retired version");
     }
 
     if (template.getTemplateKind() == null ||
@@ -160,7 +160,7 @@ public class TemplateExcelExportRest {
     String shapeGraph = extractShapeGraph(effectiveBody);
     if (shapeGraph == null || shapeGraph.isBlank()) {
       return problem(PT_UNPROCESSABLE, "Template carries no shapeGraph", 422,
-        "The flattened body of template " + templateAppId + " has no shapeGraph Turtle — author one " +
+        "The flattened body of template " + appId + " has no shapeGraph Turtle — author one " +
         "via POST /v2/shapes/build (the JSON-DSL shape builder) and store it on the template body");
     }
 
@@ -169,12 +169,12 @@ public class TemplateExcelExportRest {
       descriptor = compiler.compile(template, shapeGraph);
     } catch (IllegalArgumentException ex) {
       return problem(PT_UNPROCESSABLE, "Shape graph not compilable", 422,
-        "Template " + templateAppId + ": " + ex.getMessage());
+        "Template " + appId + ": " + ex.getMessage());
     }
 
     if (!exporter.hasCellMappings(descriptor.fields())) {
       return problem(PT_CONFLICT, "Template carries no cell-mappings", Response.Status.CONFLICT.getStatusCode(),
-        "No property shape on template " + templateAppId + " carries a urn:btkvs:cell-mapping annotation — " +
+        "No property shape on template " + appId + " carries a urn:btkvs:cell-mapping annotation — " +
         "there is nothing to place in a workbook. Author cell mappings via the shape builder's " +
         "hints.cellMapping (doc 125 §4.2)");
     }
