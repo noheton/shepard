@@ -4782,7 +4782,7 @@ picks these up. Terse by design.
 - **BLOCKED on operator input:** (a) source-export location + directory/filename convention + how a file maps to `Run NNNNN`; (b) the "other files" set beyond TIFFs; (c) 1 TIFF/track (singleton) or a set (bundle); (d) one-shot vs repeatable importer recipe. First refs: `aidocs/platform/196 §2`; `mffd-afp-tapelaying` (`attributes||run_number` join key); `feedback_completeness_nonnegotiable.md`; `feedback_no_parallel_heavy_ingests.md`.
 
 ## APISIMP-COLLEVENTS-PATHPARAM — rename `{collectionAppId}` → `{appId}` path-param in `CollectionEventsRest` (size: XS, fire-526)
-- **Status:** 🚧 in-progress (fire-526).
+- **Status:** ✅ shipped (confirmed on main fire-543 — `{appId}` and `@PathParam("appId")` present; no separate PR tracked).
 - **Why:** `CollectionEventsRest.java:47` declares `@Path("/v2/collections/{collectionAppId}/events")` and binds `@PathParam("collectionAppId") String collectionAppId` at line 83. The resource type is expressed by the URL prefix `/v2/collections/`; only one path param per method — no JAX-RS two-param collision. Zero wire-shape change — only the extraction variable name changes. Identical pattern to the already-merged `{bundleAppId}` (fire-506), `{templateAppId}` (fire-507), `{snapshotAppId}` (fire-518), `{collectionAppId}` cluster (fire-523), `{repoAppId}` (fire-524), `{entryAppId}` (fire-525). CAUTION: line 73 of the class references `collectionAppId` as an SSE event *payload* field name in the `@Operation` description — that string MUST NOT be changed.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in `@Path` (line 47), `@PathParam` binding (line 83), and local variable usages (lines 92, 98). Do NOT change line 73 (OpenAPI description text for SSE event payload fields).
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java | grep -E '@Path|@PathParam|String '` returns empty; `mvn -q test-compile -pl backend` green.
@@ -4866,7 +4866,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java:61,107`, `TemplateExcelExportRest.java:68,127`, `TemplateInstantiationRest.java:130,159`.
 
 ## APISIMP-WIKIWRITER-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` in `WikiWriterRest` (size: XS, fire-539)
-- **Status:** 🔄 in-flight (fire-539, branch `APISIMP-WIKIWRITER-PATHPARAM-1`, PR #2472 — awaiting CI).
+- **Status:** ✅ shipped (PR #2472, merged 2026-07-11T03:09Z).
 - **Why:** `WikiWriterRest.java` (wiki-writer plugin) declares `@Path("/v2/data-objects/{dataObjectAppId}/wiki-write")` with `@PathParam("dataObjectAppId")`. Single-entity path — `{dataObjectAppId}` is non-standard. Rename per v2 single-entity path-param convention. Sweep fire-539.
 - **Fix:** `@Path("{dataObjectAppId}")` → `@Path("{appId}")` (line 49); `@PathParam("dataObjectAppId") String dataObjectAppId` → `@PathParam("appId") String appId` (line 95); all four body usages updated; javadoc updated.
 - **AC:** `grep -n 'dataObjectAppId' plugins/wiki-writer/src/main/java/de/dlr/shepard/plugins/wikiwriter/resources/WikiWriterRest.java` returns empty; CI green.
@@ -4899,3 +4899,10 @@ picks these up. Terse by design.
 - **Fix:** `@Parameter` annotations on `{runId}` in `ImportV2Rest` and `{lockId}` in `ImportLockV2Rest`; cross-reference comments in both class-level Javadocs.
 - **AC:** OpenAPI spec clearly distinguishes `runId` (diagnostics) from `lockId` (lock lifecycle); CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportV2Rest.java`, `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportLockV2Rest.java`.
+
+## APISIMP-UNHIDE-FEED-PAGECAP — lower `UnhideFeedRest` feed endpoint `@Max(500)` → `@Max(200)` (size: XS, fire-543)
+- **Status:** 🔄 in-flight (fire-543, branch `APISIMP-UNHIDE-FEED-PAGECAP-1`, PR pending).
+- **Why:** `UnhideFeedRest.java:138` (plugin `unhide`) caps `GET /v2/unhide/feed.jsonld` `pageSize` at `@Max(500)` with description "Range [1, 500]". Additionally, the `@Operation` description at line 111 inconsistently says "page-size capped at 1000" (the internal `UnhideFeedService.MAX_PAGE_SIZE` service-layer constant). The v2-standard REST cap is `@Max(200)`. The Unhide harvester uses the default (`UnhideFeedService.DEFAULT_PAGE_SIZE = 100`) and does not specify `pageSize`; no caller is known to send `pageSize > 200`. Lowering the REST cap to 200 does not affect the service-layer `MAX_PAGE_SIZE = 1000` (internal, unreachable via REST after this fix).
+- **Fix:** `@Max(500)` → `@Max(200)` in `UnhideFeedRest.java:138`; update `@Parameter` description "Range [1, 500]" → "Range [1, 200]" (line 137); fix `@Operation` description "page-size capped at 1000" → "page-size capped at 200" (line 111).
+- **AC:** `grep -n '@Max' plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/resources/UnhideFeedRest.java | grep '500\|1000'` returns empty; `mvn -q test-compile -pl plugins/unhide` green.
+- **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/resources/UnhideFeedRest.java:111,137,138`.
