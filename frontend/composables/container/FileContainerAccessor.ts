@@ -251,9 +251,9 @@ export class FileContainerAccessor extends ContainerAccessor {
     if (urlResp.status === 503) throw new PresignedUnavailable();
     if (!urlResp.ok)
       throw new Error(`upload-url failed (HTTP ${urlResp.status})`);
-    const { uploadUrl, oid } = (await urlResp.json()) as {
+    const { uploadUrl, fileId } = (await urlResp.json()) as {
       uploadUrl: string;
-      oid: string;
+      fileId: string;
     };
 
     // Step 2 — PUT bytes directly to S3.  This is the byte-bearing leg —
@@ -272,7 +272,7 @@ export class FileContainerAccessor extends ContainerAccessor {
         method: "POST",
         headers: authJson,
         body: JSON.stringify({
-          oid,
+          fileId,
           fileName: file.name,
           contentType: file.type || null,
           fileSize: file.size,

@@ -19,11 +19,11 @@ public class PresignedUploadUrlIO {
   private String uploadUrl;
 
   @Schema(
-    description = "Object identifier (UUID) assigned to this file. " +
-    "Pass this to the commit endpoint after the upload completes.",
+    description = "File identifier (UUID v7) assigned to this upload slot. " +
+    "Pass this value as `fileId` to the commit endpoint after the upload completes.",
     example = "550e8400-e29b-41d4-a716-446655440000"
   )
-  private String oid;
+  private String fileId;
 
   @Schema(description = "When the presigned URL expires.", example = "2024-08-15T11:33:44Z")
   private Instant expiresAt;

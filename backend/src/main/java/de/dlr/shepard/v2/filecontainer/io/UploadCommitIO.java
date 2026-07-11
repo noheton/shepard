@@ -10,10 +10,10 @@ public class UploadCommitIO {
 
   @Schema(
     required = true,
-    description = "The oid returned by the upload-url endpoint.",
+    description = "The fileId returned by the upload-url endpoint.",
     example = "550e8400-e29b-41d4-a716-446655440000"
   )
-  private String oid;
+  private String fileId;
 
   @Schema(
     required = true,

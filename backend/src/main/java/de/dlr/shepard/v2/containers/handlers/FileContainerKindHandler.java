@@ -216,8 +216,8 @@ public class FileContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> commitUpload(String appId, UploadCommitIO commit) {
-    if (commit == null || commit.getOid() == null || commit.getOid().isBlank()) {
-      throw new BadRequestException("oid is required");
+    if (commit == null || commit.getFileId() == null || commit.getFileId().isBlank()) {
+      throw new BadRequestException("fileId is required");
     }
     if (commit.getFileName() == null || commit.getFileName().isBlank()) {
       throw new BadRequestException("fileName is required");
@@ -228,9 +228,9 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     ShepardFile file;
     try {
       file = service.commitUpload(
-        container.getId(), commit.getOid(), commit.getFileName(), commit.getFileSize());
+        container.getId(), commit.getFileId(), commit.getFileName(), commit.getFileSize());
     } catch (StorageException se) {
-      Log.errorf("commitUpload failed for container %s oid %s: %s", appId, commit.getOid(), se.getMessage());
+      Log.errorf("commitUpload failed for container %s fileId %s: %s", appId, commit.getFileId(), se.getMessage());
       throw new InternalServerErrorException("Storage error: " + se.getMessage());
     }
     return Optional.of(Response.status(Response.Status.CREATED).entity(file).build());
