@@ -6,6 +6,10 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import jakarta.validation.constraints.Max;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
@@ -239,13 +243,26 @@ class SnapshotPinnedReadRestTest {
 
   @Test
   void paginates_beyondLastPage_returnsEmptyList() {
-    // page=10, pageSize=500 → skip=5000; DB returns empty list, total still 2
-    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), eq(5000), eq(500)))
+    // page=10, pageSize=50 → skip=500; DB returns empty list, total still 2
+    when(snapshotService.listDataObjectAppIdsPage(eq(snapshot), eq(500), eq(50)))
       .thenReturn(List.of());
-    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 10, 500, sc);
+    Response r = rest.getDataObjects(COLL_APP_ID, SNAP_APP_ID, 10, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     SnapshotDataObjectsIO body = (SnapshotDataObjectsIO) r.getEntity();
     assertThat(body.dataObjectAppIds()).isEmpty();
     assertThat(body.totalDataObjects()).isEqualTo(2);
+  }
+
+  // ── pagecap guard ─────────────────────────────────────────────────────────
+
+  @Test
+  void maxPageSize_isAtMost200() throws NoSuchMethodException {
+    Method m = SnapshotPinnedReadRest.class.getMethod(
+        "getDataObjects", String.class, String.class, int.class, int.class,
+        jakarta.ws.rs.core.SecurityContext.class);
+    Parameter pageSizeParam = m.getParameters()[3];
+    Max maxAnnotation = pageSizeParam.getAnnotation(Max.class);
+    assertThat(maxAnnotation).as("@Max annotation must be present on pageSize").isNotNull();
+    assertThat(maxAnnotation.value()).as("pageSize @Max must be <= 200").isLessThanOrEqualTo(200);
   }
 }
