@@ -254,12 +254,12 @@ class PermissionAuditLogRestTest {
   }
 
   @Test
-  void auditLog_pageSizeParamDescriptionMentions500() throws NoSuchMethodException {
+  void auditLog_pageSizeParamDescriptionMentions200() throws NoSuchMethodException {
     String desc = auditLogParamDesc("pageSize");
     assertFalse(desc.isBlank(),
         "permissionAuditLog() 'pageSize' must carry a @Parameter description");
-    assertTrue(desc.contains("500"),
-        "permissionAuditLog() 'pageSize' description must mention the 500 server-side cap");
+    assertTrue(desc.contains("200"),
+        "permissionAuditLog() 'pageSize' description must mention the 200 server-side cap");
   }
 
   @Test
@@ -283,6 +283,6 @@ class PermissionAuditLogRestTest {
     assertNotNull(min, "permissionAuditLog() 'pageSize' must carry @Min");
     assertEquals(1L, min.value(), "@Min value must be 1");
     assertNotNull(max, "permissionAuditLog() 'pageSize' must carry @Max");
-    assertEquals(500L, max.value(), "@Max value must be 500");
+    assertEquals(200L, max.value(), "@Max value must be 200");
   }
 }

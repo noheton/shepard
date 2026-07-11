@@ -65,7 +65,7 @@ class InstanceAdminListRestTest {
   @Test
   void permissionAudit_returnsPagedEnvelope() {
     when(permissionAuditService.countOrphans()).thenReturn(0L);
-    when(permissionAuditService.listOrphans(0, 50)).thenReturn(List.of());
+    when(permissionAuditService.listOrphans(0L, 50)).thenReturn(List.of());
 
     Response r = resource.permissionAudit(securityContext, 0, 50);
 
@@ -78,7 +78,7 @@ class InstanceAdminListRestTest {
   void permissionAudit_paginationParamsForwardedToService() {
     PermissionAuditEntryIO entry = new PermissionAuditEntryIO(42L, "test-app-id", List.of("BasicEntity"), "thing");
     when(permissionAuditService.countOrphans()).thenReturn(1L);
-    when(permissionAuditService.listOrphans(100, 50)).thenReturn(List.of(entry));
+    when(permissionAuditService.listOrphans(100L, 50)).thenReturn(List.of(entry));
 
     Response r = resource.permissionAudit(securityContext, 2, 50);
 
