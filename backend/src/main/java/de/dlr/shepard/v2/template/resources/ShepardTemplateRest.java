@@ -39,8 +39,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -86,12 +84,7 @@ public class ShepardTemplateRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged result set, ordered by name then version DESC.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response list(
@@ -107,7 +100,6 @@ public class ShepardTemplateRest {
     long total = dao.count(kind, effInclude);
     List<ShepardTemplateIO> rows = dao.list(kind, effInclude, page, pageSize).stream().map(ShepardTemplateIO::from).toList();
     return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 
@@ -307,12 +299,7 @@ public class ShepardTemplateRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged tag list, sorted ascending. X-Total-Count = total before paging.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response tags(
@@ -327,7 +314,6 @@ public class ShepardTemplateRest {
     int skip = (int) Math.min((long) page * pageSize, total);
     List<String> slice = all.subList(skip, (int) Math.min((long) skip + pageSize, total));
     return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 

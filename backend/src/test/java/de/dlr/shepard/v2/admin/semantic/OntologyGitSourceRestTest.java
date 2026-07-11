@@ -58,7 +58,6 @@ class OntologyGitSourceRestTest {
     when(gitSourceDAO.listPaged(0L, 50)).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
     Response r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals(2L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     @SuppressWarnings("unchecked")
     PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
     assertEquals(2, body.items().size());
@@ -70,7 +69,6 @@ class OntologyGitSourceRestTest {
     when(gitSourceDAO.listPaged(0L, 2)).thenReturn(List.of(makeSource("a1"), makeSource("a2")));
     Response r = resource.list(0, 2, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     @SuppressWarnings("unchecked")
     PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
     assertEquals(2, body.items().size());
@@ -88,7 +86,6 @@ class OntologyGitSourceRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<OntologyGitSourceIO> body = (PagedResponseIO<OntologyGitSourceIO>) r.getEntity();
     assertEquals(200, body.items().size());
-    assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test

@@ -95,7 +95,6 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
     assertThat(body.items()).hasSize(1);
     assertThat(body.items().get(0).getLabel()).isEqualTo("anomaly");
     assertThat(body.total()).isEqualTo(1);
-    assertThat(result.get().getHeaderString("X-Total-Count")).isEqualTo("1");
   }
 
   @Test

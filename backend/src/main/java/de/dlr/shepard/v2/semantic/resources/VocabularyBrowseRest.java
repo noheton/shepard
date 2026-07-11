@@ -30,8 +30,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 
 /**
  * SEMA-V6-UI-FOLLOWUP — read-only browse surface for {@code :Vocabulary}
@@ -103,12 +101,7 @@ public class VocabularyBrowseRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabularies(
@@ -121,7 +114,6 @@ public class VocabularyBrowseRest {
     List<Vocabulary> page_ = vocabularyDAO.listPaged((long) page * pageSize, pageSize);
     List<VocabularyIO> out = page_.stream().map(VocabularyIO::from).toList();
     return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 
@@ -151,12 +143,7 @@ public class VocabularyBrowseRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize (APISIMP-PAGINATION-ENVELOPE).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "No vocabulary with this appId.")
@@ -179,7 +166,6 @@ public class VocabularyBrowseRest {
     List<Predicate> rows = predicateDAO.listByVocabularyPaged(appId, skip, pageSize);
     List<PredicateIO> page_ = rows.stream().map(PredicateIO::from).toList();
     return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 
@@ -216,12 +202,7 @@ public class VocabularyBrowseRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response listVocabulariesUsedBy(
@@ -240,7 +221,6 @@ public class VocabularyBrowseRest {
   ) {
     if (appId == null || appId.isBlank()) {
       return Response.ok(new PagedResponseIO<>(List.<VocabularyIO>of(), 0L, page, pageSize))
-          .header("X-Total-Count", 0L)
           .build();
     }
     List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(appId, scope);
@@ -249,7 +229,6 @@ public class VocabularyBrowseRest {
     List<Vocabulary> slice = used.subList(skip, (int) Math.min((long) skip + pageSize, total));
     List<VocabularyIO> out = slice.stream().map(VocabularyIO::from).toList();
     return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 

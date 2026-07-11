@@ -73,7 +73,6 @@ class CollectionWatchersRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
     assertEquals(1, body.items().size());
-    assertEquals(1L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -90,7 +89,6 @@ class CollectionWatchersRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
     assertEquals(2, body.items().size());
-    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
     // Verify the bounded call was made with correct skip+limit (not the unbounded 1-arg variant).
     verify(service).list(COLL_APP_ID, ALICE, 0, 2);
   }
@@ -126,7 +124,6 @@ class CollectionWatchersRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<CollectionWatcherIO> body = (PagedResponseIO<CollectionWatcherIO>) r.getEntity();
     assertEquals(200, body.items().size());
-    assertEquals(250L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test

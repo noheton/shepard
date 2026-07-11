@@ -49,8 +49,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
@@ -256,12 +254,7 @@ public class SemanticAdminRest {
   )
   @APIResponse(
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role (RFC 7807).")
@@ -281,7 +274,6 @@ public class SemanticAdminRest {
     List<OntologyBundleIO> rows = new ArrayList<>(merged.size());
     for (BundleView v : merged) rows.add(OntologyBundleIO.from(v));
     return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size()))
-        .header("X-Total-Count", (long) rows.size())
         .build();
   }
 

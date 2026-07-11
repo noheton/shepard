@@ -449,11 +449,6 @@ public class ContainersV2Rest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
-    ),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "400", description = "Missing/unknown kind.")
@@ -482,7 +477,6 @@ public class ContainersV2Rest {
       int total = containersService.count(kind, filter);
       List<ContainerV2IO> pageItems = containersService.list(kind, filter, skip, pageSize);
       Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
-          .header("X-Total-Count", total);  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
       if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
       return rb.build();
     } catch (BadRequestException bre) {
@@ -506,8 +500,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Version list (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total version count.", schema = @Schema(type = SchemaType.INTEGER))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -534,7 +527,6 @@ public class ContainersV2Rest {
     }
     List<PayloadVersionIO> versionList = versionsOpt.get();
     return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size()))
-        .header("X-Total-Count", (long) versionList.size())
         .build();
   }
 
@@ -594,8 +586,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "List of linked DataObjects (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total linked DataObject count.", schema = @Schema(type = SchemaType.INTEGER))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -618,7 +609,6 @@ public class ContainersV2Rest {
     }
     List<DataObjectIO> linkedList = linkedOpt.get();
     return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size()))
-        .header("X-Total-Count", (long) linkedList.size())
         .build();
   }
 
@@ -776,8 +766,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Raw data for all resolved channels.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Number of resolved channel series returned.", schema = @Schema(type = SchemaType.INTEGER))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   )
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -804,7 +793,6 @@ public class ContainersV2Rest {
     }
     var out = result.get();
     return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
-        .header("X-Total-Count", (long) out.size())
         .build();
   }
 
@@ -1011,13 +999,8 @@ public class ContainersV2Rest {
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "Paged list of channel annotations with X-Total-Count header (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    ))
+    description = "Paged list of channel annotations (may be empty).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1133,13 +1116,8 @@ public class ContainersV2Rest {
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200",
-    description = "Paged list of temporal annotations with X-Total-Count header (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    ))
+    description = "Paged list of temporal annotations (may be empty).",
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")

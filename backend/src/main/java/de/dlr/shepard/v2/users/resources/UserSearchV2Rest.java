@@ -29,8 +29,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -64,12 +62,7 @@ public class UserSearchV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paginated list of matching users.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter 'q' is blank or missing.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -93,7 +86,6 @@ public class UserSearchV2Rest {
     var body = new UserSearchBody(new UserSearchParams(jsonQuery));
     PagedResponseIO<UserIO> paged = userSearchService.searchPaged(body, page, pageSize);
     return Response.ok(paged)
-        .header("X-Total-Count", paged.total())
         .build();
   }
 

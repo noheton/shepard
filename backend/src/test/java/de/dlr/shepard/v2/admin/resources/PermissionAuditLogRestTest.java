@@ -127,7 +127,6 @@ class PermissionAuditLogRestTest {
     Response r = resource.permissionAuditLog(adminCtx, null, null, null, null, 0, 50);
 
     assertEquals(200, r.getStatus());
-    assertEquals("7", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   @Test

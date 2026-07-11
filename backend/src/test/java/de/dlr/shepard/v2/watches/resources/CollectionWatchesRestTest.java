@@ -74,7 +74,6 @@ class CollectionWatchesRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
     assertEquals(2, body.items().size());
-    assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -88,7 +87,6 @@ class CollectionWatchesRestTest {
     assertEquals(200, r.getStatus());
     // page=1, pageSize=3 → skip=3
     verify(service).list(COLL_APP_ID, 3, 3);
-    assertEquals("10", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -98,7 +96,6 @@ class CollectionWatchesRestTest {
 
     Response r = resource.list(COLL_APP_ID, 0, 50);
 
-    assertEquals("100", r.getHeaderString("X-Total-Count"));
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
     assertEquals(1, body.items().size());
@@ -116,7 +113,6 @@ class CollectionWatchesRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<WatchIO> body = (PagedResponseIO<WatchIO>) r.getEntity();
     assertTrue(body.items().isEmpty());
-    assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
 
   @Test

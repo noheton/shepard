@@ -30,8 +30,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -75,12 +73,7 @@ public class CollectionWatchersRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
@@ -99,7 +92,6 @@ public class CollectionWatchersRest {
     int skip = (int) Math.min((long) page * pageSize, total);
     List<CollectionWatcherIO> items = service.list(appId, caller, skip, pageSize);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-        .header("X-Total-Count", total)  // kept during deprecation window (APISIMP-PAGINATION-ENVELOPE)
         .build();
   }
 

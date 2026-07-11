@@ -47,8 +47,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -111,12 +109,7 @@ public class InstanceAdminRest {
   @APIResponse(
     description = "Paged list of active Neo4j-side instance-admin grants with audit metadata.",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
@@ -124,7 +117,6 @@ public class InstanceAdminRest {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
     return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size()))
-        .header("X-Total-Count", (long) grants.size())
         .build();
   }
 
@@ -193,12 +185,7 @@ public class InstanceAdminRest {
   @APIResponse(
     description = "Paged list of BasicEntity nodes that have no `:has_permissions` edge; empty items array means no orphans.",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
@@ -213,7 +200,6 @@ public class InstanceAdminRest {
     long total = permissionAuditService.countOrphans();
     List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans((long) page * pageSize, pageSize);
     return Response.ok(new PagedResponseIO<>(orphans, total, page, pageSize))
-      .header("X-Total-Count", total)
       .build();
   }
 
@@ -245,11 +231,6 @@ public class InstanceAdminRest {
     responseCode = "200",
     content = @Content(
       schema = @Schema(implementation = PagedResponseIO.class)
-    ),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -287,7 +268,6 @@ public class InstanceAdminRest {
       entityAppId, actor, fromInstant, toInstant, page, pageSize
     );
     return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
-      .header("X-Total-Count", total)
       .build();
   }
 

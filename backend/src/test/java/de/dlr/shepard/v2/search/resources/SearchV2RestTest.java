@@ -229,7 +229,6 @@ class SearchV2RestTest {
     Response resp = resource.search("LUMEN", 0, 50, null);
 
     assertEquals(200, resp.getStatus());
-    Object header = resp.getHeaders().getFirst("X-Total-Count");
     assertEquals(3L, header, "X-Total-Count header must match body total");
   }
 

@@ -242,14 +242,15 @@ class FlatPublicationsRestTest {
   }
 
   @Test
-  void xTotalCountHeaderPresent() {
+  void totalCountPresentInBody() {
     Publication pub = publication("shepard:dlr.de:data-objects:01HF-A:v1");
     stubPagedDao("01HF-A", 42L, List.of(pub), 1L, 0, 50);
 
     Response r = rest.list("01HF-A", 0, 50, securityContext, uriInfo);
 
     assertEquals(200, r.getStatus());
-    assertEquals("1", r.getHeaderString("X-Total-Count"),
-      "X-Total-Count header should carry total count before paging");
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PublicationIO> body = (PagedResponseIO<PublicationIO>) r.getEntity();
+    assertEquals(1L, body.total(), "total count should be present in paged response body");
   }
 }

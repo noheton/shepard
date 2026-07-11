@@ -243,7 +243,6 @@ class LabJournalHistoryRestTest {
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("2");
   }
 
   @Test
@@ -252,7 +251,6 @@ class LabJournalHistoryRestTest {
     Response r = resource.history(ENTRY_APP_ID, 0, 50, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("0");
   }
 
   @Test

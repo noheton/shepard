@@ -31,8 +31,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -111,11 +109,6 @@ public class SnapshotPinnedReadRest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = SnapshotDataObjectsIO.class)
-    ),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -161,7 +154,6 @@ public class SnapshotPinnedReadRest {
     List<String> paged = snapshotService.listDataObjectAppIdsPage(snapshot, skip, pageSize);
 
     return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 

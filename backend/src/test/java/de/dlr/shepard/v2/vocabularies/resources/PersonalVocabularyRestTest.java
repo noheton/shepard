@@ -187,7 +187,6 @@ class PersonalVocabularyRestTest {
     assertEquals(0L, body.total());
     assertEquals(0, body.page());
     assertEquals(50, body.pageSize());
-    assertEquals("0", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -217,7 +216,6 @@ class PersonalVocabularyRestTest {
     assertEquals(50, body.pageSize());
     assertTrue(body.items().stream().allMatch(v -> "PERSONAL".equals(v.getType())));
     assertTrue(body.items().stream().allMatch(v -> userAppId.equals(v.getOwnedByUserAppId())));
-    assertEquals("2", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -262,7 +260,6 @@ class PersonalVocabularyRestTest {
     assertEquals(7L, body.total());
     assertEquals(1, body.page());
     assertEquals(5, body.pageSize());
-    assertEquals("7", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -282,7 +279,6 @@ class PersonalVocabularyRestTest {
     PagedResponseIO<VocabularyIO> body = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertTrue(body.items().isEmpty());
     assertEquals(1L, body.total());
-    assertEquals("1", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -298,7 +294,6 @@ class PersonalVocabularyRestTest {
 
     Response response = rest.list(0, 50);
 
-    assertEquals("1", response.getHeaderString("X-Total-Count"));
   }
 
   @Test
