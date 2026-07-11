@@ -21,15 +21,18 @@ vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
 
 // V2-SWEEP-001-CLIENT-REGEN: the regenerated client dropped the hand-rolled
 // `listDataObjectsWithCount`; the composable now calls `listDataObjectsRaw` and
-// reads the total from the X-Total-Count response header. The mock returns an
+// reads the total from the Content-Range response header. The mock returns an
 // ApiResponse-shaped object ({ raw: { headers }, value() }).
 const mockListDataObjectsRaw = vi.fn();
 const mockGetAllDataObjects = vi.fn();
 
-/** Build an ApiResponse-shaped mock with the given items + total-count header. */
+/** Build an ApiResponse-shaped mock with the given items + Content-Range header. */
 function rawResponse(items: unknown[], total: number | null) {
   const headers = new Headers();
-  if (total !== null) headers.set("X-Total-Count", String(total));
+  if (total !== null) {
+    const last = items.length > 0 ? items.length - 1 : -1;
+    headers.set("Content-Range", `dataobjects 0-${last}/${total}`);
+  }
   return {
     raw: { headers },
     value: () => Promise.resolve(items),

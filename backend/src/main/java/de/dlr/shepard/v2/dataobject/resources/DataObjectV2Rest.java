@@ -154,8 +154,7 @@ public class DataObjectV2Rest {
       "in two response headers instead of a `PagedResponseIO` body envelope:\n\n" +
       "- `Content-Range: dataobjects START-END/TOTAL` — zero-based index of the first " +
       "and last returned item followed by the total match count " +
-      "(e.g. `dataobjects 0-49/8514`). Follows RFC 7233 §4.2 extension syntax.\n" +
-      "- `X-Total-Count: TOTAL` — bare integer total for callers that only need the count.\n\n" +
+      "(e.g. `dataobjects 0-49/8514`). Follows RFC 7233 §4.2 extension syntax.\n\n" +
       "All other paginated `/v2/` list endpoints return a `PagedResponseIO` body " +
       "envelope (`{items, total, page, pageSize}`). This endpoint predates that " +
       "convention and retains header-based metadata for backwards compatibility. " +
@@ -192,12 +191,7 @@ public class DataObjectV2Rest {
       "`structuredDataCount`. When `?include=time-bounds` is set, `timeBoundsStart`/`timeBoundsEnd` " +
       "are also populated (null means no data yet). Use `?status=READY` (or DRAFT, IN_REVIEW, " +
       "PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED) to filter server-side by lifecycle status.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -266,7 +260,6 @@ public class DataObjectV2Rest {
         // Unknown / deleted parent → empty page (mirrors an unmatched filter).
         return Response.ok("[]", MediaType.APPLICATION_JSON)
           .header("Content-Range", "dataobjects */0")
-          .header("X-Total-Count", 0)
           .build();
       }
       params = params.withParentShepardId(parent.getShepardId());
@@ -278,7 +271,6 @@ public class DataObjectV2Rest {
       if (predecessor == null || predecessor.isDeleted() || predecessor.getShepardId() == null) {
         return Response.ok("[]", MediaType.APPLICATION_JSON)
           .header("Content-Range", "dataobjects */0")
-          .header("X-Total-Count", 0)
           .build();
       }
       params = params.withPredecessorShepardId(predecessor.getShepardId());
@@ -288,7 +280,6 @@ public class DataObjectV2Rest {
       if (successor == null || successor.isDeleted() || successor.getShepardId() == null) {
         return Response.ok("[]", MediaType.APPLICATION_JSON)
           .header("Content-Range", "dataobjects */0")
-          .header("X-Total-Count", 0)
           .build();
       }
       params = params.withSuccessorShepardId(successor.getShepardId());
@@ -344,7 +335,7 @@ public class DataObjectV2Rest {
       result.add(item);
     }
 
-    // Count total matching DataObjects for Content-Range / X-Total-Count headers.
+    // Count total matching DataObjects for the Content-Range header.
     // Use the same params (minus pagination) so filters are consistent with the page.
     long total = dataObjectDAO.countByCollectionByShepardIds(collectionOgmId, params);
     int firstIndex = page * pageSize;
@@ -364,7 +355,6 @@ public class DataObjectV2Rest {
 
     return Response.ok(body, MediaType.APPLICATION_JSON)
       .header("Content-Range", contentRange)
-      .header("X-Total-Count", total)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .header("X-Shepard-Payload-Diet", fields != null && !fields.isBlank() ? "fields" : (includeFull ? "full" : "default-trim"))
       .build();
@@ -670,12 +660,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct predecessors (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -703,7 +688,6 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listPredecessors(appId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-      .header("X-Total-Count", (long) total)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
@@ -785,12 +769,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct successors (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -818,7 +797,6 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listSuccessors(appId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-        .header("X-Total-Count", (long) total)
         .build();
   }
 
@@ -836,12 +814,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct children (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -869,7 +842,6 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listChildren(appId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-        .header("X-Total-Count", (long) total)
         .build();
   }
 
@@ -890,8 +862,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total chain length returned.", schema = @Schema(type = SchemaType.INTEGER))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -913,7 +884,6 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
     return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
-        .header("X-Total-Count", (long) result.size())
         .build();
   }
 
@@ -934,8 +904,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total chain length returned.", schema = @Schema(type = SchemaType.INTEGER))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -957,7 +926,6 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
     return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
-        .header("X-Total-Count", (long) result.size())
         .build();
   }
 
