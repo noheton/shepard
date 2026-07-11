@@ -1,6 +1,7 @@
 package de.dlr.shepard.data.file.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.common.mongoDB.AbstractMongoObject;
 import java.time.Instant;
 import java.util.Date;
@@ -143,6 +144,22 @@ public class ShepardFile extends AbstractMongoObject {
   @JsonIgnore
   @Schema(hidden = true)
   private String migrationHmac;
+
+  /**
+   * APISIMP-OID-PATHPARAM-REPLACE — expose the stable UUID v7 identifier
+   * as {@code fileAppId} on the wire without touching the upstream
+   * {@code /shepard/api/…} contract (which reads {@link AbstractMongoObject}
+   * directly and is unaware of this override).
+   */
+  @JsonProperty("fileAppId")
+  @Schema(readOnly = true, nullable = true,
+    description = "Stable UUID v7 identifier for this file. "
+      + "Null on files uploaded before APISIMP-OID-PATHPARAM-REPLACE. "
+      + "Use in place of `oid` when calling the /v2/containers/{appId}/payload/{fileAppId}/thumbnail "
+      + "and /v2/containers/{appId}/files/{fileAppId}/download-url endpoints (slice 2).")
+  public String getFileAppId() {
+    return getAppId();
+  }
 
   public ShepardFile(Date createdAt, String filename, String md5) {
     setCreatedAt(createdAt);
