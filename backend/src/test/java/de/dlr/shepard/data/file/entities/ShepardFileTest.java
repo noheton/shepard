@@ -142,9 +142,14 @@ public class ShepardFileTest {
       "migratedAt must stay internal — FS1e3 internal bookkeeping");
     assertFalse(json.contains("migrationHmac"),
       "migrationHmac must stay internal — FS1e3 internal bookkeeping");
-    // appId stays internal too (L2a posture). Sanity check this still holds.
-    assertFalse(json.contains("appId"),
-      "appId must stay internal — L2a additive posture");
+    // appId (the raw L2a internal field) stays off the wire.
+    // fileAppId (APISIMP-OID-PATHPARAM-REPLACE stable identifier) IS now
+    // on the wire as a new field. The assertion below checks the internal
+    // "appId" key is absent while "fileAppId" is present.
+    assertFalse(json.contains("\"appId\""),
+      "raw appId field must stay internal — L2a additive posture");
+    assertTrue(json.contains("\"fileAppId\""),
+      "fileAppId must be present on the wire (APISIMP-OID-PATHPARAM-REPLACE slice 1)");
     // id stays internal (Neo4j-OGM-managed; clients use oid).
     assertNotNull(json);
   }

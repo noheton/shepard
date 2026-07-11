@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
@@ -339,6 +340,14 @@ public class FileContainerService extends AbstractContainerService<FileContainer
         result.getProviderId(),
         "ShepardFile.providerId must be set before persistence (NEO-AUDIT-002)"
       );
+      // APISIMP-OID-PATHPARAM-REPLACE slice 1: mint a stable UUID v7 for every
+      // newly-created ShepardFile so callers can address it without the storage-
+      // internal MongoDB OID.  GenericDAO.createOrUpdate() only mints for the
+      // root entity it receives (the FileContainer), not for related nodes — so
+      // we stamp the ShepardFile here, before it is attached.
+      if (result.getAppId() == null) {
+        result.setAppId(AppIdGenerator.next());
+      }
     }
 
     fileContainer.addFile(result);
@@ -528,6 +537,11 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       file.getProviderId(),
       "ShepardFile.providerId must be set before persistence (NEO-AUDIT-002)"
     );
+
+    // APISIMP-OID-PATHPARAM-REPLACE slice 1: same minting as createFileImpl().
+    if (file.getAppId() == null) {
+      file.setAppId(AppIdGenerator.next());
+    }
 
     container.addFile(file);
     fileContainerDAO.createOrUpdate(container);

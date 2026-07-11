@@ -2,6 +2,7 @@ package de.dlr.shepard.data.file.services;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -806,6 +807,46 @@ public class FileContainerServiceTest {
 
     // payloadVersionDAO.createOrUpdate should NOT have been called
     org.mockito.Mockito.verify(payloadVersionDAO, org.mockito.Mockito.never()).createOrUpdate(any());
+  }
+
+  // ---------- APISIMP-OID-PATHPARAM-REPLACE: fileAppId minting ----------
+
+  @Test
+  public void createFileStampsAppId() {
+    // Slice 1: every ShepardFile created via the direct-upload path must
+    // get a non-null UUID v7 appId so callers can address it stably.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    ShepardFile created = new ShepardFile("oid", new Date(), "data.bin", "md5");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.createFileWithSha256(eq("mongoId"), eq("data.bin"), isNull(), anyLong()))
+      .thenReturn(new FileCreateResult(created, "SHA256HEX"));
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+
+    ShepardFile result = service.createFile(1L, "data.bin", null);
+
+    assertNotNull(result.getAppId(), "createFile must stamp a UUID v7 appId on the returned ShepardFile");
+  }
+
+  @Test
+  public void commitUploadStampsAppId() throws Exception {
+    // Slice 1: every ShepardFile created via the presigned-upload commit path must
+    // get a non-null UUID v7 appId so callers can address it stably.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(dateHelper.getDate()).thenReturn(new Date());
+
+    ShepardFile result = service.commitUpload(1L, "s3-oid", "sensor.csv", 4096L);
+
+    assertNotNull(result.getAppId(), "commitUpload must stamp a UUID v7 appId on the returned ShepardFile");
   }
 
   // ---------- NEO-AUDIT-002: effectiveProviderId NULL-coalesce fallback ----------
