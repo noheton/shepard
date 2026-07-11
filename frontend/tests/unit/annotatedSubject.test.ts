@@ -39,12 +39,13 @@ beforeEach(() => {
   );
 });
 
+// APISIMP-ANNOT-LEGACY-FIELDS-DROP: wire shape now uses v6 canonical fields only.
 const WIRE_ANNOTATION = {
   appId: "0192aaaa-0000-7000-8000-000000000001",
-  propertyName: "material",
-  propertyIri: "http://example.org/material",
-  valueName: "CF/LMPAEK",
-  valueIri: "http://example.org/CFLMPAEK",
+  predicateLabel: "material",
+  predicateIri: "http://example.org/material",
+  objectLiteral: "CF/LMPAEK",
+  objectIri: "http://example.org/CFLMPAEK",
 };
 
 const COLLECTION_APP_ID = "0192bbbb-0000-7000-8000-000000000042";
@@ -62,7 +63,7 @@ describe("v2 SubjectAnnotated accessors", () => {
       pageSize: 200,
     });
     expect(out).toHaveLength(1);
-    // mapped onto legacy SemanticAnnotation shape
+    // mapped onto legacy SemanticAnnotation shape via v6 canonical fields
     expect(out[0]).toMatchObject({
       id: 0,
       propertyName: "material",
@@ -148,7 +149,7 @@ describe("v2 SubjectAnnotated accessors", () => {
         objectIri: "http://example.org/CFLMPAEK",
       },
     });
-    expect(created).toMatchObject({ propertyName: "material" });
+    expect(created).toMatchObject({ propertyName: "material", valueName: "CF/LMPAEK" });
   });
 
   it("addAnnotation sends an empty objectLiteral when no value IRI is given", async () => {
@@ -185,7 +186,7 @@ describe("v2 SubjectAnnotated accessors", () => {
     ).fetchAnnotations();
 
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ propertyName: "material" });
+    expect(out[0]).toMatchObject({ propertyName: "material", valueName: "CF/LMPAEK" });
   });
 
   it("fetchAnnotations fails soft (returns [], no network call) for an empty appId", async () => {

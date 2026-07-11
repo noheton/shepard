@@ -51,11 +51,11 @@ const cache = new Map<string, ProbeCacheEntry>();
 function annotationV2ToLegacy(item: AnnotationV2): SemanticAnnotation {
   return {
     id: 0,
-    name: item.propertyName ?? item.predicateLabel ?? "",
-    propertyName: item.propertyName ?? item.predicateLabel ?? "",
-    propertyIRI: item.propertyIri ?? item.predicateIri ?? "",
-    valueName: item.valueName ?? item.objectLiteral ?? "",
-    valueIRI: item.valueIri ?? item.objectIri ?? "",
+    name: item.predicateLabel ?? "",
+    propertyName: item.predicateLabel ?? "",
+    propertyIRI: item.predicateIri ?? "",
+    valueName: item.objectLiteral ?? "",
+    valueIRI: item.objectIri ?? "",
     propertyRepositoryId: 0,
     valueRepositoryId: 0,
   };

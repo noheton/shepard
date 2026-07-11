@@ -8,10 +8,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * SEMA-V6-004 — v6 JSON wire shape for a {@link SemanticAnnotation}.
  *
- * <p>All v6 fields are included; legacy fields ({@code propertyName},
- * {@code propertyIRI}, {@code valueName}, {@code valueIRI}) are preserved for
- * backward compatibility with callers that already consume the v1 surface.
- *
  * <p>The JSON shape follows §3.2 of
  * {@code aidocs/semantics/100-consistent-semantic-annotation-design.md} but uses
  * flat fields rather than nested objects for serialisation simplicity.
@@ -83,35 +79,9 @@ public class AnnotationIO {
   @Schema(nullable = true, description = "Confidence score [0.0, 1.0]. Null = not specified (human writes default 1.0).")
   private Double confidence;
 
-  // ─── legacy fields (backward compat — deprecated; use v6 canonical fields) ─
-
-  @Deprecated
-  @Schema(nullable = true, deprecated = true,
-      description = "Deprecated: use predicateLabel. Legacy predicate label snapshot.")
-  private String propertyName;
-
-  @Deprecated
-  @Schema(nullable = true, deprecated = true,
-      description = "Deprecated: use predicateIri. Legacy predicate IRI (same value).")
-  private String propertyIri;
-
-  @Deprecated
-  @Schema(nullable = true, deprecated = true,
-      description = "Deprecated: use objectLiteral. Legacy object label snapshot.")
-  private String valueName;
-
-  @Deprecated
-  @Schema(nullable = true, deprecated = true,
-      description = "Deprecated: use objectIri. Legacy object IRI (same value).")
-  private String valueIri;
-
   // ─── constructor from entity ───────────────────────────────────────────────
 
-  /**
-   * Construct from a {@link SemanticAnnotation} entity, mapping all v6 +
-   * legacy fields. Legacy callers see the original {@code property*} / {@code value*}
-   * names; v6 callers see the new flattened names.
-   */
+  /** Construct from a {@link SemanticAnnotation} entity, mapping all v6 fields. */
   public AnnotationIO(SemanticAnnotation a) {
     this.appId = a.getAppId();
 
@@ -140,11 +110,5 @@ public class AnnotationIO {
 
     // confidence
     this.confidence = a.getConfidence();
-
-    // legacy aliases
-    this.propertyName = a.getPropertyName();
-    this.propertyIri = a.getPropertyIRI();
-    this.valueName = a.getValueName();
-    this.valueIri = a.getValueIRI();
   }
 }
