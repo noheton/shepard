@@ -331,7 +331,7 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
    * @param limit           maximum number of rows to return ({@code pageSize}).
    * @return paged list of DataObject appId strings; empty when skip &ge; total.
    */
-  public List<String> findDataObjectAppIds(long snapshotNeo4jId, int skip, int limit) {
+  public List<String> findDataObjectAppIds(long snapshotNeo4jId, long skip, int limit) {
     String query =
       "MATCH (e:SnapshotEntry)-[:ENTRY_OF]->(s:Snapshot) " +
       "WHERE id(s) = $id AND (e.deleted IS NULL OR e.deleted = false) " +
@@ -342,7 +342,7 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
       "SKIP $skip LIMIT $limit";
     org.neo4j.ogm.model.Result result = session.query(
       query,
-      Map.of("id", snapshotNeo4jId, "skip", (long) skip, "limit", (long) limit)
+      Map.of("id", snapshotNeo4jId, "skip", skip, "limit", (long) limit)
     );
     List<String> out = new ArrayList<>();
     for (Map<String, Object> row : result) {

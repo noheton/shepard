@@ -307,7 +307,7 @@ public class SnapshotService {
    * @param limit    maximum rows to return ({@code pageSize}).
    * @return paged list of DataObject appId strings.
    */
-  public List<String> listDataObjectAppIdsPage(Snapshot snapshot, int skip, int limit) {
+  public List<String> listDataObjectAppIdsPage(Snapshot snapshot, long skip, int limit) {
     return snapshotDAO.findDataObjectAppIds(snapshot.getId(), skip, limit);
   }
 

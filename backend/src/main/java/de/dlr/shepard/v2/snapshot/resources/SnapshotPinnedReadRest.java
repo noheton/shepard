@@ -101,7 +101,7 @@ public class SnapshotPinnedReadRest {
       "Returns a paginated list of DataObject appIds captured in the given snapshot for the " +
       "specified Collection. Collections, References, and soft-deleted entities are excluded. " +
       "Snapshot metadata (name, capturedAt, totalEntries) is included for caller convenience. " +
-      "Use ?page= (0-based, default 0) and ?pageSize= (default 500, max 2000) to page through " +
+      "Use ?page= (0-based, default 0) and ?pageSize= (default 50, max 200) to page through " +
       "large snapshots. totalDataObjects always reflects the full count across all pages. " +
       "Requires Read permission on the Collection."
   )
@@ -128,9 +128,9 @@ public class SnapshotPinnedReadRest {
     @Parameter(description = "Zero-based page index (default 0).",
       schema = @Schema(minimum = "0", defaultValue = "0"))
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Items per page, capped at 2000 (default 500).",
-      schema = @Schema(minimum = "1", maximum = "2000", defaultValue = "500"))
-    @QueryParam("pageSize") @DefaultValue("500") @Min(1) @Max(2000) int pageSize,
+    @Parameter(description = "Items per page, capped at 200 (default 50).",
+      schema = @Schema(minimum = "1", maximum = "200", defaultValue = "50"))
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext sc
   ) {
     // Gate 1 — authentication
@@ -157,7 +157,7 @@ public class SnapshotPinnedReadRest {
 
     // DB-side SKIP/LIMIT: count + fetch only the requested window
     long total = snapshotService.countDataObjectAppIds(snapshot);
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     List<String> paged = snapshotService.listDataObjectAppIdsPage(snapshot, skip, pageSize);
 
     return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize))
