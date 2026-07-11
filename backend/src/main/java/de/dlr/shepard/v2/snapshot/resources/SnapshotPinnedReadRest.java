@@ -157,7 +157,7 @@ public class SnapshotPinnedReadRest {
 
     // DB-side SKIP/LIMIT: count + fetch only the requested window
     long total = snapshotService.countDataObjectAppIds(snapshot);
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     List<String> paged = snapshotService.listDataObjectAppIdsPage(snapshot, skip, pageSize);
 
     return Response.ok(new SnapshotDataObjectsIO(snapshot, paged, (int) total, page, pageSize))
