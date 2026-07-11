@@ -4894,7 +4894,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotRest.java:155–156`.
 
 ## APISIMP-IMPORT-RUNID-LOCKID-ALIAS — document `{runId}` vs `{lockId}` param naming across import resources (size: S, fire-539)
-- **Status:** queued (fire-539).
+- **Status:** ✅ shipped fire-542 (PR #2475).
 - **Why:** The import sub-surface uses two different param names across two resources: `ImportV2Rest` uses `{runId}` for import diagnostics/status paths, while `ImportLockV2Rest` uses `{lockId}` for lock-lifecycle operations. Both refer to the same import-run entity but use different names — callers must know which resource uses which name. `{lockId}` is intentional (it refers specifically to the lock, not the run entity) but the distinction is undocumented. Fix: add explicit `@Parameter(description = ...)` on both params noting the distinction, and ensure javadoc on each resource cross-references the other. No path rename required.
 - **Fix:** `@Parameter` annotations on `{runId}` in `ImportV2Rest` and `{lockId}` in `ImportLockV2Rest`; cross-reference comments in both class-level Javadocs.
 - **AC:** OpenAPI spec clearly distinguishes `runId` (diagnostics) from `lockId` (lock lifecycle); CI green.
