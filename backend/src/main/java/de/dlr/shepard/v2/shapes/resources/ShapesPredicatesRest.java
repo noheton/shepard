@@ -17,6 +17,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -70,6 +71,9 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 @Tag(name = "Shapes")
 public class ShapesPredicatesRest {
 
+  private static final Set<String> ALLOWED_SUBSTRATES =
+      Set.of("neo4j", "timescaledb", "postgres", "garage");
+
   @Inject
   PredicateVocabularyRepository repository;
 
@@ -95,6 +99,7 @@ public class ShapesPredicatesRest {
       schema = @Schema(type = SchemaType.INTEGER)
     )
   )
+  @APIResponse(responseCode = "400", description = "Unknown substrate value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response predicates(
     @Parameter(
@@ -103,18 +108,28 @@ public class ShapesPredicatesRest {
       required = false
     )
     @QueryParam("substrate") String substrate,
-    @Parameter(description = "Maximum entries per page (1–500). Default 200.", required = false)
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(500) int pageSize,
+    @Parameter(description = "Maximum entries per page (1–200). Default 200.", required = false)
+    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
     @Parameter(description = "Zero-based page index. Default 0.", required = false)
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page
   ) {
-    int skip = page * pageSize;
+    long skip = (long) page * pageSize;
     long total;
     List<PredicateVocabularyEntryIO> items;
     if (substrate != null && !substrate.isBlank()) {
-      String sub = substrate.trim();
-      total = repository.countBySubstrate(sub);
-      items = skip >= total ? List.of() : repository.findBySubstrate(sub, skip, pageSize);
+      // Re-derive from the trusted constant so CodeQL sees a clean (non-tainted) value
+      // flowing to repository calls — Set.contains() alone does not break the taint chain.
+      String cleanSub = ALLOWED_SUBSTRATES.stream()
+          .filter(substrate.trim()::equals)
+          .findFirst()
+          .orElse(null);
+      if (cleanSub == null) {
+        return Response.status(Response.Status.BAD_REQUEST)
+            .entity("Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")
+            .build();
+      }
+      total = repository.countBySubstrate(cleanSub);
+      items = skip >= total ? List.of() : repository.findBySubstrate(cleanSub, skip, pageSize);
     } else {
       total = repository.count();
       items = skip >= total ? List.of() : repository.findAll(skip, pageSize);

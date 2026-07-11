@@ -130,11 +130,11 @@ public class PredicateVocabularyRepository {
    * @param limit max rows to return (LIMIT)
    * @return matching rows; empty list on error
    */
-  public List<PredicateVocabularyEntryIO> findAll(int skip, int limit) {
+  public List<PredicateVocabularyEntryIO> findAll(long skip, int limit) {
     try (Connection conn = defaultDataSource.getConnection();
          PreparedStatement ps = conn.prepareStatement(SELECT_ALL_PAGED)) {
       ps.setInt(1, limit);
-      ps.setInt(2, skip);
+      ps.setLong(2, skip);
       try (ResultSet rs = ps.executeQuery()) {
         return mapRows(rs);
       }
@@ -153,7 +153,7 @@ public class PredicateVocabularyRepository {
    * @param limit max rows to return (LIMIT)
    * @return matching rows; empty list on error or unknown substrate
    */
-  public List<PredicateVocabularyEntryIO> findBySubstrate(String substrate, int skip, int limit) {
+  public List<PredicateVocabularyEntryIO> findBySubstrate(String substrate, long skip, int limit) {
     if (substrate == null || substrate.isBlank()) {
       return Collections.emptyList();
     }
@@ -161,7 +161,7 @@ public class PredicateVocabularyRepository {
          PreparedStatement ps = conn.prepareStatement(SELECT_BY_SUBSTRATE_PAGED)) {
       ps.setString(1, substrate.trim());
       ps.setInt(2, limit);
-      ps.setInt(3, skip);
+      ps.setLong(3, skip);
       try (ResultSet rs = ps.executeQuery()) {
         return mapRows(rs);
       }

@@ -25,9 +25,9 @@ import org.mockito.MockitoAnnotations;
  * <p>Verifies:
  * <ol>
  *   <li>No substrate filter → {@link PredicateVocabularyRepository#count()} +
- *       {@link PredicateVocabularyRepository#findAll(int, int)} called</li>
+ *       {@link PredicateVocabularyRepository#findAll(long, int)} called</li>
  *   <li>Substrate filter → {@link PredicateVocabularyRepository#countBySubstrate(String)} +
- *       {@link PredicateVocabularyRepository#findBySubstrate(String, int, int)} called</li>
+ *       {@link PredicateVocabularyRepository#findBySubstrate(String, long, int)} called</li>
  *   <li>Blank substrate filter treated as absent (calls count/findAll)</li>
  *   <li>Empty result set → 200 with empty items list</li>
  *   <li>Endpoint is @RolesAllowed("authenticated")</li>
@@ -88,6 +88,27 @@ class ShapesPredicatesRestTest {
     assertEquals(200, r.getStatus());
     verify(repository).count();
     verify(repository).findAll(0, 200);
+  }
+
+  // ─── substrate allowlist ──────────────────────────────────────────────────
+
+  @Test
+  void unknownSubstrate_returns400() {
+    Response r = rest.predicates("mongodb", 200, 0);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void unknownSubstrateWithSpaces_returns400() {
+    Response r = rest.predicates("  unknown  ", 200, 0);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void knownSubstrateWithLeadingSpace_returns200() {
+    when(repository.countBySubstrate("timescaledb")).thenReturn(0L);
+    Response r = rest.predicates(" timescaledb", 200, 0);
+    assertEquals(200, r.getStatus());
   }
 
   // ─── substrate filter ──────────────────────────────────────────────────────
