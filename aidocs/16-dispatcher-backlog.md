@@ -4531,7 +4531,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java`; `backend/src/main/java/de/dlr/shepard/v2/export/rep/RepExportIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-09-fire494.md §F2`.
 
 ## APISIMP-PREDICATES-PAGECAP — `ShapesPredicatesRest.predicates()` uses `@Max(500)` / "1–500" instead of the v2 standard `@Max(200)` / "1–200" (size: XS, sweep: fire-496)
-- **Status:** 🔄 in-flight (PR #2428) — CodeQL policy-check/scan race; rebased onto current main (fire-525) to trigger fresh CI run. All other checks green.
+- **Status:** ✅ shipped (fire-544, PR #2428 → merged).
 - **Why:** `ShapesPredicatesRest.java:106–107` declares `@Parameter(description = "Maximum entries per page (1–500). Default 200.")` and `@Max(500)` for the `pageSize` query param on `GET /v2/shapes/predicates`. Every other v2 list endpoint uses `@Max(200)` and the "1–200" description string — the 500 cap was introduced without justification when the endpoint was first written. Predicate vocabulary entries are lightweight (string label + URI); there is no performance or contract reason to diverge from the 200-cap standard. Same pattern as APISIMP-TPLREST-TAG-PAGECAP (fire-478, `ShepardTemplateRest.tags()`).
 - **Fix:** (1) Change `@Max(500)` → `@Max(200)` on the `pageSize` parameter in `ShapesPredicatesRest.java:107`. (2) Update the `@Parameter(description = "...")` string to replace "1–500" with "1–200". Two-character changes; zero logic change.
 - **AC:** `grep -n "Max(500)\|1.500" backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java` returns zero; `mvn -q -DnoPlugins compile` green.
@@ -4886,8 +4886,8 @@ picks these up. Terse by design.
 - **AC:** OpenAPI spec for the bulk-data endpoint shows `kind` as a documented param with enum values; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/crossdo/resources/CrossDoBulkDataRest.java:119`.
 
-## APISIMP-SNAP-MANIFEST-PAGEPARAM — add `@Parameter` on `manifest` page/pageSize in `SnapshotRest` (size: XS, fire-539, blocked)
-- **Status:** blocked — `SnapshotRest.java` is touched by PR #2451 (APISIMP-SNAPSHOT-PAGECAP, still open). Dispatch after #2451 merges.
+## APISIMP-SNAP-MANIFEST-PAGEPARAM — add `@Parameter` on `manifest` page/pageSize in `SnapshotRest` (size: XS, fire-544, in-flight)
+- **Status:** 🔄 in-flight (fire-544, branch `APISIMP-SNAP-MANIFEST-PAGEPARAM-1`, PR pending).
 - **Why:** `SnapshotRest.java:155–156` (the `manifest` endpoint) exposes `@QueryParam("page")` and `@QueryParam("pageSize")` without `@Parameter` annotations, inconsistent with the `list` endpoint on the same class. Sweep fire-539.
 - **Fix:** Same pattern as APISIMP-BUNDLE-LISTGROUPS-PAGEPARAM — add `@Parameter` on both pagination params in `manifest`.
 - **AC:** OpenAPI spec for the snapshot manifest endpoint shows pagination params; CI green.
@@ -4908,7 +4908,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/resources/UnhideFeedRest.java:111,137,138`.
 
 ## APISIMP-SNAPPINNED-PAGECAP — lower `SnapshotPinnedReadRest` pageSize `@Max(2000)` → `@Max(200)`, default 500 → 50 (size: XS, fire-543)
-- **Status:** 🔄 in-flight (fire-543, branch `APISIMP-SNAPPINNED-PAGECAP-1`, PR TBD — awaiting CI).
+- **Status:** ✅ shipped (fire-544, PR #2477 → merged).
 - **Why:** `SnapshotPinnedReadRest.java:133` (`GET /v2/collections/{collectionAppId}/snapshots/{appId}/data-objects`) declared `@Max(2000)` with `@DefaultValue("500")` — both dramatically above the v2-standard `@Max(200)` with a sensible default. A caller not passing `pageSize` silently received up to 500 DataObject appIds per page; a caller requesting up to 2000 per page would succeed. Lowering the cap to 200 also requires lowering the default to 50 (otherwise a caller not passing `pageSize` would send 500 implicitly, which fails the new `@Max(200)` constraint with a 400). The endpoint is paginated — the standard paging contract (0-based `page`, `X-Total-Count` header) is already wired. Callers that relied on `default=500` to get all results in one shot should instead page using the total count.
 - **Fix:** `@Max(2000)` → `@Max(200)`; `@DefaultValue("500")` → `@DefaultValue("50")`; `@Schema(maximum = "2000", defaultValue = "500")` → `@Schema(maximum = "200", defaultValue = "50")`; `@Operation` description updated ("default 500, max 2000" → "default 50, max 200"); test `maxPageSize_isAtMost200` (reflection-based) added; `paginates_beyondLastPage_returnsEmptyList` updated to use `pageSize=50`.
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotPinnedReadRest.java | grep '2000\|500'` returns empty; `maxPageSize_isAtMost200` passes; CI green.
