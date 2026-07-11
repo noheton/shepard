@@ -417,6 +417,41 @@ public interface ContainerKindHandler {
   }
 
   /**
+   * APISIMP-OID-PATHPARAM-REPLACE slice 2 — resolve file by stable {@code fileAppId}
+   * (UUID v7) and return a PNG thumbnail. Looks up the {@link de.dlr.shepard.data.file.entities.ShepardFile}
+   * whose {@code appId} equals {@code fileAppId}, then delegates to
+   * {@link #getThumbnail(String, String, Integer)} with the resolved MongoDB OID.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415). Only the file kind handler
+   * overrides this; other kinds don't have file payloads.
+   *
+   * @param appId     UUID v7 of the container.
+   * @param fileAppId stable UUID v7 of the file (from {@code ShepardFile.fileAppId}).
+   * @param sizeParam requested thumbnail size in pixels.
+   * @return a {@code Response} carrying the PNG bytes, or {@link Optional#empty()} (→ 415).
+   */
+  default Optional<Response> getThumbnailByFileAppId(String appId, String fileAppId, Integer sizeParam) {
+    return Optional.empty();
+  }
+
+  /**
+   * APISIMP-OID-PATHPARAM-REPLACE slice 2 — resolve file by stable {@code fileAppId}
+   * (UUID v7) and return a presigned GET URL. Looks up the {@link de.dlr.shepard.data.file.entities.ShepardFile}
+   * whose {@code appId} equals {@code fileAppId}, then delegates to
+   * {@link #getDownloadUrl(String, String)} with the resolved MongoDB OID.
+   *
+   * <p>Default returns {@link Optional#empty()} (→ 415). Only the file kind handler
+   * overrides this.
+   *
+   * @param appId     UUID v7 of the container.
+   * @param fileAppId stable UUID v7 of the file (from {@code ShepardFile.fileAppId}).
+   * @return a {@code Response} carrying the presigned download URL, or {@link Optional#empty()} (→ 415).
+   */
+  default Optional<Response> getDownloadUrlByFileAppId(String appId, String fileAppId) {
+    return Optional.empty();
+  }
+
+  /**
    * APISIMP-CONT-NS-COLLAPSE-2 — COPY-protocol ingest for a single channel.
    * Returns {@code true} if the ingest was handled (→ 204), {@code false} when
    * this kind has no channels (→ 415).
