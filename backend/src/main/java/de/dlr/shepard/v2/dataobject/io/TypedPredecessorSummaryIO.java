@@ -1,13 +1,12 @@
 package de.dlr.shepard.v2.dataobject.io;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
  * PROV1k — read-side typed predecessor entry in
  * {@link DataObjectDetailV2IO#getTypedPredecessorSummaries()}.
  *
- * <p>Pairs the compact predecessor summary (appId, id, name, status) with
+ * <p>Pairs the compact predecessor summary (appId, name, status) with
  * the stored PROV-O / FAIR²R relationship type. Pre-PROV1k DataObjects
  * (whose {@code typedPredecessorsJson} is null) emit
  * {@code "prov:wasInformedBy"} as the default.
@@ -24,18 +23,6 @@ public record TypedPredecessorSummaryIO(
 
   @Schema(readOnly = true, description = "appId (UUID v7) of the predecessor DataObject.")
   String predecessorAppId,
-
-  @Deprecated
-  @JsonIgnore
-  @Schema(
-    readOnly = true,
-    deprecated = true,
-    hidden = true,
-    description =
-      "Deprecated — join on predecessorAppId (UUID v7) instead. " +
-      "Numeric Neo4j shepardId of the predecessor DataObject."
-  )
-  long predecessorId,
 
   @Schema(readOnly = true, description = "Display name of the predecessor DataObject.")
   String predecessorName,
