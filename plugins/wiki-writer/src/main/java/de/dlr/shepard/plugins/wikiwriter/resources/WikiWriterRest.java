@@ -31,7 +31,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * WW1 — REST resource for the wiki-writer plugin.
  *
  * <p>Exposes a single endpoint:
- * {@code POST /v2/data-objects/{dataObjectAppId}/wiki-write}
+ * {@code POST /v2/data-objects/{appId}/wiki-write}
  *
  * <p>The endpoint summarises the target DataObject and its Collection siblings
  * using the configured LLM TEXT capability and writes the result as a
@@ -46,7 +46,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * present or when the TEXT capability is not configured. The plugin still
  * starts normally when {@code shepard-plugin-ai} is absent.
  */
-@Path("/v2/data-objects/{dataObjectAppId}/wiki-write")
+@Path("/v2/data-objects/{appId}/wiki-write")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
@@ -92,7 +92,7 @@ public class WikiWriterRest {
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   @APIResponse(responseCode = "503", description = "LLM provider not configured or TEXT capability unavailable.")
   public Response wikiWrite(
-    @PathParam("dataObjectAppId") String dataObjectAppId,
+    @PathParam("appId") String appId,
     @RequestBody(
       required = false,
       content = @Content(schema = @Schema(implementation = WikiWriteRequestIO.class))
@@ -104,7 +104,7 @@ public class WikiWriterRest {
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
     // Gate: Write permission on the DataObject (inherited from parent Collection).
-    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(appId, AccessType.Write, caller)) {
       return problem(Response.Status.FORBIDDEN, "Insufficient permissions");
     }
 
@@ -119,12 +119,12 @@ public class WikiWriterRest {
     WikiWriteRequestIO request = body != null ? body : new WikiWriteRequestIO();
 
     try {
-      WikiWriteResponseIO result = wikiWriterService.wikiWriteByDataObjectAppId(dataObjectAppId, request);
+      WikiWriteResponseIO result = wikiWriterService.wikiWriteByDataObjectAppId(appId, request);
       return Response.ok(result).build();
     } catch (NotFoundException nfe) {
       return problem(Response.Status.NOT_FOUND, nfe.getMessage());
     } catch (de.dlr.shepard.spi.ai.LlmException e) {
-      Log.errorf(e, "WW1: LLM call failed for DataObject %s", dataObjectAppId);
+      Log.errorf(e, "WW1: LLM call failed for DataObject %s", appId);
       return problem("urn:shepard:error:service-unavailable", "Service Unavailable",
         Response.Status.SERVICE_UNAVAILABLE, "LLM call failed: " + e.getMessage());
     }
