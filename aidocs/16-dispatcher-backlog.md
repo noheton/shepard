@@ -4901,7 +4901,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportV2Rest.java`, `backend/src/main/java/de/dlr/shepard/v2/importer/resources/ImportLockV2Rest.java`.
 
 ## APISIMP-UNHIDE-FEED-PAGECAP — lower `UnhideFeedRest` feed endpoint `@Max(500)` → `@Max(200)` (size: XS, fire-543)
-- **Status:** 🔄 in-flight (fire-543, branch `APISIMP-UNHIDE-FEED-PAGECAP-1`, PR pending).
+- **Status:** 🔄 in-flight (fire-543, branch `APISIMP-UNHIDE-FEED-PAGECAP-1`, PR #2476).
 - **Why:** `UnhideFeedRest.java:138` (plugin `unhide`) caps `GET /v2/unhide/feed.jsonld` `pageSize` at `@Max(500)` with description "Range [1, 500]". Additionally, the `@Operation` description at line 111 inconsistently says "page-size capped at 1000" (the internal `UnhideFeedService.MAX_PAGE_SIZE` service-layer constant). The v2-standard REST cap is `@Max(200)`. The Unhide harvester uses the default (`UnhideFeedService.DEFAULT_PAGE_SIZE = 100`) and does not specify `pageSize`; no caller is known to send `pageSize > 200`. Lowering the REST cap to 200 does not affect the service-layer `MAX_PAGE_SIZE = 1000` (internal, unreachable via REST after this fix).
 - **Fix:** `@Max(500)` → `@Max(200)` in `UnhideFeedRest.java:138`; update `@Parameter` description "Range [1, 500]" → "Range [1, 200]" (line 137); fix `@Operation` description "page-size capped at 1000" → "page-size capped at 200" (line 111).
 - **AC:** `grep -n '@Max' plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/resources/UnhideFeedRest.java | grep '500\|1000'` returns empty; `mvn -q test-compile -pl plugins/unhide` green.
