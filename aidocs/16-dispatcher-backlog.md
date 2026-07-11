@@ -4950,7 +4950,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:467`; `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionV2Rest.java:176`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:212`; apisimp-sweep-fire545-2026-07-11 §Finding3.
 
 ## APISIMP-TYPED-PRED-NEO4J-ID-DROP — remove `@JsonIgnore @Deprecated long predecessorId` from `TypedPredecessorSummaryIO` (size: XS, fire-547)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-progress — PR #2485 (fire-548).
 - **Why:** `TypedPredecessorSummaryIO.java:28-38` carries `@Deprecated @JsonIgnore long predecessorId` that is never serialized to the wire (`@JsonIgnore`) and is `@Schema(hidden=true)`. It is pure dead code — noted in fire-545 sweep but not filed. Removes the last numeric Neo4j id from the `TypedPredecessorSummaryIO` record. Sweep fire-547.
 - **Fix:** Delete the four-line component (`@Deprecated @JsonIgnore @Schema(…) long predecessorId`) from the record declaration. No callers to update.
 - **AC:** `grep -n 'predecessorId' backend/src/main/java/de/dlr/shepard/v2/dataobject/io/TypedPredecessorSummaryIO.java` returns empty; `mvn -q test-compile -pl backend` green.
