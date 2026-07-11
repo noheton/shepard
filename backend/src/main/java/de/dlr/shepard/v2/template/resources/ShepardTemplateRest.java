@@ -293,7 +293,7 @@ public class ShepardTemplateRest {
     summary = "Distinct list of tags across all non-retired templates.",
     description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind. " +
     "Server-side cap: at most 200 distinct tags are returned (alphabetically first 200). " +
-    "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+    "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",

@@ -75,7 +75,7 @@ public class FlatPublicationsRest {
       "server resolves the entity kind internally. Ordered mintedAt DESC (most-recent first). " +
       "Includes retired rows (digitalObjectMutability = 'retired'). " +
       "Auth: Read permission on the entity.\n\n" +
-      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",

@@ -175,7 +175,7 @@ public class PersonalVocabularyRest {
     summary = "List the caller's personal vocabularies.",
     description = "Returns :Vocabulary nodes with type=PERSONAL owned by the calling user. " +
       "Returns an empty list when the feature is disabled or the user has no personal vocabularies.\n\n" +
-      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",

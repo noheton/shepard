@@ -91,7 +91,7 @@ public class CollectionLabJournalEntriesRest {
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +
       "404 if the appId resolves to nothing, 403 if the caller lacks Read.\n\n" +
-      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",
