@@ -4838,15 +4838,22 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:369`.
 
 ## APISIMP-COLL-LABJOURNAL-PATHPARAM — rename `{collectionAppId}` → `{appId}` in `CollectionLabJournalEntriesRest` (size: XS, fire-534)
-- **Status:** 🔄 in-flight (fire-534, PR pending).
+- **Status:** ✅ done (fire-535, PR #2468, sha `655e769a`).
 - **Why:** `CollectionLabJournalEntriesRest.java` declares class-level `@Path("/v2/collections/{collectionAppId}/lab-journal-entries")` with a single method `list()` using `@PathParam("collectionAppId")`. Single-entity path — no JAX-RS collision. Rename per v2 `{appId}` convention (sweep fire-534).
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path`, the `@PathParam` binding, and all local variable usages in `list()`.
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/CollectionLabJournalEntriesRest.java` returns empty; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/CollectionLabJournalEntriesRest.java:66,113`.
 
 ## APISIMP-DATAOBJECT-V2REST-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` in `DataObjectV2Rest` (size: S, fire-534)
-- **Status:** 🔄 queued (fire-534, dispatch fire-535).
+- **Status:** 🔄 in-flight (fire-535, PR pending).
 - **Why:** `DataObjectV2Rest.java` uses `{dataObjectAppId}` as the primary entity param across ~20+ method bindings covering GET, PUT, DELETE, PATCH sub-paths. Also uses `{collectionAppId}` in the class-level `@Path("/v2/collections/{collectionAppId}/dataobjects")` — that secondary param is the collection context and must keep a distinct name since the sub-paths add `{dataObjectAppId}` (two-entity pattern). Fix: rename `{dataObjectAppId}` → `{appId}` in all method-level `@PathParam` bindings and local variable usages; `{collectionAppId}` is reviewed for consistency at the same time. Sweep fire-534.
 - **Fix:** In each method that binds `@PathParam("dataObjectAppId")`, rename the annotation and local var to `appId`. Verify the two-entity path doesn't collide (class param `{collectionAppId}` + method param `{appId}` — distinct, no collision).
 - **AC:** `grep -n 'dataObjectAppId' backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` returns empty; CI green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` (multiple lines).
+
+## APISIMP-TEMPLATE-PATHPARAM — rename `{templateAppId}` → `{appId}` in three template REST files (size: XS, fire-535)
+- **Status:** ⏳ queued (fire-535, dispatch fire-536).
+- **Why:** Three template resource classes use `{templateAppId}` as their primary entity param but each is single-entity (no collision): `TemplateFormRest.java` (`/v2/templates/{templateAppId}/form`, 1 method), `TemplateExcelExportRest.java` (`/v2/templates/{templateAppId}/export`, 1 method), and `TemplateInstantiationRest.java` (class `/v2/collections/{collectionAppId}/data-objects/from-template`, method `/{templateAppId}` — two-entity with `{collectionAppId}` as the parent, `{templateAppId}` as the secondary → rename to `{appId}` safe). Sweep fire-535.
+- **Fix:** Rename `{templateAppId}` → `{appId}` in class-level `@Path`, method-level `@Path`, `@PathParam` annotations, and local variable usages in all three files.
+- **AC:** `grep -rn 'templateAppId' backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateExcelExportRest.java backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateInstantiationRest.java` returns empty; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/TemplateFormRest.java:61,107`, `TemplateExcelExportRest.java:68,127`, `TemplateInstantiationRest.java:130,159`.
