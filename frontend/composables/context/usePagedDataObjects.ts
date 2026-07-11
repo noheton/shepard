@@ -2,20 +2,14 @@ import { DataObjectsApi, type DataObjectListItemV2 } from "@dlr-shepard/backend-
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
- * Extracts the total count from the list response headers. The backend exposes
- * the full count via `X-Total-Count`, falling back to the `Content-Range`
- * "unit 0-24/8514" form. Returns null when neither header is present.
+ * Extracts the total count from the `Content-Range` response header
+ * ("unit 0-24/8514" form). Returns null when the header is absent.
  *
  * V2-SWEEP-001-CLIENT-REGEN: the regenerated client dropped the hand-rolled
  * `listDataObjectsWithCount` wrapper, so the header read lives here now, on top
  * of the generated `listDataObjectsRaw`.
  */
 function parseTotalCount(headers: Headers): number | null {
-  const xTotal = headers.get("X-Total-Count");
-  if (xTotal != null) {
-    const parsed = parseInt(xTotal, 10);
-    if (!isNaN(parsed)) return parsed;
-  }
   const contentRange = headers.get("Content-Range");
   if (contentRange != null) {
     const m = /\/(\d+)\s*$/.exec(contentRange);
