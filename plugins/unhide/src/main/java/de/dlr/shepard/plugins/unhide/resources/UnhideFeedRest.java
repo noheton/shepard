@@ -108,7 +108,7 @@ public class UnhideFeedRest {
     summary = "Helmholtz Unhide harvest feed (schema.org + metadata4ing JSON-LD).",
     description = "Lists every Collection on this shepard instance in the schema.org / " +
     "metadata4ing JSON-LD shape that Unhide's inward-mappings consume. Cursor-paginated " +
-    "via ?page=N&page-size=N (page-size capped at 1000). When :UnhideConfig.enabled=false " +
+    "via ?page=N&page-size=N (page-size capped at 200). When :UnhideConfig.enabled=false " +
     "the endpoint returns 503 unhide.feed.disabled; when feedPublic=false, a matching " +
     "X-API-KEY header is required (use POST /v2/admin/unhide/harvest-key/rotate to mint). " +
     "UH1e: pass ?validate=true to receive a structural validation report (application/json) " +
@@ -134,8 +134,8 @@ public class UnhideFeedRest {
   public Response feed(
     @Parameter(description = "0-based page index. Default 0.")
     @DefaultValue("0") @PositiveOrZero @QueryParam("page") int page,
-    @Parameter(description = "Records per page. Default " + UnhideFeedService.DEFAULT_PAGE_SIZE + ". Range [1, 500].")
-    @DefaultValue("" + UnhideFeedService.DEFAULT_PAGE_SIZE) @Min(1) @Max(500) @QueryParam("pageSize") int pageSize,
+    @Parameter(description = "Records per page. Default " + UnhideFeedService.DEFAULT_PAGE_SIZE + ". Range [1, 200].")
+    @DefaultValue("" + UnhideFeedService.DEFAULT_PAGE_SIZE) @Min(1) @Max(200) @QueryParam("pageSize") int pageSize,
     @Parameter(description = "When true, each returned record is validated against its SHACL shape before inclusion. Validation failures are skipped. Default false.")
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
