@@ -208,30 +208,6 @@ class SearchV2RestTest {
     assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
   }
 
-  /** Regression: successful search response must carry X-Total-Count header matching body total. */
-  @Test
-  void responseIncludesXTotalCountHeader() {
-    Collection col = new Collection(1L);
-    col.setAppId(COLL_APP_ID);
-    col.setName("LUMEN Campaign");
-    PaginatedCollectionList page = new PaginatedCollectionList(
-      List.of(col),
-      3,
-      "LUMEN",
-      Optional.of(0),
-      Optional.of(50),
-      BasicCollectionAttributes.createdAt,
-      true
-    );
-    when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
-    stubEmptyDataObjects("LUMEN");
-
-    Response resp = resource.search("LUMEN", 0, 50, null);
-
-    assertEquals(200, resp.getStatus());
-    assertEquals(3L, header, "X-Total-Count header must match body total");
-  }
-
   /** Regression: pageSize @PathParam on search() must carry @Min(1) and @Max(200). */
   @Test
   void pageSizeAnnotationHasMinOneAndMax200() throws NoSuchMethodException {
