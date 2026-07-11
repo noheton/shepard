@@ -41,10 +41,10 @@ public class PermissionAuditService {
   }
 
   public List<PermissionAuditEntryIO> listOrphans() {
-    return listOrphans(0, DEFAULT_LIMIT);
+    return listOrphans(0L, DEFAULT_LIMIT);
   }
 
-  public List<PermissionAuditEntryIO> listOrphans(int skip, int limit) {
+  public List<PermissionAuditEntryIO> listOrphans(long skip, int limit) {
     var session = NeoConnector.getInstance().getNeo4jSession();
     if (session == null) return Collections.emptyList();
     String cypher =

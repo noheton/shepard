@@ -211,7 +211,7 @@ public class InstanceAdminRest {
   ) {
     requireInstanceAdmin(securityContext);
     long total = permissionAuditService.countOrphans();
-    List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans(page * pageSize, pageSize);
+    List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans((long) page * pageSize, pageSize);
     return Response.ok(new PagedResponseIO<>(orphans, total, page, pageSize))
       .header("X-Total-Count", total)
       .build();
