@@ -128,9 +128,9 @@ public class SnapshotPinnedReadRest {
     @Parameter(description = "Zero-based page index (default 0).",
       schema = @Schema(minimum = "0", defaultValue = "0"))
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @Parameter(description = "Items per page, capped at 200 (default 200).",
-      schema = @Schema(minimum = "1", maximum = "200", defaultValue = "200"))
-    @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
+    @Parameter(description = "Items per page, capped at 2000 (default 500).",
+      schema = @Schema(minimum = "1", maximum = "2000", defaultValue = "500"))
+    @QueryParam("pageSize") @DefaultValue("500") @Min(1) @Max(2000) int pageSize,
     @Context SecurityContext sc
   ) {
     // Gate 1 — authentication
