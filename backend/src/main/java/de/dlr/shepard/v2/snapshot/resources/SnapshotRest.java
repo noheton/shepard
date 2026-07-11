@@ -35,6 +35,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -152,7 +153,9 @@ public class SnapshotRest {
   @APIResponse(responseCode = "404", description = "No Snapshot with that appId.")
   public Response manifest(
       @PathParam("appId") String appId,
+      @Parameter(description = "Zero-based page index (default 0). Negative values are rejected by bean validation.")
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+      @Parameter(description = "Page size (default 200). Server-side cap: 200 — values above 200 are rejected by bean validation.")
       @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(200) int pageSize,
       @Context SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
