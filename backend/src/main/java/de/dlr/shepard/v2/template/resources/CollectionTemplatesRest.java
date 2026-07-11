@@ -36,8 +36,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -88,12 +86,7 @@ public class CollectionTemplatesRest {
   @APIResponse(
     responseCode = "200",
     description = "Allowed templates (retired excluded) wrapped in a PagedResponseIO envelope.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
@@ -110,7 +103,6 @@ public class CollectionTemplatesRest {
     List<ShepardTemplateIO> items = templateDAO.listAllowedForCollection(collectionAppId, page, pageSize)
         .stream().map(ShepardTemplateIO::from).toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 
@@ -120,12 +112,7 @@ public class CollectionTemplatesRest {
   @APIResponse(
     responseCode = "200",
     description = "Used templates (includes retired rows) wrapped in a PagedResponseIO envelope.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total element count before paging.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
@@ -142,7 +129,6 @@ public class CollectionTemplatesRest {
     List<ShepardTemplateIO> items = templateDAO.listUsedByCollection(collectionAppId, page, pageSize)
         .stream().map(ShepardTemplateIO::from).toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
-        .header("X-Total-Count", total)
         .build();
   }
 

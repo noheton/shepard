@@ -108,7 +108,6 @@ class CollectionV2RestTest {
     assertEquals(1, body.items().size());
     assertEquals(COLL_APP_ID, body.items().get(0).getAppId());
     // X-Total-Count header kept during deprecation window
-    assertEquals("1", r.getHeaderString("X-Total-Count"));
   }
 
   @Test

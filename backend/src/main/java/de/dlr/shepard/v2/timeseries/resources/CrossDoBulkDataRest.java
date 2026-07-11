@@ -31,7 +31,6 @@ import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -111,9 +110,7 @@ public class CrossDoBulkDataRest {
   @APIResponse(
     responseCode = "200",
     description = "Resolved series across the requested DataObjects.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Number of series entries returned (one per DataObject in request order).", schema = @Schema(type = SchemaType.INTEGER))
-  )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "400", description = "Validation error on request body, or unsupported/missing `kind`.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getCrossDoBulkData(
@@ -191,7 +188,6 @@ public class CrossDoBulkDataRest {
     }
 
     return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
-        .header("X-Total-Count", (long) out.size())
         .build();
   }
 

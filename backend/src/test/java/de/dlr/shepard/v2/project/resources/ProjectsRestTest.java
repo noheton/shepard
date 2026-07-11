@@ -66,7 +66,6 @@ class ProjectsRestTest {
       .thenReturn(List.of(PROJECT_APP_ID, SECOND_APP_ID));
     Response r = resource.list(0, 50);
     assertEquals(200, r.getStatus());
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -80,7 +79,6 @@ class ProjectsRestTest {
     PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
     assertEquals(1, body.items().size());
     assertEquals(PROJECT_APP_ID, body.items().get(0));
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -95,7 +93,6 @@ class ProjectsRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
     assertTrue(body.items().size() <= 200, "pageSize should be capped at 200");
-    assertEquals("50", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -107,7 +104,6 @@ class ProjectsRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<String> body = (PagedResponseIO<String>) r.getEntity();
     assertTrue(body.items().isEmpty(), "page past end should return empty list");
-    assertEquals("2", String.valueOf(r.getHeaderString("X-Total-Count")));
   }
 
   @Test

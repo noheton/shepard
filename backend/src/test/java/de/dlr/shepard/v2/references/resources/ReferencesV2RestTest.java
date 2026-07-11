@@ -256,7 +256,8 @@ class ReferencesV2RestTest {
   }
 
   @Test
-  void list_returnsXTotalCountHeader() {
+  @SuppressWarnings("unchecked")
+  void list_returnsTotalCountInBody() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(referencesService.countByDataObject(eq("file"), eq(DO_APP_ID), eq(null))).thenReturn(7);
@@ -265,9 +266,8 @@ class ReferencesV2RestTest {
 
     var r = resource.list("file", DO_APP_ID, null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    assertTrue(r.getHeaders().containsKey("X-Total-Count"),
-      "X-Total-Count header must be present (APISIMP-REFS-LIST-NO-XTOTALCOUNT)");
-    assertEquals("7", String.valueOf(r.getHeaders().getFirst("X-Total-Count")));
+    var paged = (PagedResponseIO<ReferenceV2IO>) r.getEntity();
+    assertEquals(7, paged.total());
   }
 
   // ─── uploadContent ─────────────────────────────────────────────────────────

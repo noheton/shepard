@@ -97,21 +97,23 @@ class AdminConfigRestTest {
   }
 
   @Test
-  void listFeaturesEmitsXTotalCountHeader() {
+  void listFeaturesReturnsSizeInBody() {
     Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
     Response resp = rest.listFeatures();
     assertEquals(200, resp.getStatus());
-    Object header = resp.getHeaders().getFirst("X-Total-Count");
-    assertNotNull(header, "X-Total-Count header must be present on GET /v2/admin/config");
-    assertEquals(2L, header);
+    @SuppressWarnings("unchecked")
+    List<ConfigFeatureIO> rows = (List<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(2, rows.size());
   }
 
   @Test
-  void listFeaturesXTotalCountIsZeroWhenRegistryEmpty() {
+  void listFeaturesEmptyWhenRegistryEmpty() {
     Mockito.when(registry.all()).thenReturn(List.of());
     Response resp = rest.listFeatures();
     assertEquals(200, resp.getStatus());
-    assertEquals(0L, resp.getHeaders().getFirst("X-Total-Count"));
+    @SuppressWarnings("unchecked")
+    List<ConfigFeatureIO> rows = (List<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(0, rows.size());
   }
 
   @Test

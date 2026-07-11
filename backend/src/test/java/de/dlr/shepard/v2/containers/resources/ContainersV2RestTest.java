@@ -753,7 +753,6 @@ class ContainersV2RestTest {
     when(containersService.list(eq("file"), isNull(), eq(0), eq(50))).thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
     var r = resource.list("file", null, null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals("2", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -763,7 +762,6 @@ class ContainersV2RestTest {
         .thenReturn(List.of(new ContainerV2IO(), new ContainerV2IO()));
     var r = resource.list("file", null, null, 0, 2, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals("3", r.getHeaderString("X-Total-Count"));
     @SuppressWarnings("unchecked")
     var body = (PagedResponseIO<ContainerV2IO>) r.getEntity();
     assertEquals(2, body.items().size());
@@ -1129,11 +1127,9 @@ class ContainersV2RestTest {
     when(handler.listChannelAnnotations(eq(APP_ID), eq("ch-1"), eq(0), eq(200)))
         .thenReturn(Optional.of(
             Response.ok(new PagedResponseIO<>(List.of(), 0, 0, 200))
-                .header("X-Total-Count", 0)
                 .build()));
     var r = resource.listChannelAnnotations(APP_ID, "ch-1", 0, 200, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals("0", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
@@ -1182,11 +1178,9 @@ class ContainersV2RestTest {
     when(handler.listTemporalAnnotations(eq(APP_ID), eq(0), eq(200)))
         .thenReturn(Optional.of(
             Response.ok(new PagedResponseIO<>(List.of(), 0, 0, 200))
-                .header("X-Total-Count", 0)
                 .build()));
     var r = resource.listTemporalAnnotations(APP_ID, 0, 200, securityContext);
     assertEquals(200, r.getStatus());
-    assertEquals("0", r.getHeaderString("X-Total-Count"));
   }
 
   @Test

@@ -23,7 +23,6 @@ import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -80,12 +79,7 @@ public class AdminConfigRest {
   @APIResponse(
     responseCode = "200",
     description = "Registered config features.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ConfigFeatureIO.class)),
-    headers = @Header(
-      name = "X-Total-Count",
-      description = "Total number of registered config features.",
-      schema = @Schema(type = SchemaType.INTEGER)
-    )
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ConfigFeatureIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -94,7 +88,7 @@ public class AdminConfigRest {
       .stream()
       .map(d -> new ConfigFeatureIO(d.featureName(), d.description()))
       .toList();
-    return Response.ok(rows).header("X-Total-Count", (long) rows.size()).build();
+    return Response.ok(rows).build();
   }
 
   @GET

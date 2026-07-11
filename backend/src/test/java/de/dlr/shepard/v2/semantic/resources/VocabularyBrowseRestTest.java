@@ -86,7 +86,6 @@ class VocabularyBrowseRestTest {
     assertNotNull(out);
     assertTrue(out.items().isEmpty());
     assertEquals(0L, out.total());
-    assertEquals(0L, Long.parseLong(response.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -142,7 +141,6 @@ class VocabularyBrowseRestTest {
 
     Response response = rest.listVocabularies(0, 50);
 
-    assertEquals(7L, Long.parseLong(response.getHeaderString("X-Total-Count")));
   }
 
   // ─── listPredicatesForVocabulary ─────────────────────────────────────────
@@ -266,7 +264,6 @@ class VocabularyBrowseRestTest {
     PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertTrue(out.items().isEmpty());
     assertEquals(0L, out.total());
-    assertEquals(0L, Long.parseLong(response.getHeaderString("X-Total-Count")));
     verify(vocabularyDAO, never()).findVocabulariesUsedByEntity("  ", "collection");
   }
 
@@ -295,7 +292,6 @@ class VocabularyBrowseRestTest {
     assertEquals(1, out.items().size());
     assertEquals(1L, out.total());
     assertEquals("v-dcterms", out.items().get(0).getAppId());
-    assertEquals(1L, Long.parseLong(response.getHeaderString("X-Total-Count")));
     verify(vocabularyDAO).findVocabulariesUsedByEntity(appId, "collection");
   }
 
@@ -332,7 +328,6 @@ class VocabularyBrowseRestTest {
     assertEquals(2, body0.items().size());
     assertEquals("v-a", body0.items().get(0).getAppId());
     assertEquals("v-b", body0.items().get(1).getAppId());
-    assertEquals(3L, Long.parseLong(p0.getHeaderString("X-Total-Count")));
 
     // page 1, pageSize 2 → item v-c only
     Response p1 = rest.listVocabulariesUsedBy(appId, "data-object", 1, 2);

@@ -100,7 +100,6 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
     assertThat(body.items()).hasSize(1);
     assertThat(body.items().get(0).getPropertyIRI()).isEqualTo("http://example.org/prop");
     assertThat(body.total()).isEqualTo(1);
-    assertThat(result.get().getHeaderString("X-Total-Count")).isEqualTo("1");
   }
 
   @Test

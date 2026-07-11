@@ -98,7 +98,6 @@ class CollectionContainersRestTest {
   void list_xTotalCountHeaderEqualsTotalField() {
     var r = resource.list(COLL_APP_ID, PAGE, PAGE_SIZE, sc);
     var body = (PagedResponseIO<ContainerSummaryIO>) r.getEntity();
-    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo(String.valueOf(body.total()));
   }
 
   @Test

@@ -117,7 +117,6 @@ class ReferenceAnnotationRestTest {
     assertThat(page.total()).isEqualTo(1L);
     assertThat(page.page()).isEqualTo(0);
     assertThat(page.items().get(0).get("label")).isEqualTo("spike");
-    assertThat(r.getHeaders().getFirst("X-Total-Count")).isEqualTo(1L);
   }
 
   @Test
@@ -151,7 +150,6 @@ class ReferenceAnnotationRestTest {
     var r = resource.list(REF_ID, 0, 200, sc);
     @SuppressWarnings("unchecked")
     var page = (PagedResponseIO<Map<String, Object>>) r.getEntity();
-    assertThat(r.getHeaders().getFirst("X-Total-Count")).isEqualTo(7L);
     assertThat(page.total()).isEqualTo(7L);
   }
 

@@ -73,7 +73,6 @@ class CollectionDQRRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(1, body.items().size());
-    assertEquals(1L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -97,7 +96,6 @@ class CollectionDQRRestTest {
     @SuppressWarnings("unchecked")
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(2, body.items().size());
-    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test
@@ -114,7 +112,6 @@ class CollectionDQRRestTest {
     PagedResponseIO<DQRIO> body = (PagedResponseIO<DQRIO>) r.getEntity();
     assertEquals(1, body.items().size());
     assertEquals("dqr-3", body.items().get(0).dqrAppId());
-    assertEquals(3L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 
   @Test

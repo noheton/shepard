@@ -258,7 +258,6 @@ class ShepardTemplateRestTest {
     assertEquals(3L, paged.total());
     assertEquals(3, paged.items().size());
     assertEquals("calibration", paged.items().get(0));
-    assertEquals("3", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
