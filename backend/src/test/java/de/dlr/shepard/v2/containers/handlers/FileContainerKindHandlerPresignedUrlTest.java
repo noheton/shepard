@@ -149,7 +149,7 @@ class FileContainerKindHandlerPresignedUrlTest {
     assertEquals(200, result.get().getStatus());
     var io = (PresignedUploadUrlIO) result.get().getEntity();
     assertEquals(url.toString(), io.getUploadUrl());
-    assertEquals("new-oid", io.getOid());
+    assertEquals("new-oid", io.getFileId());
   }
 
   @Test
@@ -171,9 +171,9 @@ class FileContainerKindHandlerPresignedUrlTest {
   }
 
   @Test
-  void commitUpload_returns400WhenOidBlank() {
+  void commitUpload_returns400WhenFileIdBlank() {
     var commit = new UploadCommitIO();
-    commit.setOid("  ");
+    commit.setFileId("  ");
     commit.setFileName("data.csv");
     assertThrows(BadRequestException.class, () -> handler.commitUpload(APP_ID, commit));
   }
@@ -185,7 +185,7 @@ class FileContainerKindHandlerPresignedUrlTest {
     when(service.commitUpload(CONTAINER_ID, "oid-1", "data.csv", 1024L)).thenReturn(file);
 
     var commit = new UploadCommitIO();
-    commit.setOid("oid-1");
+    commit.setFileId("oid-1");
     commit.setFileName("data.csv");
     commit.setFileSize(1024L);
     Optional<Response> result = handler.commitUpload(APP_ID, commit);
