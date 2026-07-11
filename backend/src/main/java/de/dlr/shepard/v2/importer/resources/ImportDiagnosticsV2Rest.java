@@ -58,6 +58,9 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * push DO_CREATE / REF_ATTACH / FILE_UPLOAD phase events that are out of reach of
  * the Java service.
  *
+ * <p>Cross-resource alias: {@link ImportLockV2Rest} uses the name {@code lockId} for
+ * the same value on its heartbeat/release/abandon/cancel paths.
+ *
  * <h2>Auth</h2>
  * <p>All endpoints require authentication.  There is no Write-on-collection
  * check because diagnostic data is considered operational metadata, readable by
@@ -123,6 +126,13 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(responseCode = "400", description = "Invalid level or phase filter value, or limit out of range")
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response getEvents(
+    @Parameter(
+      description =
+        "Import run identifier — the lockId value returned by POST /v2/import/lock. " +
+        "This resource uses the name 'runId' to emphasise its diagnostic role; " +
+        "ImportLockV2Rest uses the name 'lockId' for the same value on its " +
+        "heartbeat/release/abandon/cancel paths."
+    )
     @PathParam("runId") String runId,
     @Parameter(description = "Filter to a single severity level. One of: INFO, WARN, ERROR.",
                schema = @Schema(enumeration = {"INFO", "WARN", "ERROR"}))
@@ -159,7 +169,7 @@ public class ImportDiagnosticsV2Rest {
     return builder.build();
   }
 
-  // ─── GET /v2/import/runs ──────────────────────────────────────────────────
+  // ─── GET /v2/import/runs ──────────────────────────────────────────
 
   @GET
   @Path("/runs")
@@ -214,6 +224,13 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(responseCode = "400", description = "Missing required fields or invalid level/phase")
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response ingestEvent(
+    @Parameter(
+      description =
+        "Import run identifier — the lockId value returned by POST /v2/import/lock. " +
+        "This resource uses the name 'runId' to emphasise its diagnostic role; " +
+        "ImportLockV2Rest uses the name 'lockId' for the same value on its " +
+        "heartbeat/release/abandon/cancel paths."
+    )
     @PathParam("runId") String runId,
     IngestEventIO body,
     @Context SecurityContext sc
@@ -234,7 +251,7 @@ public class ImportDiagnosticsV2Rest {
     return Response.noContent().build();
   }
 
-  // ─── POST /v2/import/diagnostics/{runId}/events/batch ────────────────────
+  // ─── POST /v2/import/diagnostics/{runId}/events/batch ────────────────────────
 
   @POST
   @Path("/diagnostics/{runId}/events/batch")
@@ -253,6 +270,13 @@ public class ImportDiagnosticsV2Rest {
   @APIResponse(responseCode = "400", description = "Empty batch or invalid event field")
   @APIResponse(responseCode = "401", description = "Authentication required")
   public Response ingestBatch(
+    @Parameter(
+      description =
+        "Import run identifier — the lockId value returned by POST /v2/import/lock. " +
+        "This resource uses the name 'runId' to emphasise its diagnostic role; " +
+        "ImportLockV2Rest uses the name 'lockId' for the same value on its " +
+        "heartbeat/release/abandon/cancel paths."
+    )
     @PathParam("runId") String runId,
     BatchIngestIO body,
     @Context SecurityContext sc
@@ -282,7 +306,7 @@ public class ImportDiagnosticsV2Rest {
     return Response.noContent().build();
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────────────────────────────────
 
   /**
    * Validate an ingest event body.
