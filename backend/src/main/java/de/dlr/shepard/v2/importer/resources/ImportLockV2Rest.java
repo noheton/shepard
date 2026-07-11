@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
@@ -47,6 +48,10 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * The lock persists across server restarts so a restarted backend can surface
  * "an import was in progress" rather than silently losing state.
  *
+ * <p>The {@code lockId} returned on acquire is also the {@code runId} accepted by
+ * {@link ImportDiagnosticsV2Rest} on its {@code /v2/import/diagnostics/{runId}} paths.
+ * Use it throughout the import run to push and query structured diagnostic events.
+ *
  * <p>Auth: all endpoints require authentication.  Only {@code DELETE} requires the
  * {@code instance-admin} role.
  */
@@ -66,7 +71,7 @@ public class ImportLockV2Rest {
   @Inject
   ImportLockService lockService;
 
-  // ─── GET /v2/import/lock ──────────────────────────────────────────────────
+  // ─── GET /v2/import/lock ────────────────────────────────────────────────────
 
   @GET
   @Operation(
@@ -92,7 +97,7 @@ public class ImportLockV2Rest {
     return Response.ok(LockStatusIO.from(lock)).build();
   }
 
-  // ─── POST /v2/import/lock ─────────────────────────────────────────────────
+  // ─── POST /v2/import/lock ───────────────────────────────────────────────────
 
   @POST
   @Operation(
@@ -132,7 +137,7 @@ public class ImportLockV2Rest {
       .build();
   }
 
-  // ─── POST /v2/import/lock/{lockId}/heartbeat ──────────────────────────────
+  // ─── POST /v2/import/lock/{lockId}/heartbeat ───────────────────────────────
 
   @POST
   @Path("/{lockId}/heartbeat")
@@ -153,6 +158,12 @@ public class ImportLockV2Rest {
   @APIResponse(responseCode = "404", description = "Lock not found")
   @APIResponse(responseCode = "409", description = "Lock is not in RUNNING status")
   public Response heartbeat(
+    @Parameter(
+      description =
+        "Lock identifier returned by POST /v2/import/lock (the 'lockId' field in LockStatusIO). " +
+        "Cross-resource alias: ImportDiagnosticsV2Rest uses this same value under the " +
+        "name 'runId' on its /v2/import/diagnostics/{runId} paths."
+    )
     @PathParam("lockId") String lockId,
     @Context SecurityContext sc
   ) {
@@ -186,6 +197,12 @@ public class ImportLockV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required")
   @APIResponse(responseCode = "404", description = "Lock not found or not in RUNNING status")
   public Response release(
+    @Parameter(
+      description =
+        "Lock identifier returned by POST /v2/import/lock (the 'lockId' field in LockStatusIO). " +
+        "Cross-resource alias: ImportDiagnosticsV2Rest uses this same value under the " +
+        "name 'runId' on its /v2/import/diagnostics/{runId} paths."
+    )
     @PathParam("lockId") String lockId,
     @Context SecurityContext sc
   ) {
@@ -220,6 +237,12 @@ public class ImportLockV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required")
   @APIResponse(responseCode = "404", description = "Lock not found or not in RUNNING status")
   public Response abandon(
+    @Parameter(
+      description =
+        "Lock identifier returned by POST /v2/import/lock (the 'lockId' field in LockStatusIO). " +
+        "Cross-resource alias: ImportDiagnosticsV2Rest uses this same value under the " +
+        "name 'runId' on its /v2/import/diagnostics/{runId} paths."
+    )
     @PathParam("lockId") String lockId,
     AbandonRequestIO body,
     @Context SecurityContext sc
@@ -239,7 +262,7 @@ public class ImportLockV2Rest {
     return Response.ok(LockStatusIO.from(lock)).build();
   }
 
-  // ─── DELETE /v2/import/lock/{lockId} ─────────────────────────────────────
+  // ─── DELETE /v2/import/lock/{lockId} ───────────────────────────────────────────
 
   @DELETE
   @Path("/{lockId}")
@@ -262,6 +285,12 @@ public class ImportLockV2Rest {
   @APIResponse(responseCode = "403", description = "Requires instance-admin role")
   @APIResponse(responseCode = "404", description = "Lock not found")
   public Response cancel(
+    @Parameter(
+      description =
+        "Lock identifier returned by POST /v2/import/lock (the 'lockId' field in LockStatusIO). " +
+        "Cross-resource alias: ImportDiagnosticsV2Rest uses this same value under the " +
+        "name 'runId' on its /v2/import/diagnostics/{runId} paths."
+    )
     @PathParam("lockId") String lockId,
     @Context SecurityContext sc
   ) {
@@ -275,7 +304,7 @@ public class ImportLockV2Rest {
     return Response.ok(LockStatusIO.from(lock)).build();
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+  // ─── Helpers ──────────────────────────────────────────────────────────────────────────────
 
   private static String caller(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
