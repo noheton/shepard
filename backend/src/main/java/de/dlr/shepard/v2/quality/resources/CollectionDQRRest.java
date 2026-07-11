@@ -45,7 +45,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * <ul>
  *   <li>{@code GET    /v2/collections/{collectionAppId}/dqr}             — list DQRs (Read).</li>
  *   <li>{@code POST   /v2/collections/{collectionAppId}/dqr}             — assign DQR (Write).</li>
- *   <li>{@code DELETE /v2/collections/{collectionAppId}/dqr/{dqrAppId}}  — remove DQR (Write).</li>
+ *   <li>{@code DELETE /v2/collections/{collectionAppId}/dqr/{appId}}  — remove DQR (Write).</li>
  *   <li>{@code POST   /v2/collections/{collectionAppId}/dqr/evaluate}    — evaluate DQRs (Read).</li>
  * </ul>
  *
@@ -150,7 +150,7 @@ public class CollectionDQRRest {
   // ─── Remove ───────────────────────────────────────────────────────────────
 
   @DELETE
-  @Path("{dqrAppId}")
+  @Path("{appId}")
   @Operation(
     operationId = "remove",
     summary = "Remove a DQR from this Collection (TPL10).",
@@ -165,12 +165,12 @@ public class CollectionDQRRest {
   @APIResponse(responseCode = "404", description = "No such DQR or not assigned to this Collection.")
   public Response remove(
     @PathParam("collectionAppId") String collectionAppId,
-    @PathParam("dqrAppId") String dqrAppId,
+    @PathParam("appId") String appId,
     @Context SecurityContext securityContext
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    service.remove(collectionAppId, dqrAppId, caller);
+    service.remove(collectionAppId, appId, caller);
     return Response.noContent().build();
   }
 
