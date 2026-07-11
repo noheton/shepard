@@ -233,7 +233,6 @@ public class DataObjectDetailV2IO extends DataObjectIO {
         String rType = appIdToType.getOrDefault(p.getAppId(), TypedPredecessorIO.DEFAULT_TYPE);
         tpList.add(new TypedPredecessorSummaryIO(
           p.getAppId(),
-          p.getShepardId() != null ? p.getShepardId() : -1L,
           p.getName(),
           p.getStatus(),
           rType
