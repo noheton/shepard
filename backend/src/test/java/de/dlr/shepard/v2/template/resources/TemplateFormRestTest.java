@@ -29,7 +29,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * {@code GET /v2/templates/{templateAppId}/form} — status-code contract +
+ * {@code GET /v2/templates/{appId}/form} — status-code contract +
  * happy-path descriptor + ETag (FORM-DESCRIPTOR-1, doc 125 §5.1).
  */
 class TemplateFormRestTest {

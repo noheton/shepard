@@ -40,7 +40,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * {@code GET /v2/templates/{templateAppId}/export?dataObjectAppId=…} —
+ * {@code GET /v2/templates/{appId}/export?dataObjectAppId=…} —
  * status-code contract + the doc 125 §6 round-trip proof: the focused
  * DataObject's attribute values land in the shape's mapped cells and are
  * read back out of the generated workbook with POI (BTKVS-C1-EXCEL-EXPORT).

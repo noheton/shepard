@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * {@code POST /v2/collections/{collectionAppId}/data-objects/from-template/{templateAppId}}
+ * {@code POST /v2/collections/{collectionAppId}/data-objects/from-template/{appId}}
  *
  * <p>Server-side DataObject instantiation from a {@code :ShepardTemplate} per T1e
  * ({@code aidocs/16-dispatcher-backlog.md §T1e}).
@@ -127,7 +127,7 @@ public class TemplateInstantiationRest {
   SemanticAnnotationV2DAO annotationDAO;
 
   @POST
-  @Path("/{templateAppId}")
+  @Path("/{appId}")
   @Operation(
     operationId = "instantiateDataObject",
     summary = "Create a DataObject from a ShepardTemplate (server-side instantiation).",
@@ -156,7 +156,7 @@ public class TemplateInstantiationRest {
   )
   public Response instantiateDataObject(
     @PathParam("collectionAppId") String collectionAppId,
-    @PathParam("templateAppId") String templateAppId,
+    @PathParam("appId") String appId,
     @RequestBody(
       required = false,
       description = "Optional name override + caller-supplied attribute values (form input; merged over " +
@@ -183,26 +183,26 @@ public class TemplateInstantiationRest {
     }
 
     // Step 4: resolve template
-    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(templateAppId);
+    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(appId);
     if (templateOpt.isEmpty()) {
       return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND,
-        "No template with appId " + templateAppId);
+        "No template with appId " + appId);
     }
     ShepardTemplate template = templateOpt.get();
 
     // Step 5: 409 if retired
     if (template.isRetired()) {
       return problem(PT_CONFLICT, "Template retired", Response.Status.CONFLICT,
-        "Template " + templateAppId + " is retired; pick a non-retired version");
+        "Template " + appId + " is retired; pick a non-retired version");
     }
 
     // Step 6: allow-list guard (empty list = unrestricted)
     List<ShepardTemplate> allowed = templateDAO.listAllowedForCollection(collectionAppId);
     if (!allowed.isEmpty()) {
-      boolean inList = allowed.stream().anyMatch(t -> templateAppId.equals(t.getAppId()));
+      boolean inList = allowed.stream().anyMatch(t -> appId.equals(t.getAppId()));
       if (!inList) {
         return problem(PT_FORBIDDEN, "Template not in allow-list", Response.Status.FORBIDDEN,
-          "Template " + templateAppId + " is not in the allow-list for Collection " + collectionAppId);
+          "Template " + appId + " is not in the allow-list for Collection " + collectionAppId);
       }
     }
 
@@ -238,7 +238,7 @@ public class TemplateInstantiationRest {
         // Malformed shape or engine error: log and skip validation rather than blocking
         Log.warnf(
           "SHACL validation skipped for template %s due to error: %s%s",
-          templateAppId,
+          appId,
           report.parseError() != null ? "parseError=" + report.parseError() : "",
           report.engineError() != null ? "engineError=" + report.engineError() : ""
         );
@@ -419,7 +419,7 @@ public class TemplateInstantiationRest {
           return nameNode.textValue();
         }
       } catch (JsonProcessingException e) {
-        Log.warnf("Could not parse template body for DataObject name fallback (templateAppId=%s): %s", template.getAppId(), e.getMessage());
+        Log.warnf("Could not parse template body for DataObject name fallback (appId=%s): %s", template.getAppId(), e.getMessage());
       }
     }
     return template.getName() + "-" + System.currentTimeMillis();

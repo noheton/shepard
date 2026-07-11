@@ -33,7 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
- * {@code GET /v2/templates/{templateAppId}/form} — the form-descriptor
+ * {@code GET /v2/templates/{appId}/form} — the form-descriptor
  * endpoint (FORM-DESCRIPTOR-1, doc 125 §5.1 / BTKVS-B2).
  *
  * <p>Read-only projection: flattens the template's inheritance chain
@@ -58,7 +58,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * The FORM-DESCRIPTOR-1 backlog row tracks the residue.
  */
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/v2/templates/{templateAppId}/form")
+@Path("/v2/templates/{appId}/form")
 @RequestScoped
 @Tag(name = "Templates")
 public class TemplateFormRest {
@@ -104,7 +104,7 @@ public class TemplateFormRest {
     description = "Template is not form-renderable: no shapeGraph in the flattened body, unparseable Turtle, or a non-data templateKind."
   )
   public Response getForm(
-    @PathParam("templateAppId") String templateAppId,
+    @PathParam("appId") String appId,
     @HeaderParam("If-None-Match") String ifNoneMatch,
     @Context SecurityContext securityContext
   ) {
@@ -112,16 +112,16 @@ public class TemplateFormRest {
       return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED.getStatusCode(), null);
     }
 
-    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(templateAppId);
+    Optional<ShepardTemplate> templateOpt = templateDAO.findByAppId(appId);
     if (templateOpt.isEmpty()) {
       return problem(PT_NOT_FOUND, "Template not found", Response.Status.NOT_FOUND.getStatusCode(),
-        "No template with appId " + templateAppId);
+        "No template with appId " + appId);
     }
     ShepardTemplate template = templateOpt.get();
 
     if (template.isRetired()) {
       return problem(PT_CONFLICT, "Template retired", Response.Status.CONFLICT.getStatusCode(),
-        "Template " + templateAppId + " is retired; pick a non-retired version");
+        "Template " + appId + " is retired; pick a non-retired version");
     }
 
     if (template.getTemplateKind() == null ||
@@ -136,11 +136,11 @@ public class TemplateFormRest {
     String shapeGraph = extractShapeGraph(effectiveBody);
     if (shapeGraph == null || shapeGraph.isBlank()) {
       return problem(PT_UNPROCESSABLE, "Template carries no shapeGraph", 422,
-        "The flattened body of template " + templateAppId + " has no shapeGraph Turtle — author one " +
+        "The flattened body of template " + appId + " has no shapeGraph Turtle — author one " +
         "via POST /v2/shapes/build (the JSON-DSL shape builder) and store it on the template body");
     }
 
-    String etag = etagFor(templateAppId, effectiveBody);
+    String etag = etagFor(appId, effectiveBody);
     if (etag != null && etag.equals(ifNoneMatch)) {
       return Response.status(Response.Status.NOT_MODIFIED).header("ETag", etag).build();
     }
@@ -150,7 +150,7 @@ public class TemplateFormRest {
       descriptor = compiler.compile(template, shapeGraph);
     } catch (IllegalArgumentException ex) {
       return problem(PT_UNPROCESSABLE, "Shape graph not compilable", 422,
-        "Template " + templateAppId + ": " + ex.getMessage());
+        "Template " + appId + ": " + ex.getMessage());
     }
 
     Response.ResponseBuilder rb = Response.ok(descriptor);
