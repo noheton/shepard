@@ -4922,7 +4922,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java:56-63`.
 
 ## APISIMP-PROV-CURSOR-PAGECAP — ProvenanceRest cursor endpoints still use `@QueryParam("pageSize") @Max(1000)` despite APISIMP-PROV-CURSOR-INCONSISTENT claiming rename to `limit` (size: S, fire-545)
-- **Status:** ⏳ queued.
+- **Status:** ✓ shipped — commit `5f9cadd` (fire-549).
 - **Why:** `ProvenanceRest.java` lines 134, 202, 248 (three `/activities` content-type variants: JSON, PROV-JSON, JSON-LD) and lines 301, 347, 382 (three `/entity/{appId}` content-type variants) all still carry `@QueryParam("pageSize") @Min(1) @Max(1000) int pageSize`. Backlog rows APISIMP-PROV-CURSOR-INCONSISTENT (fire-357) and APISIMP-ENTITY-PROV-PAGESIZE (fire-359) both claim the rename `pageSize` → `limit` was shipped, but the live code shows the rename was never applied. Additionally the `@Max(1000)` cap is five times the v2-standard 200, inconsistent with every other paginated endpoint. Sweep fire-545.
 - **Fix:** Rename `@QueryParam("pageSize")` → `@QueryParam("limit")` on all six method signatures; retain `@Max(1000)` (cursor semantics justify the higher window vs. a page-based 200 cap) OR lower to `@Max(200)` if the intent was full alignment; update `ListActivitiesRequest.pageSize` → `limit` in `backend-client/src/apis/ProvenanceApi.ts` and any frontend callers. Add six `@QueryParam` annotation-presence assertions in `ProvenanceRestParamAnnotationTest` confirming `limit` (not `pageSize`).
 - **AC:** `grep -n '"pageSize"' backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java` returns empty; `grep -n '"limit"'` returns six hits (one per method); `mvn verify -pl backend` green.
@@ -4957,7 +4957,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/TypedPredecessorSummaryIO.java:28-38`; apisimp-sweep-fire547-2026-07-11 §Finding1.
 
 ## APISIMP-ANNOT-LEGACY-FIELDS-DROP — remove 4 `@Deprecated` legacy fields from `AnnotationIO` (size: S, fire-547)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-progress — PR #2487 (fire-549).
 - **Why:** `AnnotationIO.java:88-106` carries `@Deprecated` aliases (`propertyName`, `propertyIri`, `valueName`, `valueIri`) for pre-SEMA-V6 backward compat. Unlike `predecessorId`, these ARE serialized to the wire. Frontend caller audit required before removal: any composable reading old names must migrate to v6 canonical names (`predicateLabel`, `predicateIri`, `objectLiteral`, `objectIri`) first. Sweep fire-547.
 - **Fix:** (a) Audit `frontend/composables/` and `frontend/pages/` for reads of `propertyName`/`propertyIri`/`valueName`/`valueIri` on annotation responses. (b) Migrate any callers to v6 names. (c) Remove the four deprecated fields and their constructor assignments from `AnnotationIO`. (d) Add a test asserting the four old field names are absent from the serialized JSON shape.
 - **AC:** `grep -rn 'propertyName\|propertyIri\|valueName\|valueIri' frontend/composables/ frontend/pages/` returns empty for annotation-response readers; deprecated fields removed from `AnnotationIO`; `mvn verify -pl backend` + `npm run test` + `npm run typecheck` green.
@@ -4971,7 +4971,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:1453,1553`; `backend/src/main/java/de/dlr/shepard/v2/filecontainer/io/PresignedUploadUrlIO.java:26`; `backend/src/main/java/de/dlr/shepard/v2/filecontainer/io/UploadCommitIO.java:16`; apisimp-sweep-fire547-2026-07-11 §Finding3.
 
 ## APISIMP-XTOTALCOUNT-DOC-CLEANUP — remove stale X-Total-Count mentions from 17 v2 REST description strings (size: S, fire-547)
-- **Status:** 🚧 in-progress — PR open (fire-548).
+- **Status:** ✅ merged — PR #2486 (fire-548).
 - **Why:** After `APISIMP-XTOTALCOUNT-DUAL-EMIT-DROP` (fire-546) and `APISIMP-XTOTALCOUNT-LIST-DO-2` (fire-547) removed the `X-Total-Count` header from every v2 endpoint, 17 v2 REST files still carry `@APIResponse(description = "... Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE) ...")` strings. These claim the header is still emitted but it isn't. Callers reading the OpenAPI spec see a misleading claim. Sweep fire-547.
 - **Fix:** In the 17 listed files, remove or replace all `X-Total-Count` header mentions in `@APIResponse(description = ...)` and `@Operation(description = ...)` strings. Replace with "Response body `total` field carries the total count." Files: `CollectionWatchersRest`, `CollectionV2Rest`, `CollectionContainersRest`, `ContainersV2Rest`, `FlatPublicationsRest`, `NotificationRest`, `CollectionDQRRest`, `ProjectsRest`, `ReferencesV2Rest`, `ReferenceAnnotationRest`, `ShepardTemplateRest`, `VocabularyBrowseRest`, `PersonalVocabularyRest`, `CollectionLabJournalEntriesRest`, `OntologyGitSourceRest`, `CollectionWatchesRest`, plus `DataObjectDAO.java`.
 - **AC:** `grep -rn '"X-Total-Count"' backend/src/main/java/de/dlr/shepard/v2/` (excluding strings in aidocs/ and test files) returns only hits inside aidocs/16 backlog text or comments referencing the historical APISIMP rows — no live annotation strings; `mvn -q test-compile -pl backend` green.
