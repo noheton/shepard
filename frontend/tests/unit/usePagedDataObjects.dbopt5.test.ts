@@ -26,10 +26,13 @@ vi.mock("~/composables/common/api/useV2ShepardApi", () => ({
 const mockListDataObjectsRaw = vi.fn();
 const mockGetAllDataObjects = vi.fn();
 
-/** Build an ApiResponse-shaped mock with the given items + total-count header. */
+/** Build an ApiResponse-shaped mock with the given items + Content-Range header. */
 function rawResponse(items: unknown[], total: number | null) {
   const headers = new Headers();
-  if (total !== null) headers.set("X-Total-Count", String(total));
+  if (total !== null) {
+    const last = total > 0 ? total - 1 : -1;
+    headers.set("Content-Range", `dataobjects 0-${last}/${total}`);
+  }
   return {
     raw: { headers },
     value: () => Promise.resolve(items),

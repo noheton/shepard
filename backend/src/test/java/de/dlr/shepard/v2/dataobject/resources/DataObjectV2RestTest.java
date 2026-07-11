@@ -235,7 +235,7 @@ class DataObjectV2RestTest {
 
   @Test
   void listReturnsContentRangeHeader() {
-    // UX-DOPANEL-TOTAL-COUNT: list() must emit Content-Range and X-Total-Count headers.
+    // UX-DOPANEL-TOTAL-COUNT: list() must emit Content-Range header.
     DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
@@ -252,10 +252,6 @@ class DataObjectV2RestTest {
     String contentRange = (String) r.getHeaders().getFirst("Content-Range");
     assertNotNull(contentRange);
     assertEquals("dataobjects 75-75/8514", contentRange);
-    // X-Total-Count convenience header
-    Object xTotalCount = r.getHeaders().getFirst("X-Total-Count");
-    assertNotNull(xTotalCount);
-    assertEquals(8514L, ((Number) xTotalCount).longValue());
   }
 
   @Test
@@ -274,9 +270,6 @@ class DataObjectV2RestTest {
     String contentRange = (String) r.getHeaders().getFirst("Content-Range");
     assertNotNull(contentRange);
     assertEquals("dataobjects 0--1/0", contentRange);
-    Object xTotalCount = r.getHeaders().getFirst("X-Total-Count");
-    assertNotNull(xTotalCount);
-    assertEquals(0L, ((Number) xTotalCount).longValue());
   }
 
   @Test
