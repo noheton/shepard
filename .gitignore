@@ -114,6 +114,9 @@ build/
 
 # Maven build output
 **/target/
+# JaCoCo agent dumps to the working directory (not inside target/) during mvn verify
+jacoco.exec
+**/jacoco.exec
 
 # Runtime data volumes (Docker bind-mounts — never commit database files)
 # Root-anchored with leading `/` so source-tree paths like
