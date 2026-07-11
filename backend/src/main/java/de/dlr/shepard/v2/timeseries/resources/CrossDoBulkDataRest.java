@@ -110,8 +110,7 @@ public class CrossDoBulkDataRest {
   @APIResponse(
     responseCode = "200",
     description = "Resolved series across the requested DataObjects.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)).", schema = @Schema(type = SchemaType.INTEGER))
-  )
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "400", description = "Validation error on request body, or unsupported/missing `kind`.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getCrossDoBulkData(

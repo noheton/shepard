@@ -476,7 +476,7 @@ public class ContainersV2Rest {
       int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
       int total = containersService.count(kind, filter);
       List<ContainerV2IO> pageItems = containersService.list(kind, filter, skip, pageSize);
-      Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
+      Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize));
       if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
       return rb.build();
     } catch (BadRequestException bre) {
@@ -501,7 +501,6 @@ public class ContainersV2Rest {
     responseCode = "200",
     description = "Version list (may be empty).",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
-  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -587,7 +586,6 @@ public class ContainersV2Rest {
     responseCode = "200",
     description = "List of linked DataObjects (may be empty).",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
-  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -767,7 +765,6 @@ public class ContainersV2Rest {
     responseCode = "200",
     description = "Raw data for all resolved channels.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
-  )
   @APIResponse(responseCode = "400", description = "Validation error on request body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -1000,7 +997,7 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of channel annotations (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1117,7 +1114,7 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of temporal annotations (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
