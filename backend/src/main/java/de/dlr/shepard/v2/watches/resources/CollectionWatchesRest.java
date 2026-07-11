@@ -86,13 +86,12 @@ public class CollectionWatchesRest {
       "row itself is always returned so the operator knows the link exists.\n\n" +
       "Pagination (APISIMP-WATCHES-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
       "(1–200) to receive a slice. Omit both to return all watches. " +
-      "`X-Total-Count` header carries the total before paging.\n\n" +
       "Next step: `POST /v2/collections/{appId}/watched-containers` " +
       "to add a watch, or click the target container's appId in the UI."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

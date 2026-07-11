@@ -395,7 +395,7 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * completes in a single lightweight Cypher round-trip.
    *
    * <p>Used by {@code DataObjectV2Rest.list()} to populate
-   * {@code Content-Range} and {@code X-Total-Count} response headers.
+   * {@code Content-Range} response header.
    *
    * @param collectionShepardId the OGM long id of the parent Collection
    * @param params              filter parameters (name, status, pagination

@@ -78,13 +78,12 @@ public class ProjectsRest {
       "tile grid.\n\n" +
       "Pagination (APISIMP-PROJECTS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
       "(1–200) to receive a slice. Omit both to return all projects. " +
-      "`X-Total-Count` header carries the total before paging.\n\n" +
       "For each appId in the response, follow up with `GET /v2/projects/{appId}` " +
       "for the Project envelope (with programmes and aggregate counts)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

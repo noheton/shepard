@@ -175,12 +175,11 @@ public class PersonalVocabularyRest {
     summary = "List the caller's personal vocabularies.",
     description = "Returns :Vocabulary nodes with type=PERSONAL owned by the calling user. " +
       "Returns an empty list when the feature is disabled or the user has no personal vocabularies.\n\n" +
-      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
-      "`X-Total-Count` header carries the total count before paging (kept during deprecation window)."
+      "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging.",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

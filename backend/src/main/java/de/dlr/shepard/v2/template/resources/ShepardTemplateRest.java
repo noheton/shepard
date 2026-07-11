@@ -293,12 +293,11 @@ public class ShepardTemplateRest {
     summary = "Distinct list of tags across all non-retired templates.",
     description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind. " +
     "Server-side cap: at most 200 distinct tags are returned (alphabetically first 200). " +
-    "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
-    "`X-Total-Count` header carries the total before paging."
+    "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged tag list, sorted ascending. X-Total-Count = total before paging.",
+    description = "Paged tag list, sorted ascending. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

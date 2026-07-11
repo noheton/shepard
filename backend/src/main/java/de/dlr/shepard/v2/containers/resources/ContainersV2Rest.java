@@ -438,12 +438,11 @@ public class ContainersV2Rest {
       "An optional `q` query param narrows by substring (case-sensitive).\n\n" +
       "Pagination (APISIMP-CONTAINERS-LIST-NO-PAGINATION): supply both `page` (0-based) and `pageSize` " +
       "(1–200) to slice the result. Omitting either returns all containers. " +
-      "`X-Total-Count` header carries the total before paging.\n\nAuth: " +
       "authenticated; per-container Read is enforced by the underlying list query."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)

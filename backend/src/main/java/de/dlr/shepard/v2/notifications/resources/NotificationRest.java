@@ -53,12 +53,11 @@ public class NotificationRest {
     description = "Returns all non-expired notifications visible to the caller, ordered most-recent-first. " +
     "Includes notifications addressed to the caller's username, ALL-audience broadcasts, and (when the " +
     "caller is an instance-admin) INSTANCE_ADMIN-audience broadcasts.\n\n" +
-    "Pagination: supply `page` (0-based) and `pageSize` (1–200, default 50). " +
-    "`X-Total-Count` header carries the total before paging."
+    "Pagination: supply `page` (0-based) and `pageSize` (1–200, default 50). "
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total count before paging (kept during deprecation window, APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")

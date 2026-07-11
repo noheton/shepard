@@ -82,8 +82,7 @@ public class VocabularyBrowseRest {
    * seeded.
    *
    * <p>APISIMP-VOCAB-LIST-UNBOUNDED: {@code page} / {@code pageSize}
-   * push SKIP/LIMIT to the database; {@code X-Total-Count} carries the
-   * total row count before paging.
+   * push SKIP/LIMIT to the database.
    */
   @GET
   @Operation(
@@ -94,13 +93,12 @@ public class VocabularyBrowseRest {
       "ordered by label ASC. Includes both enabled and disabled vocabularies — the " +
       "`enabled` flag tells callers which appear in autocomplete. " +
       "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
-      "`X-Total-Count` header carries the total count before paging. " +
       "Auth: any authenticated user. " +
       "Empty list (200) when no vocabularies are seeded."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -196,12 +194,11 @@ public class VocabularyBrowseRest {
       "least one :SemanticAnnotation on the given entity. When `scope=collection` " +
       "the walk includes descendants reachable via [:HAS_DATAOBJECT*0..]. " +
       "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
-      "`X-Total-Count` header carries the total before paging. " +
       "Auth: any authenticated user. Empty list (200) when no annotations match."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Paged envelope: items + total + page + pageSize. Header X-Total-Count = total before paging (APISIMP-PAGINATION-ENVELOPE).",
+    description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
