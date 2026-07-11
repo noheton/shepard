@@ -163,8 +163,6 @@ public class DataObjectV2Rest {
       "envelope is absent. Migration to `PagedResponseIO` is tracked as " +
       "`APISIMP-DO-LIST-CONTENT-RANGE` in the backlog (a coordinated backend + " +
       "frontend two-commit change).\n\n" +
-      "Filtering: `q` (preferred) or deprecated `name` — case-insensitive substring match on display name. " +
-      "Using `?name=` emits `Deprecation: true` response header; migrate callers to `?q=`.\n\n" +
       "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
       "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
       "latest data-point timestamps across all timeseries channels. Null on items " +
@@ -208,8 +206,6 @@ public class DataObjectV2Rest {
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @Parameter(description = "Optional display-name filter (case-insensitive substring match). Omit to return all DataObjects.")
     @QueryParam("q") String q,
-    @Parameter(description = "Deprecated alias for `q`. Accepted for one release cycle; prefer `q`. Presence adds `Deprecation: true` response header.")
-    @Deprecated @QueryParam(Constants.QP_NAME) String nameLegacy,
     @Parameter(description = "Lifecycle status filter. Accepted values: DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, ON_HOLD, REJECTED, CERTIFIED. Unrecognised values silently return an empty page (no 400).")
     @QueryParam("status") String status,
     @Parameter(description = "Zero-based page index (default 0). Negative values are clamped to 0.")
@@ -253,8 +249,7 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     var params = new QueryParamHelper();
-    String nameFilter = q != null ? q : nameLegacy;
-    if (nameFilter != null) params = params.withName(nameFilter);
+    if (q != null) params = params.withName(q);
     if (status != null) params = params.withStatus(status);
     if (annotationFilter != null) params = params.withAnnotationFilter(annotationFilter);
     if (createdAfter != null || createdBefore != null) params = params.withCreatedRange(createdAfter, createdBefore);
@@ -367,13 +362,12 @@ public class DataObjectV2Rest {
         Response.Status.INTERNAL_SERVER_ERROR, "Failed to serialise DataObject list response");
     }
 
-    Response.ResponseBuilder rb = Response.ok(body, MediaType.APPLICATION_JSON)
+    return Response.ok(body, MediaType.APPLICATION_JSON)
       .header("Content-Range", contentRange)
       .header("X-Total-Count", total)
       .header("Cache-Control", "max-age=300, must-revalidate")
-      .header("X-Shepard-Payload-Diet", fields != null && !fields.isBlank() ? "fields" : (includeFull ? "full" : "default-trim"));
-    if (nameLegacy != null && q == null) rb = rb.header("Deprecation", "true");
-    return rb.build();
+      .header("X-Shepard-Payload-Diet", fields != null && !fields.isBlank() ? "fields" : (includeFull ? "full" : "default-trim"))
+      .build();
   }
 
   @GET
