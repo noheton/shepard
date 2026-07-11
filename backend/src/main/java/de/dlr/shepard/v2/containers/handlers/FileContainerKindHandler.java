@@ -253,6 +253,37 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     ).build());
   }
 
+  // ── APISIMP-OID-PATHPARAM-REPLACE slice 2: fileAppId variants ───────────
+
+  @Override
+  public Optional<Response> getThumbnailByFileAppId(String appId, String fileAppId, Integer sizeParam) {
+    FileContainer container = dao.findByAppId(appId)
+      .filter(c -> !c.isDeleted())
+      .orElseThrow(() -> new NotFoundException("No file container with appId " + appId));
+    String oid = resolveOidByFileAppId(container, fileAppId);
+    return getThumbnail(appId, oid, sizeParam);
+  }
+
+  @Override
+  public Optional<Response> getDownloadUrlByFileAppId(String appId, String fileAppId) {
+    FileContainer container = dao.findByAppId(appId)
+      .filter(c -> !c.isDeleted())
+      .orElseThrow(() -> new NotFoundException("No file container with appId " + appId));
+    String oid = resolveOidByFileAppId(container, fileAppId);
+    return getDownloadUrl(appId, oid);
+  }
+
+  private String resolveOidByFileAppId(FileContainer container, String fileAppId) {
+    if (container.getFiles() != null) {
+      return container.getFiles().stream()
+        .filter(f -> fileAppId.equals(f.getAppId()))
+        .map(ShepardFile::getOid)
+        .findFirst()
+        .orElseThrow(() -> new NotFoundException("No file with fileAppId " + fileAppId));
+    }
+    throw new NotFoundException("No file with fileAppId " + fileAppId);
+  }
+
   @Override
   public Optional<ContainerStatsIO> getStats(String appId) {
     FileContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);

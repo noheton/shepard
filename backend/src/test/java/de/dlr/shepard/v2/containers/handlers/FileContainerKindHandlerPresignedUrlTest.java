@@ -12,6 +12,8 @@ import de.dlr.shepard.data.file.thumbnail.ThumbnailService;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.PresignTtlValidator;
 import de.dlr.shepard.storage.StorageException;
+import java.util.ArrayList;
+import java.util.List;
 import de.dlr.shepard.v2.filecontainer.io.PresignedDownloadUrlIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadUrlIO;
@@ -223,5 +225,82 @@ class FileContainerKindHandlerPresignedUrlTest {
     when(dao.findByAppId(APP_ID)).thenReturn(Optional.empty());
 
     assertThrows(NotFoundException.class, () -> handler.getDownloadUrl(APP_ID, "dl-oid"));
+  }
+
+  // ─── getThumbnailByFileAppId (APISIMP-OID-PATHPARAM-REPLACE slice 2) ────
+
+  @Test
+  void getThumbnailByFileAppId_resolvesOidAndReturnsPng() {
+    byte[] png = {(byte)0x89, 0x50, 0x4E, 0x47};
+    ShepardFile file = new ShepardFile("resolved-oid", new Date(), "image.png", null);
+    file.setAppId("01930b92-1111-7000-8000-000000000001");
+    FileContainer c = container();
+    c.setFiles(new ArrayList<>(List.of(file)));
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(thumbnailService.getThumbnail(APP_ID, "resolved-oid", 200)).thenReturn(png);
+
+    Optional<Response> result = handler.getThumbnailByFileAppId(
+      APP_ID, "01930b92-1111-7000-8000-000000000001", 200);
+
+    assertTrue(result.isPresent());
+    assertEquals(200, result.get().getStatus());
+    verify(thumbnailService).getThumbnail(APP_ID, "resolved-oid", 200);
+  }
+
+  @Test
+  void getThumbnailByFileAppId_throws404WhenFileAppIdNotFound() {
+    FileContainer c = container();
+    c.setFiles(new ArrayList<>());
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+
+    assertThrows(NotFoundException.class,
+      () -> handler.getThumbnailByFileAppId(APP_ID, "01930b92-0000-7000-8000-000000000099", 200));
+  }
+
+  @Test
+  void getThumbnailByFileAppId_throws404WhenContainerNotFound() {
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.empty());
+
+    assertThrows(NotFoundException.class,
+      () -> handler.getThumbnailByFileAppId(APP_ID, "01930b92-1111-7000-8000-000000000001", 200));
+  }
+
+  // ─── getDownloadUrlByFileAppId (APISIMP-OID-PATHPARAM-REPLACE slice 2) ──
+
+  @Test
+  void getDownloadUrlByFileAppId_resolvesOidAndReturnsUrl() throws Exception {
+    URI dl = URI.create("https://s3.example.com/bucket/key?sig=xyz");
+    ShepardFile file = new ShepardFile("resolved-oid", new Date(), "data.csv", null);
+    file.setAppId("01930b92-2222-7000-8000-000000000002");
+    FileContainer c = container();
+    c.setFiles(new ArrayList<>(List.of(file)));
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(service.presignedDownloadUrl(eq(CONTAINER_ID), eq("resolved-oid"), any())).thenReturn(dl);
+
+    Optional<Response> result = handler.getDownloadUrlByFileAppId(
+      APP_ID, "01930b92-2222-7000-8000-000000000002");
+
+    assertTrue(result.isPresent());
+    assertEquals(200, result.get().getStatus());
+    var io = (PresignedDownloadUrlIO) result.get().getEntity();
+    assertEquals(dl.toString(), io.getDownloadUrl());
+  }
+
+  @Test
+  void getDownloadUrlByFileAppId_throws404WhenFileAppIdNotFound() {
+    FileContainer c = container();
+    c.setFiles(new ArrayList<>());
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+
+    assertThrows(NotFoundException.class,
+      () -> handler.getDownloadUrlByFileAppId(APP_ID, "01930b92-0000-7000-8000-000000000099"));
+  }
+
+  @Test
+  void getDownloadUrlByFileAppId_throws404WhenContainerNotFound() {
+    when(dao.findByAppId(APP_ID)).thenReturn(Optional.empty());
+
+    assertThrows(NotFoundException.class,
+      () -> handler.getDownloadUrlByFileAppId(APP_ID, "01930b92-2222-7000-8000-000000000002"));
   }
 }

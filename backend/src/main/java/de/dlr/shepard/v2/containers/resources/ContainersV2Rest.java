@@ -56,6 +56,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -1429,13 +1430,15 @@ public class ContainersV2Rest {
   // ─── thumbnail ─────────────────────────────────────────────────────────
 
   @GET
-  @Path("/{appId}/payload/{oid}/thumbnail")
+  @Path("/{appId}/payload/{fileId}/thumbnail")
   @Produces("image/png")
   @Operation(
     operationId = "getThumbnail",
     summary = "Get a PNG thumbnail for a file payload.",
     description =
-      "Returns a PNG thumbnail for the file at `oid` inside the container at `appId`. " +
+      "Returns a PNG thumbnail for the file at `fileId` inside the container at `appId`. " +
+      "Pass a `fileAppId` (UUID v7, preferred — available on files created after APISIMP-OID-PATHPARAM-REPLACE) " +
+      "or a legacy MongoDB `oid` (hex string, deprecated). " +
       "Valid sizes: 64, 200, 400; values in range 64–2048 that are not a standard size are normalised to 400. " +
       "Returns 415 when the container kind does not support thumbnails.\n\nAuth: Read on the container."
   )
@@ -1449,7 +1452,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "503", description = "Thumbnail generation temporarily unavailable.")
   public Response getThumbnail(
     @PathParam("appId") String appId,
-    @PathParam("oid") String oid,
+    @PathParam("fileId") String fileId,
     @Parameter(description = "Thumbnail pixel size. Default 200. Valid standard sizes: 64, 200, 400; values in 64–2048 not in the standard set are normalised to 400.")
     @DefaultValue("200") @Min(64) @Max(2048) @QueryParam("size") int size,
     @Context SecurityContext sc
@@ -1460,8 +1463,10 @@ public class ContainersV2Rest {
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    return resolved.get().handler().getThumbnail(appId, oid, size)
-      .orElse(unsupportedKind("thumbnails"));
+    Optional<Response> r = isUuidFormat(fileId)
+      ? resolved.get().handler().getThumbnailByFileAppId(appId, fileId, size)
+      : resolved.get().handler().getThumbnail(appId, fileId, size);
+    return r.orElse(unsupportedKind("thumbnails"));
   }
 
   // ─── presigned upload ──────────────────────────────────────────────────
@@ -1532,13 +1537,15 @@ public class ContainersV2Rest {
   // ─── presigned download ────────────────────────────────────────────────
 
   @GET
-  @Path("/{appId}/files/{oid}/download-url")
+  @Path("/{appId}/files/{fileId}/download-url")
   @Operation(
     operationId = "getDownloadUrl",
     summary = "Obtain a presigned GET URL to download a file directly from storage.",
     description =
-      "Returns a short-lived GET URL for the file at `oid`. No auth headers are required on the " +
-      "download itself. Returns 415 when the kind does not support presigned downloads.\n\nAuth: Read on the container."
+      "Returns a short-lived GET URL for the file at `fileId`. Pass a `fileAppId` (UUID v7, preferred — " +
+      "available on files created after APISIMP-OID-PATHPARAM-REPLACE) or a legacy MongoDB `oid` " +
+      "(hex string, deprecated). No auth headers are required on the download itself. " +
+      "Returns 415 when the kind does not support presigned downloads.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200", description = "Presigned download URL.",
     content = @Content(schema = @Schema(implementation = PresignedDownloadUrlIO.class)))
@@ -1549,7 +1556,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "503", description = "Active storage provider does not support presigned downloads.")
   public Response getDownloadUrl(
     @PathParam("appId") String appId,
-    @PathParam("oid") String oid,
+    @PathParam("fileId") String fileId,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -1558,11 +1565,18 @@ public class ContainersV2Rest {
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    return resolved.get().handler().getDownloadUrl(appId, oid)
-      .orElse(unsupportedKind("presigned downloads"));
+    Optional<Response> r = isUuidFormat(fileId)
+      ? resolved.get().handler().getDownloadUrlByFileAppId(appId, fileId)
+      : resolved.get().handler().getDownloadUrl(appId, fileId);
+    return r.orElse(unsupportedKind("presigned downloads"));
   }
 
   // ─── helpers ───────────────────────────────────────────────────────────
+
+  /** Returns true when {@code s} is UUID format (36 chars, dashes at positions 8 and 13). */
+  private static boolean isUuidFormat(String s) {
+    return s != null && s.length() == 36 && s.charAt(8) == '-' && s.charAt(13) == '-';
+  }
 
   private String callerOrNull(SecurityContext sc) {
     return sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
