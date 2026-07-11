@@ -1001,20 +1001,6 @@ class ContainersV2RestTest {
     org.junit.jupiter.api.Assertions.assertFalse(kindAnn.description().isBlank(), "list() kind description must be non-blank");
   }
 
-  @Test
-  void list_nameParamIsDescribed() {
-    var method = Arrays.stream(ContainersV2Rest.class.getMethods())
-        .filter(m -> m.getName().equals("list"))
-        .findFirst().orElseThrow();
-    var nameAnn = Arrays.stream(method.getParameters())
-        .filter(p -> p.getAnnotation(QueryParam.class) != null
-            && "name".equals(p.getAnnotation(QueryParam.class).value()))
-        .map(p -> p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class))
-        .findFirst().orElse(null);
-    org.junit.jupiter.api.Assertions.assertNotNull(nameAnn, "list() name @QueryParam must have @Parameter");
-    org.junit.jupiter.api.Assertions.assertFalse(nameAnn.description().isBlank(), "list() name description must be non-blank");
-  }
-
   // ─── APISIMP-CONTAINERS-V2-PARAMS-UNDOCUMENTED-2 regression ─────────────────
 
   @Test

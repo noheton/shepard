@@ -578,16 +578,6 @@ class CollectionV2RestTest {
     assertTrue(ann.description() != null && !ann.description().isBlank(), "@Parameter.description must be non-blank for list.q");
   }
 
-  @Test
-  void list_legacyNameParam_isDeprecated() throws NoSuchMethodException {
-    java.lang.reflect.Method m = CollectionV2Rest.class.getMethod("list", String.class, int.class, int.class);
-    java.lang.reflect.Parameter param = java.util.Arrays.stream(m.getParameters())
-        .filter(p -> { var qp = p.getAnnotation(jakarta.ws.rs.QueryParam.class); return qp != null && "name".equals(qp.value()); })
-        .findFirst().orElse(null);
-    assertNotNull(param, "list.name (legacy) must still carry @QueryParam(\"name\")");
-    assertNotNull(param.getAnnotation(Deprecated.class), "list.name must be annotated @Deprecated");
-  }
-
   // ─── APISIMP-COLLECTION-LIST-BUNDLE-SIZE-PAGESIZE reflection guards ────────
 
   @Test

@@ -1279,7 +1279,7 @@ class DataObjectV2RestTest {
 
   private static java.lang.reflect.Parameter listParam(String qpName) throws NoSuchMethodException {
     java.lang.reflect.Method m = DataObjectV2Rest.class.getMethod(
-        "list", String.class, String.class, String.class, String.class, int.class, int.class,
+        "list", String.class, String.class, String.class, int.class, int.class,
         String.class, String.class, String.class, String.class, String.class,
         String.class, Boolean.class, String.class, String.class,
         jakarta.ws.rs.core.SecurityContext.class);
@@ -1295,7 +1295,6 @@ class DataObjectV2RestTest {
   }
 
   @Test void list_qParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("q"), "list.q"); }
-  @Test void list_nameParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("name"), "list.name"); }
   @Test void list_statusParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("status"), "list.status"); }
   @Test void list_pageParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("page"), "list.page"); }
   @Test void list_pageSizeParamIsDocumented() throws NoSuchMethodException { assertParamDocumented(listParam("pageSize"), "list.pageSize"); }
