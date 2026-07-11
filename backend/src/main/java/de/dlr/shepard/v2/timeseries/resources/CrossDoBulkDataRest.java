@@ -34,6 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
@@ -116,6 +117,11 @@ public class CrossDoBulkDataRest {
   @APIResponse(responseCode = "400", description = "Validation error on request body, or unsupported/missing `kind`.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getCrossDoBulkData(
+    @Parameter(
+      description = "Payload-family discriminator. Currently only `timeseries` is accepted; "
+        + "future kinds (`file`, `structured`) will extend this endpoint without a new path.",
+      schema = @Schema(enumeration = {"timeseries"}, defaultValue = "timeseries")
+    )
     @QueryParam("kind") String kind,
     @NotNull @Valid CrossDoBulkDataRequestIO body,
     @Context SecurityContext sc
