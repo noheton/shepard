@@ -4796,21 +4796,21 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/resources/CollectionWatchersRest.java:89,128,157,178`.
 
 ## APISIMP-CONTAINERPUBSTATE-PATHPARAM — rename `{containerAppId}` → `{appId}` path-param in `ContainerPublicationStateRest` (size: XS, fire-526)
-- **Status:** ✅ in-flight (fire-528, PR pending).
+- **Status:** ✅ shipped (fire-531, PR #2462, sha `7cf839aa6`).
 - **Why:** `ContainerPublicationStateRest.java` declares `@Path("/v2/containers/{containerAppId}/publication-state")` with two method `@PathParam("containerAppId")` bindings at lines 99, 140. The resource type is expressed by `/v2/containers/`; only one path param per method.
 - **Fix:** Rename `{containerAppId}` → `{appId}` in the class-level `@Path` and both `@PathParam` bindings plus local variable usages.
 - **AC:** `grep -n 'containerAppId' backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java` returns empty; `mvn -q test-compile -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/container/resources/ContainerPublicationStateRest.java:99,140`.
 
 ## APISIMP-NOTEBOOK-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` path-param in `NotebookRest` (size: XS, fire-526)
-- **Status:** 🔄 in-flight (fire-529, PR #2463).
+- **Status:** ✅ shipped (fire-530, PR #2463, sha `4b0bfe320`).
 - **Why:** `NotebookRest.java` (class `@Path("/v2/lab-journal")`) declares method-level `@Path("/{dataObjectAppId}/notebooks")`. Effective full path: `/v2/lab-journal/{dataObjectAppId}/notebooks`. Single-ID context — no JAX-RS collision. Rename per v2 convention.
 - **Fix:** Rename `{dataObjectAppId}` → `{appId}` in the method `@Path`, `@PathParam` binding (line 119), and local variable usages.
 - **AC:** `grep -n 'dataObjectAppId' backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java` returns empty; `mvn -q test-compile -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java:95,119`.
 
 ## APISIMP-VOCABBROWSE-PATHPARAM — rename `{entityAppId}` and `{vocabId}` → `{appId}` path-params in `VocabularyBrowseRest` (size: XS, fire-526)
-- **Status:** 🔄 in-flight (fire-530, branch `APISIMP-VOCABBROWSE-PATHPARAM-1`).
+- **Status:** ✅ shipped (fire-531, PR #2464, sha `3ecf8c100`).
 - **Why:** `VocabularyBrowseRest.java` (class `@Path("/v2/semantic/vocabularies")`) has two non-standard params: (1) `@PathParam("entityAppId")` at line 228, method `@Path("/{entityAppId}/vocabularies")` — full path `/v2/semantic/vocabularies/{entityAppId}/vocabularies`; (2) `@PathParam("vocabId")` at line 164, method `@Path("/{vocabId}/predicates")` — full path `/v2/semantic/vocabularies/{vocabId}/predicates`; internally calls `vocabularyDAO.findByAppId(vocabId)`, confirming it is an appId. Both are single-ID; both should be `{appId}`.
 - **Fix:** In each affected method, rename `@PathParam("entityAppId")` → `@PathParam("appId")` and `@PathParam("vocabId")` → `@PathParam("appId")`, update the method-level `@Path` segments, and update local variable usages.
 - **AC:** `grep -n 'entityAppId\|vocabId' backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java` returns empty; `mvn -q test-compile -pl backend` green.
@@ -4824,15 +4824,29 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/me/resources/MeRoleInRest.java:88`.
 
 ## APISIMP-COLLWATCHES-PATHPARAM — rename `{collectionAppId}` → `{appId}` class-level path-param in `CollectionWatchesRest` (size: XS, fire-526)
-- **Status:** 🔄 in-flight (fire-532, branch `APISIMP-COLLWATCHES-PATHPARAM-1`).
+- **Status:** ✅ shipped (fire-533, PR #2466, sha `3f99b930a`).
 - **Why:** `CollectionWatchesRest.java` declares `@Path("/v2/collections/{collectionAppId}/watched-containers")` at the class level with method bindings at lines 109 and 160. The DELETE method at line ~198 adds a second param `{watchAppId}` — renaming the class-level param to `{appId}` introduces no JAX-RS ambiguity since the two names remain distinct.
 - **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path` and method bindings at lines 109, 160 plus local variable usages. Leave `{watchAppId}` unchanged (distinct secondary ID in the DELETE sub-path).
 - **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java` returns empty; `mvn -q test-compile -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/watches/resources/CollectionWatchesRest.java:109,160`.
 
 ## APISIMP-BUNDLEGROUPS-PAGECAP — lower `BundleGroupsV2Rest` pageSize @Max 1000 → 200 (size: XS, fire-526)
-- **Status:** ✅ shipped (fire-533, PR #2467).
+- **Status:** ✅ shipped (fire-533, PR #2467, merged fire-534, sha `ec2366f21`).
 - **Why:** `BundleGroupsV2Rest.java:369` declared `@Max(1000)` on `pageSize` (default already 200). Standard v2 pagination cap is `@Max(200)`. The oversized cap let a caller request 5× the intended maximum. Identical pattern to `APISIMP-REFANNOT-PAGECAP` (fire-519) and `APISIMP-SNAPSHOT-PAGECAP` (fire-524, PR #2451).
 - **Fix:** `@Max(1000)` → `@Max(200)` at `listGroupFiles`; `MAX_FILES_PAGE_SIZE` constant corrected to 200; OpenAPI description updated; regression test `maxFilesPageSize_isAtMost200` added.
 - **AC:** `grep -n '@Max' backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java | grep 'pageSize'` shows `@Max(200)`. ✅
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/bundle/resources/BundleGroupsV2Rest.java:369`.
+
+## APISIMP-COLL-LABJOURNAL-PATHPARAM — rename `{collectionAppId}` → `{appId}` in `CollectionLabJournalEntriesRest` (size: XS, fire-534)
+- **Status:** 🔄 in-flight (fire-534, PR pending).
+- **Why:** `CollectionLabJournalEntriesRest.java` declares class-level `@Path("/v2/collections/{collectionAppId}/lab-journal-entries")` with a single method `list()` using `@PathParam("collectionAppId")`. Single-entity path — no JAX-RS collision. Rename per v2 `{appId}` convention (sweep fire-534).
+- **Fix:** Rename `{collectionAppId}` → `{appId}` in the class-level `@Path`, the `@PathParam` binding, and all local variable usages in `list()`.
+- **AC:** `grep -n 'collectionAppId' backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/CollectionLabJournalEntriesRest.java` returns empty; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/CollectionLabJournalEntriesRest.java:66,113`.
+
+## APISIMP-DATAOBJECT-V2REST-PATHPARAM — rename `{dataObjectAppId}` → `{appId}` in `DataObjectV2Rest` (size: S, fire-534)
+- **Status:** 🔄 queued (fire-534, dispatch fire-535).
+- **Why:** `DataObjectV2Rest.java` uses `{dataObjectAppId}` as the primary entity param across ~20+ method bindings covering GET, PUT, DELETE, PATCH sub-paths. Also uses `{collectionAppId}` in the class-level `@Path("/v2/collections/{collectionAppId}/dataobjects")` — that secondary param is the collection context and must keep a distinct name since the sub-paths add `{dataObjectAppId}` (two-entity pattern). Fix: rename `{dataObjectAppId}` → `{appId}` in all method-level `@PathParam` bindings and local variable usages; `{collectionAppId}` is reviewed for consistency at the same time. Sweep fire-534.
+- **Fix:** In each method that binds `@PathParam("dataObjectAppId")`, rename the annotation and local var to `appId`. Verify the two-entity path doesn't collide (class param `{collectionAppId}` + method param `{appId}` — distinct, no collision).
+- **AC:** `grep -n 'dataObjectAppId' backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` returns empty; CI green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java` (multiple lines).

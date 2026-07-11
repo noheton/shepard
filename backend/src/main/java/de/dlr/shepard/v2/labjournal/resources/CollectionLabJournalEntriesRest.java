@@ -43,7 +43,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>Route:
  * <ul>
- *   <li>{@code GET /v2/collections/{collectionAppId}/lab-journal-entries}
+ *   <li>{@code GET /v2/collections/{appId}/lab-journal-entries}
  *       — returns every non-deleted {@link LabJournalEntry} attached to any
  *       non-deleted DataObject in the collection, sorted by {@code createdAt DESC}.
  *       Requires Read permission on the Collection.</li>
@@ -63,7 +63,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/collections/{collectionAppId}/lab-journal-entries")
+@Path("/v2/collections/{appId}/lab-journal-entries")
 @RequestScoped
 @Tag(name = "Collections")
 public class CollectionLabJournalEntriesRest {
@@ -92,7 +92,7 @@ public class CollectionLabJournalEntriesRest {
       "round-trips. Returns an empty array when the collection has no data " +
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +
-      "404 if the collectionAppId resolves to nothing, 403 if the caller lacks Read.\n\n" +
+      "404 if the appId resolves to nothing, 403 if the caller lacks Read.\n\n" +
       "Pagination: `page` (0-based, default 0) and `pageSize` (1–200, default 50). " +
       "`X-Total-Count` header carries the total entry count before paging."
   )
@@ -110,7 +110,7 @@ public class CollectionLabJournalEntriesRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
   public Response list(
-    @PathParam("collectionAppId") String collectionAppId,
+    @PathParam("appId") String appId,
     @Parameter(description = "Zero-based page index (default 0).")
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @Parameter(description = "Page size, 1–200 (default 50).")
@@ -122,18 +122,18 @@ public class CollectionLabJournalEntriesRest {
 
     long ogmId;
     try {
-      ogmId = entityIdResolver.resolveLong(collectionAppId);
+      ogmId = entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
-      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection with appId: " + collectionAppId);
+      return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No Collection with appId: " + appId);
     }
 
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller)) {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the Collection.");
     }
 
-    long total = entriesDAO.countByCollectionAppId(collectionAppId);
+    long total = entriesDAO.countByCollectionAppId(appId);
     int skip = page * pageSize;
-    List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId, skip, pageSize);
+    List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(appId, skip, pageSize);
     List<LabJournalEntryIO> ios = new ArrayList<>();
     for (LabJournalEntry e : entries) {
       // Defensive: skip orphan entries whose owning DataObject didn't hydrate.
@@ -145,7 +145,7 @@ public class CollectionLabJournalEntriesRest {
         Log.warnf(
           "Skipping orphan LabJournalEntry (appId=%s) with null DataObject in collection %s",
           e.getAppId(),
-          collectionAppId
+          appId
         );
         continue;
       }
