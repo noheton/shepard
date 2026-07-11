@@ -41,13 +41,13 @@ function makePaged(items: ReturnType<typeof makeActivity>[]) {
 }
 
 describe("useFetchAdminActivities — initial load", () => {
-  it("calls listActivities on construction with default pageSize=100", async () => {
+  it("calls listActivities on construction with default limit=100", async () => {
     mockListActivities.mockResolvedValue(makePaged([]));
     useFetchAdminActivities();
     await flush();
     expect(mockListActivities).toHaveBeenCalledTimes(1);
     expect(mockListActivities).toHaveBeenCalledWith(
-      expect.objectContaining({ pageSize: 100 }),
+      expect.objectContaining({ limit: 100 }),
     );
   });
 
@@ -151,12 +151,12 @@ describe("useFetchAdminActivities — filter params passed to API", () => {
 
     // bump limit to 200
     await loadMore();
-    let lastLimit = mockListActivities.mock.calls.at(-1)?.[0].pageSize;
+    let lastLimit = mockListActivities.mock.calls.at(-1)?.[0].limit;
     expect(lastLimit).toBe(200);
 
     // apply filters should reset to 100
     await applyFilters();
-    lastLimit = mockListActivities.mock.calls.at(-1)?.[0].pageSize;
+    lastLimit = mockListActivities.mock.calls.at(-1)?.[0].limit;
     expect(lastLimit).toBe(100);
   });
 });
@@ -168,11 +168,11 @@ describe("useFetchAdminActivities — loadMore", () => {
     await flush();
 
     await loadMore();
-    let lastLimit = mockListActivities.mock.calls.at(-1)?.[0].pageSize;
+    let lastLimit = mockListActivities.mock.calls.at(-1)?.[0].limit;
     expect(lastLimit).toBe(200);
 
     await loadMore();
-    lastLimit = mockListActivities.mock.calls.at(-1)?.[0].pageSize;
+    lastLimit = mockListActivities.mock.calls.at(-1)?.[0].limit;
     expect(lastLimit).toBe(300);
   });
 });
@@ -198,6 +198,6 @@ describe("useFetchAdminActivities — resetFilters", () => {
     expect(lastCall.agent).toBeUndefined();
     expect(lastCall.targetKind).toBeUndefined();
     expect(lastCall.targetAppId).toBeUndefined();
-    expect(lastCall.pageSize).toBe(100);
+    expect(lastCall.limit).toBe(100);
   });
 });
