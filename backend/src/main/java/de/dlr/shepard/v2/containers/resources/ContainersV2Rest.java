@@ -689,12 +689,12 @@ public class ContainersV2Rest {
   }
 
   @GET
-  @Path("/{appId}/channels/{shepardId}/data")
+  @Path("/{appId}/channels/{channelShepardId}/data")
   @Operation(
     operationId = "getContainerChannelData",
-    summary = "Fetch data points for a channel by shepardId.",
+    summary = "Fetch data points for a channel by channelShepardId.",
     description =
-      "Resolves the single-field shepardId to the legacy 5-tuple internally and returns data " +
+      "Resolves the single-field channelShepardId to the legacy 5-tuple internally and returns data " +
       "points for the requested time window. `start` and `end` are nanoseconds since Unix epoch " +
       "(e.g. `Date.now() * 1_000_000` in JS). Accepts optional LTTB downsampling via " +
       "?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.\n\n" +
@@ -712,7 +712,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
   public Response getChannelData(
     @PathParam("appId") String appId,
-    @PathParam("shepardId") UUID shepardId,
+    @PathParam("channelShepardId") UUID channelShepardId,
     @Parameter(description = "Window start, nanoseconds since Unix epoch (e.g. Date.now()*1_000_000 in JS).", required = true)
     @QueryParam("start") @NotNull @PositiveOrZero Long start,
     @Parameter(description = "Window end, nanoseconds since Unix epoch (exclusive). Must be > start.", required = true)
@@ -731,7 +731,7 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
 
     try {
-      var result = resolved.get().handler().getChannelData(appId, shepardId, start, end, downsample, maxPoints);
+      var result = resolved.get().handler().getChannelData(appId, channelShepardId, start, end, downsample, maxPoints);
       if (result.isEmpty()) {
         return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -788,13 +788,13 @@ public class ContainersV2Rest {
   }
 
   @POST
-  @Path("/{appId}/channels/{shepardId}/data/ingest")
+  @Path("/{appId}/channels/{channelShepardId}/data/ingest")
   @Operation(
     operationId = "ingestContainerChannelData",
     summary = "High-throughput COPY ingest for a single channel.",
     description =
       "Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by " +
-      "shepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
+      "channelShepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
       "unique within the batch. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Write on the container."
   )
@@ -806,7 +806,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
   public Response ingestChannelData(
     @PathParam("appId") String appId,
-    @PathParam("shepardId") UUID shepardId,
+    @PathParam("channelShepardId") UUID channelShepardId,
     @NotNull @Valid CopyIngestRequestIO body,
     @Context SecurityContext sc
   ) {
@@ -818,7 +818,7 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
 
     try {
-      boolean handled = resolved.get().handler().ingestChannelData(appId, shepardId, body);
+      boolean handled = resolved.get().handler().ingestChannelData(appId, channelShepardId, body);
       if (!handled) {
         return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
