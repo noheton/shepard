@@ -209,9 +209,9 @@ public class SemanticTermSearchRest {
     )
     @QueryParam("q") String q,
     @Parameter(
-      description = "Maximum number of results to return (default 20). Server-side cap: 50 — values above 50 are silently clamped to 50."
+      description = "Maximum number of results to return (default 50). Server-side cap: 50 — values above 50 are silently clamped to 50."
     )
-    @QueryParam("pageSize") @DefaultValue("20") @Min(1) @Max(50) int pageSize,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(50) int pageSize,
     @Parameter(
       description = "Zero-based page index (default 0). Combined with pageSize to compute the SKIP offset: page * pageSize rows are skipped."
     )
