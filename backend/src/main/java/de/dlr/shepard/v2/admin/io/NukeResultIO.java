@@ -10,8 +10,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "NukeResult")
 public class NukeResultIO {
 
-  @Schema(description = "Neo4j data nodes deleted (Collections, Containers, DataObjects, References, etc.).")
-  private long deletedNeo4jNodes;
+  @Schema(description = "Entity nodes deleted (Collections, Containers, DataObjects, References, etc.).")
+  private long deletedEntityNodes;
 
   @Schema(description = "MongoDB collections dropped (file + structured-data container payloads).")
   private int deletedMongoCollections;

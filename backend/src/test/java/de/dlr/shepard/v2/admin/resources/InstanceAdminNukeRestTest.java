@@ -101,7 +101,7 @@ class InstanceAdminNukeRestTest {
 
     assertEquals(200, r.getStatus());
     NukeResultIO entity = (NukeResultIO) r.getEntity();
-    assertEquals(42L, entity.getDeletedNeo4jNodes());
+    assertEquals(42L, entity.getDeletedEntityNodes());
     assertEquals(5, entity.getDeletedMongoCollections());
     assertEquals(1000L, entity.getDeletedTimeseriesRecords());
     verify(nukeService).nuke();

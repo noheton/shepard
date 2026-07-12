@@ -5020,7 +5020,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:692,715,791,809`.
 
 ## APISIMP-NUKE-RESULT-NEO4J-NAME — rename `deletedNeo4jNodes` to `deletedEntityNodes` in NukeResultIO (size: XS, fire-559)
-- **Status:** ⏳ queued
+- **Status:** ✅ done (fire-560, PR pending)
 - **Why:** `NukeResultIO.java:14` declares `private long deletedNeo4jNodes` — not a database ID, but a count whose name leaks the backend substrate identity ("Neo4j") as a wire-visible implementation detail on `POST /v2/admin/instance/nuke`. A name like `deletedEntityNodes` or `deletedGraphNodes` is substrate-neutral. Admin-only endpoint. Sweep fire-559.
 - **Fix:** Rename field `deletedNeo4jNodes` → `deletedEntityNodes` in `NukeResultIO.java`; update the one populate site in `NukeService.java` (or wherever the record is constructed); update the 1-2 test assertions that reference the field name. Wire break on admin-only endpoint; no external callers expected.
 - **AC:** `NukeResultIO` has no field or JSON key containing "Neo4j"; `POST /v2/admin/instance/nuke` response body uses `deletedEntityNodes`; `mvn verify -pl backend` green.
