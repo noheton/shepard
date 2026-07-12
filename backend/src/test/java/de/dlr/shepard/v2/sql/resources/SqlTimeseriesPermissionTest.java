@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.sql.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -15,7 +14,6 @@ import de.dlr.shepard.data.timeseries.sql.SqlQueryExecutor;
 import de.dlr.shepard.data.timeseries.sql.SqlQuerySpec;
 import de.dlr.shepard.data.timeseries.sql.WriteResult;
 import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -47,7 +45,7 @@ import org.mockito.Mockito;
  * <p>Tests cover the three permission-logic branches:
  * <ul>
  *   <li>Empty allowed set → 200 with format-appropriate empty body.</li>
- *   <li>Allowed set above the 1000 cap → {@link BadRequestException}.</li>
+ *   <li>Allowed set above the 1000 cap → 400 Bad Request response.</li>
  *   <li>Allowed set within cap → compiler called with exactly those IDs.</li>
  * </ul>
  */
@@ -172,8 +170,8 @@ class SqlTimeseriesPermissionTest {
         .boxed()
         .collect(Collectors.toSet());
 
-    assertThrows(BadRequestException.class,
-        () -> rest.executeQuery(spec, "application/json", null, securityContext));
+    var response = rest.executeQuery(spec, "application/json", null, securityContext);
+    assertEquals(400, response.getStatus());
   }
 
   @Test
