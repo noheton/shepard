@@ -5040,7 +5040,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/resources/JupyterConfigPublicRest.java`; `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java`; apisimp-sweep-2026-07-12 §Finding3.
 
 ## APISIMP-ADMIN-FEATURES-TOMBSTONE-DELETE — delete the dead AdminFeaturesRest tombstone class (size: XS, fire-559)
-- **Status:** ⏳ queued
+- **Status:** ✅ done (fire-562, PR TBD) — deleted `AdminFeaturesRest.java` + `AdminFeaturesRestTest.java`; `useFetchFeatureToggles.ts` already calls `/v2/admin/config/feature-toggles`; OpenAPI spec will no longer expose the deprecated `/v2/admin/runtime-toggles` group.
 - **Why:** `AdminFeaturesRest.java` at `/v2/admin/runtime-toggles` is a pure 410 Gone tombstone — both `GET` and `PATCH` methods return `Response.status(GONE).entity(…).build()` pointing clients to `/v2/admin/config/feature-toggles` (shipped by `APISIMP-FEATURE-TOGGLE-CONFIG-UNIFY`, fire-460). The class carries `@Operation(deprecated = true)`. It adds noise to the OpenAPI spec (a deprecated operation group `feature-toggles-old`) and confuses newcomers exploring the `/admin/` namespace. Safe to delete once confirmed no callers in production logs. Sweep fire-559.
 - **Fix:** Confirm via access-log that `/v2/admin/runtime-toggles` has had zero traffic for ≥ 1 week. Then delete `AdminFeaturesRest.java` and its test class if present. No `@Path` routing entry to remove (class is self-contained). AC: `mvn verify -pl backend` green; OpenAPI spec has no `/v2/admin/runtime-toggles` path group; class file absent.
 - **AC:** `AdminFeaturesRest.java` deleted; zero compile errors; `mvn verify -pl backend` green; OpenAPI spec omits the deprecated `runtime-toggles` path group.
