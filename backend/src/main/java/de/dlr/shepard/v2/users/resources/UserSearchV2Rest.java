@@ -68,11 +68,11 @@ public class UserSearchV2Rest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = "q", description = "Search string (required). OR-matched across username, firstName, lastName, email.", required = true)
   @Parameter(name = "page", description = "Zero-based page index (default 0).")
-  @Parameter(name = "pageSize", description = "Items per page, 1–100 (default 20).")
+  @Parameter(name = "pageSize", description = "Items per page, 1–100 (default 50).")
   public Response searchUsers(
     @QueryParam("q") String q,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
-    @QueryParam("pageSize") @DefaultValue("20") @Min(1) @Max(100) int pageSize
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(100) int pageSize
   ) {
     if (q == null || q.isBlank()) {
       return problem(

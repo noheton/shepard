@@ -227,10 +227,10 @@ public class ProjectsRest {
       @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
       @Parameter(
         description =
-          "Number of results per page. Default 100. Maximum 200. " +
+          "Number of results per page. Default 50. Maximum 200. " +
           "Values above 200 are rejected with 400."
       )
-      @QueryParam("pageSize") @DefaultValue("100") @Max(200) @Min(1) int pageSize) {
+      @QueryParam("pageSize") @DefaultValue("50") @Max(200) @Min(1) int pageSize) {
 
     if (predicate == null || predicate.isBlank()) {
       return problem422("Missing predicate", "Predicate query parameter must be non-blank.");
