@@ -4978,7 +4978,7 @@ picks these up. Terse by design.
 - **First refs:** 17 files listed above; apisimp-sweep-fire547-2026-07-11 §Finding4.
 
 ## APISIMP-DO-DEPRECATED-COUNT-FIELDS — suppress 3 deprecated count fields from DataObject detail v2 responses (size: XS, fire-552)
-- **Status:** ⏳ queued.
+- **Status:** ✅ shipped (fire-553).
 - **Why:** `DataObjectDetailV2IO` extends `DataObjectIO` and suppresses numeric Neo4j ID fields via `@JsonIgnoreProperties`. Three `@Deprecated` count fields (`timeseriesReferenceCount`, `fileBundleCount`, `structuredDataReferenceCount`) are present on `DataObjectIO` but absent from the ignore list, so they appear in every `GET /v2/dataobjects/{appId}` response. The v2-canonical replacements (`timeseriesCount`, `fileCount`, `structuredDataCount`) are on `DataObjectListItemV2IO`; no current frontend reads the deprecated names. Sweep fire-552.
 - **Fix:** Add `"timeseriesReferenceCount", "fileBundleCount", "structuredDataReferenceCount"` to the `@JsonIgnoreProperties` annotation on `DataObjectDetailV2IO`. Add one test asserting these three names are absent from the serialised JSON.
 - **AC:** `grep -n 'timeseriesReferenceCount\|fileBundleCount\|structuredDataReferenceCount' target/generated-sources/` returns empty after codegen; `mvn verify -pl backend` green.
