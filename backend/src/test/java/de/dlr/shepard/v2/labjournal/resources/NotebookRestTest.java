@@ -13,6 +13,7 @@ import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.ws.rs.NotFoundException;
@@ -131,28 +132,28 @@ class NotebookRestTest {
   @Test
   void returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    assertThat(resource.listNotebooks(DO_APP_ID, sc).getStatus()).isEqualTo(401);
+    assertThat(resource.listNotebooks(DO_APP_ID, 0, 50, sc).getStatus()).isEqualTo(401);
   }
 
   @Test
   void returns404WhenDataObjectNotFound() {
     when(entityIdResolver.resolveLong("unknown-id")).thenThrow(new NotFoundException("not found"));
-    assertThat(resource.listNotebooks("unknown-id", sc).getStatus()).isEqualTo(404);
+    assertThat(resource.listNotebooks("unknown-id", 0, 50, sc).getStatus()).isEqualTo(404);
   }
 
   @Test
   void returns403WhenCallerLacksReadPermission() {
     when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
-    assertThat(resource.listNotebooks(DO_APP_ID, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.listNotebooks(DO_APP_ID, 0, 50, sc).getStatus()).isEqualTo(403);
   }
 
   // ─── 200 empty ────────────────────────────────────────────────────────────
 
   @Test
   void returns200EmptyListWhenNoFiles() {
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
@@ -162,9 +163,9 @@ class NotebookRestTest {
     when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
       .thenReturn(List.of(bundle("b-1", List.of(shepardFile("report.pdf", 512L)))));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   // ─── 200 with results ─────────────────────────────────────────────────────
@@ -174,10 +175,14 @@ class NotebookRestTest {
     when(singletonService.listByDataObject(DO_APP_ID))
       .thenReturn(List.of(singleton("singleton-app-1", "analysis.ipynb", 8192L)));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = (List<NotebookReferenceIO>) r.getEntity();
+    var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
+    var items = paged.items();
     assertThat(items).hasSize(1);
+    assertThat(paged.total()).isEqualTo(1L);
+    assertThat(paged.page()).isEqualTo(0);
+    assertThat(paged.pageSize()).isEqualTo(50);
 
     var io = items.get(0);
     assertThat(io.getAppId()).isEqualTo("singleton-app-1");
@@ -195,9 +200,9 @@ class NotebookRestTest {
     when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
       .thenReturn(List.of(bundle("bundle-app-1", List.of(pdf, ipynb))));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = (List<NotebookReferenceIO>) r.getEntity();
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
     assertThat(items).hasSize(1);
 
     var io = items.get(0);
@@ -218,9 +223,9 @@ class NotebookRestTest {
     when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
       .thenReturn(List.of(bundle));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    var items = (List<NotebookReferenceIO>) r.getEntity();
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
     assertThat(items).hasSize(2);
 
     // Singletons come first
@@ -242,8 +247,8 @@ class NotebookRestTest {
         )
       );
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
-    var items = (List<NotebookReferenceIO>) r.getEntity();
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
     assertThat(items).hasSize(2);
     assertThat(items).extracting(NotebookReferenceIO::getAppId).containsExactlyInAnyOrder("s-upper", "s-mixed");
   }
@@ -254,9 +259,9 @@ class NotebookRestTest {
     ref.setDeleted(true);
     when(singletonService.listByDataObject(DO_APP_ID)).thenReturn(List.of(ref));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
@@ -265,9 +270,9 @@ class NotebookRestTest {
     b.setDeleted(true);
     when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID)).thenReturn(List.of(b));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    assertThat((List<?>) r.getEntity()).isEmpty();
+    assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
   }
 
   @Test
@@ -276,10 +281,46 @@ class NotebookRestTest {
     when(singletonService.listByDataObject(DO_APP_ID))
       .thenReturn(List.of(singleton("s-old", "old.ipynb", null)));
 
-    var r = resource.listNotebooks(DO_APP_ID, sc);
-    var items = (List<NotebookReferenceIO>) r.getEntity();
+    var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
+    var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
     assertThat(items).hasSize(1);
     assertThat(items.get(0).getFileSize()).isNull();
+  }
+
+  // ─── pagination ───────────────────────────────────────────────────────────
+
+  @Test
+  void paginationSlicesCorrectly() {
+    // 3 notebooks total; request page=1 with pageSize=2 → only the 3rd item
+    when(singletonService.listByDataObject(DO_APP_ID))
+      .thenReturn(
+        List.of(
+          singleton("s-1", "a.ipynb", 100L),
+          singleton("s-2", "b.ipynb", 200L),
+          singleton("s-3", "c.ipynb", 300L)
+        )
+      );
+
+    var r = resource.listNotebooks(DO_APP_ID, 1, 2, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
+    assertThat(paged.total()).isEqualTo(3L);
+    assertThat(paged.page()).isEqualTo(1);
+    assertThat(paged.pageSize()).isEqualTo(2);
+    assertThat(paged.items()).hasSize(1);
+    assertThat(paged.items().get(0).getAppId()).isEqualTo("s-3");
+  }
+
+  @Test
+  void paginationBeyondLastPageReturnsEmptyItems() {
+    when(singletonService.listByDataObject(DO_APP_ID))
+      .thenReturn(List.of(singleton("s-1", "a.ipynb", 100L)));
+
+    var r = resource.listNotebooks(DO_APP_ID, 5, 50, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
+    assertThat(paged.total()).isEqualTo(1L);
+    assertThat(paged.items()).isEmpty();
   }
 
   // ─── isIpynb helper ───────────────────────────────────────────────────────
