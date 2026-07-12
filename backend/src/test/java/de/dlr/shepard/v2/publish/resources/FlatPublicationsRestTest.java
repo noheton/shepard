@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 /**
  * APISIMP-PUBLICATIONS-KIND-PATH-SEGMENT unit tests for {@link FlatPublicationsRest}.
  *
- * <p>Pattern mirrors {@link PublicationsListRestTest}: collaborators mocked,
+ * <p>Collaborators mocked,
  * UriInfo seeded with a realistic base URI.
  */
 class FlatPublicationsRestTest {
