@@ -5061,7 +5061,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublicationsListRest.java`; `backend/src/main/java/de/dlr/shepard/v2/publish/resources/PublishRestUtils.java`; `backend/src/main/java/de/dlr/shepard/v2/publish/resources/FlatPublicationsRest.java:132`; apisimp-sweep-fire-563 §F5.
 
 ## APISIMP-ADMIN-CONFIG-LIST-ENVELOPE — AdminConfigRest.listFeatures() returns bare array; add PagedResponseIO (size: XS, fire-563)
-- **Status:** ⏳ queued
+- **Status:** 🚀 in-flight (fire-563, branch APISIMP-ADMIN-CONFIG-LIST-ENVELOPE)
 - **Why:** `GET /v2/admin/config` (`AdminConfigRest.listFeatures()`) returns `Response.ok(rows).build()` with a bare `List<ConfigFeatureIO>` — no `PagedResponseIO` envelope, no `total`, no pagination params. The list is currently small (bounded number of registered features), but for consistency with every other v2 list endpoint the response should carry the envelope. Also: the `@APIResponse` schema annotation declares `SchemaType.ARRAY` inline instead of a `PagedResponseIO`. Fix: add `page`/`pageSize` params; wrap in `PagedResponseIO`; update `@APIResponse`. AC: `GET /v2/admin/config` returns `{items:[…], total:N, page:0, pageSize:50}`; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:86–91`; apisimp-sweep-fire-563 §F1.
 
