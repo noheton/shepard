@@ -44,6 +44,11 @@ public class JupyterConfigDescriptor implements ConfigDescriptor<JupyterConfigIO
   }
 
   @Override
+  public boolean publicRead() {
+    return true;
+  }
+
+  @Override
   public JupyterConfigIO currentShape() {
     return toIO(service.current());
   }

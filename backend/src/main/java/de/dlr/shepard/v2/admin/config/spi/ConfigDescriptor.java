@@ -82,4 +82,22 @@ public interface ConfigDescriptor<T> {
    * @throws ConfigPatchException when a patched value fails validation
    */
   T applyMergePatch(JsonNode patch) throws ConfigPatchException;
+
+  /**
+   * Whether this feature's config may be read by any authenticated user via
+   * {@code GET /v2/config/{feature}} (no admin role required).
+   *
+   * <p>Defaults to {@code false}. Override to {@code true} for features whose
+   * read shape is safe to expose to all logged-in users — e.g. the JupyterHub
+   * {@code enabled + hubUrl} pair that the unified data-references table polls
+   * to decide whether to show the "Open in JupyterHub" affordance.
+   *
+   * <p>The admin write surface ({@code PATCH /v2/admin/config/{feature}}) is
+   * always instance-admin-only regardless of this flag.
+   *
+   * @return {@code true} when any authenticated user may read this config
+   */
+  default boolean publicRead() {
+    return false;
+  }
 }
