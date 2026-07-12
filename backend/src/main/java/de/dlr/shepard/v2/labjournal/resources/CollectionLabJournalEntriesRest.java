@@ -50,14 +50,13 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * <p>This closes the N+1 hot bug
  * ({@code aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md}):
  * the legacy frontend issued one
- * {@code GET /shepard/api/labJournalEntries?dataObjectId=N} per DataObject,
+ * {@code GET /v2/collections/{appId}/lab-journal-entries} per DataObject,
  * which scaled to 8500+ concurrent requests on MFFD-Dropbox and exhausted the
  * browser socket pool. The frontend now hits this single endpoint.
  *
  * <p>The response shape mirrors {@link LabJournalEntryIO}; each entry already
- * carries {@code dataObjectId} (the DataObject's shepardId — same numeric space
- * as {@code GET /shepard/api/dataObjects/{id}}), letting the frontend group
- * client-side without a second round-trip.
+ * carries {@code dataObjectAppId} (UUID v7 of the parent DataObject), letting
+ * the frontend group client-side without a second round-trip.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -86,7 +85,7 @@ public class CollectionLabJournalEntriesRest {
     description =
       "Walks Collection → DataObject → LabJournalEntry once and returns every " +
       "non-deleted entry, sorted by createdAt descending. Each entry carries " +
-      "its dataObjectId, so the frontend can group client-side without further " +
+      "its dataObjectAppId, so the frontend can group client-side without further " +
       "round-trips. Returns an empty array when the collection has no data " +
       "objects or none of them carry lab journal entries.\n\n" +
       "Auth: Read permission on the Collection. 401 if unauthenticated, " +

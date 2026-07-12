@@ -5111,19 +5111,19 @@ picks these up. Terse by design.
 - **First refs:** `frontend/components/context/lab-journal/LabJournalExistingEntry.vue:44,58,75`; apisimp-sweep-fire568-2026-07-12 §Finding1 Step B.
 
 ## APISIMP-SEMA-ANNOT-ID-DEPRECATE — deprecate `SemanticAnnotationIO.id` (Neo4j numeric) in favour of `appId` (UUID v7) (size: XS, fire-568)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-569) — PR dispatched, awaiting CI
 - **Why:** `SemanticAnnotationIO.java:17-18` carries `@Schema(readOnly = true, required = true) private Long id` — the Neo4j OGM node ID — wire-visible on every annotation response. `appId` (UUID v7) already exists at line 21. Unlike `propertyRepositoryId`/`valueRepositoryId` (which already carry both Java `@Deprecated` and `@Schema(deprecated=true)`), the top-level `id` field has neither. Parity fix: add `@Deprecated @Schema(deprecated=true)` consistent with the LJE-ENTRY-ID-SUPPRESS pattern.
 - **AC:** `SemanticAnnotationIO.id` carries `@Deprecated` + `@Schema(deprecated=true, description="DEPRECATED…")`; OpenAPI spec shows `id` as deprecated; `appId` remains present; `mvn verify -pl backend` green; no wire break.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/semantic/io/SemanticAnnotationIO.java:17`; apisimp-sweep-fire568-bg-2026-07-12 §Finding1.
 
 ## APISIMP-SEMA-ANNOT-NAME-SCHEMA-DEPRECATED — align `@Schema(deprecated=true)` on `SemanticAnnotationIO.name` with its Java `@Deprecated` (size: XS, fire-568)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-569) — PR dispatched, awaiting CI
 - **Why:** `SemanticAnnotationIO.java:23-25` — `name` carries Java `@Deprecated` (line 23) but `@Schema(readOnly = true, required = true)` (line 24) lacks `deprecated = true`. Client tools reading the OpenAPI/SmallRye spec see `name` as non-deprecated. Inconsistent with `propertyRepositoryId`/`valueRepositoryId` (lines 55–63) which correctly carry both. One-line `@Schema` attribute addition closes the gap.
 - **AC:** `@Schema` on `SemanticAnnotationIO.name` includes `deprecated = true`; OpenAPI spec shows `name` as deprecated; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/semantic/io/SemanticAnnotationIO.java:24`; apisimp-sweep-fire568-bg-2026-07-12 §Finding2.
 
 ## APISIMP-LJE-COLL-DOCSTRING-DEPRECATED-FIELD — update `CollectionLabJournalEntriesRest` doc to reference `dataObjectAppId` (UUID v7) instead of stale `dataObjectId` + v1 path (size: XS, fire-568)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-569) — PR dispatched, awaiting CI
 - **Why:** `CollectionLabJournalEntriesRest.java` class Javadoc (lines 52–60) cites `GET /shepard/api/labJournalEntries?dataObjectId=N` (frozen v1 path) and describes the entry as carrying "`dataObjectId` (the DataObject's shepardId — same numeric space as `GET /shepard/api/dataObjects/{id}`)". Since fire-558 the wire field is `dataObjectAppId` (UUID v7). The `@Operation` description (line 89) likewise says "Each entry carries its `dataObjectId`". Both are stale and mislead readers of the source and generated docs.
 - **AC:** Class Javadoc references `GET /v2/collections/{appId}/lab-journal-entries` and `dataObjectAppId`; `@Operation` description references `dataObjectAppId`; no reference to `/shepard/api/labJournalEntries` or numeric `dataObjectId` in the class comment; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/CollectionLabJournalEntriesRest.java:53,58,89`; apisimp-sweep-fire568-bg-2026-07-12 §Finding3.

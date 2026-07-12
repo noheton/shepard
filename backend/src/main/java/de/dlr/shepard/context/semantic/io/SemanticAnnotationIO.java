@@ -14,14 +14,17 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "SemanticAnnotation")
 public class SemanticAnnotationIO implements HasId, Named {
 
-  @Schema(readOnly = true, required = true)
+  @Deprecated
+  @Schema(readOnly = true, required = true, deprecated = true,
+      description = "DEPRECATED — numeric Neo4j OGM node ID. Use appId (UUID v7) instead.")
   private Long id;
 
   @Schema(readOnly = true)
   private String appId;
 
   @Deprecated
-  @Schema(readOnly = true, required = true)
+  @Schema(readOnly = true, required = true, deprecated = true,
+      description = "DEPRECATED — pre-SEMA-V6 display name. Use propertyName instead.")
   private String name;
 
   @Schema(readOnly = true, required = true)
