@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 145 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **566** |
+| **total docs** | **567** |
 | **UNTAGGED** | **0** |
 
 ## fragment (90)
@@ -534,6 +534,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire501-2026-07-09.md`](agent-findings/apisimp-sweep-fire501-2026-07-09.md) | APISIMP Sweep — fire-501 (2026-07-09) | 2026-07-09 | 2026-07-10 |
 | [`aidocs/agent-findings/apisimp-sweep-fire545-2026-07-11.md`](agent-findings/apisimp-sweep-fire545-2026-07-11.md) | APISIMP Sweep — fire-545 (2026-07-11) | 2026-07-11 | 2026-07-11 |
 | [`aidocs/agent-findings/apisimp-sweep-fire547-2026-07-11.md`](agent-findings/apisimp-sweep-fire547-2026-07-11.md) | APISIMP Sweep — fire-547 (2026-07-11) | 2026-07-11 | 2026-07-11 |
+| [`aidocs/agent-findings/apisimp-sweep-fire568-2026-07-12.md`](agent-findings/apisimp-sweep-fire568-2026-07-12.md) | APISIMP Sweep — fire-568 (2026-07-12) | 2026-07-12 | — |
 | [`aidocs/agent-findings/apisimp-sweep-fire568-bg-2026-07-12.md`](agent-findings/apisimp-sweep-fire568-bg-2026-07-12.md) | APISIMP Sweep — fire-568 background agent (2026-07-12) | 2026-07-12 | — |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-07-10 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-07-10 |

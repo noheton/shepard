@@ -35,7 +35,13 @@ public class LabJournalEntryIO {
   @NotNull
   private String journalContent;
 
-  @Schema(readOnly = true, required = true)
+  @Deprecated
+  @Schema(
+    readOnly = true,
+    required = true,
+    deprecated = true,
+    description = "DEPRECATED — numeric Neo4j OGM node ID of this LabJournalEntry. Use appId (UUID v7) instead."
+  )
   private Long id;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING)
