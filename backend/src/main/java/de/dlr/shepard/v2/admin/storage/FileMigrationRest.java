@@ -11,17 +11,15 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -58,6 +56,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Admin")
 public class FileMigrationRest {
 
+  private static final String PT_MISSING_PROVIDERS   = "/problems/file-migration.trigger.missing-providers";
+  private static final String PT_TRIGGER_REJECTED    = "/problems/file-migration.trigger.rejected";
+  private static final String PT_MISSING_APP_ID      = "/problems/file-migration.rollback.missing-app-id";
+  private static final String PT_ROLLBACK_NOT_FOUND  = "/problems/file-migration.rollback.not-found";
+  private static final String PT_ROLLBACK_CONFLICT   = "/problems/file-migration.rollback.conflict";
+  private static final String PT_STORAGE_FAILURE     = "/problems/file-migration.rollback.storage-failure";
+
   @Inject
   FileMigrationService migrationService;
 
@@ -87,7 +92,8 @@ public class FileMigrationRest {
     if (body == null
       || body.getSourceProviderId() == null || body.getSourceProviderId().isBlank()
       || body.getTargetProviderId() == null || body.getTargetProviderId().isBlank()) {
-      throw new BadRequestException("sourceProviderId and targetProviderId are required");
+      return problem(PT_MISSING_PROVIDERS, "Bad Request", Response.Status.BAD_REQUEST,
+          "sourceProviderId and targetProviderId are required");
     }
     FileMigrationState state;
     try {
@@ -95,7 +101,7 @@ public class FileMigrationRest {
         body.getSourceProviderId(), body.getTargetProviderId());
     } catch (IllegalArgumentException e) {
       Log.infof("FileMigrationRest: trigger rejected — %s", e.getMessage());
-      throw new BadRequestException(e.getMessage());
+      return problem(PT_TRIGGER_REJECTED, "Bad Request", Response.Status.BAD_REQUEST, e.getMessage());
     }
     return Response.accepted(FileMigrationStateIO.from(state)).build();
   }
@@ -159,7 +165,8 @@ public class FileMigrationRest {
     @PathParam("appId") String appId
   ) {
     if (appId == null || appId.isBlank()) {
-      throw new BadRequestException("appId path parameter is required");
+      return problem(PT_MISSING_APP_ID, "Bad Request", Response.Status.BAD_REQUEST,
+          "appId path parameter is required");
     }
     try {
       migrationService.rollbackOne(appId);
@@ -168,17 +175,16 @@ public class FileMigrationRest {
     } catch (IllegalArgumentException e) {
       // Unknown appId → 404
       Log.infof("FileMigrationRest: rollback rejected (unknown appId=%s) — %s", appId, e.getMessage());
-      throw new NotFoundException(e.getMessage());
+      return problem(PT_ROLLBACK_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND, e.getMessage());
     } catch (IllegalStateException e) {
       // Nothing to roll back → 409 Conflict
       Log.infof("FileMigrationRest: rollback rejected (no previous state, appId=%s) — %s",
         appId, e.getMessage());
-      throw new WebApplicationException(e.getMessage(), Response.Status.CONFLICT);
+      return problem(PT_ROLLBACK_CONFLICT, "Conflict", Response.Status.CONFLICT, e.getMessage());
     } catch (StorageException e) {
       Log.errorf(e, "FileMigrationRest: rollback failed for appId=%s — %s", appId, e.getMessage());
-      throw new WebApplicationException(
-        "Storage adapter failure during rollback: " + e.getMessage(),
-        Response.Status.INTERNAL_SERVER_ERROR);
+      return problem(PT_STORAGE_FAILURE, "Internal Server Error", Response.Status.INTERNAL_SERVER_ERROR,
+          "Storage adapter failure during rollback: " + e.getMessage());
     }
   }
 }

@@ -16,7 +16,6 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
@@ -75,7 +74,9 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 @RequestScoped
 public class SqlTimeseriesRest {
 
-  private static final String PT_NOT_FOUND = "/problems/sql-timeseries.not-found";
+  private static final String PT_NOT_FOUND          = "/problems/sql-timeseries.not-found";
+  private static final String PT_TOO_MANY_CONTAINERS = "/problems/sql-timeseries.too-many-containers";
+  private static final String PT_INVALID_DSL         = "/problems/sql-timeseries.invalid-dsl";
 
   /** Hard cap on the number of container IDs per request. */
   private static final int MAX_CONTAINERS = 1000;
@@ -206,7 +207,7 @@ public class SqlTimeseriesRest {
     Set<Long> allowed = permissionsService.filterAllowedForUser(requestedIds, AccessType.Read, username);
 
     if (allowed.size() > MAX_CONTAINERS) {
-      throw new BadRequestException(
+      return problem(PT_TOO_MANY_CONTAINERS, "Bad Request", Response.Status.BAD_REQUEST,
           ("Too many containers (%d); tighten the container_app_id_in filter (max %d)")
               .formatted(allowed.size(), MAX_CONTAINERS));
     }
@@ -228,7 +229,7 @@ public class SqlTimeseriesRest {
     try {
       compiled = compiler.compile(spec, allowed);
     } catch (IllegalArgumentException e) {
-      throw new BadRequestException(e.getMessage(), e);
+      return problem(PT_INVALID_DSL, "Bad Request", Response.Status.BAD_REQUEST, e.getMessage());
     }
 
     // Announce the trailer so HTTP/1.1 proxies forward it

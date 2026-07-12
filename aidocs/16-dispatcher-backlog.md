@@ -4992,7 +4992,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java:193`; apisimp-sweep-2026-07-11-fire552 §Finding2.
 
 ## APISIMP-PROBLEM-GENERIC-THROWS — replace direct throws with problem() responses in FileMigrationRest and SqlTimeseriesRest (size: S, fire-552)
-- **Status:** ⏳ queued.
+- **Status:** 🚧 in-flight (fire-555, PR pending).
 - **Why:** `FileMigrationRest` (6 throw sites) and `SqlTimeseriesRest` (2 throw sites) throw JAX-RS exceptions directly (`BadRequestException`, `NotFoundException`, `WebApplicationException`). The `ShepardExceptionMapper` converts these to `application/problem+json` but assigns a generic type URL (`/problems/not_found_entity`, `/problems/bad_request`), breaking RFC 7807 machine-readability. Sweep fire-552.
 - **Fix:** Replace all 8 throw sites with `return problem(PROBLEM_TYPE_CONSTANT, title, status, detail)` using resource-specific type URL string constants declared at class level. Remove the now-unused `throw` imports.
 - **AC:** `grep -n 'throw new BadRequestException\|throw new NotFoundException\|throw new WebApplicationException' backend/src/main/java/de/dlr/shepard/v2/admin/storage/FileMigrationRest.java backend/src/main/java/de/dlr/shepard/v2/sql/resources/SqlTimeseriesRest.java` returns empty; `mvn verify -pl backend` green.
