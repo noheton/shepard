@@ -1,7 +1,6 @@
 package de.dlr.shepard.v2.admin.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -10,9 +9,6 @@ import static org.mockito.Mockito.verify;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.migration.FileMigrationService;
 import de.dlr.shepard.v2.admin.storage.io.FileMigrationRollbackResultIO;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,9 +37,9 @@ class FileMigrationRestTest {
 
   @Test
   void rollbackRejectsBlankAppId() {
-    assertThrows(BadRequestException.class, () -> rest.rollback(""));
-    assertThrows(BadRequestException.class, () -> rest.rollback(null));
-    assertThrows(BadRequestException.class, () -> rest.rollback("   "));
+    assertEquals(400, rest.rollback("").getStatus());
+    assertEquals(400, rest.rollback(null).getStatus());
+    assertEquals(400, rest.rollback("   ").getStatus());
   }
 
   @Test
@@ -62,9 +58,7 @@ class FileMigrationRestTest {
     doThrow(new IllegalArgumentException("no :ShepardFile with appId=missing"))
       .when(migrationService).rollbackOne("missing");
 
-    NotFoundException ex = assertThrows(NotFoundException.class,
-      () -> rest.rollback("missing"));
-    assertEquals(404, ex.getResponse().getStatus());
+    assertEquals(404, rest.rollback("missing").getStatus());
   }
 
   @Test
@@ -72,9 +66,7 @@ class FileMigrationRestTest {
     doThrow(new IllegalStateException("previousProviderId is null"))
       .when(migrationService).rollbackOne("never-migrated");
 
-    WebApplicationException ex = assertThrows(WebApplicationException.class,
-      () -> rest.rollback("never-migrated"));
-    assertEquals(409, ex.getResponse().getStatus());
+    assertEquals(409, rest.rollback("never-migrated").getStatus());
   }
 
   @Test
@@ -82,14 +74,12 @@ class FileMigrationRestTest {
     doThrow(new StorageException("S3 timeout"))
       .when(migrationService).rollbackOne("APPID-storage-fail");
 
-    WebApplicationException ex = assertThrows(WebApplicationException.class,
-      () -> rest.rollback("APPID-storage-fail"));
-    assertEquals(500, ex.getResponse().getStatus());
+    assertEquals(500, rest.rollback("APPID-storage-fail").getStatus());
   }
 
   @Test
   void rollbackDoesNotCallServiceWhenAppIdBlank() throws Exception {
-    assertThrows(BadRequestException.class, () -> rest.rollback(""));
+    assertEquals(400, rest.rollback("").getStatus());
     verify(migrationService, never()).rollbackOne(anyString());
   }
 
