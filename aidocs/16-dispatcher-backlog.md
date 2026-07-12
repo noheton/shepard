@@ -4992,17 +4992,17 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/NotebookRest.java:193`; apisimp-sweep-2026-07-11-fire552 §Finding2.
 
 ## APISIMP-PROBLEM-GENERIC-THROWS — replace direct throws with problem() responses in FileMigrationRest and SqlTimeseriesRest (size: S, fire-552)
-- **Status:** 🚧 in-flight (fire-555, PR pending).
+- **Status:** ✅ shipped (fire-555, PR #2493 merged).
 - **Why:** `FileMigrationRest` (6 throw sites) and `SqlTimeseriesRest` (2 throw sites) throw JAX-RS exceptions directly (`BadRequestException`, `NotFoundException`, `WebApplicationException`). The `ShepardExceptionMapper` converts these to `application/problem+json` but assigns a generic type URL (`/problems/not_found_entity`, `/problems/bad_request`), breaking RFC 7807 machine-readability. Sweep fire-552.
 - **Fix:** Replace all 8 throw sites with `return problem(PROBLEM_TYPE_CONSTANT, title, status, detail)` using resource-specific type URL string constants declared at class level. Remove the now-unused `throw` imports.
 - **AC:** `grep -n 'throw new BadRequestException\|throw new NotFoundException\|throw new WebApplicationException' backend/src/main/java/de/dlr/shepard/v2/admin/storage/FileMigrationRest.java backend/src/main/java/de/dlr/shepard/v2/sql/resources/SqlTimeseriesRest.java` returns empty; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/storage/FileMigrationRest.java:90,98,162,171,176,179`; `backend/src/main/java/de/dlr/shepard/v2/sql/resources/SqlTimeseriesRest.java:209,231`; apisimp-sweep-2026-07-11-fire552 §Finding3.
 
-## APISIMP-BASIC-ENTITY-ID-HIDE — suppress Neo4j node ID from v2 entity responses via BasicV2EntityIO (size: M, fire-552)
-- **Status:** ⏳ queued.
+## APISIMP-BASIC-ENTITY-ID-HIDE — suppress Neo4j node ID from v2 entity responses via BasicEntityV2IO (size: M, fire-552)
+- **Status:** ✅ shipped (fire-556).
 - **Why:** `BasicEntityIO.id` (Neo4j OGM `Long`) is the base field for all entity IO classes, shared by both the v1 and v2 surfaces. Every v2 entity response currently includes `"id": <neo4j_node_id>`. `DataObjectDetailV2IO` already suppresses it via `@JsonIgnoreProperties({"id", …})` but other v2 IO classes do not. Cannot annotate `@JsonIgnore` on `BasicEntityIO.id` directly — that would break the frozen v1 wire shape. Sweep fire-552.
-- **Fix:** (a) Create `de.dlr.shepard.v2.common.io.BasicV2EntityIO extends BasicEntityIO` with `@Override @JsonIgnore @Schema(hidden=true) public Long getId() { return super.getId(); }`. (b) Update all v2-specific IO classes that currently extend `BasicEntityIO` directly to extend `BasicV2EntityIO` instead (~15 classes). (c) Remove now-redundant `"id"` entries from `@JsonIgnoreProperties` on `DataObjectDetailV2IO` and siblings. (d) Add test asserting `"id"` absent from a v2 entity response and present in a v1 response.
-- **AC:** `curl .../v2/collections/{appId}` response does not include top-level `"id"` field; `curl .../shepard/api/collections/{id}` response still includes `"id"`; `mvn verify -pl backend` green.
+- **Fix applied (fire-556):** `BasicEntityV2IO` (already existed at `de.dlr.shepard.common.neo4j.io.BasicEntityV2IO`) has `@JsonIgnoreProperties({"id"})`. Audit confirmed the only v2-response IO class still extending `BasicEntityIO` directly was `FileGroupIO` (used in `BundleGroupsV2Rest` and embedded in `FileBundleReferenceIO`). Changed `FileGroupIO extends BasicEntityIO` → `FileGroupIO extends BasicEntityV2IO`. Added `fileGroupIO_serialisationOmitsNumericId` unit test. `UserGroupIO`, `SemanticRepositoryIO` are v1 or internal — untouched.
+- **AC met:** `FileGroupIO` serialisation omits `"id"`; `BasicContainerV2IO`, `BasicReferenceV2IO`, `CollectionV2IO`, `DataObjectDetailV2IO` already suppressed — no regressions; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/common/neo4j/io/BasicEntityIO.java:22`; apisimp-sweep-2026-07-11-fire552 §Finding4.
 
 ## APISIMP-SEMANNT-NUMERIC-IDS — replace numeric vocabulary IDs in SemanticAnnotationIO with UUID v7 fields (size: M, fire-552)
