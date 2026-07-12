@@ -41,7 +41,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * know the entity's kind URL segment. The kind-parameterised path is kept for
  * backward compatibility but is marked {@code deprecated} in OpenAPI.
  *
- * <p>Permission model is identical to {@link PublicationsListRest}: Read access
+ * <p>Permission model: Read access
  * on the entity is sufficient. The OGM Long resolution is kind-agnostic —
  * {@link EntityIdResolver#resolveLong(String)} matches on {@code appId} across
  * all node labels, so no kind is needed for the permission gate.
@@ -129,7 +129,7 @@ public class FlatPublicationsRest {
       .findByEntityAppId(entityAppId, skip, pageSize)
       .stream()
       .map(p -> {
-        String resolverUrl = PublicationsListRest.absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
+        String resolverUrl = PublishRestUtils.absoluteUrl(uriInfo, "/v2/.well-known/kip/" + p.getPid());
         return PublicationIO.from(p, resolverUrl);
       })
       .toList();

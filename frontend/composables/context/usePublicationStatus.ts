@@ -1,9 +1,9 @@
 /**
  * KIP1k — composable fetching the publications list for an entity
- * from {@code GET /v2/{kind}/{appId}/publications}.
+ * from {@code GET /v2/publications?entityAppId=…}.
  *
- * Returns the full list (most-recent first, including retired rows)
- * from the new {@link PublicationsListRest} endpoint. The
+ * Returns the full list (most-recent first, including retired rows).
+ * The
  * {@link PublicationStatusBadge} uses this to determine whether the
  * entity has at least one active (non-retired) Publication.
  *
