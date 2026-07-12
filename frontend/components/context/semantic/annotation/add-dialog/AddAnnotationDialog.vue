@@ -179,9 +179,7 @@ const onSubmit = async () => {
   processing.value = true;
   try {
     const annotation = await props.annotated.addAnnotation({
-      propertyRepositoryId: propertyRepository.value?.id ?? 0,
       propertyIRI: propertyIri.value,
-      valueRepositoryId: valueRepository.value?.id ?? 0,
       valueIRI: valueIri.value,
     });
     showDialog.value = false;

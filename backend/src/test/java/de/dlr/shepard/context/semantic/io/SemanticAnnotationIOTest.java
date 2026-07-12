@@ -17,7 +17,9 @@ public class SemanticAnnotationIOTest {
   @Test
   public void testConversion() {
     var propertyRepository = new SemanticRepository(3L);
+    propertyRepository.setAppId("prop-repo-uuid-0001");
     var valueRepository = new SemanticRepository(4L);
+    valueRepository.setAppId("val-repo-uuid-0002");
 
     var obj = new SemanticAnnotation(1L);
     obj.setPropertyName("MyName");
@@ -31,6 +33,8 @@ public class SemanticAnnotationIOTest {
     assertEquals(obj.getName(), converted.getName());
     assertEquals(3L, converted.getPropertyRepositoryId());
     assertEquals(4L, converted.getValueRepositoryId());
+    assertEquals("prop-repo-uuid-0001", converted.getPropertyVocabularyEntryAppId());
+    assertEquals("val-repo-uuid-0002", converted.getValueVocabularyEntryAppId());
     assertEquals("prop", converted.getPropertyIRI());
     assertEquals("val", converted.getValueIRI());
   }
@@ -47,6 +51,8 @@ public class SemanticAnnotationIOTest {
     assertEquals(obj.getName(), converted.getName());
     assertEquals(-1, converted.getPropertyRepositoryId());
     assertEquals(-1, converted.getValueRepositoryId());
+    assertEquals(null, converted.getPropertyVocabularyEntryAppId());
+    assertEquals(null, converted.getValueVocabularyEntryAppId());
     assertEquals("prop", converted.getPropertyIRI());
     assertEquals("val", converted.getValueIRI());
   }

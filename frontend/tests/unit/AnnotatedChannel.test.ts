@@ -101,15 +101,14 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
     mockCreate.mockResolvedValue(created);
     const { AnnotatedChannel } = await import("~/composables/annotated");
 
-    const body = { propertyIRI: "p", valueIRI: "v", propertyRepositoryId: 1, valueRepositoryId: 2 };
-    const out = await new AnnotatedChannel(CONTAINER, CHANNEL).addAnnotation(
-      body as Parameters<InstanceType<typeof AnnotatedChannel>["addAnnotation"]>[0],
-    );
+    const body = { propertyIRI: "p", valueIRI: "v" };
+    const out = await new AnnotatedChannel(CONTAINER, CHANNEL).addAnnotation(body);
 
     expect(mockCreate).toHaveBeenCalledWith({
       appId: CONTAINER,
       channelShepardId: CHANNEL,
-      semanticAnnotation: body,
+      // compat shim fills deprecated numeric IDs until next client regen
+      semanticAnnotation: { ...body, propertyRepositoryId: 0, valueRepositoryId: 0 },
     });
     expect(out).toEqual(created);
   });
