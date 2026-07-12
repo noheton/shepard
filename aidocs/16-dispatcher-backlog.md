@@ -5006,8 +5006,15 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/common/neo4j/io/BasicEntityIO.java:22`; apisimp-sweep-2026-07-11-fire552 §Finding4.
 
 ## APISIMP-SEMANNT-NUMERIC-IDS — replace numeric vocabulary IDs in SemanticAnnotationIO with UUID v7 fields (size: M, fire-552)
-- **Status:** ✅ shipped (fire-557, PR #TODO).
+- **Status:** ✅ merged fire-558, PR #2495 (sha `aea04658`).
 - **Why:** `SemanticAnnotationIO` exposes `long propertyRepositoryId` and `long valueRepositoryId` (Neo4j OGM IDs of the vocabulary repository entries). These are actively read by `frontend/components/semantic/AnnotationDialog.vue:235-236` to identify vocabulary terms for edit/delete. No UUID v7 replacement fields exist yet. Sweep fire-552.
 - **Fix:** (a) Add `String propertyVocabularyEntryAppId` and `String valueVocabularyEntryAppId` (UUID v7) to `SemanticAnnotationIO`; populate from the vocabulary entry's `appId`. (b) Migrate `AnnotationDialog.vue` to read the new UUID fields. (c) Deprecate `propertyRepositoryId` and `valueRepositoryId` (retain for one deprecation window — `@Deprecated @Schema(deprecated=true)`). (d) Drop numeric IDs from `AnnotationToAdd` Omit type; callers cleaned up; `AnnotatedChannel.addAnnotation` fills compat shim `{...annotation, propertyRepositoryId: 0, valueRepositoryId: 0}`.
 - **AC:** `GET /v2/annotations/{appId}` response includes `propertyVocabularyEntryAppId` (non-null UUID v7); `AnnotationDialog.vue` uses UUID fields for edit/delete calls; `npm run typecheck` + `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/semantic/io/SemanticAnnotationIO.java:18,43,47`; `frontend/components/semantic/AnnotationDialog.vue:235-236`; apisimp-sweep-2026-07-11-fire552 §Finding5.
+
+## APISIMP-CHANNEL-SHEPARDID-NORMALIZE — normalize `{shepardId}` → `{channelShepardId}` in two `ContainersV2Rest` data/ingest path params (size: XS, fire-558)
+- **Status:** 🔄 PR open (fire-558, branch `APISIMP-CHANNEL-SHEPARDID-NORMALIZE`).
+- **Why:** `ContainersV2Rest` uses `{shepardId}` as the path-param name on `GET /v2/containers/{appId}/channels/{shepardId}/data` (line 692) and `POST .../data/ingest` (line 791), but uses `{channelShepardId}` on the three channel-annotation sub-paths (lines 984, 1026, 1064) for the exact same concept (a timeseries channel's UUID v7 identifier). The two names in the same class for the same entity type diverge from the codebase norm. Sweep fire-558.
+- **Fix:** Rename `@Path("/{appId}/channels/{shepardId}/...")` → `{channelShepardId}` on both endpoints; rename `@PathParam("shepardId") UUID shepardId` → `@PathParam("channelShepardId") UUID channelShepardId` and update method-body usages. No wire-shape change. `@QueryParam("shepardId")` on the live-window endpoint is a different context and is left unchanged.
+- **AC:** `grep -n '"shepardId"' backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java | grep '@PathParam\|@Path'` returns empty; `mvn -q compile` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:692,715,791,809`.
