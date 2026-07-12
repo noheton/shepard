@@ -66,7 +66,7 @@ describe("useJupyterConfig — refresh()", () => {
 
     const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
       .calls.at(-1) as [string, RequestInit];
-    expect(url).toContain("/v2/jupyter/config");
+    expect(url).toContain("/v2/config/jupyter");
     expect(url).not.toContain("/v2/admin/config/jupyter");
   });
 
