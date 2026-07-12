@@ -38,12 +38,28 @@ public class SemanticAnnotationIO implements HasId, Named {
   @Schema(required = true)
   private String valueIRI;
 
+  /**
+   * UUID v7 of the vocabulary entry that defines the predicate.
+   * Replaces the numeric {@link #propertyRepositoryId}; null when no vocabulary is linked.
+   */
+  @Schema(nullable = true, description = "appId of the vocabulary entry for the predicate. Replaces propertyRepositoryId.")
+  private String propertyVocabularyEntryAppId;
+
+  /**
+   * UUID v7 of the vocabulary entry that defines the object value.
+   * Replaces the numeric {@link #valueRepositoryId}; null when no vocabulary is linked.
+   */
+  @Schema(nullable = true, description = "appId of the vocabulary entry for the value. Replaces valueRepositoryId.")
+  private String valueVocabularyEntryAppId;
+
+  @Deprecated
   @NotNull
-  @Schema(required = true)
+  @Schema(deprecated = true, description = "Deprecated — use propertyVocabularyEntryAppId instead.")
   private long propertyRepositoryId;
 
+  @Deprecated
   @NotNull
-  @Schema(required = true)
+  @Schema(deprecated = true, description = "Deprecated — use valueVocabularyEntryAppId instead.")
   private long valueRepositoryId;
 
   /**
@@ -66,6 +82,8 @@ public class SemanticAnnotationIO implements HasId, Named {
     this.valueIRI = ref.getValueIRI();
     this.propertyRepositoryId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getId() : -1;
     this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
+    this.propertyVocabularyEntryAppId = ref.getPropertyRepository() != null ? ref.getPropertyRepository().getAppId() : null;
+    this.valueVocabularyEntryAppId = ref.getValueRepository() != null ? ref.getValueRepository().getAppId() : null;
     this.propertyName = ref.getPropertyName();
     this.valueName = ref.getValueName();
     this.numericValue = ref.getNumericValue();

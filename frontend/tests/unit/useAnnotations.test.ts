@@ -101,8 +101,6 @@ describe("useAnnotations", () => {
     const payload: AnnotationToAdd = {
       propertyIRI: "http://example.org/p",
       valueIRI: "http://example.org/v",
-      propertyRepositoryId: 0,
-      valueRepositoryId: 0,
     };
     const result = await createAnnotation(payload);
 

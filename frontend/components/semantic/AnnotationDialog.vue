@@ -232,8 +232,6 @@ async function submitViaLegacy() {
   const payload: AnnotationToAdd = {
     propertyIRI: propertyIri.value,
     valueIRI: valueIri.value,
-    propertyRepositoryId: 0,
-    valueRepositoryId: 0,
   };
   await props.annotated!.addAnnotation(payload);
 }

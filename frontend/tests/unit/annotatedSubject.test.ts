@@ -137,8 +137,6 @@ describe("v2 SubjectAnnotated accessors", () => {
     const created = await new AnnotatedCollection(COLLECTION_APP_ID).addAnnotation({
       propertyIRI: "http://example.org/material",
       valueIRI: "http://example.org/CFLMPAEK",
-      propertyRepositoryId: 0,
-      valueRepositoryId: 0,
     });
 
     expect(mockCreateAnnotation).toHaveBeenCalledWith({
@@ -159,8 +157,6 @@ describe("v2 SubjectAnnotated accessors", () => {
     await new AnnotatedDataObject("0192ffff-0000-7000-8000-0000000000dd").addAnnotation({
       propertyIRI: "http://example.org/p",
       valueIRI: "",
-      propertyRepositoryId: 0,
-      valueRepositoryId: 0,
     });
 
     expect(mockCreateAnnotation).toHaveBeenCalledWith({

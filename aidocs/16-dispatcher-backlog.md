@@ -5006,8 +5006,8 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/common/neo4j/io/BasicEntityIO.java:22`; apisimp-sweep-2026-07-11-fire552 §Finding4.
 
 ## APISIMP-SEMANNT-NUMERIC-IDS — replace numeric vocabulary IDs in SemanticAnnotationIO with UUID v7 fields (size: M, fire-552)
-- **Status:** ⏳ queued.
+- **Status:** ✅ shipped (fire-557, PR #TODO).
 - **Why:** `SemanticAnnotationIO` exposes `long propertyRepositoryId` and `long valueRepositoryId` (Neo4j OGM IDs of the vocabulary repository entries). These are actively read by `frontend/components/semantic/AnnotationDialog.vue:235-236` to identify vocabulary terms for edit/delete. No UUID v7 replacement fields exist yet. Sweep fire-552.
-- **Fix:** (a) Add `String propertyVocabularyEntryAppId` and `String valueVocabularyEntryAppId` (UUID v7) to `SemanticAnnotationIO`; populate from the vocabulary entry's `appId`. (b) Migrate `AnnotationDialog.vue` to read the new UUID fields. (c) Deprecate `propertyRepositoryId` and `valueRepositoryId` (retain for one deprecation window — `@Deprecated @Schema(deprecated=true)`).
+- **Fix:** (a) Add `String propertyVocabularyEntryAppId` and `String valueVocabularyEntryAppId` (UUID v7) to `SemanticAnnotationIO`; populate from the vocabulary entry's `appId`. (b) Migrate `AnnotationDialog.vue` to read the new UUID fields. (c) Deprecate `propertyRepositoryId` and `valueRepositoryId` (retain for one deprecation window — `@Deprecated @Schema(deprecated=true)`). (d) Drop numeric IDs from `AnnotationToAdd` Omit type; callers cleaned up; `AnnotatedChannel.addAnnotation` fills compat shim `{...annotation, propertyRepositoryId: 0, valueRepositoryId: 0}`.
 - **AC:** `GET /v2/annotations/{appId}` response includes `propertyVocabularyEntryAppId` (non-null UUID v7); `AnnotationDialog.vue` uses UUID fields for edit/delete calls; `npm run typecheck` + `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/semantic/io/SemanticAnnotationIO.java:18,43,47`; `frontend/components/semantic/AnnotationDialog.vue:235-236`; apisimp-sweep-2026-07-11-fire552 §Finding5.

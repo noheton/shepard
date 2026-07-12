@@ -8,7 +8,7 @@ import { useV2ShepardApi } from "./common/api/useV2ShepardApi";
 
 export type AnnotationToAdd = Omit<
   SemanticAnnotation,
-  "id" | "name" | "propertyName" | "valueName"
+  "id" | "name" | "propertyName" | "valueName" | "propertyRepositoryId" | "valueRepositoryId"
 >;
 
 export interface Annotated {
@@ -217,7 +217,9 @@ export class AnnotatedChannel implements Annotated {
     return this.channelAnnotationsApi.value.createChannelAnnotation({
       appId: this.containerAppId,
       channelShepardId: this.channelShepardId,
-      semanticAnnotation: annotation,
+      // Deprecated numeric IDs are required by the generated v1-compat client
+      // type; fill as 0 until the next client regen drops them.
+      semanticAnnotation: { ...annotation, propertyRepositoryId: 0, valueRepositoryId: 0 },
     });
   }
 }
