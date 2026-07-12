@@ -4985,7 +4985,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectDetailV2IO.java:37-38`; `backend/src/main/java/de/dlr/shepard/context/collection/io/DataObjectIO.java:73,92,111`; apisimp-sweep-2026-07-11-fire552 §Finding1.
 
 ## APISIMP-NOTEBOOK-LIST-PAGINATE — wrap NotebookRest.listByCollection in PagedResponseIO (size: S, fire-552)
-- **Status:** ⏳ queued.
+- **Status:** ✅ shipped (fire-554).
 - **Why:** `GET /v2/collections/{appId}/notebooks` returns a bare `Response.ok(List<NotebookReferenceIO>)` with no `page`/`pageSize` params. Every other v2 list endpoint uses `PagedResponseIO`. Sweep fire-552.
 - **Fix:** Add `@QueryParam("page") @DefaultValue("0") @Min(0) int page` and `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize` to `listByCollection`; wrap result in `new PagedResponseIO<>(pageItems, total, page, pageSize)`. Apply SKIP/LIMIT in the DAO or slice at the service layer.
 - **AC:** `curl .../v2/collections/{appId}/notebooks?pageSize=1` returns `{"items":[…],"total":N,"page":0,"pageSize":1}`; `mvn verify -pl backend` green.
