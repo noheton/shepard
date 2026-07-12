@@ -5093,7 +5093,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-2.
 
 ## APISIMP-PROV-STATS-ENTITYID-RENAME — rename `?entityId=` → `?subject=` in ProvenanceRest.stats() (size: XS, fire-564)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-567)
 - **Why:** `GET /v2/provenance/stats?scope=…&entityId=…` — the `entityId` query param is semantically ambiguous: for `scope=collection` it holds a collection UUID v7 appId; for `scope=user` it holds a username string. The name `entityId` collides with the old Shepard numeric-id vocabulary and falsely implies a stable entity identity. Rename to `?subject=` — neutral, scope-agnostic, consistent with PROV-O's `prov:wasAssociatedWith(agent)` terminology. Wire break on `GET /v2/provenance/stats` only; no known frontend callers (provenance stats are admin-only). Update: `@QueryParam` + all `entityId` references in the handler body + `@Parameter` description + `@APIResponse` 400 text; update `ProvenanceStatsService.compute(scope, subject, …)` signature.
 - **AC:** `GET /v2/provenance/stats?scope=collection&subject=<appId>` returns 200; old `?entityId=` returns 400 "unknown parameter"; `mvn verify -pl backend` green; no `entityId` in `ProvenanceRest` source.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:517`; apisimp-sweep-2026-07-12-fire564 §F2.
