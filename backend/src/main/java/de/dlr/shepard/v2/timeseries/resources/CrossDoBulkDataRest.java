@@ -42,8 +42,8 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * TS-CROSS-DO-VIEW-1 — cross-DataObject timeseries bulk-data endpoint.
  *
  * <p>Route: {@code POST /v2/data-objects/cross-bulk?kind=timeseries}
- * (old path {@code /v2/data-objects/cross-timeseries-bulk} is tombstoned
- * in {@code CrossDoBulkTombstoneRest} with 410 Gone).
+ * (old path {@code /v2/data-objects/cross-timeseries-bulk} is removed;
+ * requests to it now return 404).
  *
  * <p>Takes a list of DataObject appIds + one channel-predicate IRI, and
  * returns LTTB-downsampled series — one entry per DataObject — for the

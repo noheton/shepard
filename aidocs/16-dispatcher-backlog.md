@@ -5087,7 +5087,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-1.
 
 ## APISIMP-CROSSBULK-TOMBSTONE-DELETE — delete CrossDoBulkTombstoneRest 410 tombstone (size: XS, fire-564)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-566)
 - **Why:** `CrossDoBulkTombstoneRest` at `POST /v2/data-objects/cross-timeseries-bulk` is a single-method 410 stub created when APISIMP-CROSS-BULK-KIND-PATH shipped (fire-496, ~68 fires ago). Same vintage as APISIMP-ANOMALY-TOMBSTONE-DELETE — stabilization window elapsed. The canonical endpoint is `POST /v2/data-objects/cross-bulk?kind=timeseries`.
 - **AC:** `CrossDoBulkTombstoneRest.java` absent; `POST /v2/data-objects/cross-timeseries-bulk` returns 404; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-2.
