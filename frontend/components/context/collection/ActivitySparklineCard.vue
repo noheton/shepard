@@ -2,7 +2,7 @@
 /**
  * PROV1d — per-Collection activity sparkline dashboard.
  *
- * Fetches `GET /v2/provenance/stats?scope=collection&entityId={appId}` and
+ * Fetches `GET /v2/provenance/stats?scope=collection&subject={appId}` and
  * renders three panels:
  *
  *   1. Header strip — total activity count + distinct-agent count + a
@@ -38,7 +38,7 @@ const selectedDays = ref<number>(30);
 
 const { stats, isLoading, refresh } = useFetchProvenanceStats({
   scope: "collection",
-  entityId: props.collectionAppId ?? undefined,
+  subject: props.collectionAppId ?? undefined,
   sinceMillis: Date.now() - selectedDays.value * DAY_MILLIS,
 });
 

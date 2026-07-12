@@ -508,13 +508,14 @@ public class ProvenanceRest {
     description = "Stats payload.",
     content = @Content(schema = @Schema(implementation = ProvenanceStatsIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, missing entityId for scope=collection|user, or unparseable since/until.")
+  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, missing subject for scope=collection|user, unparseable since/until, or use of removed 'entityId' parameter.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Non-admin requested scope=instance or another user's stats.")
   public Response stats(
     @Parameter(description = "scope: instance | collection | user.", required = true) @QueryParam("scope") String scope,
     @Parameter(description = "Collection appId for scope=collection, username for scope=user. Ignored for scope=instance.")
-    @QueryParam("entityId") String entityId,
+    @QueryParam("subject") String subject,
+    @Parameter(hidden = true) @QueryParam("entityId") String legacyEntityId,
     @Parameter(description = SINCE_DESC + " Defaults to 90 days ago.")
     @QueryParam("since") String sinceRaw,
     @Parameter(description = UNTIL_DESC + " Defaults to now.")
@@ -523,6 +524,10 @@ public class ProvenanceRest {
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
+    // Reject the removed 'entityId' param so callers get a clear migration hint rather than a silent no-op.
+    if (legacyEntityId != null) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Unknown query parameter", Response.Status.BAD_REQUEST, "unknown query parameter 'entityId': use 'subject' instead");
+    }
     if (scope == null || scope.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "scope is required");
     }
@@ -532,27 +537,27 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "scope=instance requires instance-admin role.");
     }
     if (ProvenanceStatsService.SCOPE_USER.equals(scope)) {
-      if (entityId == null || entityId.isBlank()) {
-        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "entityId is required for scope=user");
+      if (subject == null || subject.isBlank()) {
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "subject is required for scope=user");
       }
-      if (!entityId.equals(caller) && !isAdmin) {
+      if (!subject.equals(caller) && !isAdmin) {
         return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request stats for their own user without instance-admin role.");
       }
     }
     if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope)) {
-      if (entityId == null || entityId.isBlank()) {
-        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "entityId is required for scope=collection");
+      if (subject == null || subject.isBlank()) {
+        return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "subject is required for scope=collection");
       }
       // PROV1c-acl: gate on Read permission against the target Collection.
       // Admins bypass the per-Collection check (instance-admin already sees
       // everything elsewhere). Missing Collection → 404; lacking Read → 403.
       if (!isAdmin) {
-        var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(entityId);
+        var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(subject);
         if (ogmId.isEmpty()) {
-          return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "No Collection with appId " + entityId);
+          return problem(PROBLEM_TYPE_NOT_FOUND, "Collection not found", Response.Status.NOT_FOUND, "No Collection with appId " + subject);
         }
         if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller, 0L)) {
-          return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Read permission required on Collection '" + entityId + "' to view its stats.");
+          return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Read permission required on Collection '" + subject + "' to view its stats.");
         }
       }
     }
@@ -571,7 +576,7 @@ public class ProvenanceRest {
     long defaultWindowMillis = 90L * 86_400_000L;
     long effSince = sinceClamped == null ? Math.max(0L, effUntil - defaultWindowMillis) : Math.min(sinceClamped, effUntil);
     try {
-      ProvenanceStatsIO out = statsService.compute(scope, entityId, effSince, effUntil);
+      ProvenanceStatsIO out = statsService.compute(scope, subject, effSince, effUntil);
       return Response.ok(out).build();
     } catch (IllegalArgumentException e) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, e.getMessage());

@@ -27,7 +27,7 @@ export interface UseFetchProvenanceStatsOptions {
    * Collection appId (for `scope=collection`) or username (for `scope=user`).
    * Ignored for `scope=instance`.
    */
-  entityId?: string;
+  subject?: string;
   /**
    * Inclusive lower bound on `startedAt` (millis since epoch). Defaults
    * to "30 days ago" when omitted.
@@ -66,7 +66,7 @@ export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
     // hydrating the Collection.
     if (
       (opts.scope === "collection" || opts.scope === "user") &&
-      !opts.entityId
+      !opts.subject
     ) {
       stats.value = null;
       return;
@@ -77,7 +77,7 @@ export function useFetchProvenanceStats(opts: UseFetchProvenanceStatsOptions) {
     useV2ShepardApi(ProvenanceApi)
       .value.stats({
         scope: opts.scope,
-        entityId: opts.entityId,
+        subject: opts.subject,
         since: effectiveSince(),
         until: untilMillis.value,
       })
