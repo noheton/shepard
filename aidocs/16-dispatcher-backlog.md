@@ -5081,19 +5081,19 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/ledger/LedgerAnchorRest.java`; apisimp-sweep-fire-563 §F7.
 
 ## APISIMP-ANOMALY-TOMBSTONE-DELETE — delete AnomalyDetectionTombstoneRest 410 tombstone (size: XS, fire-564)
-- **Status:** 🔄 in-flight (fire-565, PR #2503, branch APISIMP-ANOMALY-TOMBSTONE-DELETE)
+- **Status:** ✅ merged (fire-565, sha `d03b923`)
 - **Why:** `AnomalyDetectionTombstoneRest` at `POST /v2/references/{appId}/detect-anomalies` is a single-method 410 stub created when APISIMP-ANOMALY-ACTION-PATH shipped (fire-496, ~68 fires ago). The tombstone has been live well past the 10-fire stabilization window. No frontend or MCP caller references the old path. Safe to delete; the current surface is `POST /v2/references/{appId}/actions?action=detect-anomalies`.
 - **AC:** `AnomalyDetectionTombstoneRest.java` absent; `POST /v2/references/{appId}/detect-anomalies` returns 404 (no route); `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-1.
 
 ## APISIMP-CROSSBULK-TOMBSTONE-DELETE — delete CrossDoBulkTombstoneRest 410 tombstone (size: XS, fire-564)
-- **Status:** 🔄 in-flight (fire-566)
+- **Status:** ✅ merged (fire-567, PR #2504, sha `0105edb`)
 - **Why:** `CrossDoBulkTombstoneRest` at `POST /v2/data-objects/cross-timeseries-bulk` is a single-method 410 stub created when APISIMP-CROSS-BULK-KIND-PATH shipped (fire-496, ~68 fires ago). Same vintage as APISIMP-ANOMALY-TOMBSTONE-DELETE — stabilization window elapsed. The canonical endpoint is `POST /v2/data-objects/cross-bulk?kind=timeseries`.
 - **AC:** `CrossDoBulkTombstoneRest.java` absent; `POST /v2/data-objects/cross-timeseries-bulk` returns 404; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-2.
 
 ## APISIMP-PROV-STATS-ENTITYID-RENAME — rename `?entityId=` → `?subject=` in ProvenanceRest.stats() (size: XS, fire-564)
-- **Status:** 🔄 in-flight (fire-567)
+- **Status:** ✅ merged (fire-568, PR #2505, sha `ecef299`)
 - **Why:** `GET /v2/provenance/stats?scope=…&entityId=…` — the `entityId` query param is semantically ambiguous: for `scope=collection` it holds a collection UUID v7 appId; for `scope=user` it holds a username string. The name `entityId` collides with the old Shepard numeric-id vocabulary and falsely implies a stable entity identity. Rename to `?subject=` — neutral, scope-agnostic, consistent with PROV-O's `prov:wasAssociatedWith(agent)` terminology. Wire break on `GET /v2/provenance/stats` only; no known frontend callers (provenance stats are admin-only). Update: `@QueryParam` + all `entityId` references in the handler body + `@Parameter` description + `@APIResponse` 400 text; update `ProvenanceStatsService.compute(scope, subject, …)` signature.
 - **AC:** `GET /v2/provenance/stats?scope=collection&subject=<appId>` returns 200; old `?entityId=` returns 400 "unknown parameter"; `mvn verify -pl backend` green; no `entityId` in `ProvenanceRest` source.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:517`; apisimp-sweep-2026-07-12-fire564 §F2.
