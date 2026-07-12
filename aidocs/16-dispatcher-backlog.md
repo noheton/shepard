@@ -5081,7 +5081,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/ledger/LedgerAnchorRest.java`; apisimp-sweep-fire-563 §F7.
 
 ## APISIMP-ANOMALY-TOMBSTONE-DELETE — delete AnomalyDetectionTombstoneRest 410 tombstone (size: XS, fire-564)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-565, branch APISIMP-ANOMALY-TOMBSTONE-DELETE)
 - **Why:** `AnomalyDetectionTombstoneRest` at `POST /v2/references/{appId}/detect-anomalies` is a single-method 410 stub created when APISIMP-ANOMALY-ACTION-PATH shipped (fire-496, ~68 fires ago). The tombstone has been live well past the 10-fire stabilization window. No frontend or MCP caller references the old path. Safe to delete; the current surface is `POST /v2/references/{appId}/actions?action=detect-anomalies`.
 - **AC:** `AnomalyDetectionTombstoneRest.java` absent; `POST /v2/references/{appId}/detect-anomalies` returns 404 (no route); `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/AnomalyDetectionTombstoneRest.java`; apisimp-sweep-2026-07-12-fire564 §F1-1.
