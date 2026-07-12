@@ -205,11 +205,11 @@ public class NotebookRest {
     }
 
     long total = result.size();
-    int skip = page * pageSize;
-    List<NotebookReferenceIO> page_items = skip >= total
+    long skip = (long) page * pageSize;
+    List<NotebookReferenceIO> pageItems = skip >= total
       ? List.of()
-      : result.subList(skip, (int) Math.min(skip + pageSize, total));
-    return Response.ok(new PagedResponseIO<>(page_items, total, page, pageSize)).build();
+      : result.subList((int) skip, (int) Math.min(skip + pageSize, total));
+    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
   }
 
   /**
