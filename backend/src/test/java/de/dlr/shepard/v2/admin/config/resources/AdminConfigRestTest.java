@@ -12,6 +12,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.config.spi.ConfigDescriptor;
 import de.dlr.shepard.v2.admin.config.spi.ConfigPatchException;
 import de.dlr.shepard.v2.admin.config.spi.ConfigRegistry;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
@@ -87,33 +88,57 @@ class AdminConfigRestTest {
   @Test
   void listFeaturesReturnsRegisteredRows() {
     Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor()));
-    Response resp = rest.listFeatures();
+    Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<ConfigFeatureIO> rows = (List<ConfigFeatureIO>) resp.getEntity();
-    assertEquals(1, rows.size());
-    assertEquals("fake", rows.get(0).feature());
-    assertEquals("a fake feature", rows.get(0).description());
+    PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(1L, body.total());
+    assertEquals(0, body.page());
+    assertEquals(50, body.pageSize());
+    assertEquals("fake", body.items().get(0).feature());
+    assertEquals("a fake feature", body.items().get(0).description());
   }
 
   @Test
   void listFeaturesReturnsSizeInBody() {
     Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
-    Response resp = rest.listFeatures();
+    Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<ConfigFeatureIO> rows = (List<ConfigFeatureIO>) resp.getEntity();
-    assertEquals(2, rows.size());
+    PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(2L, body.total());
   }
 
   @Test
   void listFeaturesEmptyWhenRegistryEmpty() {
     Mockito.when(registry.all()).thenReturn(List.of());
-    Response resp = rest.listFeatures();
+    Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
-    List<ConfigFeatureIO> rows = (List<ConfigFeatureIO>) resp.getEntity();
-    assertEquals(0, rows.size());
+    PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(0, body.items().size());
+    assertEquals(0L, body.total());
+  }
+
+  @Test
+  void listFeaturesXTotalCountHeader() {
+    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
+    Response resp = rest.listFeatures(0, 50);
+    assertEquals(200, resp.getStatus());
+    assertEquals("2", resp.getHeaderString("X-Total-Count"));
+  }
+
+  @Test
+  void listFeaturesCustomPageParams() {
+    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor()));
+    Response resp = rest.listFeatures(1, 10);
+    assertEquals(200, resp.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(1, body.page());
+    assertEquals(10, body.pageSize());
   }
 
   @Test

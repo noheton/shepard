@@ -8,21 +8,26 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.config.spi.ConfigDescriptor;
 import de.dlr.shepard.v2.admin.config.spi.ConfigPatchException;
 import de.dlr.shepard.v2.admin.config.spi.ConfigRegistry;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -79,16 +84,23 @@ public class AdminConfigRest {
   @APIResponse(
     responseCode = "200",
     description = "Registered config features.",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ConfigFeatureIO.class))
+    headers = @Header(name = "X-Total-Count", description = "Total number of registered config features.", schema = @Schema(implementation = Long.class)),
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response listFeatures() {
+  public Response listFeatures(
+    @QueryParam("page") @DefaultValue("0") @Min(0) int page,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     List<ConfigFeatureIO> rows = registry.all()
       .stream()
       .map(d -> new ConfigFeatureIO(d.featureName(), d.description()))
       .toList();
-    return Response.ok(rows).build();
+    long total = rows.size();
+    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+      .header("X-Total-Count", total)
+      .build();
   }
 
   @GET
