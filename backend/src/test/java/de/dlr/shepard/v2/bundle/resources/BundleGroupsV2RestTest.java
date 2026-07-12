@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.bundle.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -464,5 +465,16 @@ class BundleGroupsV2RestTest {
   void maxFilesPageSize_isAtMost200() {
     assertEquals(200, BundleGroupsV2Rest.MAX_FILES_PAGE_SIZE,
         "APISIMP-BUNDLEGROUPS-PAGECAP: MAX_FILES_PAGE_SIZE must not exceed the v2-standard 200");
+  }
+
+  // ─── APISIMP-BASIC-ENTITY-ID-HIDE: id must not appear in v2 FileGroupIO JSON ─
+
+  @Test
+  void fileGroupIO_serialisationOmitsNumericId() throws Exception {
+    var g = existingGroup(); // neo4j id = 1L via new FileGroup(1L)
+    var io = new de.dlr.shepard.context.references.file.io.FileGroupIO(g);
+    var node = new ObjectMapper().valueToTree(io);
+    assertFalse(node.has("id"),
+        "APISIMP-BASIC-ENTITY-ID-HIDE: FileGroupIO must not serialise the Neo4j node-id in v2 responses");
   }
 }

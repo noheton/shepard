@@ -1,7 +1,7 @@
 package de.dlr.shepard.context.references.file.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
+import de.dlr.shepard.common.neo4j.io.BasicEntityV2IO;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.ArrayList;
@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(name = "FileGroup")
-public class FileGroupIO extends BasicEntityIO {
+public class FileGroupIO extends BasicEntityV2IO {
 
   @Schema(readOnly = true, nullable = true, description = "Application identifier (UUID v7).")
   private String appId;
