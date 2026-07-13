@@ -121,7 +121,7 @@ class OntologyAlignmentRestTest {
     assertEquals("rdfs:subClassOf", io1.relationshipType());
     assertEquals("HIGH", io1.confidence());
     assertEquals("aidocs/semantics/96-upper-ontology-alignment.md", io1.source());
-    assertEquals(1000L, io1.createdAt());
+    assertEquals("1970-01-01T00:00:01Z", io1.createdAt());
   }
 
   @Test
@@ -137,7 +137,7 @@ class OntologyAlignmentRestTest {
     assertEquals("rdfs:subClassOf", io.relationshipType());
     assertEquals("HIGH", io.confidence());
     assertEquals("aidocs/semantics/96-upper-ontology-alignment.md", io.source());
-    assertEquals(999L, io.createdAt());
+    assertEquals("1970-01-01T00:00:00.999Z", io.createdAt());
   }
 
   @Test
@@ -147,7 +147,7 @@ class OntologyAlignmentRestTest {
       "rdfs:subClassOf", "MEDIUM", "aidocs/semantics/96-upper-ontology-alignment.md", null
     );
     OntologyAlignmentIO io = OntologyAlignmentIO.from(e);
-    assertTrue(io.createdAt() == null, "createdAt may be null for rows without timestamp");
+    assertNull(io.createdAt(), "createdAt may be null for rows without timestamp");
   }
 
   @Test
