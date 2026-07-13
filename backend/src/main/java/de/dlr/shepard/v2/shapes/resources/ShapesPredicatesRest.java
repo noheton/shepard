@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.shapes.resources;
 
+import de.dlr.shepard.v2.common.ProblemResponse;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.shapes.io.PredicateVocabularyEntryIO;
 import de.dlr.shepard.v2.shapes.repositories.PredicateVocabularyRepository;
@@ -117,9 +118,8 @@ public class ShapesPredicatesRest {
           .findFirst()
           .orElse(null);
       if (cleanSub == null) {
-        return Response.status(Response.Status.BAD_REQUEST)
-            .entity("Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")
-            .build();
+        return ProblemResponse.problem(Response.Status.BAD_REQUEST,
+            "Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.");
       }
       total = repository.countBySubstrate(cleanSub);
       items = skip >= total ? List.of() : repository.findBySubstrate(cleanSub, skip, pageSize);
