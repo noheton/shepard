@@ -1,11 +1,13 @@
 package de.dlr.shepard.v2.shapes.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.shapes.io.PredicateVocabularyEntryIO;
 import de.dlr.shepard.v2.shapes.repositories.PredicateVocabularyRepository;
@@ -93,15 +95,19 @@ class ShapesPredicatesRestTest {
   // ─── substrate allowlist ──────────────────────────────────────────────────
 
   @Test
-  void unknownSubstrate_returns400() {
+  void unknownSubstrate_returns400ProblemJson() {
     Response r = rest.predicates("mongodb", 200, 0);
     assertEquals(400, r.getStatus());
+    assertInstanceOf(ProblemJson.class, r.getEntity(),
+        "400 body must be a ProblemJson (application/problem+json), not a plain String");
   }
 
   @Test
-  void unknownSubstrateWithSpaces_returns400() {
+  void unknownSubstrateWithSpaces_returns400ProblemJson() {
     Response r = rest.predicates("  unknown  ", 200, 0);
     assertEquals(400, r.getStatus());
+    assertInstanceOf(ProblemJson.class, r.getEntity(),
+        "400 body must be a ProblemJson (application/problem+json), not a plain String");
   }
 
   @Test

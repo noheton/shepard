@@ -5202,7 +5202,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/context/references/git/io/GitReferenceIO.java:60`; apisimp-sweep-2026-07-13-fire582.md §F1.
 
 ## APISIMP-SHAPES-PREDICATES-PROBLEM-JSON — convert plain-String 400 in `ShapesPredicatesRest` to RFC 7807 problem+json (size: XS, fire-582)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-583, PR open)
 - **Why:** `ShapesPredicatesRest.java:120–122` returns `Response.status(BAD_REQUEST).entity("Unknown substrate…").build()` — a `text/plain` String body. Prior sweeps (APISIMP-SHAPES-DEDUP-MISSED fire-481, APISIMP-PROBLEM-HELPER-BYPASS-3/4 fire-483/484) covered `ShapesRenderRest`, `ShapesBuildRest`, and 86 other files; `ShapesPredicatesRest` was missed. Breaks error-envelope consistency for clients testing `Content-Type: application/problem+json`.
 - **AC:** `ShapesPredicatesRest.java:120–122` returns `problem(Response.Status.BAD_REQUEST, "Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")`; `mvn verify -pl backend` green; no `text/plain` 4xx bodies in `ShapesPredicatesRest`.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:120-122`; apisimp-sweep-2026-07-13-fire582.md §F2.
