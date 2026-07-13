@@ -47,6 +47,7 @@ export * from './JupyterApi';
 export * from './KIPResolverApi';
 export * from './LabJournalApi';
 export * from './LabJournalEntryApi';
+export * from './LabJournalEntryV2Api';
 export * from './MappingsApi';
 export * from './MeApi';
 export * from './MigrationApi';

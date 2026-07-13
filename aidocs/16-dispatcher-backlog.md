@@ -5105,7 +5105,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/labJournal/io/LabJournalEntryIO.java:39`; apisimp-sweep-fire568-2026-07-12 §Finding1.
 
 ## APISIMP-LJE-ENTRY-V2-CRUD — add v2 lab-journal CRUD by `entryAppId` + migrate frontend (size: M, gate: APISIMP-LJE-ENTRY-ID-SUPPRESS + 10-fire stabilization)
-- **Status:** ⏳ queued (gate: APISIMP-LJE-ENTRY-ID-SUPPRESS must ship first; then 10-fire stabilization)
+- **Status:** 🔁 PR open (fire-582, branch `APISIMP-LJE-ENTRY-V2-CRUD`)
 - **Why:** `LabJournalExistingEntry.vue` uses `useShepardApi(LabJournalEntryApi)` (v1 path) with numeric `model.value.id` for get/update/delete. No v2 endpoints exist for individual lab journal entry CRUD by `entryAppId`. This is Step B of the two-step plan. Add `GET/PUT/DELETE /v2/lab-journal/{entryAppId}` backend endpoints; migrate frontend to `useV2ShepardApi` + `appId`; add `@JsonIgnore` to `LabJournalEntryIO.id` once no frontend caller uses it.
 - **AC:** `GET /v2/lab-journal/{entryAppId}` 200; `PUT` updates content; `DELETE` removes entry; `LabJournalExistingEntry.vue` uses `useV2ShepardApi` throughout; `LabJournalEntryIO.id` carries `@JsonIgnore`; numeric `id` absent from v2 OpenAPI spec; `mvn verify -pl backend` + `npm run typecheck` green.
 - **First refs:** `frontend/components/context/lab-journal/LabJournalExistingEntry.vue:44,58,75`; apisimp-sweep-fire568-2026-07-12 §Finding1 Step B.

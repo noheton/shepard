@@ -78,7 +78,7 @@ function onLabJournalDeleted(deletedIndex: number) {
   <div v-if="localEntries !== undefined">
     <LabJournalExistingEntry
       v-for="(entry, index) in localEntries"
-      :key="entry.id"
+      :key="entry.appId ?? index"
       :collection-id="collectionNumericId ?? 0"
       :data-object-id="dataObjectNumericId ?? entry.dataObjectId"
       :lab-journal="entry"

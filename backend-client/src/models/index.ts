@@ -174,6 +174,7 @@ export * from './KipRecord';
 export * from './LabJournalEntry';
 export * from './LabJournalRender';
 export * from './LabJournalRevision';
+export * from './UpdateLabJournalEntryV2';
 export * from './LedgerAnchorJob';
 export * from './LedgerAnchorRequest';
 export * from './LegacyV1StatsIO';

@@ -39,11 +39,11 @@ export interface LabJournalEntry {
      */
     journalContent: string;
     /**
-     * 
+     * @deprecated Numeric Neo4j OGM id — suppressed from v2 responses. Use appId instead.
      * @type {number}
      * @memberof LabJournalEntry
      */
-    readonly id: number;
+    readonly id?: number | null;
     /**
      * 
      * @type {Date}
@@ -88,7 +88,6 @@ export interface LabJournalEntry {
 export function instanceOfLabJournalEntry(value: object): value is LabJournalEntry {
     if (!('dataObjectId' in value) || value['dataObjectId'] === undefined) return false;
     if (!('journalContent' in value) || value['journalContent'] === undefined) return false;
-    if (!('id' in value) || value['id'] === undefined) return false;
     if (!('createdAt' in value) || value['createdAt'] === undefined) return false;
     if (!('createdBy' in value) || value['createdBy'] === undefined) return false;
     if (!('updatedAt' in value) || value['updatedAt'] === undefined) return false;
@@ -110,7 +109,7 @@ export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boo
         'dataObjectId': json['dataObjectId'],
         'dataObjectAppId': json['dataObjectAppId'] == null ? undefined : json['dataObjectAppId'],
         'journalContent': json['journalContent'],
-        'id': json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
