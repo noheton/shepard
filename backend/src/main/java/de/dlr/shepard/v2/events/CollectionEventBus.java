@@ -71,7 +71,7 @@ public class CollectionEventBus {
       .add(entry);
     // Send an immediate heartbeat so the client sees a response right away.
     CollectionEventIO hb = new CollectionEventIO(
-      "HEARTBEAT", null, null, null, null, System.currentTimeMillis()
+      "HEARTBEAT", null, null, null, null, CollectionEventIO.toIso(System.currentTimeMillis())
     );
     sendToEntry(entry, hb, collectionAppId);
   }
@@ -122,7 +122,7 @@ public class CollectionEventBus {
   @Scheduled(every = "30s")
   public void heartbeat() {
     if (subscribers.isEmpty()) return;
-    long now = System.currentTimeMillis();
+    String now = CollectionEventIO.toIso(System.currentTimeMillis());
     for (Map.Entry<String, Set<SinkEntry>> mapEntry : subscribers.entrySet()) {
       Set<SinkEntry> entries = mapEntry.getValue();
       if (entries.isEmpty()) continue;

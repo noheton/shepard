@@ -21,7 +21,7 @@ function makeEventPayload(eventType: string, extra: Record<string, unknown> = {}
     entityKind: extra.entityKind ?? "DataObject",
     collectionAppId: extra.collectionAppId ?? "coll-app-id",
     actorUsername: extra.actorUsername ?? "alice",
-    timestamp: extra.timestamp ?? 1716739200000,
+    timestamp: extra.timestamp ?? "2024-05-26T16:00:00Z",
     ...extra,
   });
 }
@@ -57,7 +57,7 @@ describe("parseBuffer — single complete event", () => {
   });
 
   it("parses a HEARTBEAT event (minimal payload)", () => {
-    const payload = JSON.stringify({ eventType: "HEARTBEAT", timestamp: 1716739200000 });
+    const payload = JSON.stringify({ eventType: "HEARTBEAT", timestamp: "2024-05-26T16:00:00Z" });
     const buffer = `data: ${payload}\n\n`;
 
     const { events, remaining } = parseBuffer(buffer);

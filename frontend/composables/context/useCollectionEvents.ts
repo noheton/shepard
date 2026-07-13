@@ -31,8 +31,8 @@ export interface CollectionEventIO {
   collectionAppId: string | null;
   /** Username of the actor who triggered the change. Null for HEARTBEAT. */
   actorUsername: string | null;
-  /** Epoch-millis when the event was emitted. */
-  timestamp: number;
+  /** ISO 8601 UTC string when the event was emitted (e.g. "2026-07-13T10:21:00Z"). */
+  timestamp: string;
 }
 
 type EventHandler = (event: CollectionEventIO) => void;

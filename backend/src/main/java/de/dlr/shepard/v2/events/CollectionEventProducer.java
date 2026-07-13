@@ -55,7 +55,7 @@ public class CollectionEventProducer {
       "DataObject",
       collectionAppId,
       actorUsername,
-      System.currentTimeMillis()
+      CollectionEventIO.toIso(System.currentTimeMillis())
     ));
   }
 
@@ -77,7 +77,7 @@ public class CollectionEventProducer {
       "DataObject",
       collectionAppId,
       actorUsername,
-      System.currentTimeMillis()
+      CollectionEventIO.toIso(System.currentTimeMillis())
     ));
   }
 
@@ -99,7 +99,7 @@ public class CollectionEventProducer {
       "DataObject",
       collectionAppId,
       actorUsername,
-      System.currentTimeMillis()
+      CollectionEventIO.toIso(System.currentTimeMillis())
     ));
   }
 
@@ -119,7 +119,7 @@ public class CollectionEventProducer {
       "Collection",
       collectionAppId,
       actorUsername,
-      System.currentTimeMillis()
+      CollectionEventIO.toIso(System.currentTimeMillis())
     ));
   }
 
