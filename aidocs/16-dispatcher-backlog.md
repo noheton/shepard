@@ -5214,7 +5214,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:261,272,281`; apisimp-sweep-2026-07-13-fire582.md §F3.
 
 ## APISIMP-PLUGINS-ADMIN-APPID-PATH — rename `/{id}` → `/{appId}` in `PluginsAdminRest` (size: XS, fire-582)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-583, PR open)
 - **Why:** `PluginsAdminRest.java:137` declares `@Path("/{id}")` and line 166 uses `@PathParam("id") String id`. Every other admin endpoint in `v2/admin/` uses `{appId}` as the path-param name. The parameter is typed `String` (correct — plugin IDs are string keys, not numeric Neo4j ids), but the naming breaks OpenAPI client consistency: generated clients produce `patchPluginById` vs `patchPluginByAppId` for every other resource.
 - **AC:** `PluginsAdminRest.java:137` declares `@Path("/{appId}")` and line 166 uses `@PathParam("appId") String appId`; `mvn verify -pl backend` green; OpenAPI spec updated.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:137,166`; apisimp-sweep-2026-07-13-fire582.md §F4.
