@@ -28,7 +28,7 @@ export interface NotificationTransport {
   name: string;
   enabled: boolean;
   lastTestResult?: string | null;
-  lastTestedAt?: number | null;
+  lastTestedAt?: string | null;
   lastTestDetail?: string | null;
   // SMTP (credential field absent by backend contract)
   smtpHost?: string | null;

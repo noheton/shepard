@@ -2,6 +2,9 @@ package de.dlr.shepard.v2.notifications.transport.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -31,7 +34,7 @@ public record NotificationTransportReadIO(
     String name,
     boolean enabled,
     String lastTestResult,
-    Long lastTestedAt,
+    String lastTestedAt,
     String lastTestDetail,
     // SMTP fields — password OMITTED by design (compile-time guarantee).
     String smtpHost,
@@ -57,7 +60,7 @@ public record NotificationTransportReadIO(
         t.getName(),
         t.isEnabled(),
         t.getLastTestResult(),
-        t.getLastTestedAt(),
+        toIso(t.getLastTestedAt()),
         t.getLastTestDetail(),
         t.getSmtpHost(),
         t.getSmtpPort(),
@@ -66,6 +69,13 @@ public record NotificationTransportReadIO(
         t.getSmtpTls(),
         t.getMatrixHomeserver(),
         t.getMatrixDefaultRoom()
+    );
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC)
     );
   }
 }

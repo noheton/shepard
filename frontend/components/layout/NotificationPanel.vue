@@ -47,7 +47,7 @@
           </template>
           <template #subtitle>
             <div class="text-caption mt-1">{{ formatBody(n.body) }}</div>
-            <div class="text-caption text-medium-emphasis mt-1">{{ formatTime(n.createdAtMillis) }}</div>
+            <div class="text-caption text-medium-emphasis mt-1">{{ formatTime(n.createdAt) }}</div>
           </template>
           <template #append>
             <div class="d-flex flex-column align-end ga-1">
@@ -134,8 +134,8 @@ function formatBody(body: string): string {
   return body.replace(/[*_`#>[\]]/g, "").slice(0, 120);
 }
 
-function formatTime(millis: number): string {
-  const d = new Date(millis);
+function formatTime(iso: string): string {
+  const d = new Date(iso);
   return d.toLocaleString(undefined, {
     dateStyle: "short",
     timeStyle: "short",

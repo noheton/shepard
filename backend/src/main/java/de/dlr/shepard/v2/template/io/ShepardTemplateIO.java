@@ -2,6 +2,9 @@ package de.dlr.shepard.v2.template.io;
 
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -53,11 +56,11 @@ public class ShepardTemplateIO {
   @Schema(required = false, nullable = true, description = "Display name of the user who minted (or copy-on-write-edited) the row (UUID-shaped Keycloak subjects are redacted).")
   private String createdBy;
 
-  @Schema(required = false, nullable = true, description = "Millis since epoch when the row was created.")
-  private Long createdAt;
+  @Schema(required = false, nullable = true, description = "ISO 8601 UTC timestamp when the row was created.")
+  private String createdAt;
 
-  @Schema(required = false, nullable = true, description = "Millis since epoch when the row was last touched.")
-  private Long updatedAt;
+  @Schema(required = false, nullable = true, description = "ISO 8601 UTC timestamp when the row was last touched.")
+  private String updatedAt;
 
   @Schema(required = true, description = "true when retired and filtered from picker listings (still kept on disk).")
   private boolean retired;
@@ -88,11 +91,18 @@ public class ShepardTemplateIO {
       t.getDescription(),
       t.getTags(),
       DisplayNameResolver.redactUsername(t.getCreatedBy()),
-      t.getCreatedAt(),
-      t.getUpdatedAt(),
+      toIso(t.getCreatedAt()),
+      toIso(t.getUpdatedAt()),
       t.isRetired(),
       t.getIconKey(),
       t.getParentTemplateAppId()
+    );
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC)
     );
   }
 }

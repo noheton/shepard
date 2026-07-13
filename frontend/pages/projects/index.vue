@@ -85,9 +85,9 @@ const filteredProjects = computed<ProjectIO[]>(() => {
   return projects;
 });
 
-function lastActivityLabel(millis: number | null | undefined): string {
-  if (!millis || millis <= 0) return "";
-  return new Date(millis).toLocaleString();
+function lastActivityLabel(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString();
 }
 
 function openProject(appId: string) {
@@ -179,8 +179,8 @@ function openProject(appId: string) {
                     {{ p.subCollectionCount }} sub-Collection{{ p.subCollectionCount === 1 ? '' : 's' }}
                     · {{ p.aggregateDoCount.toLocaleString() }} DataObjects
                   </span>
-                  <span v-if="p.lastActivityMillis" class="text-caption text-textbody2 ml-2">
-                    · last activity {{ lastActivityLabel(p.lastActivityMillis) }}
+                  <span v-if="p.lastActivity" class="text-caption text-textbody2 ml-2">
+                    · last activity {{ lastActivityLabel(p.lastActivity) }}
                   </span>
                 </v-list-item-subtitle>
                 <template #append>

@@ -31,8 +31,8 @@ public class SubCollectionItemIO {
   @Schema(description = "DataObject count on this child Collection.")
   private long doCount;
 
-  @Schema(description = "Maximum {created/updated} timestamp on this child Collection; epoch millis.")
-  private Long lastActivityMillis;
+  @Schema(description = "ISO 8601 UTC timestamp of the maximum {created/updated} on this child Collection.")
+  private String lastActivity;
 
   @Schema(description = "Other Projects this Collection is also a member of (urn:shepard:partOf appIds, excluding the queried parent).")
   private List<String> alsoMemberOf = new ArrayList<>();

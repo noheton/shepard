@@ -15,8 +15,8 @@ export interface NotificationIO {
   body: string;
   actionUrl: string | null;
   read: boolean;
-  createdAtMillis: number;
-  expiresAtMillis: number | null;
+  createdAt: string;
+  expiresAt: string | null;
 }
 
 const POLL_INTERVAL_MS = 30_000;
