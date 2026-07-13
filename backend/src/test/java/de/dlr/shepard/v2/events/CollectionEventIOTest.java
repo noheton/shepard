@@ -31,8 +31,8 @@ class CollectionEventIOTest {
 
   @Test
   void toIso_knownTimestamp_isUtc() {
-    // 2026-07-13T10:00:00Z = 1752400800000ms
-    String iso = CollectionEventIO.toIso(1752400800000L);
+    // 2026-07-13T10:00:00Z = 1783936800000ms
+    String iso = CollectionEventIO.toIso(1783936800000L);
     assertEquals("2026-07-13T10:00:00Z", iso);
   }
 
