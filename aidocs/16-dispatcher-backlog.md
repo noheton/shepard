@@ -5166,7 +5166,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/io/ShepardTemplateIO.java:57,60`; `backend/src/main/java/de/dlr/shepard/v2/notifications/io/NotificationIO.java:41,44`; `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/io/NotificationTransportReadIO.java:34`; `backend/src/main/java/de/dlr/shepard/v2/timeseriescontainer/io/TimeseriesContainerChartViewIO.java:28`; apisimp-sweep-fire572-2026-07-13 §Finding3.
 
 ## APISIMP-PROVENANCE-ENTITYID-TOMBSTONE-DROP — remove hidden `?entityId` tombstone + rejection branch from `ProvenanceRest.stats()` (size: XS, fire-572)
-- **Status:** ⏳ queued (gate: not before fire-578 — 10-fire stabilization from fire-568 when tombstone was added)
+- **Status:** 🔄 PR open (fire-578)
 - **Why:** `ProvenanceRest.java:518,527-530` carries a hidden `@Parameter(hidden=true) @QueryParam("entityId")` param plus a rejection block that returns 400 with "use 'subject' instead". This tombstone was added in fire-568 (PR #2505, sha `ecef299`) when `?entityId=` was renamed to `?subject=`. Per APISIMP-PROV-STATS-ENTITYID-RENAME, the tombstone must stay for a 10-fire stabilization window before removal. The `@APIResponse` at line ~511 includes "or use of removed 'entityId' parameter" which can be simplified to "Bad request" once the tombstone is gone.
 - **AC:** `ProvenanceRest.stats()` signature contains no `legacyEntityId` param; rejection `if` block removed; `@APIResponse` description simplified; `mvn verify -pl backend` green. Gate: fire-578 earliest.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:518,527-530`; apisimp-sweep-fire572-2026-07-13 §Finding4.
