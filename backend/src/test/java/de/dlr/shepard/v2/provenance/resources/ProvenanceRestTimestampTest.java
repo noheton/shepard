@@ -12,8 +12,10 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.UriInfo;
 import java.security.Principal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +42,9 @@ class ProvenanceRestTimestampTest {
   @Mock
   Principal principal;
 
+  @Mock
+  UriInfo uriInfo;
+
   ProvenanceRest resource;
 
   @BeforeEach
@@ -47,6 +52,7 @@ class ProvenanceRestTimestampTest {
     MockitoAnnotations.openMocks(this);
     resource = new ProvenanceRest();
     resource.provenance = provenance;
+    resource.uriInfo = uriInfo;
     OutputProfileResolver outputProfile = new OutputProfileResolver();
     outputProfile.setProfile(OutputProfile.ALL);
     resource.outputProfile = outputProfile;
@@ -54,6 +60,7 @@ class ProvenanceRestTimestampTest {
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn("alice");
     when(securityContext.isUserInRole(any())).thenReturn(false);
+    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
   }
 
   // ── parseTimestamp unit tests ──────────────────────────────────────────────

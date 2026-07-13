@@ -38,21 +38,21 @@ class ProvenanceRestParamAnnotationTest {
   }
 
   @Test
-  void listActivitiesProvJson_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesProvJson_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesProvJson",
       String.class, String.class, String.class, String.class, String.class,
       int.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listActivitiesProvJson.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listActivitiesProvJson.pageSize");
   }
 
   @Test
-  void listActivitiesJsonLd_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listActivitiesJsonLd_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listActivitiesJsonLd",
       String.class, String.class, String.class, String.class, String.class,
       int.class, String.class, jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listActivitiesJsonLd.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listActivitiesJsonLd.pageSize");
   }
 
   @Test
@@ -65,12 +65,12 @@ class ProvenanceRestParamAnnotationTest {
   }
 
   @Test
-  void listEntityActivitiesProvJson_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listEntityActivitiesProvJson_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listEntityActivitiesProvJson",
       String.class, String.class, String.class, int.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesProvJson.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivitiesProvJson.pageSize");
   }
 
   @Test
@@ -83,21 +83,21 @@ class ProvenanceRestParamAnnotationTest {
   }
 
   @Test
-  void listEntityActivitiesJsonLd_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listEntityActivitiesJsonLd_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listEntityActivitiesJsonLd",
       String.class, String.class, String.class, int.class, String.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivitiesJsonLd.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivitiesJsonLd.pageSize");
   }
 
   @Test
-  void listEntityActivities_limitParam_hasParameterAnnotation() throws NoSuchMethodException {
+  void listEntityActivities_pageSizeParam_hasParameterAnnotation() throws NoSuchMethodException {
     Method m = ProvenanceRest.class.getMethod(
       "listEntityActivities",
       String.class, String.class, String.class, int.class,
       jakarta.ws.rs.core.SecurityContext.class);
-    assertDocumented(queryParam(m, "limit"), "listEntityActivities.limit");
+    assertDocumented(queryParam(m, "pageSize"), "listEntityActivities.pageSize");
   }
 
   @Test

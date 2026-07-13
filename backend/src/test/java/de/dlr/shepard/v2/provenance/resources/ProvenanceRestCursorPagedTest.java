@@ -13,8 +13,10 @@ import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.UriInfo;
 import java.security.Principal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +27,7 @@ import org.mockito.MockitoAnnotations;
 /**
  * APISIMP-PROV-CURSOR-PAGED-WRAP — regression guards ensuring that
  * {@link ProvenanceRest#listActivities} and
- * {@link ProvenanceRest#listEntityActivities} use the request {@code limit}
+ * {@link ProvenanceRest#listEntityActivities} use the request {@code pageSize}
  * as {@code pageSize} in the envelope (not {@code rows.size()}) and emit
  * correct {@code X-Has-More} / {@code X-Next-Cursor} response headers.
  */
@@ -34,6 +36,7 @@ class ProvenanceRestCursorPagedTest {
   @Mock ProvenanceService provenance;
   @Mock SecurityContext securityContext;
   @Mock Principal principal;
+  @Mock UriInfo uriInfo;
 
   ProvenanceRest resource;
 
@@ -42,6 +45,7 @@ class ProvenanceRestCursorPagedTest {
     MockitoAnnotations.openMocks(this);
     resource = new ProvenanceRest();
     resource.provenance = provenance;
+    resource.uriInfo = uriInfo;
     OutputProfileResolver outputProfile = new OutputProfileResolver();
     outputProfile.setProfile(OutputProfile.ALL);
     resource.outputProfile = outputProfile;
@@ -49,6 +53,7 @@ class ProvenanceRestCursorPagedTest {
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn("alice");
     when(securityContext.isUserInRole(any())).thenReturn(false);
+    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
   }
 
   private static Activity stubActivity(long startedAtMillis) {
@@ -68,7 +73,7 @@ class ProvenanceRestCursorPagedTest {
     Response r = resource.listActivities(null, null, null, null, null, 50, securityContext);
     assertEquals(200, r.getStatus());
     PagedResponseIO<?> body = (PagedResponseIO<?>) r.getEntity();
-    assertEquals(50, body.pageSize(), "pageSize must equal the limit param (50), not rows.size() (0)");
+    assertEquals(50, body.pageSize(), "pageSize must equal the pageSize param (50), not rows.size() (0)");
   }
 
   @Test
