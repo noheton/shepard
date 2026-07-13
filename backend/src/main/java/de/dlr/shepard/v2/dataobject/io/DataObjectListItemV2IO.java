@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -74,22 +76,22 @@ public class DataObjectListItemV2IO extends DataObjectIO {
     nullable = true,
     description =
       "Earliest data-point timestamp across all timeseries channels of this DataObject, " +
-      "in nanoseconds since Unix epoch. Null when no timeseries data exists or " +
-      "`?include=time-bounds` was not requested."
+      "as ISO 8601 UTC with nanosecond precision (e.g. '2024-06-01T12:00:00.000000001Z'). " +
+      "Null when no timeseries data exists or `?include=time-bounds` was not requested."
   )
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  private Long timeBoundsStart;
+  private String timeBoundsStart;
 
   @Schema(
     readOnly = true,
     nullable = true,
     description =
       "Latest data-point timestamp across all timeseries channels of this DataObject, " +
-      "in nanoseconds since Unix epoch. Null when no timeseries data exists or " +
-      "`?include=time-bounds` was not requested."
+      "as ISO 8601 UTC with nanosecond precision (e.g. '2024-06-01T12:00:00.000000001Z'). " +
+      "Null when no timeseries data exists or `?include=time-bounds` was not requested."
   )
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  private Long timeBoundsEnd;
+  private String timeBoundsEnd;
 
   /**
    * PROV1j — EU AI Act Art. 50 per-artefact visibility field.
@@ -173,5 +175,11 @@ public class DataObjectListItemV2IO extends DataObjectIO {
       }
     }
     this.childrenAppIds = kids;
+  }
+
+  /** Converts a nanosecond-precision epoch timestamp to ISO 8601 UTC (e.g. "2024-06-01T12:00:00.000000001Z"). */
+  public static String toIsoNs(long epochNs) {
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochSecond(epochNs / 1_000_000_000L, epochNs % 1_000_000_000L));
   }
 }
