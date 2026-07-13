@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.labJournal.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -36,6 +37,7 @@ public class LabJournalEntryIO {
   private String journalContent;
 
   @Deprecated
+  @JsonIgnore
   @Schema(
     readOnly = true,
     required = true,

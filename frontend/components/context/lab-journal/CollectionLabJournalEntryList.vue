@@ -84,7 +84,7 @@ onMounted(() => {
   <div v-if="entries != undefined">
     <LabJournalExistingEntry
       v-for="(entry, index) in entries"
-      :key="'lab-journal-' + entry.id"
+      :key="entry.appId ?? index"
       :collection-id="collectionId"
       :data-object-id="entry.dataObjectId"
       :data-object-name="dataObjectName(entry.dataObjectId)"

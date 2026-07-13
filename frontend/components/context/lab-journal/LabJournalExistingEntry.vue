@@ -1,12 +1,13 @@
 <script lang="ts" setup>
 import {
-  LabJournalEntryApi,
+  LabJournalEntryV2Api,
   type LabJournalEntry,
   type Roles,
   FileContainerApi,
 } from "@dlr-shepard/backend-client";
 import { computed } from "vue";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { useShepardApi } from "~/composables/common/api/useShepardApi"; // v1 fallback: FileContainerApi has no v2 counterpart yet (see aidocs/16 FILE-CONTAINER-V2)
 import type { Editor } from "@tiptap/vue-3";
 import BiMap from "bidirectional-map";
 import { valsToNeo4jImg, db_img_regex } from "~/composables/labJournalHelper";
@@ -23,7 +24,7 @@ const props = defineProps<LabJournalExistingEntryProps>();
 const model = ref(props.labJournal);
 const emit = defineEmits(["deleted"]);
 
-const title = `${toShortDateString(model.value.createdAt)} | by ${model.value.createdBy} | entry id: ${props.labJournal.id}`;
+const title = `${toShortDateString(model.value.createdAt)} | by ${model.value.createdBy} | entry id: ${props.labJournal.appId}`;
 const isEditing = ref<boolean>(false);
 const isExpanded = ref<boolean>(false);
 const isHovering = ref<boolean>(false);
@@ -37,26 +38,26 @@ async function startEditing(event: Event) {
   isExpanded.value = true;
 }
 
-const labJournalApi = useShepardApi(LabJournalEntryApi);
+const labJournalApi = useV2ShepardApi(LabJournalEntryV2Api);
 
 async function cancelEditing() {
   labJournalApi.value
-    .getLabJournalById({ labJournalEntryId: model.value.id })
+    .getLabJournalEntry({ appId: model.value.appId! })
     .then(response => {
       model.value = response;
       isEditing.value = false;
       isExpanded.value = false;
     })
     .catch(error => {
-      handleError(error, "getLabJournalById");
+      handleError(error, "getLabJournalEntry");
     });
 }
 
 async function saveChanges() {
   labJournalApi.value
-    .updateLabJournal({
-      labJournalEntryId: model.value.id,
-      updateLabJournalRequest: {
+    .updateLabJournalEntry({
+      appId: model.value.appId!,
+      updateLabJournalEntryV2: {
         journalContent: model.value.journalContent,
       },
     })
@@ -66,19 +67,19 @@ async function saveChanges() {
       isExpanded.value = true;
     })
     .catch(error => {
-      handleError(error, "updateLabJournal");
+      handleError(error, "updateLabJournalEntry");
     });
 }
 
 async function deleteEntry() {
   labJournalApi.value
-    .deleteLabJournal({ labJournalEntryId: model.value.id })
+    .deleteLabJournalEntry({ appId: model.value.appId! })
     .then(_ => {
       emit("deleted");
       emitSuccess("Entry deleted!");
     })
     .catch(error => {
-      handleError(error, "deleteLabJournal");
+      handleError(error, "deleteLabJournalEntry");
     });
 }
 
@@ -91,9 +92,9 @@ function toggleExpanded() {
   isExpanded.value = !isExpanded.value;
 }
 
-function getDataObjectLink(dataObjectId: number): string {
+function getDataObjectLink(dataObjectAppId: string | null | undefined): string {
   const routePath = useRoute().path;
-  return routePath + `/dataobjects/${dataObjectId}`;
+  return routePath + `/dataobjects/${dataObjectAppId ?? ""}`;
 }
 
 const getUpdatedInfoString = computed(() => {
@@ -218,7 +219,7 @@ function fetchImage(fileContainerId: number, oid: string): Promise<Blob> {
       &nbsp;|
       <span v-if="props.dataObjectName" id="lab-journal-title" class="pa-2">
         <NuxtLink
-          :to="getDataObjectLink(props.dataObjectId)"
+          :to="getDataObjectLink(props.labJournal.dataObjectAppId)"
           class="dataobject-link"
         >
           {{ props.dataObjectName }}
