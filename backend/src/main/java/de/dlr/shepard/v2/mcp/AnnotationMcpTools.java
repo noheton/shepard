@@ -16,6 +16,9 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -697,8 +700,8 @@ public class AnnotationMcpTools {
     row.put("sourceMode", a.getSourceMode());
     row.put("confidence", a.getConfidence());
     row.put("sourceActivityAppId", a.getSourceActivityAppId());
-    row.put("validFromMillis", a.getValidFromMillis());
-    row.put("validUntilMillis", a.getValidUntilMillis());
+    row.put("validFrom", toIso(a.getValidFromMillis()));
+    row.put("validUntil", toIso(a.getValidUntilMillis()));
     row.put("source", a.getSource());
     return row;
   }
@@ -719,5 +722,10 @@ public class AnnotationMcpTools {
     } catch (RuntimeException e) {
       return false;
     }
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC));
   }
 }

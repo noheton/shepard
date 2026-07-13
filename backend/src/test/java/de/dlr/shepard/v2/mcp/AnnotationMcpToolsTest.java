@@ -137,9 +137,9 @@ class AnnotationMcpToolsTest {
     assertEquals(VOC_APP_ID, row.get("vocabularyId").asText());
     assertEquals("ai", row.get("sourceMode").asText());
     assertEquals(0.87, row.get("confidence").asDouble(), 0.001);
-    // temporal bounds
-    assertEquals(1000L, row.get("validFromMillis").asLong());
-    assertEquals(9999L, row.get("validUntilMillis").asLong());
+    // temporal bounds — now ISO 8601 strings
+    assertEquals("1970-01-01T00:00:01Z", row.get("validFrom").asText());
+    assertEquals("1970-01-01T00:00:09.999Z", row.get("validUntil").asText());
   }
 
   @Test

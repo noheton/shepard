@@ -1,6 +1,9 @@
 package de.dlr.shepard.v2.annotations.io;
 
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -68,11 +71,11 @@ public class AnnotationIO {
 
   // ─── temporal validity ─────────────────────────────────────────────────────
 
-  @Schema(nullable = true, description = "Epoch-millis at which this annotation becomes valid. Null = valid from creation.")
-  private Long validFromMillis;
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp at which this annotation becomes valid. Null = valid from creation.")
+  private String validFrom;
 
-  @Schema(nullable = true, description = "Epoch-millis at which this annotation expires. Null = no expiry (currently asserted).")
-  private Long validUntilMillis;
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp at which this annotation expires. Null = no expiry (currently asserted).")
+  private String validUntil;
 
   // ─── confidence ────────────────────────────────────────────────────────────
 
@@ -105,10 +108,15 @@ public class AnnotationIO {
     this.sourceActivityAppId = a.getSourceActivityAppId();
 
     // temporal
-    this.validFromMillis = a.getValidFromMillis();
-    this.validUntilMillis = a.getValidUntilMillis();
+    this.validFrom = toIso(a.getValidFromMillis());
+    this.validUntil = toIso(a.getValidUntilMillis());
 
     // confidence
     this.confidence = a.getConfidence();
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC));
   }
 }
