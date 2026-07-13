@@ -5066,7 +5066,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:86–91`; apisimp-sweep-fire-563 §F1.
 
 ## APISIMP-JUPYTER-PUBLIC-REST-DELETE — delete JupyterConfigPublicRest 301 tombstone (size: XS, fire-563)
-- **Status:** ⏳ queued (pending — wait for 301 redirect to stabilize; do not act before fire-573)
+- **Status:** ✅ done (fire-573, PR TBD)
 - **Why:** `JupyterConfigPublicRest.java` at `GET /v2/jupyter/config` is now a 301 redirect tombstone pointing to `GET /v2/config/jupyter` (shipped in fire-563, PR #2499). The class should be deleted once the redirect has had time to propagate to callers. Minimum stabilization window: 10 fires (~10 hours).
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/jupyter/resources/JupyterConfigPublicRest.java`; apisimp-sweep-fire-563 §F3.
 
