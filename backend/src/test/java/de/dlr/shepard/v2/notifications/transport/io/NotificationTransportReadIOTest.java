@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.notifications.transport.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,6 +95,22 @@ class NotificationTransportReadIOTest {
     assertEquals("noreply", io.smtpUsername());
     assertEquals("noreply@example.org", io.smtpFrom());
     assertEquals(Boolean.TRUE, io.smtpTls());
+  }
+
+  @Test
+  void lastTestedAt_isRenderedAsIso8601() {
+    // 1_700_000_000_000 ms = 2023-11-14T22:13:20Z
+    NotificationTransport t = populatedSmtp();
+    NotificationTransportReadIO io = NotificationTransportReadIO.from(t);
+    assertEquals("2023-11-14T22:13:20Z", io.lastTestedAt());
+  }
+
+  @Test
+  void lastTestedAt_isNullWhenNotSet() {
+    NotificationTransport t = populatedSmtp();
+    t.setLastTestedAt(null);
+    NotificationTransportReadIO io = NotificationTransportReadIO.from(t);
+    assertNull(io.lastTestedAt());
   }
 
   // ─── helpers ────────────────────────────────────────────────────────────

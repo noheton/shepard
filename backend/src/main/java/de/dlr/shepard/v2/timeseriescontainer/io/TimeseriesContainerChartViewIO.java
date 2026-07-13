@@ -2,6 +2,9 @@ package de.dlr.shepard.v2.timeseriescontainer.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -24,8 +27,8 @@ public record TimeseriesContainerChartViewIO(
    */
   List<String> selectedChannels,
 
-  /** Millis-epoch of the last PATCH. Server-set; ignored on PATCH. */
-  Long updatedAt,
+  /** ISO 8601 UTC timestamp of the last PATCH. Server-set; ignored on PATCH. */
+  String updatedAt,
 
   /** Username of the last PATCH author. Server-set; ignored on PATCH. */
   String updatedBy
@@ -38,8 +41,15 @@ public record TimeseriesContainerChartViewIO(
       view.getSelectedChannels() != null
         ? new ArrayList<>(view.getSelectedChannels())
         : new ArrayList<>(),
-      view.getUpdatedAt(),
+      toIso(view.getUpdatedAt()),
       view.getUpdatedBy()
+    );
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC)
     );
   }
 }

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for U1b2: DisplayNameResolver.redactUsername applied in ShepardTemplateIO.from(). */
+/** Unit tests for U1b2 and APISIMP-MULTI-IO-EPOCH-MS-TO-ISO applied in ShepardTemplateIO.from(). */
 class ShepardTemplateIOTest {
 
   private ShepardTemplate buildTemplate(String createdBy) {
@@ -18,6 +18,38 @@ class ShepardTemplateIOTest {
     t.setBody("{}");
     t.setCreatedBy(createdBy);
     return t;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  // APISIMP-MULTI-IO-EPOCH-MS-TO-ISO — createdAt/updatedAt as ISO 8601
+  // ────────────────────────────────────────────────────────────────────
+
+  @Test
+  void createdAtIsRenderedAsIso8601() {
+    ShepardTemplate t = buildTemplate("alice");
+    t.setCreatedAt(1751328000000L); // 2025-07-01T00:00:00Z
+    ShepardTemplateIO io = ShepardTemplateIO.from(t);
+    assertEquals("2025-07-01T00:00:00Z", io.getCreatedAt());
+  }
+
+  @Test
+  void updatedAtIsRenderedAsIso8601() {
+    ShepardTemplate t = buildTemplate("alice");
+    t.setUpdatedAt(1751414400000L); // 2025-07-02T00:00:00Z
+    ShepardTemplateIO io = ShepardTemplateIO.from(t);
+    assertEquals("2025-07-02T00:00:00Z", io.getUpdatedAt());
+  }
+
+  @Test
+  void createdAtIsNullWhenNotSet() {
+    ShepardTemplateIO io = ShepardTemplateIO.from(buildTemplate("alice"));
+    assertNull(io.getCreatedAt());
+  }
+
+  @Test
+  void updatedAtIsNullWhenNotSet() {
+    ShepardTemplateIO io = ShepardTemplateIO.from(buildTemplate("alice"));
+    assertNull(io.getUpdatedAt());
   }
 
   @Test

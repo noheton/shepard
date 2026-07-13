@@ -45,10 +45,9 @@ function shouldShow(): boolean {
   return hasProgrammes || hasChildren;
 }
 
-function lastActivityLabel(millis: number | null | undefined): string {
-  if (!millis || millis <= 0) return "";
-  const d = new Date(millis);
-  return d.toLocaleString();
+function lastActivityLabel(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString();
 }
 
 function openChild(childAppId: string) {
@@ -123,9 +122,9 @@ function openChild(childAppId: string) {
                 <v-icon icon="mdi-account-group-outline" size="small" class="mr-1" />
                 {{ child.ownerGroup }}
               </div>
-              <div v-if="child.lastActivityMillis" class="mt-1">
+              <div v-if="child.lastActivity" class="mt-1">
                 <v-icon icon="mdi-clock-outline" size="small" class="mr-1" />
-                last activity {{ lastActivityLabel(child.lastActivityMillis) }}
+                last activity {{ lastActivityLabel(child.lastActivity) }}
               </div>
             </v-card-text>
             <v-card-text

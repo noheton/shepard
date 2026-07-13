@@ -6,6 +6,9 @@ import de.dlr.shepard.v2.project.io.ProjectByAnnotationItemIO;
 import de.dlr.shepard.v2.project.io.ProjectIO;
 import de.dlr.shepard.v2.project.io.SubCollectionItemIO;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +168,7 @@ public class ProjectsDAO {
     for (var row : agg) {
       io.setAggregateDoCount(asLongOrZero(row.get("aggregateDoCount")));
       Long la = asLong(row.get("lastActivityMillis"));
-      if (la != null && la > 0L) io.setLastActivityMillis(la);
+      if (la != null && la > 0L) io.setLastActivity(toIso(la));
     }
 
     return io;
@@ -214,7 +217,7 @@ public class ProjectsDAO {
       io.setOwnerGroup((String) row.get("ownerGroup"));
       io.setDoCount(asLongOrZero(row.get("doCount")));
       Long la = asLong(row.get("lastActivityMillis"));
-      if (la != null && la > 0L) io.setLastActivityMillis(la);
+      if (la != null && la > 0L) io.setLastActivity(toIso(la));
       List<String> also = asStringList(row.get("alsoMemberOf"));
       if (also != null) io.setAlsoMemberOf(also);
       items.add(io);
@@ -443,5 +446,12 @@ public class ProjectsDAO {
   private static long asLongOrZero(Object o) {
     Long l = asLong(o);
     return l == null ? 0L : l;
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC)
+    );
   }
 }

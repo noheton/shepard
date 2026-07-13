@@ -48,8 +48,8 @@ public class ProjectIO {
   @Schema(description = "Sum of DataObject counts across all sub-Collections.")
   private long aggregateDoCount;
 
-  @Schema(description = "Maximum {created/updated} timestamp across all sub-Collections; epoch millis.")
-  private Long lastActivityMillis;
+  @Schema(description = "ISO 8601 UTC timestamp of the maximum {created/updated} across all sub-Collections.")
+  private String lastActivity;
 
   @Schema(description = "Always true for endpoints under /v2/projects/{appId}; included for cross-API parity.")
   private boolean isProject = true;

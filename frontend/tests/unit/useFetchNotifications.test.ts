@@ -37,8 +37,8 @@ function makeNotification(appId: string, read = false): NotificationIO {
     body: "Test body",
     actionUrl: null,
     read,
-    createdAtMillis: Date.now(),
-    expiresAtMillis: null,
+    createdAt: new Date().toISOString(),
+    expiresAt: null,
   };
 }
 

@@ -110,7 +110,7 @@ public class ProjectsRest {
       "Returns the Project-flavoured envelope: the underlying Collection's name " +
       "+ description + ownerGroup, plus the Project-only fields " +
       "(`programmes`, `subCollectionCount`, `aggregateDoCount`, " +
-      "`lastActivityMillis`).\n\n" +
+      "`lastActivity`).\n\n" +
       "404 when the appId does not resolve to a Project — i.e. either the " +
       "appId is unknown OR the Collection at that appId does not carry " +
       "`urn:shepard:project = \"true\"`."

@@ -17,7 +17,7 @@ export interface ProjectIO {
   programmes: string[];
   subCollectionCount: number;
   aggregateDoCount: number;
-  lastActivityMillis?: number | null;
+  lastActivity?: string | null;
   isProject: boolean;
 }
 
@@ -26,7 +26,7 @@ export interface SubCollectionItemIO {
   name: string;
   ownerGroup?: string | null;
   doCount: number;
-  lastActivityMillis?: number | null;
+  lastActivity?: string | null;
   alsoMemberOf: string[];
 }
 

@@ -37,7 +37,7 @@ public class ProjectMcpTools {
       "and may declare one or more funder/programme labels via " +
       "`urn:shepard:programme`.\n\n" +
       "Returns the project flavoured shape: name, description, ownerGroup, " +
-      "programmes array, subCollectionCount, aggregateDoCount, lastActivityMillis. " +
+      "programmes array, subCollectionCount, aggregateDoCount, lastActivity (ISO 8601). " +
       "When the appId resolves to a Collection that is NOT a Project, the tool " +
       "fails with 'not found' — call `list_collections` and pick a Project " +
       "(those with the project annotation), or use `list_projects` for the " +

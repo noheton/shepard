@@ -1,6 +1,9 @@
 package de.dlr.shepard.v2.notifications.io;
 
 import de.dlr.shepard.v2.notifications.entities.Notification;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -37,11 +40,11 @@ public class NotificationIO {
   @Schema(description = "Whether the current user has marked this notification as read.")
   private boolean read;
 
-  @Schema(description = "Milliseconds since Unix epoch when this notification was created.", example = "1751400000000")
-  private Long createdAtMillis;
+  @Schema(description = "ISO 8601 UTC timestamp when this notification was created.", example = "2025-07-01T12:00:00Z")
+  private String createdAt;
 
-  @Schema(description = "Milliseconds since Unix epoch after which this notification is considered expired. Null means it never expires.", nullable = true, example = "1751486400000")
-  private Long expiresAtMillis;
+  @Schema(description = "ISO 8601 UTC timestamp after which this notification is considered expired. Null means it never expires.", nullable = true, example = "2025-07-02T12:00:00Z")
+  private String expiresAt;
 
   public static NotificationIO from(Notification n) {
     return new NotificationIO(
@@ -53,8 +56,15 @@ public class NotificationIO {
       n.getBody(),
       n.getActionUrl(),
       n.isRead(),
-      n.getCreatedAtMillis(),
-      n.getExpiresAtMillis()
+      toIso(n.getCreatedAtMillis()),
+      toIso(n.getExpiresAtMillis())
+    );
+  }
+
+  private static String toIso(Long epochMs) {
+    if (epochMs == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(
+      Instant.ofEpochMilli(epochMs).atZone(ZoneOffset.UTC)
     );
   }
 }
