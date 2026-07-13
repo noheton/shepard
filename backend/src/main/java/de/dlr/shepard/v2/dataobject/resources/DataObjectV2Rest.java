@@ -258,9 +258,7 @@ public class DataObjectV2Rest {
       DataObject parent = dataObjectDAO.findByAppId(parentAppId);
       if (parent == null || parent.isDeleted() || parent.getShepardId() == null) {
         // Unknown / deleted parent → empty page (mirrors an unmatched filter).
-        return Response.ok("[]", MediaType.APPLICATION_JSON)
-          .header("Content-Range", "dataobjects */0")
-          .build();
+        return emptyListResponse();
       }
       params = params.withParentShepardId(parent.getShepardId());
     }
@@ -269,18 +267,14 @@ public class DataObjectV2Rest {
     if (predecessorAppId != null && !predecessorAppId.isBlank()) {
       DataObject predecessor = dataObjectDAO.findByAppId(predecessorAppId);
       if (predecessor == null || predecessor.isDeleted() || predecessor.getShepardId() == null) {
-        return Response.ok("[]", MediaType.APPLICATION_JSON)
-          .header("Content-Range", "dataobjects */0")
-          .build();
+        return emptyListResponse();
       }
       params = params.withPredecessorShepardId(predecessor.getShepardId());
     }
     if (successorAppId != null && !successorAppId.isBlank()) {
       DataObject successor = dataObjectDAO.findByAppId(successorAppId);
       if (successor == null || successor.isDeleted() || successor.getShepardId() == null) {
-        return Response.ok("[]", MediaType.APPLICATION_JSON)
-          .header("Content-Range", "dataobjects */0")
-          .build();
+        return emptyListResponse();
       }
       params = params.withSuccessorShepardId(successor.getShepardId());
     }
@@ -1060,6 +1054,16 @@ public class DataObjectV2Rest {
    * <p>Mirrors {@code ProvenanceRest.enforceJsonLdProfile} but with a
    * DataObject-scoped problem type.
    */
+  /** Empty-list response consistent with the normal list path: same body shape (raw JSON
+   *  array), same caching headers, and the standard diet sentinel for downstream clients. */
+  private static Response emptyListResponse() {
+    return Response.ok("[]", MediaType.APPLICATION_JSON)
+        .header("Content-Range", "dataobjects */0")
+        .header("Cache-Control", "max-age=300, must-revalidate")
+        .header("X-Shepard-Payload-Diet", "default-trim")
+        .build();
+  }
+
   private static Response enforceM4iProfile(String acceptHeader) {
     String raw = ProvJsonLdRenderer.extractProfileParam(acceptHeader);
     if (raw == null || raw.isBlank()) return null;

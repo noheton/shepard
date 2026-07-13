@@ -451,6 +451,9 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     assertEquals("[]", r.getEntity());
+    assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
+    assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
+    assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
 
@@ -511,6 +514,9 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     assertEquals("[]", r.getEntity());
+    assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
+    assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
+    assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
 
@@ -550,6 +556,9 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     assertEquals("[]", r.getEntity());
+    assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
+    assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
+    assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
 
