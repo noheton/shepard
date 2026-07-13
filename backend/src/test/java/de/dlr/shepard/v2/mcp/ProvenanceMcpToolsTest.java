@@ -93,7 +93,7 @@ class ProvenanceMcpToolsTest {
     assertEquals("UPDATE", act.get("actionKind").asText());
     assertEquals("DataObject", act.get("targetKind").asText());
     assertEquals("flo", act.get("agentUsername").asText());
-    assertEquals(1_000_000L, act.get("startedAtMillis").asLong());
+    assertEquals("1970-01-01T00:16:40Z", act.get("startedAt").asText());
   }
 
   @Test
