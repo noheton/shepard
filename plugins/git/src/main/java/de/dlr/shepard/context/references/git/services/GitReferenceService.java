@@ -236,7 +236,7 @@ public class GitReferenceService {
    * @param username  the caller's username — used to look up their PAT
    *                  (optional; null is passed to the adapter when no
    *                  PAT is registered for the host).
-   * @return  {currentSha, previousSha, updated, checkedAtMillis}.
+   * @return  {currentSha, previousSha, updated, checkedAt}.
    * @throws GitAdapterException if the ref cannot be resolved (bad
    *         URL / unsupported host / 4xx from upstream / network).
    */
@@ -275,11 +275,13 @@ public class GitReferenceService {
       throw new GitAdapterException(502, "Unable to resolve ref to SHA: " + e.getMessage(), e);
     }
 
-    long checkedAt = System.currentTimeMillis();
+    long checkedAtMs = System.currentTimeMillis();
     gr.setResolvedSha(currentSha);
-    gr.setResolvedAtMillis(checkedAt);
+    gr.setResolvedAtMillis(checkedAtMs);
 
     boolean updated = previousSha != null && !previousSha.equals(currentSha);
+    String checkedAt = java.time.format.DateTimeFormatter.ISO_INSTANT
+      .format(java.time.Instant.ofEpochMilli(checkedAtMs));
     return new CheckUpdateResultIO(currentSha, previousSha, updated, checkedAt);
   }
 }

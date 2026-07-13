@@ -2,6 +2,8 @@ package de.dlr.shepard.context.references.git.io;
 
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -10,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Wire shape for {@code /v2/data-objects/{appId}/git-references}
  * per {@code aidocs/38 §3}. G1a exposes the **mode (a)** fields
  * ({@code repoUrl} / {@code ref} / {@code path}); G1b adds {@code mode}
- * (writable) and lights up {@code resolvedSha} / {@code resolvedAtMillis}
+ * (writable) and lights up {@code resolvedSha} / {@code resolvedAt}
  * (read-only) for tracked-artifact rows; G1c will populate {@code sha}.
  */
 @Data
@@ -55,9 +57,9 @@ public class GitReferenceIO {
   @Schema(
     readOnly = true,
     nullable = true,
-    description = "Epoch-millis when `resolvedSha` was captured. Null in mode (a) v1."
+    description = "ISO 8601 UTC instant when `resolvedSha` was captured (e.g. 2026-01-01T12:00:00Z). Null in mode (a) v1."
   )
-  private Long resolvedAtMillis;
+  private String resolvedAt;
 
   public GitReferenceIO(GitReference src) {
     this.appId = src.getAppId();
@@ -67,6 +69,11 @@ public class GitReferenceIO {
     this.path = src.getPath();
     this.sha = src.getSha();
     this.resolvedSha = src.getResolvedSha();
-    this.resolvedAtMillis = src.getResolvedAtMillis();
+    this.resolvedAt = toIso(src.getResolvedAtMillis());
+  }
+
+  private static String toIso(Long ms) {
+    if (ms == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(ms));
   }
 }

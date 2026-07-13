@@ -38,11 +38,11 @@ export interface CheckUpdateResultIO {
      */
     updated?: boolean;
     /**
-     * 
-     * @type {number}
+     * ISO 8601 UTC instant when this check was performed (e.g. 2026-01-01T12:00:00Z).
+     * @type {string}
      * @memberof CheckUpdateResultIO
      */
-    checkedAtMillis?: number;
+    checkedAt?: string;
 }
 
 /**
@@ -65,7 +65,7 @@ export function CheckUpdateResultIOFromJSONTyped(json: any, ignoreDiscriminator:
         'currentSha': json['currentSha'] == null ? undefined : json['currentSha'],
         'previousSha': json['previousSha'] == null ? undefined : json['previousSha'],
         'updated': json['updated'] == null ? undefined : json['updated'],
-        'checkedAtMillis': json['checkedAtMillis'] == null ? undefined : json['checkedAtMillis'],
+        'checkedAt': json['checkedAt'] == null ? undefined : json['checkedAt'],
     };
 }
 
@@ -78,7 +78,7 @@ export function CheckUpdateResultIOToJSON(value?: CheckUpdateResultIO | null): a
         'currentSha': value['currentSha'],
         'previousSha': value['previousSha'],
         'updated': value['updated'],
-        'checkedAtMillis': value['checkedAtMillis'],
+        'checkedAt': value['checkedAt'],
     };
 }
 

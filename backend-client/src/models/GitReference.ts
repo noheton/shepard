@@ -69,11 +69,11 @@ export interface GitReference {
      */
     readonly resolvedSha?: string | null;
     /**
-     * Epoch-millis when `resolvedSha` was captured. Null in mode (a) v1.
-     * @type {number}
+     * ISO 8601 UTC instant when `resolvedSha` was captured (e.g. 2026-01-01T12:00:00Z). Null in mode (a) v1.
+     * @type {string}
      * @memberof GitReference
      */
-    readonly resolvedAtMillis?: number | null;
+    readonly resolvedAt?: string | null;
 }
 
 
@@ -103,11 +103,11 @@ export function GitReferenceFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'path': json['path'] == null ? undefined : json['path'],
         'sha': json['sha'] == null ? undefined : json['sha'],
         'resolvedSha': json['resolvedSha'] == null ? undefined : json['resolvedSha'],
-        'resolvedAtMillis': json['resolvedAtMillis'] == null ? undefined : json['resolvedAtMillis'],
+        'resolvedAt': json['resolvedAt'] == null ? undefined : json['resolvedAt'],
     };
 }
 
-export function GitReferenceToJSON(value?: Omit<GitReference, 'appId'|'sha'|'resolvedSha'|'resolvedAtMillis'> | null): any {
+export function GitReferenceToJSON(value?: Omit<GitReference, 'appId'|'sha'|'resolvedSha'|'resolvedAt'> | null): any {
     if (value == null) {
         return value;
     }
