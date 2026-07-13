@@ -32,17 +32,17 @@ export interface ProvenanceStats {
      */
     id?: string | null;
     /**
-     * Inclusive lower bound of the window (millis since epoch).
-     * @type {number}
+     * Inclusive lower bound of the window (ISO 8601 UTC, e.g. '2026-01-01T00:00:00Z').
+     * @type {string}
      * @memberof ProvenanceStats
      */
-    sinceMillis: number;
+    since: string;
     /**
-     * Inclusive upper bound of the window (millis since epoch).
-     * @type {number}
+     * Inclusive upper bound of the window (ISO 8601 UTC, e.g. '2026-12-31T23:59:59Z').
+     * @type {string}
      * @memberof ProvenanceStats
      */
-    untilMillis: number;
+    until: string;
     /**
      * Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000).
      * @type {number}
@@ -98,8 +98,8 @@ export interface ProvenanceStats {
  */
 export function instanceOfProvenanceStats(value: object): value is ProvenanceStats {
     if (!('scope' in value) || value['scope'] === undefined) return false;
-    if (!('sinceMillis' in value) || value['sinceMillis'] === undefined) return false;
-    if (!('untilMillis' in value) || value['untilMillis'] === undefined) return false;
+    if (!('since' in value) || value['since'] === undefined) return false;
+    if (!('until' in value) || value['until'] === undefined) return false;
     if (!('bucketMillis' in value) || value['bucketMillis'] === undefined) return false;
     if (!('totalCount' in value) || value['totalCount'] === undefined) return false;
     if (!('distinctAgents' in value) || value['distinctAgents'] === undefined) return false;
@@ -121,8 +121,8 @@ export function ProvenanceStatsFromJSONTyped(json: any, ignoreDiscriminator: boo
         
         'scope': json['scope'],
         'id': json['id'] == null ? undefined : json['id'],
-        'sinceMillis': json['sinceMillis'],
-        'untilMillis': json['untilMillis'],
+        'since': json['since'],
+        'until': json['until'],
         'bucketMillis': json['bucketMillis'],
         'totalCount': json['totalCount'],
         'distinctAgents': json['distinctAgents'],
@@ -142,8 +142,8 @@ export function ProvenanceStatsToJSON(value?: ProvenanceStats | null): any {
         
         'scope': value['scope'],
         'id': value['id'],
-        'sinceMillis': value['sinceMillis'],
-        'untilMillis': value['untilMillis'],
+        'since': value['since'],
+        'until': value['until'],
         'bucketMillis': value['bucketMillis'],
         'totalCount': value['totalCount'],
         'distinctAgents': value['distinctAgents'],

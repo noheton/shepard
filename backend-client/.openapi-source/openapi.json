@@ -2609,8 +2609,8 @@
       "ProvenanceStats": {
         "required": [
           "scope",
-          "sinceMillis",
-          "untilMillis",
+          "since",
+          "until",
           "bucketMillis",
           "totalCount",
           "distinctAgents",
@@ -2629,15 +2629,13 @@
             "type": "string",
             "nullable": true
           },
-          "sinceMillis": {
-            "format": "int64",
-            "description": "Inclusive lower bound of the window (millis since epoch).",
-            "type": "integer"
+          "since": {
+            "description": "Inclusive lower bound of the window (ISO 8601 UTC, e.g. '2026-01-01T00:00:00Z').",
+            "type": "string"
           },
-          "untilMillis": {
-            "format": "int64",
-            "description": "Inclusive upper bound of the window (millis since epoch).",
-            "type": "integer"
+          "until": {
+            "description": "Inclusive upper bound of the window (ISO 8601 UTC, e.g. '2026-12-31T23:59:59Z').",
+            "type": "string"
           },
           "bucketMillis": {
             "format": "int64",
