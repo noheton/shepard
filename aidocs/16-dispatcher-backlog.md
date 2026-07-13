@@ -5207,10 +5207,10 @@ picks these up. Terse by design.
 - **AC:** `ShapesPredicatesRest.java:120–122` returns `problem(Response.Status.BAD_REQUEST, "Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")`; `mvn verify -pl backend` green; no `text/plain` 4xx bodies in `ShapesPredicatesRest`.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:120-122`; apisimp-sweep-2026-07-13-fire582.md §F2.
 
-## APISIMP-DO-EMPTY-LIST-ENVELOPE — replace raw `"[]"` early-return with `PagedResponseIO` envelope in `DataObjectV2Rest` (size: XS, fire-582)
-- **Status:** ⏳ queued
-- **Why:** `DataObjectV2Rest.java:261,272,281` returns `Response.ok("[]", APPLICATION_JSON)` when a referenced entity (parent/predecessor/successor by appId) is not found — an unmatched-filter shortcut. The normal list path returns a typed `PagedResponseIO` envelope with `total`, `page`, `pageSize`, `content`. Clients that destructure the envelope shape receive an inconsistent body (JSON array vs. JSON object) on these three paths.
-- **AC:** All three early-return sites return a zero-total `PagedResponseIO` (same envelope as normal list responses) with `Content-Range: dataobjects */0`; `mvn verify -pl backend` green.
+## APISIMP-DO-EMPTY-LIST-ENVELOPE — add consistent headers to early-return empty responses in `DataObjectV2Rest` (size: XS, fire-582)
+- **Status:** 🔄 in-flight (fire-585, PR open)
+- **Why:** `DataObjectV2Rest.java` had three `Response.ok("[]", APPLICATION_JSON)` early-return paths (unknown parent/predecessor/successor appId) that were missing `Cache-Control` and `X-Shepard-Payload-Diet` headers present on the normal list path. (Note: the sweep's description of `PagedResponseIO` was a misread — the main list endpoint intentionally uses a raw JSON array + `Content-Range` header, not a PagedResponseIO body wrapper; migration to PagedResponseIO is tracked as `APISIMP-DO-LIST-CONTENT-RANGE`.)
+- **AC (actual):** All three early-return sites return `Cache-Control: max-age=300, must-revalidate` and `X-Shepard-Payload-Diet: default-trim` in addition to the existing `Content-Range: dataobjects */0`; `emptyListResponse()` private helper consolidates the three sites; 80 tests pass.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:261,272,281`; apisimp-sweep-2026-07-13-fire582.md §F3.
 
 ## APISIMP-PLUGINS-ADMIN-APPID-PATH — rename `/{id}` → `/{appId}` in `PluginsAdminRest` (size: XS, fire-582)
