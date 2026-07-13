@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.admin.semantic.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.semantic.entities.OntologyGitSource;
+import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -56,8 +57,8 @@ public class OntologyGitSourceIO {
   @Schema(description = "When false the nightly scheduler skips this source. Default true.")
   private Boolean enabled;
 
-  @Schema(description = "Epoch-ms of the last completed ingest run. Null if never run.", readOnly = true)
-  private Long lastIngestedAt;
+  @Schema(description = "ISO 8601 UTC timestamp of the last completed ingest run. Null if never run.", readOnly = true, example = "2025-09-01T14:32:00Z")
+  private String lastIngestedAt;
 
   @Schema(description = "Last ingest status: OK, ERROR, or PENDING. Null if never run.", readOnly = true)
   private String lastStatus;
@@ -65,8 +66,8 @@ public class OntologyGitSourceIO {
   @Schema(description = "Last error message. Null when lastStatus is OK.", readOnly = true)
   private String lastError;
 
-  @Schema(description = "Epoch-ms when this record was created.", readOnly = true)
-  private Long createdAt;
+  @Schema(description = "ISO 8601 UTC timestamp when this record was created.", readOnly = true, example = "2025-08-15T10:00:00Z")
+  private String createdAt;
 
   @Schema(description = "Username of the admin who created this record.", readOnly = true)
   private String createdBy;
@@ -82,10 +83,10 @@ public class OntologyGitSourceIO {
     io.setPathPattern(entity.getPathPattern());
     io.setTargetRepoAppId(entity.getTargetRepoAppId());
     io.setEnabled(entity.isEnabled());
-    io.setLastIngestedAt(entity.getLastIngestedAt());
+    io.setLastIngestedAt(entity.getLastIngestedAt() == null ? null : Instant.ofEpochMilli(entity.getLastIngestedAt()).toString());
     io.setLastStatus(entity.getLastStatus());
     io.setLastError(entity.getLastError());
-    io.setCreatedAt(entity.getCreatedAt());
+    io.setCreatedAt(entity.getCreatedAt() == null ? null : Instant.ofEpochMilli(entity.getCreatedAt()).toString());
     io.setCreatedBy(entity.getCreatedBy());
     return io;
   }
