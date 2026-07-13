@@ -9,6 +9,8 @@ import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,7 +28,7 @@ import java.util.Map;
  * </ul>
  *
  * <p>Both tools return activities newest-first (descending
- * {@code startedAtMillis}), matching the REST
+ * {@code startedAt}), matching the REST
  * {@code GET /v2/provenance/activities} default.
  *
  * <p>Agent-username values that look like raw Keycloak UUIDs are redacted
@@ -67,7 +69,7 @@ public class ProvenanceMcpTools {
       "what happened to a DataObject, Collection, or any other entity: who created it, " +
       "who modified it, what HTTP method was used, and whether the call came from a " +
       "human or an AI agent (the `sourceMode` field).\n\n" +
-      "The response is ordered newest-first (descending `startedAtMillis`).\n\n" +
+      "The response is ordered newest-first (descending `startedAt`).\n\n" +
       "Parameters:\n" +
       "  entityAppId — UUID v7 of any Shepard entity (DataObject, Collection, Container, " +
       "Reference, …). Must exist in the graph — a wrong appId produces a -32602 error.\n" +
@@ -86,7 +88,7 @@ public class ProvenanceMcpTools {
       "      \"targetAppId\":     \"<entity-uuid>\",\n" +
       "      \"agentUsername\":   \"<display-name or redacted prefix>\",\n" +
       "      \"summary\":         \"<≤ 256-char human description>\",\n" +
-      "      \"startedAtMillis\": <epoch-millis>,\n" +
+      "      \"startedAt\":       \"<ISO 8601 UTC, e.g. 2026-01-01T12:00:00Z>\",\n" +
       "      \"sourceMode\":      \"human|ai|null\"\n" +
       "    }, ...\n" +
       "  ]\n" +
@@ -132,14 +134,14 @@ public class ProvenanceMcpTools {
       "  • Audit a time window: set sinceMillis + untilMillis.\n" +
       "  • Combine filters for surgical queries (e.g. all DELETE operations on " +
       "Collections in the last hour).\n\n" +
-      "The response is ordered newest-first (descending `startedAtMillis`).\n\n" +
+      "The response is ordered newest-first (descending `startedAt`).\n\n" +
       "Parameters (all optional):\n" +
       "  agentUsername — filter to activities by this agent.\n" +
       "  targetKind    — filter to activities whose target is this entity kind " +
       "(e.g. `Collection`, `DataObject`, `FileReference`).\n" +
       "  targetAppId   — filter to activities targeting this specific entity UUID.\n" +
-      "  sinceMillis   — inclusive lower bound on `startedAtMillis` (epoch millis).\n" +
-      "  untilMillis   — inclusive upper bound on `startedAtMillis` (epoch millis).\n" +
+      "  sinceMillis   — inclusive lower bound on startedAt (epoch millis).\n" +
+      "  untilMillis   — inclusive upper bound on startedAt (epoch millis).\n" +
       "  limit         — max rows. Default " + DEFAULT_LIMIT + ", max " + MAX_LIMIT + ".\n\n" +
       "Response shape:\n" +
       "{\n" +
@@ -153,7 +155,7 @@ public class ProvenanceMcpTools {
       "      \"targetAppId\":     \"<entity-uuid>\",\n" +
       "      \"agentUsername\":   \"<display-name or redacted prefix>\",\n" +
       "      \"summary\":         \"<≤ 256-char description>\",\n" +
-      "      \"startedAtMillis\": <epoch-millis>,\n" +
+      "      \"startedAt\":       \"<ISO 8601 UTC, e.g. 2026-01-01T12:00:00Z>\",\n" +
       "      \"sourceMode\":      \"human|ai|null\",\n" +
       "      \"agentId\":         \"<ai-model-id or null>\"\n" +
       "    }, ...\n" +
@@ -201,6 +203,11 @@ public class ProvenanceMcpTools {
     return (s == null || s.isBlank()) ? null : s;
   }
 
+  private static String toIso(Long ms) {
+    if (ms == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(ms));
+  }
+
   private static List<Map<String, Object>> toActivityMaps(List<Activity> rows) {
     List<Map<String, Object>> out = new ArrayList<>(rows.size());
     for (Activity a : rows) {
@@ -211,8 +218,8 @@ public class ProvenanceMcpTools {
       if (a.getTargetAppId() != null) m.put("targetAppId", a.getTargetAppId());
       m.put("agentUsername", DisplayNameResolver.redactUsername(a.getAgentUsername()));
       m.put("summary", a.getSummary());
-      m.put("startedAtMillis", a.getStartedAtMillis());
-      if (a.getEndedAtMillis() != null) m.put("endedAtMillis", a.getEndedAtMillis());
+      m.put("startedAt", toIso(a.getStartedAtMillis()));
+      if (a.getEndedAtMillis() != null) m.put("endedAt", toIso(a.getEndedAtMillis()));
       if (a.getMethod() != null) m.put("method", a.getMethod());
       if (a.getPath() != null) m.put("path", a.getPath());
       if (a.getStatus() != null) m.put("status", a.getStatus());

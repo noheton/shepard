@@ -2,6 +2,8 @@ package de.dlr.shepard.v2.provenance.io;
 
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.provenance.entities.Activity;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,11 +38,11 @@ public class ActivityIO {
   @Schema(required = true, description = "Short human-readable summary, ≤ 256 chars.")
   private String summary;
 
-  @Schema(required = true, description = "Millis since epoch when the activity began.")
-  private Long startedAtMillis;
+  @Schema(required = true, description = "ISO 8601 UTC instant when the activity began (e.g. 2026-01-01T12:00:00Z).")
+  private String startedAt;
 
-  @Schema(required = true, description = "Millis since epoch when the activity ended.")
-  private Long endedAtMillis;
+  @Schema(required = false, nullable = true, description = "ISO 8601 UTC instant when the activity ended (e.g. 2026-01-01T12:00:01Z).")
+  private String endedAt;
 
   @Schema(required = false, nullable = true, description = "HTTP method that drove the activity, when captured via REST.")
   private String method;
@@ -92,8 +94,8 @@ public class ActivityIO {
       a.getTargetAppId(),
       DisplayNameResolver.redactUsername(a.getAgentUsername()),
       a.getSummary(),
-      a.getStartedAtMillis(),
-      a.getEndedAtMillis(),
+      toIso(a.getStartedAtMillis()),
+      toIso(a.getEndedAtMillis()),
       a.getMethod(),
       a.getPath(),
       a.getStatus(),
@@ -103,6 +105,11 @@ public class ActivityIO {
     );
   }
 
+  private static String toIso(Long ms) {
+    if (ms == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(ms));
+  }
+
   /**
    * Return a copy with the request-shape fields (method / path / status
    * / endedAt / originInstance) cleared. Used by the
@@ -110,7 +117,7 @@ public class ActivityIO {
    * core PROV-O Activity surface.
    */
   public ActivityIO metadataOnly() {
-    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null, sourceMode, agentId);
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAt, null, null, null, null, null, sourceMode, agentId);
   }
 
   /**
@@ -120,6 +127,6 @@ public class ActivityIO {
    * {@link #metadataOnly()} does.
    */
   public ActivityIO relationsOnly() {
-    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null, sourceMode, agentId);
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAt, null, null, null, null, null, sourceMode, agentId);
   }
 }
