@@ -134,7 +134,7 @@ public class PluginsAdminRest {
   }
 
   @PATCH
-  @Path("/{id}")
+  @Path("/{appId}")
   @Operation(
     operationId = "patchPlugin",
     summary = "RFC 7396 merge-patch a plugin's enabled toggle.",
@@ -163,13 +163,13 @@ public class PluginsAdminRest {
     description = "No plugin with that id (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
-  public Response patch(@PathParam("id") String id, PluginPatchIO body, @Context SecurityContext securityContext) {
+  public Response patch(@PathParam("appId") String appId, PluginPatchIO body, @Context SecurityContext securityContext) {
     final PluginPatchIO patch = body == null ? new PluginPatchIO() : body;
 
     Set<String> unknown = patch.unknownFields();
     if (!unknown.isEmpty()) {
       String firstUnknown = unknown.iterator().next();
-      Log.warnf("PM1b: rejected PATCH /v2/admin/plugins/%s — read-only field '%s' mentioned", id, firstUnknown);
+      Log.warnf("PM1b: rejected PATCH /v2/admin/plugins/%s — read-only field '%s' mentioned", appId, firstUnknown);
       return problem(
         PROBLEM_TYPE_READ_ONLY_FIELD,
         "Field is not patchable",
@@ -178,30 +178,30 @@ public class PluginsAdminRest {
       );
     }
 
-    Optional<PluginEntry> existing = registry.get(id);
+    Optional<PluginEntry> existing = registry.get(appId);
     if (existing.isEmpty()) {
       return problem(
         PROBLEM_TYPE_NOT_FOUND,
         "Unknown plugin id",
         Status.NOT_FOUND,
-        "No plugin registered with id '" + id + "'."
+        "No plugin registered with id '" + appId + "'."
       );
     }
 
     if (patch.getEnabled() != null) {
       boolean targetState = patch.getEnabled();
-      boolean currentState = registry.isEnabled(id);
+      boolean currentState = registry.isEnabled(appId);
       if (targetState != currentState) {
-        registry.setEnabled(id, targetState, callerSub(securityContext));
-        Log.infof("PM1e: plugin '%s' enabled toggle flipped to %s via admin REST (persisted)", id, targetState);
+        registry.setEnabled(appId, targetState, callerSub(securityContext));
+        Log.infof("PM1e: plugin '%s' enabled toggle flipped to %s via admin REST (persisted)", appId, targetState);
       } else {
-        Log.debugf("PM1b: plugin '%s' already enabled=%s — PATCH is a no-op", id, targetState);
+        Log.debugf("PM1b: plugin '%s' already enabled=%s — PATCH is a no-op", appId, targetState);
       }
     }
     // No body / no fields → return the current entry unchanged (200).
 
-    PluginEntry refreshed = registry.get(id).orElse(existing.get());
-    return Response.ok(PluginEntryIO.from(refreshed, registry.isEnabled(id))).build();
+    PluginEntry refreshed = registry.get(appId).orElse(existing.get());
+    return Response.ok(PluginEntryIO.from(refreshed, registry.isEnabled(appId))).build();
   }
 
   /** Convenience overload — keeps existing tests that don't pass a SecurityContext source-compatible. */
