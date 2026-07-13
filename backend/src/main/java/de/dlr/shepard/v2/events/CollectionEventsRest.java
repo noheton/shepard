@@ -70,7 +70,7 @@ public class CollectionEventsRest {
       "Event types: DATA_OBJECT_CREATED, DATA_OBJECT_UPDATED, DATA_OBJECT_DELETED, " +
       "COLLECTION_UPDATED, HEARTBEAT.\n\n" +
       "Each non-heartbeat event carries `eventType`, `entityAppId`, `entityKind`, " +
-      "`collectionAppId`, `actorUsername`, and `timestamp` (epoch millis).\n\n" +
+      "`collectionAppId`, `actorUsername`, and `timestamp` (ISO 8601 UTC string).\n\n" +
       "Auth: Read permission on the Collection. Native EventSource cannot send " +
       "Authorization headers — use fetch + streaming body with `Authorization: Bearer <token>` " +
       "or the `X-API-KEY` header."

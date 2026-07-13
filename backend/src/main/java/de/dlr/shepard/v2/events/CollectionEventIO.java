@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.events;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -55,7 +57,15 @@ public record CollectionEventIO(
   String actorUsername,
 
   /**
-   * Epoch-millis timestamp when the event was emitted.
+   * ISO 8601 UTC timestamp when the event was emitted
+   * (e.g. {@code "2026-07-13T10:21:00Z"}).
    */
-  long timestamp
-) {}
+  @Schema(description = "ISO 8601 UTC timestamp when the event was emitted (e.g. \"2026-07-13T10:21:00Z\").")
+  String timestamp
+) {
+
+  /** Converts an epoch-millisecond value to an ISO 8601 UTC string. */
+  public static String toIso(long epochMs) {
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(epochMs));
+  }
+}

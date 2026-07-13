@@ -5184,7 +5184,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/io/OntologyAlignmentIO.java:63-64`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-COLLECTION-EVENT-EPOCH-MS-TO-ISO — convert `CollectionEventIO.timestamp` from epoch-ms `long` to ISO 8601 `String` (size: XS, fire-577)
-- **Status:** ⏳ queued
+- **Status:** 🔄 PR open (fire-579)
 - **Why:** `CollectionEventIO.timestamp` is typed `long` and described as "Epoch-millis timestamp when the event was emitted." (`backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`). Exposed on the SSE stream `GET /v2/collections/{appId}/events`. Inconsistent with ISO 8601 convention applied across other v2 entity timestamps. Fix: change field type to `String`; convert in the constructor/factory via `Instant.ofEpochMilli(epochMs).toString()`. Note: the SSE frontend consumer (`useCollectionEvents.ts` or equivalent) must be updated to parse the ISO string when computing relative times.
 - **AC:** `CollectionEventIO.timestamp` is a `String` ISO 8601 UTC value; SSE frontend consumer updated; `mvn verify -pl backend` green; `npm run typecheck` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`; `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java`; apisimp-sweep-fire577-2026-07-13.md §Findings.
