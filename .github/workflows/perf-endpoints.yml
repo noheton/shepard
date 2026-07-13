@@ -56,7 +56,7 @@ jobs:
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # ── 2. Start compose stack ───────────────────────────────────────────────
       # Full stack: backend + MongoDB + Neo4j + TimescaleDB (+ S3 for file refs).

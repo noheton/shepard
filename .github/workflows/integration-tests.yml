@@ -20,7 +20,7 @@ jobs:
     # Scheduled runs only on main; workflow_dispatch can run from any branch.
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
