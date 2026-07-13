@@ -25,12 +25,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(description = "A watched-container subscription entry, including the container kind, appId, resolved name, and availability status.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WatchIO(
+  @Schema(description = "Stable application-level identifier for this watch record (UUID v7).", readOnly = true)
   String watchAppId,
+  @Schema(description = "The kind of container being watched (e.g. TIMESERIES, FILE, STRUCTURED_DATA).")
   Watch.Kind containerKind,
+  @Schema(description = "Stable application-level identifier of the watched container (UUID v7).")
   String containerAppId,
+  @Schema(description = "Human-readable name of the watched container, resolved at query time. Null when availability is 'forbidden' or 'error'.", nullable = true)
   String containerName,
+  @Schema(description = "Availability of the watched container for the current caller. One of: 'available', 'forbidden', 'deleted', 'error'.", nullable = true)
   String containerAvailability,
+  @Schema(description = "Epoch-milliseconds when this watch was created.", example = "1751400000000")
   Long since,
+  @Schema(description = "Username of the user who created this watch.")
   String addedBy
 ) {
   /** Build the wire shape without the container resolution (service layer fills the rest). */
