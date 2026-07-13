@@ -488,13 +488,17 @@ public class ContainersV2Rest {
     description =
       "Returns the complete upload history for the file identified by `fileName` within " +
       "the container at `appId`, ordered by `versionNumber` ascending (oldest first). " +
+      "Returns all versions (no pagination — version count is bounded by upload history). " +
       "Supported for `file` and `structured-data` kind containers. Other kinds answer 415.\n\n" +
       "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Version list (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    description = "Array of all versions for this file (may be empty).",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = @Schema(type = SchemaType.ARRAY, implementation = PayloadVersionIO.class)
+    ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -518,9 +522,7 @@ public class ContainersV2Rest {
           Response.Status.UNSUPPORTED_MEDIA_TYPE,
           "Container kind '" + resolved.get().handler().kind() + "' does not support payload versioning");
     }
-    List<PayloadVersionIO> versionList = versionsOpt.get();
-    return Response.ok(new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size()))
-        .build();
+    return Response.ok(versionsOpt.get()).build();
   }
 
   // ─── stats ───────────────────────────────────────────────────────────────
@@ -572,19 +574,30 @@ public class ContainersV2Rest {
     summary = "List DataObjects linked to a container by appId.",
     description =
       "Returns the distinct DataObjects whose references point at the container at " +
-      "`appId`, as DataObjectIO[]. Supported for `file`, `structured-data` and " +
-      "`timeseries` kind containers; other kinds answer 415.\n\n" +
+      "`appId`, as a paged `PagedResponse<DataObjectIO>`. Supported for `file`, " +
+      "`structured-data` and `timeseries` kind containers; other kinds answer 415.\n\n" +
+      "Pagination: supply `page` (0-based, default 0) and `pageSize` (1–200, default 50).\n\n" +
       "Auth: Read on the container."
   )
   @APIResponse(
     responseCode = "200",
-    description = "List of linked DataObjects (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    description = "Paged list of linked DataObjects (may be empty).",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = @Schema(implementation = PagedResponseIO.class)
+    ))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
   @APIResponse(responseCode = "415", description = "This container kind has no linked-DataObject concept.")
-  public Response getLinkedDataObjects(@PathParam("appId") String appId, @Context SecurityContext sc) {
+  public Response getLinkedDataObjects(
+    @PathParam("appId") String appId,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size, 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
+    @Context SecurityContext sc
+  ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
     var resolved = containersService.resolveByAppId(appId);
@@ -600,8 +613,11 @@ public class ContainersV2Rest {
           "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept");
     }
     List<DataObjectIO> linkedList = linkedOpt.get();
-    return Response.ok(new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size()))
-        .build();
+    int total = linkedList.size();
+    int fromIdx = Math.min((int) Math.min((long) page * pageSize, Integer.MAX_VALUE), total);
+    int toIdx = Math.min(fromIdx + pageSize, total);
+    List<DataObjectIO> pageItems = linkedList.subList(fromIdx, toIdx);
+    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
   }
 
   // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
