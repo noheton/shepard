@@ -209,17 +209,17 @@ export interface DataObjectListItemV2 {
      */
     readonly structuredDataCount?: number;
     /**
-     * Earliest data-point timestamp across all timeseries channels of this DataObject, in nanoseconds since Unix epoch. Null when no timeseries data exists or `?include=time-bounds` was not requested.
-     * @type {number}
+     * Earliest data-point timestamp across all timeseries channels of this DataObject, as ISO 8601 UTC with nanosecond precision (e.g. '2024-06-01T12:00:00.000000001Z'). Null when no timeseries data exists or `?include=time-bounds` was not requested.
+     * @type {string}
      * @memberof DataObjectListItemV2
      */
-    readonly timeBoundsStart?: number | null;
+    readonly timeBoundsStart?: string | null;
     /**
-     * Latest data-point timestamp across all timeseries channels of this DataObject, in nanoseconds since Unix epoch. Null when no timeseries data exists or `?include=time-bounds` was not requested.
-     * @type {number}
+     * Latest data-point timestamp across all timeseries channels of this DataObject, as ISO 8601 UTC with nanosecond precision (e.g. '2024-06-01T12:00:00.000000001Z'). Null when no timeseries data exists or `?include=time-bounds` was not requested.
+     * @type {string}
      * @memberof DataObjectListItemV2
      */
-    readonly timeBoundsEnd?: number | null;
+    readonly timeBoundsEnd?: string | null;
     /**
      * EU AI Act Art. 50 provenance mode: 'human', 'ai', 'collaborative', or null (default, equivalent to human-authored). Set from the X-AI-Agent request header on create.
      * @type {string}

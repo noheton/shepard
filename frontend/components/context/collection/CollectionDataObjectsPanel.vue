@@ -420,8 +420,8 @@ interface Row {
   childCount: number;
   incomingCount: number;
   createdAt: Date;
-  timeBoundsStart: number | null;
-  timeBoundsEnd: number | null;
+  timeBoundsStart: number | null; // milliseconds
+  timeBoundsEnd: number | null;   // milliseconds
   /** TEMPLATE-ICONS-2-FE-RENDER-POINTS-EXPAND: appId of the template this DO was created from. */
   attachedTemplateAppId: string | null;
 }
@@ -440,8 +440,8 @@ const rows = computed<Row[]>(() =>
     childCount: (d.childrenIds ?? []).length,
     incomingCount: (d.incomingIds ?? []).length,
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
-    timeBoundsStart: d.timeBoundsStart ?? null,
-    timeBoundsEnd: d.timeBoundsEnd ?? null,
+    timeBoundsStart: d.timeBoundsStart != null ? new Date(d.timeBoundsStart).getTime() : null,
+    timeBoundsEnd: d.timeBoundsEnd != null ? new Date(d.timeBoundsEnd).getTime() : null,
     attachedTemplateAppId: d.attachedTemplateAppId ?? null,
   })),
 );
@@ -479,10 +479,7 @@ function timeBoundsBarWidth(start: number, end: number): number {
   return (end - start) / (gMax - gMin);
 }
 
-function timeBoundsTooltip(startNs: number, endNs: number): string {
-  // nanoseconds → milliseconds for Date
-  const startMs = startNs / 1_000_000;
-  const endMs   = endNs   / 1_000_000;
+function timeBoundsTooltip(startMs: number, endMs: number): string {
   return `${new Date(startMs).toLocaleString()} → ${new Date(endMs).toLocaleString()}`;
 }
 

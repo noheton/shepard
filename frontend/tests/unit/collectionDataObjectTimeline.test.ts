@@ -32,16 +32,16 @@ describe("computeGlobalMinMs", () => {
     expect(computeGlobalMinMs([])).toBe(0);
   });
 
-  it("converts nanoseconds to milliseconds", () => {
-    // 1 000 000 000 ns → 1 000 ms
-    expect(computeGlobalMinMs([{ timeBoundsStart: 1_000_000_000 }])).toBe(1_000);
+  it("parses ISO 8601 string to milliseconds", () => {
+    // "1970-01-01T00:00:01Z" = 1 000 ms
+    expect(computeGlobalMinMs([{ timeBoundsStart: "1970-01-01T00:00:01Z" }])).toBe(1_000);
   });
 
   it("returns the minimum across multiple rows", () => {
     const rows = [
-      { timeBoundsStart: 10_000_000_000 }, // 10 000 ms
-      { timeBoundsStart:  5_000_000_000 }, //  5 000 ms
-      { timeBoundsStart: 20_000_000_000 }, // 20 000 ms
+      { timeBoundsStart: "1970-01-01T00:00:10Z" }, // 10 000 ms
+      { timeBoundsStart: "1970-01-01T00:00:05Z" }, //  5 000 ms
+      { timeBoundsStart: "1970-01-01T00:00:20Z" }, // 20 000 ms
     ];
     expect(computeGlobalMinMs(rows)).toBe(5_000);
   });
@@ -58,15 +58,16 @@ describe("computeGlobalMaxMs", () => {
     expect(computeGlobalMaxMs([])).toBe(0);
   });
 
-  it("converts nanoseconds to milliseconds", () => {
-    expect(computeGlobalMaxMs([{ timeBoundsEnd: 2_000_000_000 }])).toBe(2_000);
+  it("parses ISO 8601 string to milliseconds", () => {
+    // "1970-01-01T00:00:02Z" = 2 000 ms
+    expect(computeGlobalMaxMs([{ timeBoundsEnd: "1970-01-01T00:00:02Z" }])).toBe(2_000);
   });
 
   it("returns the maximum across multiple rows", () => {
     const rows = [
-      { timeBoundsEnd: 10_000_000_000 }, // 10 000 ms
-      { timeBoundsEnd:  5_000_000_000 }, //  5 000 ms
-      { timeBoundsEnd: 20_000_000_000 }, // 20 000 ms
+      { timeBoundsEnd: "1970-01-01T00:00:10Z" }, // 10 000 ms
+      { timeBoundsEnd: "1970-01-01T00:00:05Z" }, //  5 000 ms
+      { timeBoundsEnd: "1970-01-01T00:00:20Z" }, // 20 000 ms
     ];
     expect(computeGlobalMaxMs(rows)).toBe(20_000);
   });

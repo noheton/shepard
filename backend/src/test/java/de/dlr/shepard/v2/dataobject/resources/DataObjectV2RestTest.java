@@ -229,8 +229,8 @@ class DataObjectV2RestTest {
     List<DataObjectListItemV2IO> body = parseListBody(r);
     assertEquals(1, body.size());
     DataObjectListItemV2IO item = body.get(0);
-    assertEquals(1_000_000L, item.getTimeBoundsStart());
-    assertEquals(9_000_000L, item.getTimeBoundsEnd());
+    assertEquals("1970-01-01T00:00:00.001Z", item.getTimeBoundsStart());
+    assertEquals("1970-01-01T00:00:00.009Z", item.getTimeBoundsEnd());
   }
 
   @Test

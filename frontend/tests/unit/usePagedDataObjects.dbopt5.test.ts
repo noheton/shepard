@@ -133,8 +133,8 @@ describe("DB-OPT5 — usePagedDataObjects sends panel-shaped ?fields=", () => {
       timeseriesCount: 3,
       fileCount: 1,
       structuredDataCount: 0,
-      timeBoundsStart: 1_000_000_000,
-      timeBoundsEnd: 9_000_000_000,
+      timeBoundsStart: "1970-01-01T00:00:01Z",
+      timeBoundsEnd: "1970-01-01T00:00:09Z",
     };
     mockListDataObjectsRaw.mockReturnValue(rawResponse([trimmedItem], 1));
 

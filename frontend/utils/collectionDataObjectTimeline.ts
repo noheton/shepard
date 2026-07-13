@@ -15,21 +15,21 @@ export const BIN_SIZE_MS: Record<"hour" | "day" | "week", number> = {
 export const MAX_BINS = 200;
 
 /** Global start of the swimlane grid, in milliseconds.
- *  timeBoundsStart values are nanoseconds from the backend. */
+ *  timeBoundsStart values are ISO 8601 UTC strings from the backend. */
 export function computeGlobalMinMs(
-  rows: { timeBoundsStart?: number | null }[],
+  rows: { timeBoundsStart?: string | null }[],
 ): number {
   if (!rows.length) return 0;
-  return Math.min(...rows.map(d => (d.timeBoundsStart ?? 0) / 1_000_000));
+  return Math.min(...rows.map(d => d.timeBoundsStart != null ? new Date(d.timeBoundsStart).getTime() : 0));
 }
 
 /** Global end of the swimlane grid, in milliseconds.
- *  timeBoundsEnd values are nanoseconds from the backend. */
+ *  timeBoundsEnd values are ISO 8601 UTC strings from the backend. */
 export function computeGlobalMaxMs(
-  rows: { timeBoundsEnd?: number | null }[],
+  rows: { timeBoundsEnd?: string | null }[],
 ): number {
   if (!rows.length) return 0;
-  return Math.max(...rows.map(d => (d.timeBoundsEnd ?? 0) / 1_000_000));
+  return Math.max(...rows.map(d => d.timeBoundsEnd != null ? new Date(d.timeBoundsEnd).getTime() : 0));
 }
 
 /** Compute bin start timestamps (ms) for the grid, capped at MAX_BINS. */

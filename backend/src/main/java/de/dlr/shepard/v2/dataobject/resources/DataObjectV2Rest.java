@@ -163,7 +163,7 @@ public class DataObjectV2Rest {
       "`APISIMP-DO-LIST-CONTENT-RANGE` in the backlog (a coordinated backend + " +
       "frontend two-commit change).\n\n" +
       "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
-      "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
+      "`timeBoundsEnd` (ISO 8601 UTC with nanosecond precision) to each item, reflecting the earliest and " +
       "latest data-point timestamps across all timeseries channels. Null on items " +
       "with no timeseries data. Omitted from the response entirely when " +
       "`?include=time-bounds` is not requested.\n\n" +
@@ -323,8 +323,8 @@ public class DataObjectV2Rest {
             if (maxNs == null || bounds[1] > maxNs) maxNs = bounds[1];
           }
         }
-        item.setTimeBoundsStart(minNs);
-        item.setTimeBoundsEnd(maxNs);
+        item.setTimeBoundsStart(minNs != null ? DataObjectListItemV2IO.toIsoNs(minNs) : null);
+        item.setTimeBoundsEnd(maxNs != null ? DataObjectListItemV2IO.toIsoNs(maxNs) : null);
       }
       result.add(item);
     }

@@ -87,8 +87,8 @@ const lanes = computed<Lane[]>(() => {
       startMs: start,
       // A bin is active when the DataObject's time range overlaps it.
       active:
-        d.timeBoundsStart! / 1_000_000 < start + bms &&
-        d.timeBoundsEnd! / 1_000_000 >= start,
+        new Date(d.timeBoundsStart!).getTime() < start + bms &&
+        new Date(d.timeBoundsEnd!).getTime() >= start,
     })),
   }));
 });
