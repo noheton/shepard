@@ -43,6 +43,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -444,8 +445,8 @@ public class SemanticAnnotationV2Rest {
     // if ProvenanceService mints a new Activity for this create.
     annotation.setSourceActivityAppId(body.getSourceActivityAppId());
     annotation.setAgentUsername(caller);  // SEMA-V6-013: record the author username at creation
-    annotation.setValidFromMillis(body.getValidFromMillis());
-    annotation.setValidUntilMillis(body.getValidUntilMillis());
+    annotation.setValidFromMillis(parseIso(body.getValidFrom()));
+    annotation.setValidUntilMillis(parseIso(body.getValidUntil()));
     annotation.setConfidence(body.getConfidence() != null ? body.getConfidence() : 1.0);
 
     annotationDAO.createOrUpdate(annotation);
@@ -573,8 +574,8 @@ public class SemanticAnnotationV2Rest {
         annotation.setSourceMode(resolvedSourceMode);
         annotation.setSourceActivityAppId(body.getSourceActivityAppId());
         annotation.setAgentUsername(caller);
-        annotation.setValidFromMillis(body.getValidFromMillis());
-        annotation.setValidUntilMillis(body.getValidUntilMillis());
+        annotation.setValidFromMillis(parseIso(body.getValidFrom()));
+        annotation.setValidUntilMillis(parseIso(body.getValidUntil()));
         annotation.setConfidence(body.getConfidence() != null ? body.getConfidence() : 1.0);
 
         annotationDAO.createOrUpdate(annotation);
@@ -623,8 +624,8 @@ public class SemanticAnnotationV2Rest {
     description =
       "RFC 7396 merge-patch: only non-null fields in the request body are applied. " +
       "The subject and predicate of an annotation are immutable. Patchable fields: " +
-      "`objectLiteral`, `objectIri`, `numericValue`, `unitIri`, `validFromMillis`, " +
-      "`validUntilMillis`, `confidence`, `sourceMode`.\n\n" +
+      "`objectLiteral`, `objectIri`, `numericValue`, `unitIri`, `validFrom`, " +
+      "`validUntil`, `confidence`, `sourceMode`.\n\n" +
       "Auth: caller must be able to Write the subject entity (inherited from its Collection). " +
       "Returns `200 OK` with the updated AnnotationV2."
   )
@@ -694,8 +695,8 @@ public class SemanticAnnotationV2Rest {
     }
     if (body.getNumericValue() != null) annotation.setNumericValue(body.getNumericValue());
     if (body.getUnitIri() != null) annotation.setUnitIRI(body.getUnitIri());
-    if (body.getValidFromMillis() != null) annotation.setValidFromMillis(body.getValidFromMillis());
-    if (body.getValidUntilMillis() != null) annotation.setValidUntilMillis(body.getValidUntilMillis());
+    if (body.getValidFrom() != null) annotation.setValidFromMillis(parseIso(body.getValidFrom()));
+    if (body.getValidUntil() != null) annotation.setValidUntilMillis(parseIso(body.getValidUntil()));
     if (body.getConfidence() != null) annotation.setConfidence(body.getConfidence());
     if (body.getSourceMode() != null) annotation.setSourceMode(body.getSourceMode());
 
@@ -728,8 +729,8 @@ public class SemanticAnnotationV2Rest {
       "- `'author-only'` — only the annotation author may delete.\n" +
       "- `'manager-only'` — only collection managers may delete.\n\n" +
       "Returns `204 No Content` on success.\n\n" +
-      "Note: this is a hard delete. For soft-delete (set `validUntilMillis`), use " +
-      "`PATCH /v2/annotations/{appId}` with `{\"validUntilMillis\": <now>}`."
+      "Note: this is a hard delete. For soft-delete, use " +
+      "`PATCH /v2/annotations/{appId}` with `{\"validUntil\": \"<iso-timestamp>\"}`."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -1096,5 +1097,10 @@ public class SemanticAnnotationV2Rest {
 
   private static String nvl(String s, String fallback) {
     return s == null || s.isBlank() ? fallback : s;
+  }
+
+  private static Long parseIso(String iso) {
+    if (iso == null || iso.isBlank()) return null;
+    return Instant.parse(iso).toEpochMilli();
   }
 }

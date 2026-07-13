@@ -61,11 +61,11 @@ public class CreateAnnotationIO {
 
   // ─── temporal validity (optional) ─────────────────────────────────────────
 
-  @Schema(nullable = true, description = "Epoch-millis start of temporal validity. Null = valid from creation.")
-  private Long validFromMillis;
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp start of temporal validity (e.g. '2024-06-01T12:00:00Z'). Null = valid from creation.")
+  private String validFrom;
 
-  @Schema(nullable = true, description = "Epoch-millis end of temporal validity. Null = currently asserted.")
-  private Long validUntilMillis;
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp end of temporal validity. Null = currently asserted.")
+  private String validUntil;
 
   // ─── confidence ───────────────────────────────────────────────────────────
 

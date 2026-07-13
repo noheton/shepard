@@ -34,12 +34,12 @@ public class UpdateAnnotationIO {
 
   // ─── temporal validity ─────────────────────────────────────────────────────
 
-  @Schema(nullable = true, description = "Epoch-millis close of the prior validity window. " +
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp closing the prior validity window (e.g. '2024-06-01T12:00:00Z'). " +
       "Setting this to a past time soft-deletes the annotation.")
-  private Long validUntilMillis;
+  private String validUntil;
 
-  @Schema(nullable = true, description = "Epoch-millis start of validity.")
-  private Long validFromMillis;
+  @Schema(nullable = true, description = "ISO 8601 UTC timestamp start of validity.")
+  private String validFrom;
 
   // ─── confidence ────────────────────────────────────────────────────────────
 
