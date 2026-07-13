@@ -306,7 +306,8 @@ class GitReferenceServiceTest {
     assertEquals("abc123", out.currentSha());
     assertNull(out.previousSha());
     assertFalse(out.updated());                  // previousSha null → not "updated"
-    assertTrue(out.checkedAtMillis() > 0);
+    assertNotNull(out.checkedAt());
+    assertTrue(out.checkedAt().contains("T"));   // ISO 8601 e.g. 2026-01-01T12:00:00Z
     assertEquals("abc123", gr.getResolvedSha()); // side-effect persisted on entity
     assertNotNull(gr.getResolvedAtMillis());
   }

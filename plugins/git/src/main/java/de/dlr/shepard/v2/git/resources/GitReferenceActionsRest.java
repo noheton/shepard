@@ -123,7 +123,7 @@ public class GitReferenceActionsRest {
     "(using the caller's stored PAT if present; works without a PAT for public repos). " +
     "Compares the current SHA to the persisted resolvedSha. Side-effect: updates " +
     "resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, " +
-    "updated, checkedAtMillis}. Requires Write permission on the parent DataObject."
+    "updated, checkedAt}. Requires Write permission on the parent DataObject."
   )
   @APIResponse(
     responseCode = "200",
