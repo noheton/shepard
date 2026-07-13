@@ -5190,7 +5190,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`; `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-PROVENANCE-STATS-EPOCH-MS-TO-ISO — convert `ProvenanceStatsIO.sinceMillis`/`untilMillis` from epoch-ms `long` to ISO 8601 `String` (size: S, fire-577)
-- **Status:** ⏳ queued
+- **Status:** 🔁 PR open (fire-581)
 - **Why:** `ProvenanceStatsIO` (`GET /v2/provenance/stats`) exposes `sinceMillis` and `untilMillis` as `long` epoch-ms window echoes on the wire (`backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`). These are query-parameter echoes (the effective window bounds after defaulting), not sensor timestamps or durations. Inconsistent with the ISO 8601 campaign. `bucketMillis` is a *duration* (not a timestamp — e.g. `86_400_000` = 1 day) and stays numeric. `buckets`/`cumulative` are `List<long[]>` charting series that must stay numeric. Fix: rename `sinceMillis`→`since` and `untilMillis`→`until`; change type to `String`; convert via `Instant.ofEpochMilli(...)​.toString()` in the service; update `ProvenanceRest.stats()` where it sets these fields; update frontend code that reads `sinceMillis`/`untilMillis`.
 - **AC:** `ProvenanceStatsIO.since` and `untilMillis` renamed to `since`/`until` (ISO 8601 strings); `bucketMillis`, `buckets`, `cumulative` unchanged; `mvn verify -pl backend` green; `npm run typecheck` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`; apisimp-sweep-fire577-2026-07-13.md §Findings.

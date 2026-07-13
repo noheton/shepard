@@ -1,5 +1,7 @@
 package de.dlr.shepard.v2.provenance.io;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -25,11 +27,11 @@ public class ProvenanceStatsIO {
   @Schema(required = false, nullable = true, description = "Entity / user id the scope narrows to. Null for scope=instance.")
   private String id;
 
-  @Schema(required = true, description = "Inclusive lower bound of the window (millis since epoch).")
-  private long sinceMillis;
+  @Schema(required = true, description = "Inclusive lower bound of the window (ISO 8601 UTC, e.g. '2026-01-01T00:00:00Z').")
+  private String since;
 
-  @Schema(required = true, description = "Inclusive upper bound of the window (millis since epoch).")
-  private long untilMillis;
+  @Schema(required = true, description = "Inclusive upper bound of the window (ISO 8601 UTC, e.g. '2026-12-31T23:59:59Z').")
+  private String until;
 
   @Schema(required = true, description = "Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000).")
   private long bucketMillis;
@@ -75,4 +77,9 @@ public class ProvenanceStatsIO {
     "(`timeseriesBytes`, `structuredDataBytes`) get added as separate keys without changing the schema."
   )
   private Map<String, Long> byteTotals;
+
+  /** Converts an epoch-ms timestamp to an ISO 8601 UTC string. */
+  public static String toIso(long epochMs) {
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(epochMs));
+  }
 }

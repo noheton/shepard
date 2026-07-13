@@ -135,8 +135,8 @@ const sparklineBars = computed<Bar[]>(() => {
   const s = stats.value;
   if (!s || !s.buckets || s.buckets.length === 0) return [];
 
-  const sinceMs = s.sinceMillis;
-  const untilMs = s.untilMillis;
+  const sinceMs = new Date(s.since).getTime();
+  const untilMs = new Date(s.until).getTime();
   const windowMs = Math.max(1, untilMs - sinceMs);
   const maxCount = Math.max(1, ...s.buckets.map(b => b[1] ?? 0));
 
@@ -161,8 +161,8 @@ const sparklineBars = computed<Bar[]>(() => {
 const cumulativePath = computed<string>(() => {
   const s = stats.value;
   if (!s || !s.cumulative || s.cumulative.length === 0) return "";
-  const sinceMs = s.sinceMillis;
-  const untilMs = s.untilMillis;
+  const sinceMs = new Date(s.since).getTime();
+  const untilMs = new Date(s.until).getTime();
   const windowMs = Math.max(1, untilMs - sinceMs);
   const innerW = SVG_W - PAD_X * 2;
   const innerH = SVG_H - PAD_Y_TOP - PAD_Y_BOTTOM;

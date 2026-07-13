@@ -98,8 +98,8 @@ public class ProvenanceStatsService {
     return new ProvenanceStatsIO(
       scope,
       id,
-      sinceMillis,
-      untilMillis,
+      ProvenanceStatsIO.toIso(sinceMillis),
+      ProvenanceStatsIO.toIso(untilMillis),
       bucketMillis,
       snap.totalCount,
       distinctAgents,
