@@ -508,14 +508,13 @@ public class ProvenanceRest {
     description = "Stats payload.",
     content = @Content(schema = @Schema(implementation = ProvenanceStatsIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, missing subject for scope=collection|user, unparseable since/until, or use of removed 'entityId' parameter.")
+  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, missing subject for scope=collection|user, or unparseable since/until.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Non-admin requested scope=instance or another user's stats.")
   public Response stats(
     @Parameter(description = "scope: instance | collection | user.", required = true) @QueryParam("scope") String scope,
     @Parameter(description = "Collection appId for scope=collection, username for scope=user. Ignored for scope=instance.")
     @QueryParam("subject") String subject,
-    @Parameter(hidden = true) @QueryParam("entityId") String legacyEntityId,
     @Parameter(description = SINCE_DESC + " Defaults to 90 days ago.")
     @QueryParam("since") String sinceRaw,
     @Parameter(description = UNTIL_DESC + " Defaults to now.")
@@ -524,10 +523,6 @@ public class ProvenanceRest {
   ) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-    // Reject the removed 'entityId' param so callers get a clear migration hint rather than a silent no-op.
-    if (legacyEntityId != null) {
-      return problem(PROBLEM_TYPE_BAD_REQUEST, "Unknown query parameter", Response.Status.BAD_REQUEST, "unknown query parameter 'entityId': use 'subject' instead");
-    }
     if (scope == null || scope.isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing parameter", Response.Status.BAD_REQUEST, "scope is required");
     }
