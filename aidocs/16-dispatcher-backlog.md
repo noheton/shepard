@@ -5208,13 +5208,27 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:120-122`; apisimp-sweep-2026-07-13-fire582.md §F2.
 
 ## APISIMP-DO-EMPTY-LIST-ENVELOPE — add consistent headers to early-return empty responses in `DataObjectV2Rest` (size: XS, fire-582)
-- **Status:** 🔄 in-flight (fire-585, PR open)
+- **Status:** ✅ merged (fire-586, PR #2545, SHA 449c82ef)
 - **Why:** `DataObjectV2Rest.java` had three `Response.ok("[]", APPLICATION_JSON)` early-return paths (unknown parent/predecessor/successor appId) that were missing `Cache-Control` and `X-Shepard-Payload-Diet` headers present on the normal list path. (Note: the sweep's description of `PagedResponseIO` was a misread — the main list endpoint intentionally uses a raw JSON array + `Content-Range` header, not a PagedResponseIO body wrapper; migration to PagedResponseIO is tracked as `APISIMP-DO-LIST-CONTENT-RANGE`.)
 - **AC (actual):** All three early-return sites return `Cache-Control: max-age=300, must-revalidate` and `X-Shepard-Payload-Diet: default-trim` in addition to the existing `Content-Range: dataobjects */0`; `emptyListResponse()` private helper consolidates the three sites; 80 tests pass.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:261,272,281`; apisimp-sweep-2026-07-13-fire582.md §F3.
 
 ## APISIMP-PLUGINS-ADMIN-APPID-PATH — rename `/{id}` → `/{appId}` in `PluginsAdminRest` (size: XS, fire-582)
-- **Status:** 🔄 in-flight (fire-583, PR open)
+- **Status:** ✅ merged (fire-585, direct to main, SHA d294e6db7)
 - **Why:** `PluginsAdminRest.java:137` declares `@Path("/{id}")` and line 166 uses `@PathParam("id") String id`. Every other admin endpoint in `v2/admin/` uses `{appId}` as the path-param name. The parameter is typed `String` (correct — plugin IDs are string keys, not numeric Neo4j ids), but the naming breaks OpenAPI client consistency: generated clients produce `patchPluginById` vs `patchPluginByAppId` for every other resource.
 - **AC:** `PluginsAdminRest.java:137` declares `@Path("/{appId}")` and line 166 uses `@PathParam("appId") String appId`; `mvn verify -pl backend` green; OpenAPI spec updated.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:137,166`; apisimp-sweep-2026-07-13-fire582.md §F4.
+
+## APISIMP-CONTAINER-VERSIONS-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/files/{fileName}/versions` (size: XS, fire-586)
+- **Status:** ⏳ queued
+- **Why:** `ContainersV2Rest.java:522` returns `new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())` but accepts no `?page=` or `?pageSize=` query parameters. The pagination envelope is structurally present but semantically inert — callers always receive the full list with `total == items.size()`. This is an incomplete follow-up from `APISIMP-CONTAINER-LIST-ENVELOPES` (fire-324), which added the wrapper without wiring real pagination logic.
+- **Fix:** Add `@QueryParam("page") @DefaultValue("0") int page` + `@QueryParam("pageSize") @DefaultValue("50") int pageSize` params and slice `versionList` with `subList(page * pageSize, min((page+1)*pageSize, size))`. If versions are naturally small in practice, dropping the `PagedResponseIO` wrapper and returning a plain `List<PayloadVersionIO>` is also acceptable.
+- **AC:** Endpoint either accepts `?page=0&pageSize=50` and returns a correctly-sliced page, OR returns a plain array documented as "returns all" in the OpenAPI description; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:522`; apisimp-sweep-2026-07-13-fire586.md §F1.
+
+## APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/linked-data-objects` (size: XS, fire-586)
+- **Status:** ⏳ queued
+- **Why:** `ContainersV2Rest.java:603` returns `new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())` but accepts no `?page=` or `?pageSize=` query parameters. At MFFD scale (a TimescaleDB container linked to dozens of DataObjects per process step), this will return unbounded payloads. The linked-DataObject set grows proportionally to the collection size, making this more urgent than the versions endpoint.
+- **Fix:** Add `@QueryParam("page") @DefaultValue("0") int page` + `@QueryParam("pageSize") @DefaultValue("50") int pageSize` params and slice `linkedList`. Real pagination preferred over dropping the envelope, given MFFD-scale growth.
+- **AC:** Endpoint accepts `?page=0&pageSize=50` and returns a correctly-sliced `PagedResponseIO`; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:603`; apisimp-sweep-2026-07-13-fire586.md §F2.
