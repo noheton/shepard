@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.semantic.io;
 
 import de.dlr.shepard.context.semantic.entities.OntologyAlignment;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -60,8 +62,8 @@ public record OntologyAlignmentIO(
   )
   String source,
 
-  @Schema(description = "Epoch-millis timestamp when the row was first created by the migration.")
-  Long createdAt
+  @Schema(description = "ISO 8601 UTC timestamp when the row was first created by the migration. Null for rows seeded before this field was added.")
+  String createdAt
 
 ) {
 
@@ -76,7 +78,12 @@ public record OntologyAlignmentIO(
       entity.getRelationshipType(),
       entity.getConfidence(),
       entity.getSource(),
-      entity.getCreatedAt()
+      toIso(entity.getCreatedAt())
     );
+  }
+
+  private static String toIso(Long ms) {
+    if (ms == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(ms));
   }
 }

@@ -5178,7 +5178,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:134,202,248,301,347,382`; apisimp-sweep-fire572-2026-07-13 §Finding5.
 
 ## APISIMP-ONTOLOGY-ALIGNMENT-EPOCH-MS-TO-ISO — convert `OntologyAlignmentIO.createdAt` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-577)
-- **Status:** ⏳ queued
+- **Status:** 🔄 PR open (fire-578)
 - **Why:** `OntologyAlignmentIO.createdAt` is typed `Long` and described as "Epoch-millis timestamp when the row was first created by the migration." (`backend/src/main/java/de/dlr/shepard/v2/semantic/io/OntologyAlignmentIO.java:63-64`). The `GET /v2/semantic/ontology/alignment` endpoint exposes this as a raw numeric millis field on the wire. Inconsistent with the ISO 8601 conversion applied to `AnnotationIO` (fire-576) and `ActivityIO` (fire-577). Fix: change field type to `String`; convert in `OntologyAlignmentIO.from()` via `entity.getCreatedAt() == null ? null : Instant.ofEpochMilli(entity.getCreatedAt()).toString()` (same pattern as `OntologyGitSourceIO.java:86,89`).
 - **AC:** `OntologyAlignmentIO.createdAt` is a `String` ISO 8601 UTC value (e.g. `"2026-07-01T10:00:00Z"`); `OntologyAlignmentRestTest` asserts ISO string shape; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/io/OntologyAlignmentIO.java:63-64`; apisimp-sweep-fire577-2026-07-13.md §Findings.
