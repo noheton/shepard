@@ -32,11 +32,11 @@ export interface HarvestKeyMintedIO {
      */
     fingerprint?: string;
     /**
-     * 
-     * @type {Date}
+     * ISO 8601 UTC timestamp of key mint.
+     * @type {string}
      * @memberof HarvestKeyMintedIO
      */
-    mintedAt?: Date;
+    mintedAt?: string;
     /**
      * 
      * @type {string}
@@ -64,7 +64,7 @@ export function HarvestKeyMintedIOFromJSONTyped(json: any, ignoreDiscriminator: 
         
         'harvestApiKey': json['harvestApiKey'] == null ? undefined : json['harvestApiKey'],
         'fingerprint': json['fingerprint'] == null ? undefined : json['fingerprint'],
-        'mintedAt': json['mintedAt'] == null ? undefined : (new Date(json['mintedAt'])),
+        'mintedAt': json['mintedAt'] == null ? undefined : json['mintedAt'],
         'warning': json['warning'] == null ? undefined : json['warning'],
     };
 }
@@ -77,7 +77,7 @@ export function HarvestKeyMintedIOToJSON(value?: HarvestKeyMintedIO | null): any
         
         'harvestApiKey': value['harvestApiKey'],
         'fingerprint': value['fingerprint'],
-        'mintedAt': value['mintedAt'] == null ? undefined : ((value['mintedAt']).toISOString().substring(0,10)),
+        'mintedAt': value['mintedAt'],
         'warning': value['warning'],
     };
 }

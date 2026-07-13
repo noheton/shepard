@@ -3,7 +3,7 @@ package de.dlr.shepard.plugins.unhide.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.services.UnhideConfigService;
-import java.util.Date;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -27,7 +27,7 @@ public record UnhideConfigIO(
   boolean enabled,
   boolean feedPublic,
   String contactEmail,
-  Date harvestApiKeyMintedAt,
+  String harvestApiKeyMintedAt,
   String harvestApiKeyFingerprint
 ) {
   /**
@@ -40,7 +40,7 @@ public record UnhideConfigIO(
       cfg.isEnabled(),
       cfg.isFeedPublic(),
       cfg.getContactEmail(),
-      rotatedAt == null ? null : new Date(rotatedAt),
+      rotatedAt == null ? null : Instant.ofEpochMilli(rotatedAt).toString(),
       UnhideConfigService.fingerprint(cfg.getHarvestApiKeyHash())
     );
   }
