@@ -5220,15 +5220,15 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:137,166`; apisimp-sweep-2026-07-13-fire582.md §F4.
 
 ## APISIMP-CONTAINER-VERSIONS-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/files/{fileName}/versions` (size: XS, fire-586)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight — PR `APISIMP-CONTAINER-FAKE-PAGED-587` (fire-587)
 - **Why:** `ContainersV2Rest.java:522` returns `new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())` but accepts no `?page=` or `?pageSize=` query parameters. The pagination envelope is structurally present but semantically inert — callers always receive the full list with `total == items.size()`. This is an incomplete follow-up from `APISIMP-CONTAINER-LIST-ENVELOPES` (fire-324), which added the wrapper without wiring real pagination logic.
-- **Fix:** Add `@QueryParam("page") @DefaultValue("0") int page` + `@QueryParam("pageSize") @DefaultValue("50") int pageSize` params and slice `versionList` with `subList(page * pageSize, min((page+1)*pageSize, size))`. If versions are naturally small in practice, dropping the `PagedResponseIO` wrapper and returning a plain `List<PayloadVersionIO>` is also acceptable.
-- **AC:** Endpoint either accepts `?page=0&pageSize=50` and returns a correctly-sliced page, OR returns a plain array documented as "returns all" in the OpenAPI description; `mvn verify -pl backend` green.
+- **Fix:** Dropped `PagedResponseIO` wrapper; endpoint now returns a plain `List<PayloadVersionIO>` (version count is bounded by upload history). OpenAPI description updated to say "Returns all versions (no pagination)". Tests updated accordingly.
+- **AC:** Returns a plain array documented as "returns all" in the OpenAPI description; `mvn verify -pl backend` green. ✓ test-compile green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:522`; apisimp-sweep-2026-07-13-fire586.md §F1.
 
 ## APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/linked-data-objects` (size: XS, fire-586)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight — PR `APISIMP-CONTAINER-FAKE-PAGED-587` (fire-587)
 - **Why:** `ContainersV2Rest.java:603` returns `new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())` but accepts no `?page=` or `?pageSize=` query parameters. At MFFD scale (a TimescaleDB container linked to dozens of DataObjects per process step), this will return unbounded payloads. The linked-DataObject set grows proportionally to the collection size, making this more urgent than the versions endpoint.
-- **Fix:** Add `@QueryParam("page") @DefaultValue("0") int page` + `@QueryParam("pageSize") @DefaultValue("50") int pageSize` params and slice `linkedList`. Real pagination preferred over dropping the envelope, given MFFD-scale growth.
-- **AC:** Endpoint accepts `?page=0&pageSize=50` and returns a correctly-sliced `PagedResponseIO`; `mvn verify -pl backend` green.
+- **Fix:** Added `@QueryParam("page") @DefaultValue("0") @PositiveOrZero int page` + `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize`; `linkedList.subList(fromIdx, toIdx)` slices the in-memory result. 3+1 tests updated, new `getLinkedDataObjects_paginatesCorrectly` test added.
+- **AC:** Endpoint accepts `?page=0&pageSize=50` and returns a correctly-sliced `PagedResponseIO`; `mvn verify -pl backend` green. ✓ test-compile green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:603`; apisimp-sweep-2026-07-13-fire586.md §F2.

@@ -550,8 +550,8 @@ class ContainersV2RestTest {
     when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of(v)));
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
     assertEquals(200, r.getStatus());
-    var page = (PagedResponseIO<?>) r.getEntity();
-    assertEquals(1, page.total());
+    var list = (List<?>) r.getEntity();
+    assertEquals(1, list.size());
   }
 
   @Test
@@ -560,8 +560,8 @@ class ContainersV2RestTest {
     when(handler.listVersions(eq(APP_ID), eq("sensor.csv"))).thenReturn(Optional.of(List.of()));
     var r = resource.listVersions(APP_ID, "sensor.csv", securityContext);
     assertEquals(200, r.getStatus());
-    var page = (PagedResponseIO<?>) r.getEntity();
-    assertEquals(0, page.total());
+    var list = (List<?>) r.getEntity();
+    assertEquals(0, list.size());
   }
 
   @Test
@@ -612,20 +612,50 @@ class ContainersV2RestTest {
     dataObject.setCollection(col);
     var doIo = new de.dlr.shepard.context.collection.io.DataObjectIO(dataObject);
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of(doIo)));
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     var page = (PagedResponseIO<?>) r.getEntity();
     assertEquals(1, page.total());
+    assertEquals(1, page.items().size());
   }
 
   @Test
   void getLinkedDataObjects_returns200WithEmptyList() {
     allowRead();
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of()));
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     var page = (PagedResponseIO<?>) r.getEntity();
     assertEquals(0, page.total());
+    assertEquals(0, page.items().size());
+  }
+
+  @Test
+  void getLinkedDataObjects_paginatesCorrectly() {
+    allowRead();
+    var col = new de.dlr.shepard.context.collection.entities.Collection();
+    col.setShepardId(1L);
+    var items = new java.util.ArrayList<de.dlr.shepard.context.collection.io.DataObjectIO>();
+    for (int i = 0; i < 5; i++) {
+      var do_ = new de.dlr.shepard.context.collection.entities.DataObject();
+      do_.setAppId("do-app-" + i);
+      do_.setCollection(col);
+      items.add(new de.dlr.shepard.context.collection.io.DataObjectIO(do_));
+    }
+    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(items));
+    // page 0, size 2 → items 0–1, total 5
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 2, securityContext);
+    assertEquals(200, r.getStatus());
+    var page = (PagedResponseIO<?>) r.getEntity();
+    assertEquals(5, page.total());
+    assertEquals(2, page.items().size());
+    assertEquals(0, page.page());
+    assertEquals(2, page.pageSize());
+    // page 2, size 2 → items 4–4, total 5
+    var r2 = resource.getLinkedDataObjects(APP_ID, 2, 2, securityContext);
+    var page2 = (PagedResponseIO<?>) r2.getEntity();
+    assertEquals(5, page2.total());
+    assertEquals(1, page2.items().size());
   }
 
   @Test
@@ -633,7 +663,7 @@ class ContainersV2RestTest {
     allowRead();
     when(handler.kind()).thenReturn("hdf");
     when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.empty());
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(415, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
     ProblemJson body = (ProblemJson) r.getEntity();
@@ -644,7 +674,7 @@ class ContainersV2RestTest {
   @Test
   void getLinkedDataObjects_returns404WhenUnknown() {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.empty());
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(404, r.getStatus());
   }
 
@@ -653,14 +683,14 @@ class ContainersV2RestTest {
     when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
     when(permissionsService.isAccessTypeAllowedForUser(eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(403, r.getStatus());
   }
 
   @Test
   void getLinkedDataObjects_returns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = resource.getLinkedDataObjects(APP_ID, securityContext);
+    var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
   }
 
