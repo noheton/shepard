@@ -26,6 +26,6 @@ public record CheckUpdateResultIO(
   String previousSha,
   /** True iff currentSha != previousSha AND previousSha was non-null. */
   boolean updated,
-  /** Millis-epoch this check happened. */
-  long checkedAtMillis
+  /** ISO 8601 UTC instant when this check was performed (e.g. 2026-01-01T12:00:00Z). */
+  String checkedAt
 ) {}

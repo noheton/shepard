@@ -151,7 +151,7 @@ class GitReferenceActionsRestTest {
     GitReference gr = existingGr();
     gr.setMode(GitReferenceMode.TRACKED_ARTIFACT);
     when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
-    var result = new CheckUpdateResultIO("newsha", "oldsha", true, System.currentTimeMillis());
+    var result = new CheckUpdateResultIO("newsha", "oldsha", true, "2026-01-01T12:00:00Z");
     when(gitReferenceService.checkForUpdate(eq(gr), eq(CALLER))).thenReturn(result);
 
     var r = resource.checkUpdate(GR_APP_ID, securityContext);

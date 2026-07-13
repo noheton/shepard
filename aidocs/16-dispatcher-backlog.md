@@ -5196,7 +5196,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-GIT-REFERENCE-EPOCH-MS-TO-ISO — convert `GitReferenceIO.resolvedAtMillis` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-582)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-584, PR open)
 - **Why:** `GitReferenceIO.resolvedAtMillis` (line 60, `plugins/git/…/io/GitReferenceIO.java`) is an absolute timestamp (when the tracked SHA was last resolved at fetch time), typed `Long` epoch-ms. All in-tree v2 IO absolute timestamps have been converted to ISO 8601 strings (fires 576–582). The git plugin was out of scope for those sweeps and was missed. Pattern is identical to `OntologyAlignmentIO.createdAt` (fire-578) and `ActivityIO.createdAt` (fire-576/577).
 - **AC:** `GitReferenceIO.resolvedAt` (renamed from `resolvedAtMillis`) is a nullable `String` ISO 8601 UTC value; `plugins/git` build + `mvn verify -pl plugins/git` green; TypeScript client type updated; `npm run typecheck` green.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/context/references/git/io/GitReferenceIO.java:60`; apisimp-sweep-2026-07-13-fire582.md §F1.

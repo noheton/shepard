@@ -16,6 +16,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +30,7 @@ import java.util.Map;
  * {@link GitReferenceDAO}.
  *
  * <p>Payload key set: {@code repoUrl, ref, path, mode, sha, resolvedSha,
- * resolvedAtMillis}.
+ * resolvedAt}.
  *
  * <p>Mutable fields via PATCH: {@code name, repoUrl, ref, path, mode}.
  * Complex mode transitions (PINNED_SNAPSHOT SHA resolution) are deferred
@@ -78,7 +80,7 @@ public class GitReferenceKindHandler implements ReferenceKindHandler {
     io.put("mode", ref.getMode() == null ? null : ref.getMode().name());
     io.put("sha", ref.getSha());
     io.put("resolvedSha", ref.getResolvedSha());
-    io.put("resolvedAtMillis", ref.getResolvedAtMillis());
+    io.put("resolvedAt", toIso(ref.getResolvedAtMillis()));
     return io;
   }
 
@@ -208,5 +210,10 @@ public class GitReferenceKindHandler implements ReferenceKindHandler {
         "mode must be one of LOOSE_LINK, TRACKED_ARTIFACT, PINNED_SNAPSHOT"
       );
     }
+  }
+
+  private static String toIso(Long ms) {
+    if (ms == null) return null;
+    return DateTimeFormatter.ISO_INSTANT.format(Instant.ofEpochMilli(ms));
   }
 }

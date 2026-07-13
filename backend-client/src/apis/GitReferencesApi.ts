@@ -39,7 +39,7 @@ export interface PreviewGitReferenceV2Request {
 export class GitReferencesApi extends runtime.BaseAPI {
 
     /**
-     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, updated, checkedAtMillis}. Requires Write permission on the parent DataObject.
+     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAt on the reference. Returns {currentSha, previousSha, updated, checkedAt}. Requires Write permission on the parent DataObject.
      * [v2] Check whether the upstream Git ref has moved since last resolution (G1d).
      */
     async checkGitReferenceUpdateV2Raw(requestParameters: CheckGitReferenceUpdateV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CheckUpdateResultIO>> {
@@ -77,7 +77,7 @@ export class GitReferencesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAtMillis on the reference. Returns {currentSha, previousSha, updated, checkedAtMillis}. Requires Write permission on the parent DataObject.
+     * Resolves the GitReference\'s ref via the matching GitAdapter (using the caller\'s stored PAT if present; works without a PAT for public repos). Compares the current SHA to the persisted resolvedSha. Side-effect: updates resolvedSha + resolvedAt on the reference. Returns {currentSha, previousSha, updated, checkedAt}. Requires Write permission on the parent DataObject.
      * [v2] Check whether the upstream Git ref has moved since last resolution (G1d).
      */
     async checkGitReferenceUpdateV2(requestParameters: CheckGitReferenceUpdateV2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<CheckUpdateResultIO> {
