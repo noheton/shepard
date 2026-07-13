@@ -163,7 +163,7 @@ public class ProvenanceRest {
     var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, limit))
         .header("X-Has-More", hasMore);
     if (hasMore) {
-      rb.header("X-Next-Cursor", rows.get(rows.size() - 1).getStartedAtMillis());
+      rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
     }
     return rb.build();
   }
@@ -323,7 +323,7 @@ public class ProvenanceRest {
     var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, limit))
         .header("X-Has-More", hasMore);
     if (hasMore) {
-      rb.header("X-Next-Cursor", rows.get(rows.size() - 1).getStartedAtMillis());
+      rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
     }
     return rb.build();
   }
