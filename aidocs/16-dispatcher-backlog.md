@@ -5190,7 +5190,31 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`; `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-PROVENANCE-STATS-EPOCH-MS-TO-ISO — convert `ProvenanceStatsIO.sinceMillis`/`untilMillis` from epoch-ms `long` to ISO 8601 `String` (size: S, fire-577)
-- **Status:** 🔁 PR open (fire-581)
+- **Status:** ✅ merged (fire-582, PR #2540 SHA cb81f21f)
 - **Why:** `ProvenanceStatsIO` (`GET /v2/provenance/stats`) exposes `sinceMillis` and `untilMillis` as `long` epoch-ms window echoes on the wire (`backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`). These are query-parameter echoes (the effective window bounds after defaulting), not sensor timestamps or durations. Inconsistent with the ISO 8601 campaign. `bucketMillis` is a *duration* (not a timestamp — e.g. `86_400_000` = 1 day) and stays numeric. `buckets`/`cumulative` are `List<long[]>` charting series that must stay numeric. Fix: rename `sinceMillis`→`since` and `untilMillis`→`until`; change type to `String`; convert via `Instant.ofEpochMilli(...)​.toString()` in the service; update `ProvenanceRest.stats()` where it sets these fields; update frontend code that reads `sinceMillis`/`untilMillis`.
 - **AC:** `ProvenanceStatsIO.since` and `untilMillis` renamed to `since`/`until` (ISO 8601 strings); `bucketMillis`, `buckets`, `cumulative` unchanged; `mvn verify -pl backend` green; `npm run typecheck` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`; apisimp-sweep-fire577-2026-07-13.md §Findings.
+
+## APISIMP-GIT-REFERENCE-EPOCH-MS-TO-ISO — convert `GitReferenceIO.resolvedAtMillis` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-582)
+- **Status:** ⏳ queued
+- **Why:** `GitReferenceIO.resolvedAtMillis` (line 60, `plugins/git/…/io/GitReferenceIO.java`) is an absolute timestamp (when the tracked SHA was last resolved at fetch time), typed `Long` epoch-ms. All in-tree v2 IO absolute timestamps have been converted to ISO 8601 strings (fires 576–582). The git plugin was out of scope for those sweeps and was missed. Pattern is identical to `OntologyAlignmentIO.createdAt` (fire-578) and `ActivityIO.createdAt` (fire-576/577).
+- **AC:** `GitReferenceIO.resolvedAt` (renamed from `resolvedAtMillis`) is a nullable `String` ISO 8601 UTC value; `plugins/git` build + `mvn verify -pl plugins/git` green; TypeScript client type updated; `npm run typecheck` green.
+- **First refs:** `plugins/git/src/main/java/de/dlr/shepard/context/references/git/io/GitReferenceIO.java:60`; apisimp-sweep-2026-07-13-fire582.md §F1.
+
+## APISIMP-SHAPES-PREDICATES-PROBLEM-JSON — convert plain-String 400 in `ShapesPredicatesRest` to RFC 7807 problem+json (size: XS, fire-582)
+- **Status:** ⏳ queued
+- **Why:** `ShapesPredicatesRest.java:120–122` returns `Response.status(BAD_REQUEST).entity("Unknown substrate…").build()` — a `text/plain` String body. Prior sweeps (APISIMP-SHAPES-DEDUP-MISSED fire-481, APISIMP-PROBLEM-HELPER-BYPASS-3/4 fire-483/484) covered `ShapesRenderRest`, `ShapesBuildRest`, and 86 other files; `ShapesPredicatesRest` was missed. Breaks error-envelope consistency for clients testing `Content-Type: application/problem+json`.
+- **AC:** `ShapesPredicatesRest.java:120–122` returns `problem(Response.Status.BAD_REQUEST, "Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")`; `mvn verify -pl backend` green; no `text/plain` 4xx bodies in `ShapesPredicatesRest`.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:120-122`; apisimp-sweep-2026-07-13-fire582.md §F2.
+
+## APISIMP-DO-EMPTY-LIST-ENVELOPE — replace raw `"[]"` early-return with `PagedResponseIO` envelope in `DataObjectV2Rest` (size: XS, fire-582)
+- **Status:** ⏳ queued
+- **Why:** `DataObjectV2Rest.java:261,272,281` returns `Response.ok("[]", APPLICATION_JSON)` when a referenced entity (parent/predecessor/successor by appId) is not found — an unmatched-filter shortcut. The normal list path returns a typed `PagedResponseIO` envelope with `total`, `page`, `pageSize`, `content`. Clients that destructure the envelope shape receive an inconsistent body (JSON array vs. JSON object) on these three paths.
+- **AC:** All three early-return sites return a zero-total `PagedResponseIO` (same envelope as normal list responses) with `Content-Range: dataobjects */0`; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:261,272,281`; apisimp-sweep-2026-07-13-fire582.md §F3.
+
+## APISIMP-PLUGINS-ADMIN-APPID-PATH — rename `/{id}` → `/{appId}` in `PluginsAdminRest` (size: XS, fire-582)
+- **Status:** ⏳ queued
+- **Why:** `PluginsAdminRest.java:137` declares `@Path("/{id}")` and line 166 uses `@PathParam("id") String id`. Every other admin endpoint in `v2/admin/` uses `{appId}` as the path-param name. The parameter is typed `String` (correct — plugin IDs are string keys, not numeric Neo4j ids), but the naming breaks OpenAPI client consistency: generated clients produce `patchPluginById` vs `patchPluginByAppId` for every other resource.
+- **AC:** `PluginsAdminRest.java:137` declares `@Path("/{appId}")` and line 166 uses `@PathParam("appId") String appId`; `mvn verify -pl backend` green; OpenAPI spec updated.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:137,166`; apisimp-sweep-2026-07-13-fire582.md §F4.
