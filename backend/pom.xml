@@ -91,7 +91,7 @@
          import below. quarkus-test-common carries no direct Testcontainers
          dependency, so pinning 1.21.4 does not fight the platform. A deliberate
          Testcontainers 2.x migration is out of scope for this platform bump. -->
-    <testcontainers.version>1.21.4</testcontainers.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
   </properties>
   <dependencyManagement>
     <dependencies>
