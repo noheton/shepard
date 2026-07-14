@@ -84,9 +84,9 @@ export function UserGroupV2FromJSONTyped(json: any, ignoreDiscriminator: boolean
         'appId': json['appId'] == null ? undefined : json['appId'],
         'name': json['name'],
         'usernames': json['usernames'] == null ? undefined : json['usernames'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'createdAt': json['createdAt'] == null ? undefined : json['createdAt'],
         'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'updatedAt': json['updatedAt'] == null ? undefined : json['updatedAt'],
         'updatedBy': json['updatedBy'] == null ? undefined : json['updatedBy'],
     };
 }
