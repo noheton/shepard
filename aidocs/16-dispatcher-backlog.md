@@ -5178,13 +5178,13 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:134,202,248,301,347,382`; apisimp-sweep-fire572-2026-07-13 §Finding5.
 
 ## APISIMP-ONTOLOGY-ALIGNMENT-EPOCH-MS-TO-ISO — convert `OntologyAlignmentIO.createdAt` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-577)
-- **Status:** 🔄 PR open (fire-578)
+- **Status:** ✅ merged (fire-578, PR #2538)
 - **Why:** `OntologyAlignmentIO.createdAt` is typed `Long` and described as "Epoch-millis timestamp when the row was first created by the migration." (`backend/src/main/java/de/dlr/shepard/v2/semantic/io/OntologyAlignmentIO.java:63-64`). The `GET /v2/semantic/ontology/alignment` endpoint exposes this as a raw numeric millis field on the wire. Inconsistent with the ISO 8601 conversion applied to `AnnotationIO` (fire-576) and `ActivityIO` (fire-577). Fix: change field type to `String`; convert in `OntologyAlignmentIO.from()` via `entity.getCreatedAt() == null ? null : Instant.ofEpochMilli(entity.getCreatedAt()).toString()` (same pattern as `OntologyGitSourceIO.java:86,89`).
 - **AC:** `OntologyAlignmentIO.createdAt` is a `String` ISO 8601 UTC value (e.g. `"2026-07-01T10:00:00Z"`); `OntologyAlignmentRestTest` asserts ISO string shape; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/io/OntologyAlignmentIO.java:63-64`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-COLLECTION-EVENT-EPOCH-MS-TO-ISO — convert `CollectionEventIO.timestamp` from epoch-ms `long` to ISO 8601 `String` (size: XS, fire-577)
-- **Status:** 🔄 PR open (fire-579)
+- **Status:** ✅ merged (fire-579, PR #2539)
 - **Why:** `CollectionEventIO.timestamp` is typed `long` and described as "Epoch-millis timestamp when the event was emitted." (`backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`). Exposed on the SSE stream `GET /v2/collections/{appId}/events`. Inconsistent with ISO 8601 convention applied across other v2 entity timestamps. Fix: change field type to `String`; convert in the constructor/factory via `Instant.ofEpochMilli(epochMs).toString()`. Note: the SSE frontend consumer (`useCollectionEvents.ts` or equivalent) must be updated to parse the ISO string when computing relative times.
 - **AC:** `CollectionEventIO.timestamp` is a `String` ISO 8601 UTC value; SSE frontend consumer updated; `mvn verify -pl backend` green; `npm run typecheck` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventIO.java:58-60`; `backend/src/main/java/de/dlr/shepard/v2/events/CollectionEventsRest.java`; apisimp-sweep-fire577-2026-07-13.md §Findings.
@@ -5196,7 +5196,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:28-32`; apisimp-sweep-fire577-2026-07-13.md §Findings.
 
 ## APISIMP-GIT-REFERENCE-EPOCH-MS-TO-ISO — convert `GitReferenceIO.resolvedAtMillis` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-582)
-- **Status:** 🔄 in-flight (fire-584, PR open)
+- **Status:** ✅ merged (fire-584, PR #2543 SHA e2b680172)
 - **Why:** `GitReferenceIO.resolvedAtMillis` (line 60, `plugins/git/…/io/GitReferenceIO.java`) is an absolute timestamp (when the tracked SHA was last resolved at fetch time), typed `Long` epoch-ms. All in-tree v2 IO absolute timestamps have been converted to ISO 8601 strings (fires 576–582). The git plugin was out of scope for those sweeps and was missed. Pattern is identical to `OntologyAlignmentIO.createdAt` (fire-578) and `ActivityIO.createdAt` (fire-576/577).
 - **AC:** `GitReferenceIO.resolvedAt` (renamed from `resolvedAtMillis`) is a nullable `String` ISO 8601 UTC value; `plugins/git` build + `mvn verify -pl plugins/git` green; TypeScript client type updated; `npm run typecheck` green.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/context/references/git/io/GitReferenceIO.java:60`; apisimp-sweep-2026-07-13-fire582.md §F1.
@@ -5360,7 +5360,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionPermissionsRest.java:104`; apisimp-sweep-2026-07-14-fire594.md §F5.
 
 ## APISIMP-PROVENANCE-TRIPLED-HANDLER — extract shared logic from 9 near-identical `@Produces` overloads in `ProvenanceRest` (size: M, sweep: fire-594)
-- **Status:** ⏳ queued
+- **Status:** ✅ shipped (fire-598, PR #2559 SHA 090671f13)
 - **Why:** Three endpoint groups (`/activities`, `/entities`, `/relations`) in `ProvenanceRest` each have three `@GET` overloads differentiated only by `@Produces` annotation (`application/json`, `application/activity+json`, `application/ld+json`). This yields 9 near-identical method bodies with duplicated auth, filter validation, service calls, and response assembly. Adding a field or fixing a bug requires touching 9 methods instead of 3.
 - **AC:** Private helper methods `buildActivitiesResponse(…)`, `buildEntitiesResponse(…)`, `buildRelationsResponse(…)` consolidate the shared logic; each `@Produces` overload delegates to its helper; no wire change; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java`; apisimp-sweep-2026-07-14-fire594.md §F6.
