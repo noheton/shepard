@@ -17,6 +17,7 @@ import * as runtime from '../runtime';
 import type {
   CreateGitCredential,
   GitCredential,
+  PagedResponse,
   PatchGitCredential,
 } from '../models/index';
 import {
@@ -24,6 +25,7 @@ import {
     CreateGitCredentialToJSON,
     GitCredentialFromJSON,
     GitCredentialToJSON,
+    PagedResponseFromJSON,
     PatchGitCredentialFromJSON,
     PatchGitCredentialToJSON,
 } from '../models/index';
@@ -190,8 +192,15 @@ export class GitCredentialsApi extends runtime.BaseAPI {
     /**
      * [v2] List the caller\'s Git credentials.
      */
-    async listUserGitCredentialsRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<GitCredential>>> {
+    async listUserGitCredentialsRaw(requestParameters: { page?: number; pageSize?: number } = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PagedResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['pageSize'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -214,14 +223,14 @@ export class GitCredentialsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(GitCredentialFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PagedResponseFromJSON(jsonValue));
     }
 
     /**
      * [v2] List the caller\'s Git credentials.
      */
-    async listUserGitCredentials(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<GitCredential>> {
-        const response = await this.listUserGitCredentialsRaw(initOverrides);
+    async listUserGitCredentials(requestParameters: { page?: number; pageSize?: number } = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PagedResponse> {
+        const response = await this.listUserGitCredentialsRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
