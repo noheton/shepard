@@ -5466,7 +5466,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/resources/NotificationTransportRest.java:84`; fire-602 codebase sweep.
 
 ## APISIMP-ADMIN-CONFIG-FEATURES-UNSLICED — add in-memory slice to `GET /v2/admin/config` (size: XS, sweep: fire-604)
-- **Status:** ✅ shipped (fire-604, direct main commit SHA TBD)
+- **Status:** ✅ shipped (fire-604, direct main commit `da3cc2839`)
 - **Why:** `AdminConfigRest.listFeatures()` accepts `@QueryParam("page")`/`@QueryParam("pageSize")` and reflects them in the `PagedResponseIO` envelope's `page`/`pageSize` fields, but `rows` (the full registry list) is never sliced before wrapping (`new PagedResponseIO<>(rows, total, page, pageSize)` at line 101). A caller requesting `page=1&pageSize=5` receives all N features while the envelope says `{page:1, pageSize:5, total:N}`. Discovered when comparing accepted params to the return value. Registry is bounded (< 20 features in practice) so memory impact is nil, but the contract is broken.
 - **Fix:** Add `long from = Math.min((long) page * pageSize, total); List<ConfigFeatureIO> slice = rows.subList((int) from, (int) Math.min(from + pageSize, total));` before wrapping; pass `slice` instead of `rows` to `PagedResponseIO`.
 - **AC:** `GET /v2/admin/config?page=0&pageSize=5` returns at most 5 items; `GET /v2/admin/config?page=1&pageSize=5` returns the next 5 (or empty if fewer than 6 features registered); `X-Total-Count` still reflects `total` (full registry count); `mvn verify -pl backend` green.
