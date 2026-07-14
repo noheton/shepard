@@ -63,11 +63,11 @@ export interface PluginEntry {
      */
     sourcePath?: string;
     /**
-     * Wall-clock instant the registry first observed the plugin.
-     * @type {Date}
+     * Wall-clock instant the registry first observed the plugin (ISO 8601 UTC).
+     * @type {string}
      * @memberof PluginEntry
      */
-    registeredAt: Date;
+    registeredAt: string;
     /**
      * Failure reason — populated only when state == FAILED.
      * @type {string}
@@ -140,7 +140,7 @@ export function PluginEntryFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'state': json['state'],
         'enabled': json['enabled'],
         'sourcePath': json['sourcePath'] == null ? undefined : json['sourcePath'],
-        'registeredAt': (new Date(json['registeredAt'])),
+        'registeredAt': json['registeredAt'],
         'failureMessage': json['failureMessage'] == null ? undefined : json['failureMessage'],
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
@@ -163,7 +163,7 @@ export function PluginEntryToJSON(value?: PluginEntry | null): any {
         'state': value['state'],
         'enabled': value['enabled'],
         'sourcePath': value['sourcePath'],
-        'registeredAt': ((value['registeredAt']).toISOString().substring(0,10)),
+        'registeredAt': value['registeredAt'],
         'failureMessage': value['failureMessage'],
         'title': value['title'],
         'description': value['description'],

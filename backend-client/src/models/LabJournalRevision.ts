@@ -32,11 +32,11 @@ export interface LabJournalRevision {
      */
     content?: string;
     /**
-     * When the revision was captured.
-     * @type {Date}
+     * When the revision was captured (ISO 8601 UTC).
+     * @type {string}
      * @memberof LabJournalRevision
      */
-    readonly revisedAt?: Date;
+    readonly revisedAt?: string;
     /**
      * Display name of the user who made the edit.
      * @type {string}
@@ -70,7 +70,7 @@ export function LabJournalRevisionFromJSONTyped(json: any, ignoreDiscriminator: 
         
         'appId': json['appId'] == null ? undefined : json['appId'],
         'content': json['content'] == null ? undefined : json['content'],
-        'revisedAt': json['revisedAt'] == null ? undefined : (new Date(json['revisedAt'])),
+        'revisedAt': json['revisedAt'] == null ? undefined : json['revisedAt'],
         'revisedBy': json['revisedBy'] == null ? undefined : json['revisedBy'],
         'revisionNumber': json['revisionNumber'] == null ? undefined : json['revisionNumber'],
     };
