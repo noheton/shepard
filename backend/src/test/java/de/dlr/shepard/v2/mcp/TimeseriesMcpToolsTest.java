@@ -180,7 +180,8 @@ class TimeseriesMcpToolsTest {
     ArgumentCaptor<TimeseriesDataPointsQueryParams> paramsCap = ArgumentCaptor.forClass(TimeseriesDataPointsQueryParams.class);
     ArgumentCaptor<Timeseries> tsCap = ArgumentCaptor.forClass(Timeseries.class);
 
-    tools.getChannelData(CONTAINER_APP_ID, "vibration", "turbopump", "bearing", "TB1", "rms_g", 1000L, 2000L, null);
+    // 1000 ns = 1970-01-01T00:00:00.000001Z; 2000 ns = 1970-01-01T00:00:00.000002Z
+    tools.getChannelData(CONTAINER_APP_ID, "vibration", "turbopump", "bearing", "TB1", "rms_g", "1970-01-01T00:00:00.000001Z", "1970-01-01T00:00:00.000002Z", null);
 
     org.mockito.Mockito.verify(timeseriesService)
       .getDataPointsByTimeseries(org.mockito.ArgumentMatchers.eq(CONTAINER_OGM_ID), tsCap.capture(), paramsCap.capture());
@@ -292,7 +293,7 @@ class TimeseriesMcpToolsTest {
         List.of(new TimeseriesDataPoint(1L, 10.0), new TimeseriesDataPoint(2L, 11.0))
       )));
 
-    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString()), 0L, 1_000_000_000L, null);
+    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString()), "1970-01-01T00:00:00Z", "1970-01-01T00:00:01Z", null);
 
     var root = new ObjectMapper().readTree(json);
     assertEquals(1, root.get("requested").asInt());
@@ -319,7 +320,7 @@ class TimeseriesMcpToolsTest {
     when(timeseriesService.getManyDataPointsByEntities(eq(CONTAINER_OGM_ID), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
       .thenReturn(List.of(new TimeseriesWithDataPoints(new Timeseries(entA), many)));
 
-    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString()), 0L, 1_000_000_000L, 50);
+    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString()), "1970-01-01T00:00:00Z", "1970-01-01T00:00:01Z", 50);
 
     var root = new ObjectMapper().readTree(json);
     var ch = root.get("channels").get(0);
@@ -332,14 +333,14 @@ class TimeseriesMcpToolsTest {
   @Test
   void tsQueryMultiRejectsEmptyChannelList() {
     McpException ex = assertThrows(McpException.class,
-      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of(), 0L, 1L, null));
+      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of(), "1970-01-01T00:00:00Z", "1970-01-01T00:00:00.000000001Z", null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
   }
 
   @Test
   void tsQueryMultiRejectsInvalidUuid() {
     McpException ex = assertThrows(McpException.class,
-      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of("not-a-uuid"), 0L, 1L, null));
+      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of("not-a-uuid"), "1970-01-01T00:00:00Z", "1970-01-01T00:00:00.000000001Z", null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
     assertTrue(ex.getMessage().toLowerCase().contains("uuid"));
   }
@@ -351,14 +352,14 @@ class TimeseriesMcpToolsTest {
       tooMany.add(UUID.randomUUID().toString());
     }
     McpException ex = assertThrows(McpException.class,
-      () -> tools.tsQueryMulti(CONTAINER_APP_ID, tooMany, 0L, 1L, null));
+      () -> tools.tsQueryMulti(CONTAINER_APP_ID, tooMany, "1970-01-01T00:00:00Z", "1970-01-01T00:00:00.000000001Z", null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
   }
 
   @Test
   void tsQueryMultiRejectsMissingWindow() {
     McpException ex = assertThrows(McpException.class,
-      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of(UUID.randomUUID().toString()), null, 1L, null));
+      () -> tools.tsQueryMulti(CONTAINER_APP_ID, List.of(UUID.randomUUID().toString()), null, "1970-01-01T00:00:00.000000001Z", null));
     assertEquals(-32602, ex.getJsonRpcErrorCode());
   }
 
@@ -372,7 +373,7 @@ class TimeseriesMcpToolsTest {
     when(timeseriesService.getManyDataPointsByEntities(eq(CONTAINER_OGM_ID), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
       .thenReturn(List.of(new TimeseriesWithDataPoints(new Timeseries(entA), List.of())));
 
-    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString(), shepardB.toString()), 0L, 1L, null);
+    String json = tools.tsQueryMulti(CONTAINER_APP_ID, List.of(shepardA.toString(), shepardB.toString()), "1970-01-01T00:00:00Z", "1970-01-01T00:00:00.000000001Z", null);
 
     var root = new ObjectMapper().readTree(json);
     assertEquals(2, root.get("requested").asInt());

@@ -162,7 +162,7 @@ class ReferencesMcpToolsTest {
     when(referencesService.create(eq("timeseries"), eq(DO_APP_ID), any())).thenReturn(created);
 
     String json = tools.referenceCreate(DO_APP_ID, "timeseries", "TR-004 run",
-      1_000_000L, 2_000_000L, TS_CON_APP_ID, null, null);
+      "1970-01-01T00:00:00.001Z", "1970-01-01T00:00:00.002Z", TS_CON_APP_ID, null, null);
 
     var root = new ObjectMapper().readTree(json);
     assertEquals(REF_APP_ID, root.get("appId").asText());
@@ -175,7 +175,7 @@ class ReferencesMcpToolsTest {
       .thenReturn(makeRefIO(REF_APP_ID, "timeseries"));
 
     tools.referenceCreate(DO_APP_ID, "timeseries", "label",
-      100L, 200L, TS_CON_APP_ID, null, null);
+      "1970-01-01T00:00:00.000000100Z", "1970-01-01T00:00:00.000000200Z", TS_CON_APP_ID, null, null);
 
     verify(referencesService).create(eq("timeseries"), eq(DO_APP_ID), argThat(body ->
       "label".equals(body.get("name")) &&
@@ -272,7 +272,7 @@ class ReferencesMcpToolsTest {
     when(referencesService.patchByAppId(eq(REF_APP_ID), any()))
       .thenReturn(makeRefIO(REF_APP_ID, "timeseries"));
 
-    tools.referenceUpdate(REF_APP_ID, null, 100L, 200L, null, null);
+    tools.referenceUpdate(REF_APP_ID, null, "1970-01-01T00:00:00.000000100Z", "1970-01-01T00:00:00.000000200Z", null, null);
 
     verify(referencesService).patchByAppId(eq(REF_APP_ID), argThat(p ->
       Long.valueOf(100L).equals(p.get("start")) &&

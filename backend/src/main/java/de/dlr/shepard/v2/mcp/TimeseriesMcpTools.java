@@ -16,6 +16,8 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -114,20 +116,21 @@ public class TimeseriesMcpTools {
       "in hand.\n\n" +
       "Identify the channel by passing the same 5-tuple {measurement, device, location, " +
       "symbolicName, field} returned by `list_channels`. Optionally bound the window " +
-      "with `startNanos` / `endNanos`; if omitted, all available samples in the channel " +
-      "are queried.\n\n" +
+      "with `startTime` / `endTime` (ISO 8601 UTC); if omitted, all available samples " +
+      "in the channel are queried.\n\n" +
       "Response shape:\n" +
       "{\n" +
       "  \"channel\":     {measurement, device, location, symbolicName, field},\n" +
-      "  \"window\":      {startNanos, endNanos},\n" +
+      "  \"window\":      {startTime, endTime},\n" +
       "  \"raw_count\":   <samples available in the window>,\n" +
       "  \"returned_count\": <samples in the response after downsampling>,\n" +
       "  \"downsampled\": true|false,\n" +
       "  \"algorithm\":   \"LTTB\" | \"none\",\n" +
       "  \"points\":      [{timestamp: <ns since epoch>, value: <number|string|bool>}, ...]\n" +
       "}\n\n" +
-      "Time unit is **nanoseconds since the Unix epoch** throughout (shepard's native " +
-      "timeseries resolution). To convert to milliseconds divide by 1_000_000.\n\n" +
+      "Point timestamps in the response are nanoseconds since the Unix epoch " +
+      "(shepard's native timeseries resolution). To convert to milliseconds divide " +
+      "by 1_000_000.\n\n" +
       "`maxPoints` caps the response size (default 2000, hard ceiling " + MAX_POINTS_CAP + "). " +
       "LTTB (Largest-Triangle-Three-Buckets) preserves visual shape — peaks, troughs and " +
       "trends survive even at aggressive 100× compression. For exact analysis (e.g. " +
@@ -141,8 +144,8 @@ public class TimeseriesMcpTools {
     @ToolArg(description = "Channel location.") String location,
     @ToolArg(description = "Channel symbolicName.") String symbolicName,
     @ToolArg(description = "Channel field.") String field,
-    @ToolArg(required = false, description = "Window start in nanoseconds since Unix epoch. Omit for open-start.") Long startNanos,
-    @ToolArg(required = false, description = "Window end in nanoseconds since Unix epoch. Omit for open-end.") Long endNanos,
+    @ToolArg(required = false, description = "Window start as ISO 8601 UTC string, e.g. \"2024-06-01T08:00:00Z\" or \"2024-06-01T08:00:00.123456789Z\". Omit for open-start.") String startTime,
+    @ToolArg(required = false, description = "Window end as ISO 8601 UTC string. Omit for open-end.") String endTime,
     @ToolArg(required = false, description = "Max points in response. Default 2000, capped at " + MAX_POINTS_CAP + ".") Integer maxPoints
   ) {
     return support.run("get_channel_data", () -> {
@@ -160,8 +163,8 @@ public class TimeseriesMcpTools {
         );
       }
 
-      long start = startNanos != null ? startNanos : Long.MIN_VALUE;
-      long end = endNanos != null ? endNanos : Long.MAX_VALUE;
+      long start = startTime != null ? isoToNanos(startTime) : Long.MIN_VALUE;
+      long end = endTime != null ? isoToNanos(endTime) : Long.MAX_VALUE;
       int cap = maxPoints != null ? Math.min(Math.max(maxPoints, 1), MAX_POINTS_CAP) : DEFAULT_MAX_POINTS;
 
       Timeseries channel = new Timeseries(measurement, device, location, symbolicName, field);
@@ -189,8 +192,8 @@ public class TimeseriesMcpTools {
       ch.put("field", field);
       body.put("channel", ch);
       Map<String, Object> window = new LinkedHashMap<>();
-      window.put("startNanos", startNanos);
-      window.put("endNanos", endNanos);
+      window.put("startTime", startTime);
+      window.put("endTime", endTime);
       body.put("window", window);
       body.put("raw_count", rawCount);
       body.put("returned_count", shown.size());
@@ -203,7 +206,7 @@ public class TimeseriesMcpTools {
           "note",
           "No samples in this window. The channel descriptor matched a known " +
           "TimeseriesContainer slot but no points were written for it in the queried range " +
-          "(startNanos..endNanos). Try widening the window, or confirm via `list_channels` " +
+          "(startTime..endTime). Try widening the window, or confirm via `list_channels` " +
           "that the 5-tuple is spelled exactly as listed."
         );
       }
@@ -320,7 +323,7 @@ public class TimeseriesMcpTools {
       "Response shape:\n" +
       "{\n" +
       "  \"containerAppId\": \"<uuid>\",\n" +
-      "  \"window\":         { \"startNanos\": <long>, \"endNanos\": <long> },\n" +
+      "  \"window\":         { \"startTime\": \"<ISO 8601>\", \"endTime\": \"<ISO 8601>\" },\n" +
       "  \"requested\":      <int>,           // shepardIds passed in\n" +
       "  \"resolved\":       <int>,           // channels actually returned\n" +
       "  \"channels\": [{\n" +
@@ -333,17 +336,17 @@ public class TimeseriesMcpTools {
       "    \"returnedCount\": <int>,\n" +
       "    \"downsampled\": true|false,\n" +
       "    \"algorithm\":   \"LTTB\" | \"none\",\n" +
-      "    \"points\":      [{ \"timestamp\": <ns>, \"value\": <number|string|bool> }, ...]\n" +
+      "    \"points\":      [{ \"timestamp\": <ns since epoch>, \"value\": <number|string|bool> }, ...]\n" +
       "  }, ...]\n" +
       "}\n\n" +
-      "Timestamps are nanoseconds since Unix epoch. Divide by 1_000_000 for ms, by " +
-      "1_000_000_000 for seconds."
+      "Point timestamps in the response are nanoseconds since the Unix epoch. " +
+      "Divide by 1_000_000 for milliseconds, by 1_000_000_000 for seconds."
   )
   public String tsQueryMulti(
     @ToolArg(description = "UUID v7 of the TimeseriesContainer (from `get_data_object → containers.timeseries[].containerAppId`).") String containerAppId,
     @ToolArg(description = "Channel shepardIds to fetch (from `ts_describe → channels[].shepardId`). Max " + TS_QUERY_MULTI_MAX_CHANNELS + ".") List<String> shepardIds,
-    @ToolArg(description = "Window start, nanoseconds since Unix epoch.") Long startNanos,
-    @ToolArg(description = "Window end, nanoseconds since Unix epoch.") Long endNanos,
+    @ToolArg(description = "Window start as ISO 8601 UTC string, e.g. \"2024-06-01T08:00:00Z\" or \"2024-06-01T08:00:00.123456789Z\".") String startTime,
+    @ToolArg(description = "Window end as ISO 8601 UTC string.") String endTime,
     @ToolArg(required = false, description = "Optional per-channel LTTB cap. Omit for raw points; cap is " + MAX_POINTS_CAP + ".") Integer maxPointsPerChannel
   ) {
     return support.run("ts_query_multi", () -> {
@@ -361,12 +364,13 @@ public class TimeseriesMcpTools {
           " per call — split into multiple ts_query_multi invocations."
         );
       }
-      if (startNanos == null || endNanos == null) {
-        throw McpToolSupport.invalidParams("startNanos and endNanos are both required (nanoseconds since Unix epoch).");
+      if (startTime == null || endTime == null) {
+        throw McpToolSupport.invalidParams(
+          "startTime and endTime are both required (ISO 8601 UTC, e.g. \"2024-06-01T08:00:00Z\")."
+        );
       }
-      if (startNanos < 0 || endNanos < 0) {
-        throw McpToolSupport.invalidParams("startNanos and endNanos must be non-negative.");
-      }
+      long startNanos = isoToNanos(startTime);
+      long endNanos = isoToNanos(endTime);
 
       List<UUID> ids = new ArrayList<>(shepardIds.size());
       for (String s : shepardIds) {
@@ -432,8 +436,8 @@ public class TimeseriesMcpTools {
       Map<String, Object> body = new LinkedHashMap<>();
       body.put("containerAppId", containerAppId);
       Map<String, Object> window = new LinkedHashMap<>();
-      window.put("startNanos", startNanos);
-      window.put("endNanos", endNanos);
+      window.put("startTime", startTime);
+      window.put("endTime", endTime);
       body.put("window", window);
       body.put("requested", shepardIds.size());
       body.put("resolved", results.size());
@@ -527,6 +531,19 @@ public class TimeseriesMcpTools {
       row.put("valueName", resultIO.getValueName());
       return support.toJson(row);
     });
+  }
+
+  /** Converts an ISO 8601 UTC string to nanoseconds since the Unix epoch. */
+  private static long isoToNanos(String iso) {
+    try {
+      Instant instant = Instant.parse(iso.trim());
+      return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
+    } catch (DateTimeParseException e) {
+      throw McpToolSupport.invalidParams(
+        "Invalid ISO 8601 timestamp: \"" + iso + "\". " +
+        "Examples: \"2024-06-01T08:00:00Z\" or \"2024-06-01T08:00:00.123456789Z\"."
+      );
+    }
   }
 
   /** Test-visible delegate — the real impl lives in {@link Lttb}. */

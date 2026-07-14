@@ -6,6 +6,8 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,8 +117,9 @@ public class ReferencesMcpTools {
       "  kind=timeseries:\n" +
       "    timeseriesContainerAppId (required) — UUID v7 of the TimeseriesContainer;\n" +
       "      get from `get_data_object → containers.timeseries[].containerAppId`\n" +
-      "    start (required) — time window start in nanoseconds since Unix epoch\n" +
-      "    end   (required) — time window end in nanoseconds since Unix epoch\n" +
+      "    start (required) — time window start as ISO 8601 UTC string,\n" +
+      "      e.g. \"2024-06-01T08:00:00Z\" or \"2024-06-01T08:00:00.123456789Z\"\n" +
+      "    end   (required) — time window end as ISO 8601 UTC string\n" +
       "    name  (optional) — human-readable label\n\n" +
       "  kind=file (metadata step 1; upload content separately via REST PUT /v2/references/{appId}/content):\n" +
       "    name (required) — filename or label, e.g. 'robot.urdf', 'test-report.pdf'\n\n" +
@@ -130,8 +133,8 @@ public class ReferencesMcpTools {
     @ToolArg(description = "UUID v7 of the parent DataObject.") String dataObjectAppId,
     @ToolArg(description = "Reference kind: timeseries | file | uri | collection | dataobject | structured.") String kind,
     @ToolArg(required = false, description = "Name / label for the reference.") String name,
-    @ToolArg(required = false, description = "Start of the time window in nanoseconds (timeseries only).") Long start,
-    @ToolArg(required = false, description = "End of the time window in nanoseconds (timeseries only).") Long end,
+    @ToolArg(required = false, description = "Start of the time window as ISO 8601 UTC string (timeseries only), e.g. \"2024-06-01T08:00:00Z\".") String start,
+    @ToolArg(required = false, description = "End of the time window as ISO 8601 UTC string (timeseries only).") String end,
     @ToolArg(required = false, description = "UUID v7 of the TimeseriesContainer (timeseries only). Get from `get_data_object → containers.timeseries[].containerAppId`.") String timeseriesContainerAppId,
     @ToolArg(required = false, description = "Target URI (uri kind only).") String uri,
     @ToolArg(required = false, description = "Relationship predicate (uri kind only, e.g. 'isDocumentedBy').") String relationship
@@ -148,8 +151,8 @@ public class ReferencesMcpTools {
       }
       Map<String, Object> body = new LinkedHashMap<>();
       if (name != null && !name.isBlank()) body.put("name", name);
-      if (start != null) body.put("start", start);
-      if (end != null) body.put("end", end);
+      if (start != null && !start.isBlank()) body.put("start", isoToNanos(start));
+      if (end != null && !end.isBlank()) body.put("end", isoToNanos(end));
       if (timeseriesContainerAppId != null && !timeseriesContainerAppId.isBlank()) {
         body.put("timeseriesContainerAppId", timeseriesContainerAppId);
       }
@@ -169,7 +172,7 @@ public class ReferencesMcpTools {
       "Common mutable fields (any kind):\n" +
       "  name (string)\n\n" +
       "Timeseries-only mutable fields:\n" +
-      "  start (long, nanoseconds), end (long, nanoseconds)\n" +
+      "  start (ISO 8601 UTC string), end (ISO 8601 UTC string)\n" +
       "  timeReference (string), wallClockOffset (long), wallClockOffsetSource (string)\n\n" +
       "URI-only mutable fields:\n" +
       "  uri (string), relationship (string)\n\n" +
@@ -180,8 +183,8 @@ public class ReferencesMcpTools {
   public String referenceUpdate(
     @ToolArg(description = "UUID v7 of the Reference to update. Get from `list_references` or `get_data_object`.") String referenceAppId,
     @ToolArg(required = false, description = "New name / label. Omit to keep existing.") String name,
-    @ToolArg(required = false, description = "New start of time window in nanoseconds (timeseries only). Omit to keep existing.") Long start,
-    @ToolArg(required = false, description = "New end of time window in nanoseconds (timeseries only). Omit to keep existing.") Long end,
+    @ToolArg(required = false, description = "New start of time window as ISO 8601 UTC string (timeseries only), e.g. \"2024-06-01T08:00:00Z\". Omit to keep existing.") String start,
+    @ToolArg(required = false, description = "New end of time window as ISO 8601 UTC string (timeseries only). Omit to keep existing.") String end,
     @ToolArg(required = false, description = "New URI string (uri kind only). Omit to keep existing.") String uri,
     @ToolArg(required = false, description = "New relationship predicate (uri kind only). Omit to keep existing.") String relationship
   ) {
@@ -192,8 +195,8 @@ public class ReferencesMcpTools {
       }
       Map<String, Object> patch = new LinkedHashMap<>();
       if (name != null && !name.isBlank()) patch.put("name", name);
-      if (start != null) patch.put("start", start);
-      if (end != null) patch.put("end", end);
+      if (start != null && !start.isBlank()) patch.put("start", isoToNanos(start));
+      if (end != null && !end.isBlank()) patch.put("end", isoToNanos(end));
       if (uri != null && !uri.isBlank()) patch.put("uri", uri);
       if (relationship != null && !relationship.isBlank()) patch.put("relationship", relationship);
       if (patch.isEmpty()) {
@@ -230,5 +233,18 @@ public class ReferencesMcpTools {
       confirmation.put("referenceAppId", referenceAppId);
       return support.toJson(confirmation);
     });
+  }
+
+  /** Converts an ISO 8601 UTC string to nanoseconds since the Unix epoch. */
+  private static long isoToNanos(String iso) {
+    try {
+      Instant instant = Instant.parse(iso.trim());
+      return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
+    } catch (DateTimeParseException e) {
+      throw McpToolSupport.invalidParams(
+        "Invalid ISO 8601 timestamp: \"" + iso + "\". " +
+        "Examples: \"2024-06-01T08:00:00Z\" or \"2024-06-01T08:00:00.123456789Z\"."
+      );
+    }
   }
 }
