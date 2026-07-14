@@ -5354,7 +5354,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/TimeseriesMcpTools.java:144–145,192–193,339,345–346`; `ReferencesMcpTools.java:133–134,183–184`; apisimp-sweep-2026-07-14-fire594.md §F4.
 
 ## APISIMP-COLLECTION-PERMISSIONS-PUT-VS-PATCH — change `@PUT` to `@PATCH` on `CollectionPermissionsRest` (size: M, sweep: fire-594)
-- **Status:** ⏳ queued
+- **Status:** 🚧 in-progress (PR #2558, branch: `APISIMP-COLLECTION-PERMISSIONS-PUT-VS-PATCH-fire597`)
 - **Why:** `CollectionPermissionsRest.java:104` uses `@PUT /v2/collections/{appId}/permissions`; container permissions use `@PATCH /v2/containers/{appId}/permissions` with RFC 7396 merge-patch. Both endpoints replace the full permissions object, but the HTTP verb inconsistency breaks OpenAPI client ergonomics and violates the RFC 7396 convention established across other mutable admin/config endpoints. Changing to `@PATCH` + `@Consumes("application/merge-patch+json")` aligns collection permissions with container permissions.
 - **AC:** `CollectionPermissionsRest.java` uses `@PATCH`; `@Consumes("application/merge-patch+json")` added; `@Operation` description updated; `mvn verify -pl backend` green. Wire-breaking change — note in `aidocs/34`.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionPermissionsRest.java:104`; apisimp-sweep-2026-07-14-fire594.md §F5.
