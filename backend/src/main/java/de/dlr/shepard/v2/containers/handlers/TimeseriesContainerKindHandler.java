@@ -48,6 +48,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -580,9 +581,9 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> createTemporalAnnotation(String appId, TimeseriesAnnotationIO body) {
-    if (body == null || body.getStartNs() == null) {
+    if (body == null || body.getStart() == null) {
       return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
-          Response.Status.BAD_REQUEST, "startNs is required"));
+          Response.Status.BAD_REQUEST, "start is required"));
     }
     if (body.getLabel() == null || body.getLabel().isBlank()) {
       return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
@@ -593,8 +594,8 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
     TimeseriesAnnotation a = new TimeseriesAnnotation();
     a.setAppId(AppIdGenerator.next());
-    a.setStartNs(body.getStartNs());
-    a.setEndNs(body.getEndNs());
+    a.setStartNs(parseNs(body.getStart()));
+    a.setEndNs(body.getEnd() != null ? parseNs(body.getEnd()) : null);
     a.setLabel(body.getLabel().strip());
     a.setDescription(body.getDescription());
     a.setAiGenerated(body.isAiGenerated());
@@ -629,8 +630,8 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
           "Annotation not found: " + annotationAppId));
     }
 
-    if (body.getStartNs() != null) a.setStartNs(body.getStartNs());
-    if (body.getEndNs() != null) a.setEndNs(body.getEndNs());
+    if (body.getStart() != null) a.setStartNs(parseNs(body.getStart()));
+    if (body.getEnd() != null) a.setEndNs(parseNs(body.getEnd()));
     if (body.getLabel() != null) {
       if (body.getLabel().isBlank()) {
         return Optional.of(problem("timeseries-container-annotations.bad-request", "Bad Request",
@@ -667,5 +668,10 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
             .map(d -> d.getAppId())
             .toList()
     );
+  }
+
+  private static long parseNs(String iso) {
+    Instant instant = Instant.parse(iso);
+    return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
   }
 }

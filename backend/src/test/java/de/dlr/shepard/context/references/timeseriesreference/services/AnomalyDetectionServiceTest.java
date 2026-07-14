@@ -18,11 +18,12 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.spi.analytics.AnomalyInterval;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
 import de.dlr.shepard.v2.timeseries.io.AnomalyDetectRequestIO;
 import de.dlr.shepard.v2.timeseries.io.AnomalyDetectResultIO;
-import de.dlr.shepard.v2.timeseries.io.AnomalyIntervalIO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -165,9 +166,9 @@ class AnomalyDetectionServiceTest {
     double[] v = {1.0, 100.0, 1.0};
     double[] z = {0.0, 10.0, 0.0};
     boolean[] flags = {false, true, false};
-    List<AnomalyIntervalIO> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
+    List<AnomalyInterval> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
     assertThat(intervals).hasSize(1);
-    AnomalyIntervalIO a = intervals.get(0);
+    AnomalyInterval a = intervals.get(0);
     assertThat(a.startNs()).isEqualTo(2_000L);
     assertThat(a.endNs()).isEqualTo(2_000L);
     assertThat(a.peakValue()).isEqualTo(100.0);
@@ -180,9 +181,9 @@ class AnomalyDetectionServiceTest {
     double[] v = {1.0, 50.0, 100.0, 50.0, 1.0};
     double[] z = {0.0, 8.0, 15.0, 8.0, 0.0};
     boolean[] flags = {false, true, true, true, false};
-    List<AnomalyIntervalIO> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
+    List<AnomalyInterval> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
     assertThat(intervals).hasSize(1);
-    AnomalyIntervalIO a = intervals.get(0);
+    AnomalyInterval a = intervals.get(0);
     assertThat(a.startNs()).isEqualTo(200L);
     assertThat(a.endNs()).isEqualTo(400L);
     assertThat(a.maxZScore()).isEqualTo(15.0);
@@ -195,7 +196,7 @@ class AnomalyDetectionServiceTest {
     double[] v = {50.0, 1.0, 50.0, 1.0, 50.0};
     double[] z = {8.0, 0.0, 9.0, 0.0, 7.0};
     boolean[] flags = {true, false, true, false, true};
-    List<AnomalyIntervalIO> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
+    List<AnomalyInterval> intervals = AnomalyDetectionService.collectIntervals(ts, v, z, flags);
     assertThat(intervals).hasSize(3);
   }
 
@@ -297,7 +298,7 @@ class AnomalyDetectionServiceTest {
     // The spike at index 50 should be inside at least one interval
     long spikeTs = 50 * 1_000_000L;
     boolean found = result.anomalies().stream()
-      .anyMatch(a -> a.startNs() <= spikeTs && a.endNs() >= spikeTs);
+      .anyMatch(a -> isoToNs(a.start()) <= spikeTs && isoToNs(a.end()) >= spikeTs);
     assertThat(found).isTrue();
   }
 
@@ -427,6 +428,11 @@ class AnomalyDetectionServiceTest {
     AnomalyDetectResultIO result = svc.detect(ref, SERIES, new AnomalyDetectRequestIO());
 
     assertThat(result.totalPoints()).isEqualTo(2); // only the numeric ones
+  }
+
+  private static long isoToNs(String iso) {
+    var i = Instant.parse(iso);
+    return i.getEpochSecond() * 1_000_000_000L + i.getNano();
   }
 
   @Test

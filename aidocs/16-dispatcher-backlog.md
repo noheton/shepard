@@ -5487,14 +5487,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/CrossDoBulkDataRequestIO.java:65,70`; apisimp-sweep-2026-07-14-fire604 §Finding3.
 
 ## APISIMP-TS-ANNOTATION-IO-NS-TO-ISO — convert `TimeseriesAnnotationIO.startNs`/`endNs` from nanosecond `Long` to ISO 8601 `String` (size: XS, sweep: fire-604)
-- **Status:** 🔲 queued
+- **Status:** 🚢 shipped — fire-606, PR #2567
 - **Why:** `TimeseriesAnnotationIO.java:16,19` carries `private Long startNs` and `private Long endNs` — nanoseconds since Unix epoch — as both request (POST body) and response fields. The endpoint `@APIResponse(responseCode="400")` description even hard-codes the field name `` `startNs` is null ``. ISO 8601 with nanosecond fractional seconds is self-describing and consistent with the v2 surface convention. Natural pair with APISIMP-ANOMALY-INTERVAL-NS-TO-ISO — both convert the same nanosecond pattern in the timeseries anomaly cluster.
 - **Fix:** Change `Long startNs` / `Long endNs` to `String startNs` / `String endNs`; constructor maps `a.getStartNs()` → `Instant.ofEpochSecond(ns/1_000_000_000L, ns%1_000_000_000L).toString()`; parse incoming string at service boundary. Update `@APIResponse(responseCode="400")` description. Field names can stay `startNs`/`endNs` or be renamed `start`/`end` — prefer rename to drop the now-redundant `Ns` suffix.
 - **AC:** `POST .../temporal-annotations` with ISO 8601 `startNs`/`endNs` accepted; GET response carries ISO 8601 strings; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/io/TimeseriesAnnotationIO.java:16,19`; apisimp-sweep-2026-07-14-fire604 §Finding4.
 
 ## APISIMP-ANOMALY-INTERVAL-NS-TO-ISO — convert `AnomalyIntervalIO.startNs`/`endNs` from nanosecond `Long` to ISO 8601 `String` (size: XS, sweep: fire-604)
-- **Status:** 🔲 queued
+- **Status:** 🚢 shipped — fire-606, PR #2567
 - **Why:** `AnomalyIntervalIO.java:16,19` defines `long startNs` and `long endNs` — nanoseconds since Unix epoch — in the response record for `POST /v2/anomaly-detection/detect`. A caller comparing anomaly interval timestamps to `TimeseriesAnnotationIO.startNs` (Finding 4, same units) must know both are nanoseconds; with ISO 8601 both are self-describing. Natural pair with APISIMP-TS-ANNOTATION-IO-NS-TO-ISO — batch in the same PR.
 - **Fix:** Change `long startNs` / `long endNs` to `String startNs` / `String endNs`; convert in the constructor or service layer via `Instant.ofEpochSecond(ns/1_000_000_000L, ns%1_000_000_000L).toString()`. Field names can be renamed to `start`/`end` consistently with the annotation IO update.
 - **AC:** `POST /v2/anomaly-detection/detect` response contains ISO 8601 `startNs`/`endNs` strings; `mvn verify -pl backend` green.

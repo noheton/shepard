@@ -137,7 +137,7 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
   @Test
   void create_returnsPresent400_whenLabelBlank() {
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
-    body.setStartNs(1_000_000_000L);
+    body.setStart("1970-01-01T00:00:01Z");
     body.setLabel("  ");
     var result = handler.createTemporalAnnotation(CONTAINER_APP_ID, body);
     assertThat(result).isPresent();
@@ -148,8 +148,8 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
   @Test
   void create_returnsPresent201_andLinksAnnotation() {
     TimeseriesAnnotationIO body = new TimeseriesAnnotationIO();
-    body.setStartNs(1_000_000_000L);
-    body.setEndNs(2_000_000_000L);
+    body.setStart("1970-01-01T00:00:01Z");
+    body.setEnd("1970-01-01T00:00:02Z");
     body.setLabel("spike");
     var result = handler.createTemporalAnnotation(CONTAINER_APP_ID, body);
     assertThat(result).isPresent();
@@ -158,7 +158,7 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
     verify(annotationDAO).linkToContainer(eq(CONTAINER_ID), anyString());
     TimeseriesAnnotationIO out = (TimeseriesAnnotationIO) result.get().getEntity();
     assertThat(out.getLabel()).isEqualTo("spike");
-    assertThat(out.getStartNs()).isEqualTo(1_000_000_000L);
+    assertThat(out.getStart()).isEqualTo("1970-01-01T00:00:01Z");
   }
 
   // ── get by appId ──────────────────────────────────────────────────────────
@@ -211,8 +211,8 @@ class TimeseriesContainerKindHandlerTemporalAnnotationTest {
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
     assertThat(((TimeseriesAnnotationIO) result.get().getEntity()).getLabel()).isEqualTo("relabelled");
-    assertThat(((TimeseriesAnnotationIO) result.get().getEntity()).getStartNs())
-        .isEqualTo(1_000_000_000L);
+    assertThat(((TimeseriesAnnotationIO) result.get().getEntity()).getStart())
+        .isEqualTo("1970-01-01T00:00:01Z");
   }
 
   // ── delete ────────────────────────────────────────────────────────────────

@@ -1,5 +1,7 @@
 package de.dlr.shepard.v2.timeseries.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,11 +14,12 @@ public class TimeseriesAnnotationIO {
   @Schema(readOnly = true)
   private String appId;
 
-  @Schema(description = "Start of the annotated interval in nanoseconds since Unix epoch.", required = true)
-  private Long startNs;
+  @Schema(description = "Start of the annotated interval as ISO 8601 UTC with nanosecond precision, e.g. '2024-06-01T12:00:00.000000001Z'.", required = true)
+  private String start;
 
-  @Schema(description = "End of the annotated interval in nanoseconds since Unix epoch. Null for point annotations.")
-  private Long endNs;
+  @Schema(description = "End of the annotated interval as ISO 8601 UTC with nanosecond precision. Null for point annotations.")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String end;
 
   @Schema(description = "Annotation label / tag, e.g. 'anomaly', 'event-start'.", required = true)
   private String label;
@@ -32,8 +35,8 @@ public class TimeseriesAnnotationIO {
 
   public TimeseriesAnnotationIO(TimeseriesAnnotation a) {
     this.appId = a.getAppId();
-    this.startNs = a.getStartNs();
-    this.endNs = a.getEndNs();
+    this.start = DataObjectListItemV2IO.toIsoNs(a.getStartNs());
+    this.end = a.getEndNs() != null ? DataObjectListItemV2IO.toIsoNs(a.getEndNs()) : null;
     this.label = a.getLabel();
     this.description = a.getDescription();
     this.aiGenerated = a.isAiGenerated();
