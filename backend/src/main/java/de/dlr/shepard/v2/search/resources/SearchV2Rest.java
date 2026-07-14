@@ -53,6 +53,10 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * <p>Results are interleaved (collections first, then DataObjects) and paged
  * via a single {@code page} / {@code pageSize} window on the combined set —
  * no per-kind secondary pagination axes.
+ *
+ * <p>APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE: the combined result set is capped at
+ * {@link #SEARCH_RESULT_CAP} to bound memory use. Queries that would produce more
+ * matches should use the scoped {@code collectionAppId} parameter to narrow scope.
  */
 @Path("/v2/search")
 @RequestScoped
@@ -60,6 +64,9 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Search")
 public class SearchV2Rest {
+
+  /** Maximum combined results returned across all kinds. Documented in OpenAPI. */
+  static final int SEARCH_RESULT_CAP = 1000;
 
   @Inject
   CollectionSearchService collectionSearchService;
@@ -82,11 +89,16 @@ public class SearchV2Rest {
       "single `page` / `pageSize` window on the combined set — no per-kind secondary " +
       "pagination. When `collectionAppId` is supplied, DataObject results are narrowed " +
       "to that collection and no collection items are returned (scoped DO search). " +
+      "The combined result set is capped at 1000 items; use `collectionAppId` to narrow " +
+      "scope when a broader query would exceed this limit. " +
       "Requires authentication."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Search results — items ordered collections-first, then dataobjects.",
+    description =
+      "Search results — items ordered collections-first, then dataobjects. " +
+      "The combined set is capped at 1000 items; `total` reflects the capped count " +
+      "when the cap is reached.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = SearchV2ResultIO.class)
@@ -176,10 +188,17 @@ public class SearchV2Rest {
     }
     total += allDos.length;
 
+    // Cap the combined set to avoid unbounded in-memory accumulation.
+    List<SearchV2ItemIO> capped = combined;
+    if (combined.size() > SEARCH_RESULT_CAP) {
+      capped = combined.subList(0, SEARCH_RESULT_CAP);
+      total = SEARCH_RESULT_CAP;
+    }
+
     // Apply single page/pageSize window to the combined set.
-    int from = (int) Math.min((long) safePage * safeSize, combined.size());
-    int to = Math.min(from + safeSize, combined.size());
-    List<SearchV2ItemIO> paged = combined.subList(from, to);
+    int from = (int) Math.min((long) safePage * safeSize, capped.size());
+    int to = Math.min(from + safeSize, capped.size());
+    List<SearchV2ItemIO> paged = capped.subList(from, to);
 
     return Response.ok(new SearchV2ResultIO(paged, total, safePage, safeSize, q))
         .build();
