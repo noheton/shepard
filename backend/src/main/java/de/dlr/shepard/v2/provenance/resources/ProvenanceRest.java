@@ -103,6 +103,74 @@ public class ProvenanceRest {
     "Inclusive upper bound on startedAt. Accepts ISO 8601 instant " +
     "(e.g. 2026-01-01T00:00:00Z) or epoch-milliseconds (e.g. 1751299200000).";
 
+  // ---------------------------------------------------------------------------
+  // Internal filter-resolution helpers (APISIMP-PROVENANCE-TRIPLED-HANDLER)
+  // ---------------------------------------------------------------------------
+
+  /** Carries either a resolved filter set or an early-exit error response. */
+  private sealed interface FilterResult permits FilterResult.Ok, FilterResult.Err {
+    record Ok(String resolvedAgent, Long since, Long until) implements FilterResult {}
+    record Err(Response response) implements FilterResult {}
+  }
+
+  /**
+   * Resolve auth + agent scoping + timestamp parsing for the
+   * {@code /activities} and {@code /count} endpoint groups.
+   *
+   * <p>Casual users may only supply {@code null} (→ own rows) or their own
+   * username; passing a different username without instance-admin → 403.
+   */
+  private FilterResult resolveActivitiesFilter(
+      String agent, String sinceRaw, String untilRaw, SecurityContext sc) {
+    String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) {
+      return new FilterResult.Err(
+          problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal."));
+    }
+    boolean isAdmin = sc.isUserInRole("instance-admin");
+    if (agent == null) {
+      if (!isAdmin) agent = caller;
+    } else if (!agent.equals(caller) && !isAdmin) {
+      return new FilterResult.Err(
+          problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN,
+              "Caller may only access their own activity rows without instance-admin role."));
+    }
+    Long since, until;
+    try {
+      since = parseTimestamp(sinceRaw);
+      until = parseTimestamp(untilRaw);
+    } catch (IllegalArgumentException e) {
+      return new FilterResult.Err(badTimestamp(e.getMessage()));
+    }
+    return new FilterResult.Ok(agent, since, until);
+  }
+
+  /**
+   * Resolve auth + agent scoping + timestamp parsing for the
+   * {@code /entity/{appId}} endpoint group.
+   *
+   * <p>Any authenticated user may browse an entity's provenance trail;
+   * casual users see only their own rows ({@code agentFilter = caller}),
+   * instance-admins see all ({@code agentFilter = null}).
+   */
+  private FilterResult resolveEntityFilter(String sinceRaw, String untilRaw, SecurityContext sc) {
+    String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) {
+      return new FilterResult.Err(
+          problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal."));
+    }
+    boolean isAdmin = sc.isUserInRole("instance-admin");
+    String agentFilter = isAdmin ? null : caller;
+    Long since, until;
+    try {
+      since = parseTimestamp(sinceRaw);
+      until = parseTimestamp(untilRaw);
+    } catch (IllegalArgumentException e) {
+      return new FilterResult.Err(badTimestamp(e.getMessage()));
+    }
+    return new FilterResult.Ok(agentFilter, since, until);
+  }
+
   @GET
   @Path("/activities")
   @Operation(
@@ -142,27 +210,12 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    // Casual users can only see their own activity rows. Asking for someone
-    // else's without the admin role → 403.
-    if (agent == null) {
-      // Default: caller sees their own rows. Admins see everyone unless they
-      // narrow with ?agent=.
-      if (!isAdmin) agent = caller;
-    } else if (!agent.equals(caller) && !isAdmin) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
-    }
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
+    var f = resolveActivitiesFilter(agent, sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
     OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
-      .list(agent, targetKind, targetAppId, since, until, pageSize)
+      .list(ok.resolvedAgent(), targetKind, targetAppId, ok.since(), ok.until(), pageSize)
       .stream()
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
@@ -214,21 +267,10 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    if (agent == null) {
-      if (!isAdmin) agent = caller;
-    } else if (!agent.equals(caller) && !isAdmin) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
-    }
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
-    List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, pageSize);
+    var f = resolveActivitiesFilter(agent, sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
+    List<Activity> rows = provenance.list(ok.resolvedAgent(), targetKind, targetAppId, ok.since(), ok.until(), pageSize);
     return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
 
@@ -265,25 +307,13 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    if (agent == null) {
-      if (!isAdmin) agent = caller;
-    } else if (!agent.equals(caller) && !isAdmin) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only request their own activity rows without instance-admin role.");
-    }
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
+    var f = resolveActivitiesFilter(agent, sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
-
-    List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, pageSize);
+    List<Activity> rows = provenance.list(ok.resolvedAgent(), targetKind, targetAppId, ok.since(), ok.until(), pageSize);
     return Response.ok(provJsonLdRenderer.render(rows, profile))
       .type(jsonLdMediaTypeFor(profile))
       .build();
@@ -321,20 +351,12 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    // Casual users only see their own rows against this entity; admins see all.
-    String agentFilter = isAdmin ? null : caller;
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
+    var f = resolveEntityFilter(sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
     OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
-      .list(agentFilter, null, entityAppId, since, until, pageSize)
+      .list(ok.resolvedAgent(), null, entityAppId, ok.since(), ok.until(), pageSize)
       .stream()
       .map(ActivityIO::from)
       .map(io -> applyProfile(io, prof))
@@ -371,17 +393,10 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    String agentFilter = isAdmin ? null : caller;
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
-    List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, pageSize);
+    var f = resolveEntityFilter(sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
+    List<Activity> rows = provenance.list(ok.resolvedAgent(), null, entityAppId, ok.since(), ok.until(), pageSize);
     return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
 
@@ -411,21 +426,13 @@ public class ProvenanceRest {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Deprecated parameter", Response.Status.BAD_REQUEST,
           "'?limit=' was renamed '?pageSize=' (APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE). Update your client.");
     }
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    String agentFilter = isAdmin ? null : caller;
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
+    var f = resolveEntityFilter(sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
-
-    List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, pageSize);
+    List<Activity> rows = provenance.list(ok.resolvedAgent(), null, entityAppId, ok.since(), ok.until(), pageSize);
     return Response.ok(provJsonLdRenderer.render(rows, profile))
       .type(jsonLdMediaTypeFor(profile))
       .build();
@@ -454,21 +461,10 @@ public class ProvenanceRest {
     @Parameter(description = UNTIL_DESC) @QueryParam("until") String untilRaw,
     @Context SecurityContext securityContext
   ) {
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    if (agent == null) {
-      if (!isAdmin) agent = caller;
-    } else if (!agent.equals(caller) && !isAdmin) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
-    }
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
-    long c = provenance.count(agent, targetKind, targetAppId, since, until);
+    var f = resolveActivitiesFilter(agent, sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
+    long c = provenance.count(ok.resolvedAgent(), targetKind, targetAppId, ok.since(), ok.until());
     return Response.ok(new ActivityCountIO(c)).build();
   }
 
@@ -498,25 +494,13 @@ public class ProvenanceRest {
     @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
     @Context SecurityContext securityContext
   ) {
-    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
-    if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
-
-    boolean isAdmin = securityContext.isUserInRole("instance-admin");
-    if (agent == null) {
-      if (!isAdmin) agent = caller;
-    } else if (!agent.equals(caller) && !isAdmin) {
-      return problem(PROBLEM_TYPE_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller may only count their own activity rows without instance-admin role.");
-    }
-
-    Long since, until;
-    try { since = parseTimestamp(sinceRaw); until = parseTimestamp(untilRaw); }
-    catch (IllegalArgumentException e) { return badTimestamp(e.getMessage()); }
-
+    var f = resolveActivitiesFilter(agent, sinceRaw, untilRaw, securityContext);
+    if (f instanceof FilterResult.Err e) return e.response();
+    var ok = (FilterResult.Ok) f;
     Response profileError = enforceJsonLdProfile(acceptHeader);
     if (profileError != null) return profileError;
     ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
-
-    long c = provenance.count(agent, targetKind, targetAppId, since, until);
+    long c = provenance.count(ok.resolvedAgent(), targetKind, targetAppId, ok.since(), ok.until());
     java.util.Map<String, Object> body = provJsonLdRenderer.renderCount(c, profile);
     return Response.ok(body).type(jsonLdMediaTypeFor(profile)).build();
   }
