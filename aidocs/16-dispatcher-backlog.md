@@ -5288,13 +5288,13 @@ picks these up. Terse by design.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35`; apisimp-sweep (fire-588).
 
 ## APISIMP-LEGACY-V1-CONFIG-DATE-TO-ISO — convert `LegacyV1ConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR dispatched fire-593, branch apisimp-feed-v1config-dates-to-iso)
 - **Why:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39` exposes `Date updatedAt` as a record component on `GET /v2/admin/legacy/v1/config`. The factory at line 44 wraps a `Long updatedAt` entity field via `new Date(updated)`. There is no `@JsonFormat(shape=STRING)` annotation, so Jackson serialises as numeric epoch-ms — the last Date-typed field in the v1-compat plugin's IO surface after `LegacyV1StatsIO` is fixed by PR #2551. Fix: change record component to `String updatedAt`; convert in `from()` via `updated == null ? null : Instant.ofEpochMilli(updated).toString()`.
 - **AC:** `GET /v2/admin/legacy/v1/config` returns `updatedAt` as an ISO 8601 UTC string (e.g. `"2026-07-14T10:00:00Z"`) or `null`; `mvn verify -pl plugins/v1-compat` green.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39,44`; apisimp-sweep-2026-07-14-fire592.md §Finding1.
 
 ## APISIMP-FEED-ENTRY-DATE-TO-ISO — convert `FeedEntryIO.dateCreated`/`dateModified` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR dispatched fire-593, branch apisimp-feed-v1config-dates-to-iso)
 - **Why:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82` exposes `Date dateCreated` and `Date dateModified` as record components in the JSON-LD feed at `GET /v2/unhide/feed.jsonld`. No `@JsonFormat(shape=STRING)` annotation is present, so Jackson serialises both as numeric epoch-ms integers — which is invalid schema.org JSON-LD (schema.org `dateCreated`/`dateModified` expects an ISO 8601 dateTime string per its spec). Fix: change both components to `String`; convert at the call site in `UnhideFeedService` via `Instant.ofEpochMilli(collection.getCreatedAt().getTime()).toString()` with null-guard.
 - **AC:** `GET /v2/unhide/feed.jsonld` entries carry `dateCreated`/`dateModified` as ISO 8601 UTC strings conforming to schema.org; `mvn verify -pl plugins/unhide` green.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82`; apisimp-sweep-2026-07-14-fire592.md §Finding2.

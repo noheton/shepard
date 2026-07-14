@@ -3,7 +3,6 @@ package de.dlr.shepard.plugins.unhide.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import java.util.Date;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -78,8 +77,8 @@ public record FeedEntryIO(
   @JsonProperty("@type") List<String> type,
   @JsonProperty("name") String name,
   @JsonProperty("description") String description,
-  @JsonProperty("dateCreated") Date dateCreated,
-  @JsonProperty("dateModified") Date dateModified,
+  @JsonProperty("dateCreated") String dateCreated,
+  @JsonProperty("dateModified") String dateModified,
   @JsonProperty("license") String license,
   @JsonProperty("creator") Object creator,
   @JsonProperty("schema:identifier") Object schemaIdentifier,

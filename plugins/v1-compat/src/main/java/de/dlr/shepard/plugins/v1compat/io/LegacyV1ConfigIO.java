@@ -2,7 +2,7 @@ package de.dlr.shepard.plugins.v1compat.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.v1compat.entities.LegacyV1Config;
-import java.util.Date;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -36,7 +36,7 @@ public record LegacyV1ConfigIO(
   boolean suppressDeprecationHeaders,
   boolean stripAppIdFromResponses,
   String appId,
-  Date updatedAt,
+  String updatedAt,
   String updatedBy
 ) {
   /** Project an entity onto the IO record. */
@@ -47,7 +47,7 @@ public record LegacyV1ConfigIO(
       cfg.isSuppressDeprecationHeaders(),
       cfg.isStripAppIdFromResponses(),
       cfg.getAppId(),
-      updated == null ? null : new Date(updated),
+      updated == null ? null : Instant.ofEpochMilli(updated).toString(),
       cfg.getUpdatedBy()
     );
   }

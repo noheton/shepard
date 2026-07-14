@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
 import de.dlr.shepard.plugins.unhide.io.UnhideValidationReportIO;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -153,8 +152,8 @@ class UnhideFeedValidationTest {
       List.of("schema:Dataset"),
       name,
       description,
-      new Date(),
-      new Date(),
+      "2026-01-01T00:00:00Z",
+      "2026-01-01T00:00:00Z",
       null, // license
       null, // creator
       null, // schemaIdentifier
