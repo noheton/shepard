@@ -98,7 +98,9 @@ public class AdminConfigRest {
       .map(d -> new ConfigFeatureIO(d.featureName(), d.description()))
       .toList();
     long total = rows.size();
-    return Response.ok(new PagedResponseIO<>(rows, total, page, pageSize))
+    long from = Math.min((long) page * pageSize, total);
+    List<ConfigFeatureIO> slice = rows.subList((int) from, (int) Math.min(from + pageSize, total));
+    return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
       .header("X-Total-Count", total)
       .build();
   }
