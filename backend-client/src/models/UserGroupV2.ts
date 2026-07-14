@@ -38,23 +38,23 @@ export interface UserGroupV2 {
      */
     usernames?: Array<string>;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof UserGroupV2
      */
-    readonly createdAt?: Date;
+    readonly createdAt?: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof UserGroupV2
      */
     readonly createdBy?: string;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof UserGroupV2
      */
-    readonly updatedAt?: Date | null;
+    readonly updatedAt?: string | null;
     /**
      * 
      * @type {string}

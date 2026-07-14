@@ -1,7 +1,5 @@
 package de.dlr.shepard.v2.labjournal.io;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -72,15 +70,14 @@ public class NotebookReferenceIO {
   private String mimeType;
 
   /** Wall-clock creation time of the parent Reference. */
-  @JsonFormat(shape = JsonFormat.Shape.STRING)
   @Schema(
     readOnly = true,
     nullable = true,
     format = "date-time",
-    example = "2024-08-15T11:18:44.632+00:00",
+    example = "2024-08-15T11:18:44.632Z",
     description = "Creation time of the parent Reference."
   )
-  private Date createdAt;
+  private String createdAt;
 
   /** Display name of the user who created the parent Reference. */
   @Schema(readOnly = true, nullable = true, description = "Creator of the parent Reference.")

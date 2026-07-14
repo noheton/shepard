@@ -1,10 +1,9 @@
 package de.dlr.shepard.v2.dataobject.io;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.collection.entities.DataObject;
-import java.util.Date;
+import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -29,15 +28,14 @@ public class DataObjectSummaryIO {
    * before OGM stamped createdAt reliably.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @JsonFormat(shape = JsonFormat.Shape.STRING)
   @Schema(
     readOnly = true,
     nullable = true,
     format = "date-time",
-    example = "2024-08-15T11:18:44.632+00:00",
+    example = "2024-08-15T11:18:44.632Z",
     description = "PRED-V2-SHAPE: creation timestamp. Null for pre-OGM rows."
   )
-  private Date createdAt;
+  private String createdAt;
 
   /**
    * PRED-V2-SHAPE: display name of the user who created this DataObject.
@@ -55,7 +53,9 @@ public class DataObjectSummaryIO {
     this.appId = d.getAppId();
     this.name = d.getName();
     this.status = d.getStatus();
-    this.createdAt = d.getCreatedAt();
+    this.createdAt = d.getCreatedAt() != null
+        ? Instant.ofEpochMilli(d.getCreatedAt().getTime()).toString()
+        : null;
     this.createdBy = d.getCreatedBy() != null
       ? DisplayNameResolver.effectiveDisplayName(d.getCreatedBy())
       : null;

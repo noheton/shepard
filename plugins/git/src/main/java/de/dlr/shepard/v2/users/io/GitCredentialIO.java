@@ -1,8 +1,7 @@
 package de.dlr.shepard.v2.users.io;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import de.dlr.shepard.auth.users.entities.GitCredential;
-import java.util.Date;
+import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -28,15 +27,16 @@ public class GitCredentialIO {
   @Schema(description = "Git username this credential is valid for.")
   private String username;
 
-  @JsonFormat(shape = JsonFormat.Shape.STRING)
-  @Schema(readOnly = true, required = true, format = "date-time", example = "2026-05-12T10:00:00.000+00:00")
-  private Date createdAt;
+  @Schema(readOnly = true, required = true, format = "date-time", example = "2026-05-12T10:00:00Z")
+  private String createdAt;
 
   public GitCredentialIO(GitCredential cred) {
     this.appId = cred.getAppId();
     this.host = cred.getHost();
     this.displayName = cred.getDisplayName();
     this.username = cred.getUsername();
-    this.createdAt = cred.getCreatedAt();
+    this.createdAt = cred.getCreatedAt() != null
+        ? Instant.ofEpochMilli(cred.getCreatedAt().getTime()).toString()
+        : null;
   }
 }

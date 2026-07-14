@@ -39,10 +39,10 @@ export interface DataObjectSummary {
     readonly status?: string;
     /**
      * PRED-V2-SHAPE: creation timestamp. Null for pre-OGM rows.
-     * @type {Date}
+     * @type {string}
      * @memberof DataObjectSummary
      */
-    readonly createdAt?: Date | null;
+    readonly createdAt?: string | null;
     /**
      * PRED-V2-SHAPE: display name of the creator.
      * @type {string}
@@ -71,7 +71,7 @@ export function DataObjectSummaryFromJSONTyped(json: any, ignoreDiscriminator: b
         'appId': json['appId'] == null ? undefined : json['appId'],
         'name': json['name'] == null ? undefined : json['name'],
         'status': json['status'] == null ? undefined : json['status'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'createdAt': json['createdAt'] == null ? undefined : json['createdAt'],
         'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
     };
 }

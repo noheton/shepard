@@ -44,11 +44,11 @@ export interface GitCredential {
      */
     username?: string;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof GitCredential
      */
-    readonly createdAt: Date;
+    readonly createdAt: string;
 }
 
 /**
@@ -74,7 +74,7 @@ export function GitCredentialFromJSONTyped(json: any, ignoreDiscriminator: boole
         'host': json['host'] == null ? undefined : json['host'],
         'displayName': json['displayName'] == null ? undefined : json['displayName'],
         'username': json['username'] == null ? undefined : json['username'],
-        'createdAt': (new Date(json['createdAt'])),
+        'createdAt': json['createdAt'],
     };
 }
 

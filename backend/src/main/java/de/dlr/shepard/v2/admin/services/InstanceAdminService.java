@@ -9,6 +9,7 @@ import de.dlr.shepard.v2.admin.io.InstanceAdminGrantIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -60,7 +61,7 @@ public class InstanceAdminService {
           g.username(),
           "Neo4j",
           g.grantedBy(),
-          g.grantedAtMillis() == null ? null : new Date(g.grantedAtMillis())
+          g.grantedAtMillis() == null ? null : Instant.ofEpochMilli(g.grantedAtMillis()).toString()
         )
       );
     }
@@ -89,7 +90,7 @@ public class InstanceAdminService {
     }
     stampRoleChangedAt(user, now);
     Log.infof("Granted instance-admin role to '%s' (grantedBy=%s)", username, grantedBy);
-    return new InstanceAdminGrantIO(username, "Neo4j", grantedBy, new Date(now));
+    return new InstanceAdminGrantIO(username, "Neo4j", grantedBy, Instant.ofEpochMilli(now).toString());
   }
 
   /**
