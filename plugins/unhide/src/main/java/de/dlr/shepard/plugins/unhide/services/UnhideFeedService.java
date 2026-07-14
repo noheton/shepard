@@ -15,6 +15,7 @@ import de.dlr.shepard.publish.entities.Publication;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -156,13 +157,15 @@ public class UnhideFeedService {
     // UH1c — KIP citation: current Publication's PID + resolver URL.
     KipCitation kip = buildKipCitation(c.getAppId(), baseUrl);
 
+    Date createdAtDate = c.getCreatedAt();
+    Date updatedAtDate = c.getUpdatedAt();
     return new FeedEntryIO(
       id,
       List.of("schema:Dataset", "m4i:Dataset"),
       c.getName(),
       c.getDescription(),
-      c.getCreatedAt(),
-      c.getUpdatedAt(),
+      createdAtDate == null ? null : Instant.ofEpochMilli(createdAtDate.getTime()).toString(),
+      updatedAtDate == null ? null : Instant.ofEpochMilli(updatedAtDate.getTime()).toString(),
       null, // license — Collection schema doesn't carry one yet; UH1d wires it via CP1a properties
       creator,
       kip == null ? null : kip.schemaIdentifier,
