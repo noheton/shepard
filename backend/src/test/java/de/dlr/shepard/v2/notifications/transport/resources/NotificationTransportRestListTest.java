@@ -65,7 +65,7 @@ class NotificationTransportRestListTest {
   void list_emptyServiceReturnsPagedEnvelopeWithEmptyItems() {
     when(service.listAll()).thenReturn(List.of());
 
-    Response r = rest.list();
+    Response r = rest.list(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -76,7 +76,7 @@ class NotificationTransportRestListTest {
     assertTrue(out.items().isEmpty());
     assertEquals(0, out.total());
     assertEquals(0, out.page());
-    assertEquals(0, out.pageSize());
+    assertEquals(50, out.pageSize());
   }
 
   @Test
@@ -98,7 +98,7 @@ class NotificationTransportRestListTest {
 
     when(service.listAll()).thenReturn(List.of(smtp, matrix));
 
-    Response r = rest.list();
+    Response r = rest.list(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -128,7 +128,7 @@ class NotificationTransportRestListTest {
 
     when(service.listAll()).thenReturn(List.of(smtp, matrix));
 
-    Response r = rest.list();
+    Response r = rest.list(0, 50);
     // Serialize the PagedResponseIO envelope — credential values must not appear anywhere.
     String json = new ObjectMapper().writeValueAsString(r.getEntity());
 
