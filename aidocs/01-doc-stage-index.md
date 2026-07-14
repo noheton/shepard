@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 94 |
-| `concept` | 42 |
+| `concept` | 43 |
 | `idea` | 13 |
 | `feature-defined` | 136 |
 | `audited-by-personas` | 78 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 147 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **572** |
+| **total docs** | **573** |
 | **UNTAGGED** | **0** |
 
 ## fragment (94)
@@ -142,7 +142,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-07-12 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-07-12 |
 
-## concept (42)
+## concept (43)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -154,6 +154,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-30-fire330.md`](agent-findings/apisimp-sweep-2026-06-30-fire330.md) | APISIMP Sweep — fire-330 (2026-06-30) | 2026-06-30 | 2026-07-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-04.md`](agent-findings/apisimp-sweep-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-399) | 2026-07-04 | 2026-07-12 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-10.md`](agent-findings/apisimp-sweep-2026-07-10.md) | APISIMP — v2 surface simplification sweep (2026-07-10, fire-526) | 2026-07-10 | 2026-07-12 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-14-fire592.md`](agent-findings/apisimp-sweep-2026-07-14-fire592.md) | APISIMP Sweep — fire-592 (2026-07-14) | 2026-07-14 | — |
 | [`aidocs/agent-findings/apisimp-sweep-fire346-2026-07-01.md`](agent-findings/apisimp-sweep-fire346-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-346) | 2026-07-01 | 2026-07-12 |
 | [`aidocs/agent-findings/apisimp-sweep-fire351-2026-07-01.md`](agent-findings/apisimp-sweep-fire351-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-351) | 2026-07-01 | 2026-07-12 |
 | [`aidocs/agent-findings/apisimp-sweep-fire387-2026-07-03.md`](agent-findings/apisimp-sweep-fire387-2026-07-03.md) | APISIMP Sweep — 2026-07-03 (fire-387) | 2026-07-03 | 2026-07-12 |
