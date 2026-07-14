@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.daos.GitCredentialDAO;
 import de.dlr.shepard.auth.users.entities.GitCredential;
+import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.users.io.CreateGitCredentialIO;
 import de.dlr.shepard.v2.users.io.GitCredentialIO;
 import de.dlr.shepard.v2.users.io.PatchGitCredentialIO;
@@ -66,7 +67,7 @@ class MeCredentialsRestTest {
   @Test
   void listReturns401WhenUnauthenticated() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    assertEquals(401, resource.list(securityContext).getStatus());
+    assertEquals(401, resource.list(0, 50, securityContext).getStatus());
   }
 
   @Test
@@ -96,25 +97,63 @@ class MeCredentialsRestTest {
   // --- list ---
 
   @Test
-  void listReturnsEmptyListWhenNoneExist() {
+  void listReturnsEmptyPageWhenNoneExist() {
     when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of());
-    var r = resource.list(securityContext);
+    var r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    assertTrue(((List<?>) r.getEntity()).isEmpty());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<GitCredentialIO> page = (PagedResponseIO<GitCredentialIO>) r.getEntity();
+    assertEquals(0, page.total());
+    assertTrue(page.items().isEmpty());
   }
 
   @Test
-  void listReturnsIoListWhenCredentialsExist() {
+  void listReturnsPagedIoWhenCredentialsExist() {
     GitCredential cred = buildCred("id-1", "gitlab.com", "DLR", "alice");
     when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(cred));
 
-    var r = resource.list(securityContext);
+    var r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<GitCredentialIO> ios = (List<GitCredentialIO>) r.getEntity();
-    assertEquals(1, ios.size());
-    assertEquals("gitlab.com", ios.get(0).getHost());
-    assertEquals("id-1", ios.get(0).getAppId());
+    PagedResponseIO<GitCredentialIO> page = (PagedResponseIO<GitCredentialIO>) r.getEntity();
+    assertEquals(1, page.total());
+    assertEquals(1, page.items().size());
+    assertEquals("gitlab.com", page.items().get(0).getHost());
+    assertEquals("id-1", page.items().get(0).getAppId());
+  }
+
+  @Test
+  void listReturnsEmptySliceWhenPageBeyondTotal() {
+    GitCredential cred = buildCred("id-1", "gitlab.com", "DLR", "alice");
+    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(cred));
+
+    var r = resource.list(1, 50, securityContext);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<GitCredentialIO> page = (PagedResponseIO<GitCredentialIO>) r.getEntity();
+    assertEquals(1, page.total());
+    assertTrue(page.items().isEmpty());
+  }
+
+  @Test
+  void listSlicesCorrectlyWithPageSize1() {
+    GitCredential c1 = buildCred("id-1", "gitlab.com", "DLR", "alice");
+    GitCredential c2 = buildCred("id-2", "github.com", "GH", "alice");
+    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(c1, c2));
+
+    var r0 = resource.list(0, 1, securityContext);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<GitCredentialIO> page0 = (PagedResponseIO<GitCredentialIO>) r0.getEntity();
+    assertEquals(2, page0.total());
+    assertEquals(1, page0.items().size());
+    assertEquals("id-1", page0.items().get(0).getAppId());
+
+    var r1 = resource.list(1, 1, securityContext);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<GitCredentialIO> page1 = (PagedResponseIO<GitCredentialIO>) r1.getEntity();
+    assertEquals(2, page1.total());
+    assertEquals(1, page1.items().size());
+    assertEquals("id-2", page1.items().get(0).getAppId());
   }
 
   // --- create ---

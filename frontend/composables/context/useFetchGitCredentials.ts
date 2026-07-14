@@ -13,7 +13,8 @@ export function useFetchGitCredentials() {
   async function refresh() {
     isLoading.value = true;
     try {
-      credentials.value = await api.value.listUserGitCredentials();
+      const page = await api.value.listUserGitCredentials();
+      credentials.value = (page.items as GitCredential[]) ?? [];
     } catch (error) {
       handleError(error, "fetching git credentials");
     } finally {
