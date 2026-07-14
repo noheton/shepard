@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.unhide.cli.io;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Date;
 
 /**
  * CLI mirror of the backend's {@code UnhideConfigIO} JSON shape —
@@ -23,7 +22,7 @@ public final class UnhideConfig {
   private boolean enabled;
   private boolean feedPublic;
   private String contactEmail;
-  private Date harvestApiKeyMintedAt;
+  private String harvestApiKeyMintedAt;
   private String harvestApiKeyFingerprint;
 
   public boolean isEnabled() {
@@ -51,11 +50,11 @@ public final class UnhideConfig {
     this.contactEmail = contactEmail;
   }
 
-  public Date getHarvestApiKeyMintedAt() {
+  public String getHarvestApiKeyMintedAt() {
     return harvestApiKeyMintedAt;
   }
 
-  public void setHarvestApiKeyMintedAt(Date harvestApiKeyMintedAt) {
+  public void setHarvestApiKeyMintedAt(String harvestApiKeyMintedAt) {
     this.harvestApiKeyMintedAt = harvestApiKeyMintedAt;
   }
 

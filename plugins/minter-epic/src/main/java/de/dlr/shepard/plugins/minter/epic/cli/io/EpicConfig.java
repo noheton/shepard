@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.minter.epic.cli.io;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Date;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +25,6 @@ public class EpicConfig {
   private String handlePrefix;
   private boolean credentialSet;
   private String credentialFingerprint;
-  private Date updatedAt;
+  private String updatedAt;
   private String updatedBy;
 }
