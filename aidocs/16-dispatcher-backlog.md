@@ -5240,7 +5240,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectListItemV2IO.java`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:326-327`; `frontend/utils/collectionDataObjectTimeline.ts`; `backend-client/src/models/DataObjectListItemV2.ts`; apisimp-sweep (fire-588 dispatch).
 
 ## APISIMP-AAS-REGISTRATION-LONG-TO-ISO — convert `AasRegistrationIO.lastAttemptAt`/`createdAt`/`updatedAt` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-591, branch apisimp-minter-legacy-aas-dates-to-iso)
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/io/AasRegistrationIO.java` lines 17, 19–20 expose `lastAttemptAt`, `createdAt`, and `updatedAt` as `Long` epoch-ms values on `GET /v2/admin/aas/registrations`. The entity fields (`AasRegistration.java:71,79,83`) are `Long` ms since epoch. All other v2 admin entity timestamps have been converted to ISO 8601 strings; these three are the last outliers in the AAS plugin.
 - **AC:** `AasRegistrationIO` record components `lastAttemptAt`, `createdAt`, `updatedAt` are `String` ISO 8601 UTC values (e.g. `"2026-07-01T10:00:00Z"`); entity `Long` values converted via `Instant.ofEpochMilli(...).toString()` with null-guard; `mvn verify -pl plugins/aas` green.
 - **First refs:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/io/AasRegistrationIO.java:17,19-20`; apisimp-sweep-2026-07-13-fire586.md follow-on sweep (fire-588).
@@ -5258,13 +5258,13 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalRevisionIO.java:36`; apisimp-sweep (fire-588).
 
 ## APISIMP-DATACITE-CONFIG-DATE-TO-ISO — convert `DataciteMinterConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-591, branch apisimp-minter-legacy-aas-dates-to-iso)
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/io/DataciteMinterConfigIO.java:32,40,51` wraps the entity's `Long updatedAtMillis` into a `Date` field; Jackson serialises as numeric epoch-ms. Pattern matches the other minter config outlier (APISIMP-EPIC-CONFIG-DATE-TO-ISO). Fix: change `Date updatedAt` to `String updatedAt`; convert via `updatedAtMillis == null ? null : Instant.ofEpochMilli(updatedAtMillis).toString()`.
 - **AC:** `GET /v2/admin/config/datacite` (via AdminConfigRest) returns `updatedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/minter-datacite` green.
 - **First refs:** `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/io/DataciteMinterConfigIO.java:32,40,51`; apisimp-sweep (fire-588).
 
 ## APISIMP-EPIC-CONFIG-DATE-TO-ISO — convert `EpicMinterConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-591, branch apisimp-minter-legacy-aas-dates-to-iso)
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicMinterConfigIO.java:28,36,43` wraps `Long updatedAtMillis` into a `Date` field (same anti-pattern as `DataciteMinterConfigIO`). Fix: same pattern — change `Date updatedAt` to `String updatedAt`; convert via `Instant.ofEpochMilli(updatedAtMillis).toString()`.
 - **AC:** `GET /v2/admin/config/epic` returns `updatedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/minter-epic` green.
 - **First refs:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicMinterConfigIO.java:28,36,43`; apisimp-sweep (fire-588).
@@ -5282,7 +5282,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/HarvestKeyMintedIO.java:32`; apisimp-sweep (fire-588).
 
 ## APISIMP-LEGACY-V1-STATS-DATE-TO-ISO — convert `LegacyV1StatsIO.firstHitAt`/`mostRecentHitAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-591, branch apisimp-minter-legacy-aas-dates-to-iso)
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35` has `Date firstHitAt` and `Date mostRecentHitAt` as record components on `GET /v2/admin/config/legacy-v1/stats`. Without `@JsonFormat(shape=STRING)` both serialise as numeric epoch-ms. Fix: change both to `String`; convert via `Instant.ofEpochMilli(...)`.
 - **AC:** `GET /v2/admin/config/legacy-v1/stats` carries `firstHitAt`/`mostRecentHitAt` as ISO 8601 UTC strings; `mvn verify -pl plugins/v1-compat` green.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35`; apisimp-sweep (fire-588).
