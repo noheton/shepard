@@ -5246,13 +5246,13 @@ picks these up. Terse by design.
 - **First refs:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/io/AasRegistrationIO.java:17,19-20`; apisimp-sweep-2026-07-13-fire586.md follow-on sweep (fire-588).
 
 ## APISIMP-PLUGIN-ENTRY-DATE-TO-ISO — convert `PluginEntryIO.registeredAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR dispatched fire-590, branch `apisimp-plugin-lab-dates-to-iso`)
 - **Why:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/io/PluginEntryIO.java:54` has `Date registeredAt` as a record component; line 80 sets it via `Date.from(entry.registeredAt())`. Jackson serialises `java.util.Date` as a numeric epoch-ms by default (without `@JsonFormat(shape=STRING)`), diverging from the ISO 8601 convention applied everywhere else on the v2 surface. Fix: change type to `String`; convert via `entry.registeredAt() == null ? null : entry.registeredAt().toString()` (Instant → ISO 8601 string).
 - **AC:** `GET /v2/admin/plugins` response carries `registeredAt` as an ISO 8601 UTC string; `PluginsAdminRestTest` asserts string shape; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/io/PluginEntryIO.java:54,80`; apisimp-sweep (fire-588).
 
 ## APISIMP-LAB-JOURNAL-REVISION-DATE-TO-ISO — convert `LabJournalRevisionIO.revisedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR dispatched fire-590, branch `apisimp-plugin-lab-dates-to-iso`)
 - **Why:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalRevisionIO.java:36` has `private Date revisedAt`. Without `@JsonFormat(shape=STRING)` Jackson serialises as numeric epoch-ms. Every other timestamp on the lab-journal surface uses ISO 8601 strings. Fix: change type to `String`; convert in the static `from()` factory via `Instant.ofEpochMilli(entity.getRevisedAt().getTime()).toString()` with null-guard.
 - **AC:** `GET /v2/lab-journal/{entryAppId}/history` response carries `revisedAt` as an ISO 8601 UTC string; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalRevisionIO.java:36`; apisimp-sweep (fire-588).

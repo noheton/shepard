@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugin.PluginDependency;
 import de.dlr.shepard.plugin.PluginEntry;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -51,7 +50,7 @@ public record PluginEntryIO(
   @Schema(required = true, description = "Lifecycle state: DISCOVERED / ENABLED / DISABLED / FAILED / DEGRADED (PM1b2).") String state,
   @Schema(required = true, description = "Effective enabled toggle (runtime override or config fallback).") boolean enabled,
   @Schema(description = "Path of the source JAR (null for build-classpath plugins).") String sourcePath,
-  @Schema(required = true, description = "Wall-clock instant the registry first observed the plugin.") Date registeredAt,
+  @Schema(required = true, description = "Wall-clock instant the registry first observed the plugin (ISO 8601 UTC).") String registeredAt,
   @Schema(description = "Failure reason — populated only when state == FAILED.") String failureMessage,
   @Schema(description = "PM1c — human-readable display name (default: id).") String title,
   @Schema(description = "PM1c — one-paragraph operator-facing description.") String description,
@@ -77,7 +76,7 @@ public record PluginEntryIO(
       entry.state().name(),
       enabled,
       entry.jarPath() == null ? null : entry.jarPath().toString(),
-      entry.registeredAt() == null ? null : Date.from(entry.registeredAt()),
+      entry.registeredAt() == null ? null : entry.registeredAt().toString(),
       entry.failureMessage(),
       nullIfBlank(entry.title()),
       nullIfBlank(entry.description()),

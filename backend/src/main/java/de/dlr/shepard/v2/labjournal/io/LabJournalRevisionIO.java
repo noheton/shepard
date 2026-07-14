@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.labjournal.io;
 
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntryRevision;
-import java.util.Date;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -31,9 +30,9 @@ public class LabJournalRevisionIO {
   @Schema(description = "Content of the entry as it existed before the edit.")
   private String content;
 
-  /** Timestamp at which the revision was captured (= when the update was applied). */
-  @Schema(readOnly = true, description = "When the revision was captured.")
-  private Date revisedAt;
+  /** Timestamp at which the revision was captured (= when the update was applied). ISO 8601 UTC. */
+  @Schema(readOnly = true, description = "When the revision was captured (ISO 8601 UTC).")
+  private String revisedAt;
 
   /**
    * Display name of the user who performed the edit that produced this revision
@@ -53,7 +52,7 @@ public class LabJournalRevisionIO {
   public LabJournalRevisionIO(LabJournalEntryRevision revision) {
     this.appId = revision.getAppId();
     this.content = revision.getContent();
-    this.revisedAt = revision.getCreatedAt();
+    this.revisedAt = revision.getCreatedAt() == null ? null : revision.getCreatedAt().toInstant().toString();
     this.revisedBy =
       revision.getCreatedBy() != null ? DisplayNameResolver.effectiveDisplayName(revision.getCreatedBy()) : null;
     this.revisionNumber = revision.getRevisionNumber();
