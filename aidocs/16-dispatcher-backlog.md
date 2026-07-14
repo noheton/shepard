@@ -5372,8 +5372,9 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` (`getLinkedDataObjects` method); apisimp-sweep-2026-07-14-fire594.md §F7.
 
 ## APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE — cap or push DAO pagination into `SearchV2Rest` (size: L, sweep: fire-594)
-- **Status:** 🚧 in-flight (fire-598, option-a cap shipped; option-b DAO push queued as follow-up)
-- **PR:** #2561 (`APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE-fire598`)
+- **Status:** 🚧 in-flight (option-a shipped fire-598 PR #2561; option-b PR #2562 rebased fire-599, CI re-running)
+- **PR (option-a, merged):** #2561 (`APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE-fire598`)
+- **PR (option-b, open):** #2562 (`APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE-2-fire599`)
 - **Why:** `SearchV2Rest.java:139–182` fetches ALL matching Collections and ALL matching DataObjects into JVM heap, merges them, then slices a page with `subList`. At scale (10 000 DataObjects, broad keyword) this materialises the full result set per request and stresses the JVM heap.
 - **AC:** Either (a) server-side result cap (≤1 000 combined results) documented in OpenAPI, or (b) DAO-level `SKIP`/`LIMIT` passed through both service methods; in-memory `subList` removed; `mvn verify -pl backend` green.
 - **Shipped (fire-598):** Option (a) — `SEARCH_RESULT_CAP = 1000` constant; combined list capped after merge, before page-slice; `total` reflects capped count; cap documented in OpenAPI `description` and `@APIResponse(responseCode="200")`. Two regression tests added (`combinedResultSetIsCappedAt1000`, `combinedResultSetBelowCapIsUncapped`).
