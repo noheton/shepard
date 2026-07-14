@@ -3,7 +3,6 @@ package de.dlr.shepard.v2.timeseries.io;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -17,10 +16,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}s,
  * finds the channel whose {@code AnnotatableTimeseries} carries a
  * {@code SemanticAnnotation} with {@code propertyIRI = channelPredicate}, and
- * fetches that channel's series in the {@code [start, end]} window with LTTB
- * downsampling. The response carries one entry per resolved DataObject;
- * DataObjects with no matching channel return an empty {@code points} array
- * (the whole request never 404s).
+ * fetches that channel's series in the {@code [start, end]} time window with
+ * LTTB downsampling. {@code start} and {@code end} are ISO 8601 UTC strings
+ * with optional nanosecond precision (e.g. {@code "2024-06-01T08:00:00Z"} or
+ * {@code "2024-06-01T08:00:00.123456789Z"}). The response carries one entry
+ * per resolved DataObject; DataObjects with no matching channel return an
+ * empty {@code points} array (the whole request never 404s).
  *
  * <p>Permission gate is per-DataObject: callers without Read on a given DO are
  * silently dropped from the response (no 403 for the whole request — see also
@@ -60,14 +61,20 @@ public record CrossDoBulkDataRequestIO(
   String channelPredicate,
 
   @NotNull
-  @PositiveOrZero
-  @Schema(description = "Window start, nanoseconds since epoch.", required = true, example = "1700000000000000000")
-  Long start,
+  @Schema(
+    description = "Window start as ISO 8601 UTC, nanosecond precision supported. E.g. '2024-06-01T08:00:00Z' or '2024-06-01T08:00:00.000000000Z'.",
+    required = true,
+    example = "2024-06-01T08:00:00Z"
+  )
+  String start,
 
   @NotNull
-  @PositiveOrZero
-  @Schema(description = "Window end, nanoseconds since epoch.", required = true, example = "1700003600000000000")
-  Long end,
+  @Schema(
+    description = "Window end as ISO 8601 UTC, nanosecond precision supported. Must be after start.",
+    required = true,
+    example = "2024-06-01T09:00:00Z"
+  )
+  String end,
 
   @Positive
   @Schema(

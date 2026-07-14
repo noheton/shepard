@@ -4,6 +4,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useIntersectionObserver } from "@vueuse/core";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { nsToIso } from "~/composables/containers/useCrossDoBulkData";
 
 /**
  * TS-IDc — v2 channel-data endpoint URL.
@@ -109,8 +110,8 @@ async function fetchPreviewData(
       const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
       const qs = new URLSearchParams();
-      qs.set("start", "0");
-      qs.set("end", String(endNs));
+      qs.set("start", "1970-01-01T00:00:00Z");
+      qs.set("end", nsToIso(endNs));
       if (downsample) {
         qs.set("downsample", "lttb");
         qs.set("maxPoints", String(maxPoints));

@@ -24,6 +24,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,8 +103,9 @@ public class CrossDoBulkDataRest {
       "DataObjects the caller can't read are silently dropped (no 403 for the whole request). " +
       "Where a single DataObject has multiple channels matching the predicate, the first by " +
       "`symbolicName` ascending is picked (deterministic). " +
-      "Timestamps are absolute UTC nanoseconds; clients render within-DO relative time on the " +
-      "frontend by subtracting each series' first timestamp.\n\n" +
+      "Response timestamps are absolute UTC nanoseconds; clients render within-DO relative time on the " +
+      "frontend by subtracting each series' first timestamp. The request `start`/`end` fields " +
+      "accept ISO 8601 UTC strings (e.g. '2024-06-01T08:00:00Z').\n\n" +
       "The `kind` query parameter discriminates the payload family. Currently only `timeseries` " +
       "is supported; future kinds (`file`, `structured`) will extend this endpoint without a new path.",
     extensions = @Extension(name = "x-agent-hint", value = "Pass kind=timeseries + dataObjectAppIds + channelPredicate (urn:shepard:...). Returns one downsampled series per DO; empty points means 'no channel matched'.")
@@ -134,8 +137,16 @@ public class CrossDoBulkDataRest {
     if (caller == null) return problem(PT_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED, "Authentication required");
 
     final int downsampleTo = clampDownsample(body.downsampleTo());
-    final long start = body.start();
-    final long end = body.end();
+    final long start;
+    final long end;
+    try {
+      start = parseNs(body.start());
+      end   = parseNs(body.end());
+    } catch (DateTimeParseException e) {
+      return problem("cross-bulk.bad-timestamp", "Bad Request", Response.Status.BAD_REQUEST,
+        "Invalid ISO 8601 timestamp in 'start' or 'end': " + e.getParsedString() +
+        ". Expected format: '2024-06-01T08:00:00Z' or '2024-06-01T08:00:00.123456789Z'.");
+    }
     final String predicate = body.channelPredicate();
 
     // Batch phase 1: collect valid appIds, preserving input order.
@@ -201,5 +212,11 @@ public class CrossDoBulkDataRest {
     if (requested < 1) return 1;
     if (requested > HARD_MAX_DOWNSAMPLE) return HARD_MAX_DOWNSAMPLE;
     return requested;
+  }
+
+  /** Converts an ISO 8601 UTC string to nanoseconds since the Unix epoch. */
+  static long parseNs(String iso) {
+    Instant instant = Instant.parse(iso.trim());
+    return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
   }
 }

@@ -16,7 +16,7 @@
  * Hover sync: hovering a cell highlights the same x on every other cell.
  * Cell click: navigates to that DO's detail page.
  */
-import { useCrossDoBulkData } from "~/composables/containers/useCrossDoBulkData";
+import { useCrossDoBulkData, nsToIso } from "~/composables/containers/useCrossDoBulkData";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
 import {
   applyDoCap,
@@ -93,6 +93,8 @@ const crossTime = ref<number | null>(null);
 // per-DO bounds from the reference start/end and union them.
 const DEFAULT_START_NS = 0;
 const DEFAULT_END_NS = 3_154_000_000_000_000; // ~year in ns
+const DEFAULT_START_ISO = nsToIso(DEFAULT_START_NS);
+const DEFAULT_END_ISO = nsToIso(DEFAULT_END_NS);
 
 // ── Data flow ────────────────────────────────────────────────────────────
 
@@ -111,8 +113,8 @@ watch(allDataObjects, async (dos) => {
   await fetchCrossDo({
     dataObjectAppIds: capped.kept,
     channelPredicate: props.channelPredicate,
-    start: DEFAULT_START_NS,
-    end: DEFAULT_END_NS,
+    start: DEFAULT_START_ISO,
+    end: DEFAULT_END_ISO,
     downsampleTo: props.downsampleTo,
   });
 }, { immediate: true });
@@ -124,8 +126,8 @@ async function refresh(): Promise<void> {
   await fetchCrossDo({
     dataObjectAppIds: kept,
     channelPredicate: props.channelPredicate,
-    start: DEFAULT_START_NS,
-    end: DEFAULT_END_NS,
+    start: DEFAULT_START_ISO,
+    end: DEFAULT_END_ISO,
     downsampleTo: props.downsampleTo,
   });
 }

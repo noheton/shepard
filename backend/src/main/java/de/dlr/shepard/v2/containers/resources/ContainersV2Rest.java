@@ -711,8 +711,9 @@ public class ContainersV2Rest {
     summary = "Fetch data points for a channel by channelShepardId.",
     description =
       "Resolves the single-field channelShepardId to the legacy 5-tuple internally and returns data " +
-      "points for the requested time window. `start` and `end` are nanoseconds since Unix epoch " +
-      "(e.g. `Date.now() * 1_000_000` in JS). Accepts optional LTTB downsampling via " +
+      "points for the requested time window. `start` and `end` are ISO 8601 UTC strings with " +
+      "optional nanosecond precision (e.g. '2024-06-01T08:00:00Z' or " +
+      "'2024-06-01T08:00:00.123456789Z'). Accepts optional LTTB downsampling via " +
       "?downsample=lttb&maxPoints=N. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Read on the container."
   )
@@ -721,7 +722,7 @@ public class ContainersV2Rest {
     description = "Data points for the channel.",
     content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
   )
-  @APIResponse(responseCode = "400", description = "start or end missing / negative, or maxPoints out of range [1–5000].")
+  @APIResponse(responseCode = "400", description = "start or end missing or not a valid ISO 8601 UTC timestamp, or maxPoints out of range [1–5000].")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container or channel with that id.")
@@ -729,10 +730,10 @@ public class ContainersV2Rest {
   public Response getChannelData(
     @PathParam("appId") String appId,
     @PathParam("channelShepardId") UUID channelShepardId,
-    @Parameter(description = "Window start, nanoseconds since Unix epoch (e.g. Date.now()*1_000_000 in JS).", required = true)
-    @QueryParam("start") @NotNull @PositiveOrZero Long start,
-    @Parameter(description = "Window end, nanoseconds since Unix epoch (exclusive). Must be > start.", required = true)
-    @QueryParam("end")   @NotNull @PositiveOrZero Long end,
+    @Parameter(description = "Window start as ISO 8601 UTC (e.g. '2024-06-01T08:00:00Z'). Nanosecond precision supported.", required = true)
+    @QueryParam("start") @NotNull String start,
+    @Parameter(description = "Window end as ISO 8601 UTC. Must be after start.", required = true)
+    @QueryParam("end")   @NotNull String end,
     @Parameter(description = "Downsampling algorithm. Only 'lttb' (Largest Triangle Three Buckets) is supported; any other value disables downsampling.")
     @QueryParam("downsample") String downsample,
     @Parameter(description = "Maximum number of data points to return when downsample=lttb is active (1–5000). Ignored when downsample is absent or unrecognised. Absent or null uses the server default (2000).")
@@ -741,13 +742,23 @@ public class ContainersV2Rest {
   ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    final long startNs;
+    final long endNs;
+    try {
+      startNs = parseChannelNs(start);
+      endNs   = parseChannelNs(end);
+    } catch (java.time.format.DateTimeParseException e) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
+        "Invalid ISO 8601 timestamp in 'start' or 'end': " + e.getParsedString() +
+        ". Expected format: '2024-06-01T08:00:00Z' or '2024-06-01T08:00:00.123456789Z'.");
+    }
     var resolved = containersService.resolveByAppId(appId);
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
     try {
-      var result = resolved.get().handler().getChannelData(appId, channelShepardId, start, end, downsample, maxPoints);
+      var result = resolved.get().handler().getChannelData(appId, channelShepardId, startNs, endNs, downsample, maxPoints);
       if (result.isEmpty()) {
         return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -1616,5 +1627,11 @@ public class ContainersV2Rest {
   private Response unsupportedKind(String capability) {
     return problem(PROBLEM_TYPE_UNSUPPORTED, "Unsupported container kind",
         Response.Status.UNSUPPORTED_MEDIA_TYPE, "This container kind does not support " + capability + ".");
+  }
+
+  /** Converts an ISO 8601 UTC string to nanoseconds since the Unix epoch. */
+  private static long parseChannelNs(String iso) {
+    java.time.Instant instant = java.time.Instant.parse(iso.trim());
+    return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
   }
 }

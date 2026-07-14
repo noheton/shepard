@@ -20,7 +20,7 @@
  * already handles LTTB downsampling server-side.
  */
 import { computed, onMounted, onUnmounted, watch } from "vue";
-import { useCrossDoBulkData } from "~/composables/containers/useCrossDoBulkData";
+import { useCrossDoBulkData, nsToIso } from "~/composables/containers/useCrossDoBulkData";
 import { useSyncedTimeCursor } from "~/composables/context/useSyncedTimeCursor";
 
 import VChart from "vue-echarts";
@@ -52,6 +52,8 @@ const { series, loading, error, fetchCrossDo } = useCrossDoBulkData();
 
 const DEFAULT_START_NS = 0;
 const DEFAULT_END_NS = 3_154_000_000_000_000;
+const DEFAULT_START_ISO = nsToIso(DEFAULT_START_NS);
+const DEFAULT_END_ISO = nsToIso(DEFAULT_END_NS);
 
 const cell = computed(() => series.value[0] ?? null);
 
@@ -97,8 +99,8 @@ onMounted(async () => {
   await fetchCrossDo({
     dataObjectAppIds: [props.dataObjectAppId],
     channelPredicate: props.channelPredicate,
-    start: DEFAULT_START_NS,
-    end: DEFAULT_END_NS,
+    start: DEFAULT_START_ISO,
+    end: DEFAULT_END_ISO,
     downsampleTo: props.downsampleTo,
   });
 });

@@ -57,8 +57,11 @@ public class CrossDoBulkDataRestTest {
   private static final String DO_FORBIDDEN = "01930a2b-fe4c-7e3c-9f1d-ffffffffffff";
   private static final String DO_UNKNOWN = "01930a2b-fe4c-7e3c-9f1d-999999999999";
   private static final String PREDICATE = "urn:shepard:afp:tcp-temperature-c";
+  // ISO strings used in request bodies; Long equivalents used in service mock assertions.
+  private static final String START_ISO = "1970-01-01T00:00:01Z";
+  private static final String END_ISO   = "1970-01-01T00:00:02Z";
   private static final long START_NS = 1_000_000_000L;
-  private static final long END_NS = 2_000_000_000L;
+  private static final long END_NS   = 2_000_000_000L;
   private static final String CALLER = "tester";
 
   @BeforeEach
@@ -91,7 +94,7 @@ public class CrossDoBulkDataRestTest {
   void missingKind_returns400() {
     Response resp = resource.getCrossDoBulkData(
       null,
-      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
     assertEquals(400, resp.getStatus());
@@ -102,7 +105,20 @@ public class CrossDoBulkDataRestTest {
   void unknownKind_returns400() {
     Response resp = resource.getCrossDoBulkData(
       "file",
-      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
+      securityContext
+    );
+    assertEquals(400, resp.getStatus());
+    verify(permsMock, never()).filterAllowedDataObjectAppIds(any(), any(), any());
+  }
+
+  // ── Bad ISO timestamp → 400 before any permission check ─────────────────
+
+  @Test
+  void badIsoTimestamp_returns400() {
+    Response resp = resource.getCrossDoBulkData(
+      "timeseries",
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, "not-a-timestamp", END_ISO, 500),
       securityContext
     );
     assertEquals(400, resp.getStatus());
@@ -118,7 +134,7 @@ public class CrossDoBulkDataRestTest {
 
     Response resp = resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       anon
     );
 
@@ -146,7 +162,7 @@ public class CrossDoBulkDataRestTest {
 
     Response resp = resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
 
@@ -173,7 +189,7 @@ public class CrossDoBulkDataRestTest {
 
     Response resp = resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_B), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_B), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
 
@@ -201,7 +217,7 @@ public class CrossDoBulkDataRestTest {
 
     Response resp = resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_FORBIDDEN, DO_A), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_FORBIDDEN, DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
 
@@ -223,7 +239,7 @@ public class CrossDoBulkDataRestTest {
 
     Response resp = resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_UNKNOWN), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_UNKNOWN), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
 
@@ -259,7 +275,7 @@ public class CrossDoBulkDataRestTest {
       "timeseries",
       new CrossDoBulkDataRequestIO(
         List.of(DO_A, DO_B, DO_FORBIDDEN, DO_C),
-        PREDICATE, START_NS, END_NS, 500
+        PREDICATE, START_ISO, END_ISO, 500
       ),
       securityContext
     );
@@ -316,7 +332,7 @@ public class CrossDoBulkDataRestTest {
 
     resource.getCrossDoBulkData(
       "timeseries",
-      new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B), PREDICATE, START_NS, END_NS, 500),
+      new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
 

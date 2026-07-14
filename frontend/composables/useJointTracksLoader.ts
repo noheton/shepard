@@ -14,6 +14,7 @@
  */
 import { ref } from "vue";
 import type { JointTrack } from "~/utils/urdfAnimation";
+import { nsToIso } from "~/composables/containers/useCrossDoBulkData";
 
 export interface JointBinding {
   /** Joint name as declared in the URDF. */
@@ -78,8 +79,8 @@ export function useJointTracksLoader() {
           .filter(b => b.channelSelector)
           .map(async (b): Promise<JointTrack | null> => {
             const qs = new URLSearchParams({
-              start: String(startNs),
-              end: String(endNs),
+              start: nsToIso(startNs),
+              end: nsToIso(endNs),
             });
             const dataRes = await fetch(
               `${base}/v2/containers/${containerAppId}/channels/${b.channelSelector}/data?${qs}`,
