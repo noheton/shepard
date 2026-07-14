@@ -246,10 +246,10 @@ public class AdminUserGitCredentialRest {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    int from = page * pageSize;
+    long from = (long) page * pageSize;
     List<AdminGitCredentialListItemIO> slice = from >= items.size()
         ? List.of()
-        : items.subList(from, Math.min(from + pageSize, items.size()));
+        : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
     return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
         .build();
   }

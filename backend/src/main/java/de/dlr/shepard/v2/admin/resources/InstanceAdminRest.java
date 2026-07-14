@@ -123,10 +123,10 @@ public class InstanceAdminRest {
   ) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    int from = page * pageSize;
+    long from = (long) page * pageSize;
     List<InstanceAdminGrantIO> slice = from >= grants.size()
         ? List.of()
-        : grants.subList(from, Math.min(from + pageSize, grants.size()));
+        : grants.subList((int) from, (int) Math.min(from + pageSize, grants.size()));
     return Response.ok(new PagedResponseIO<>(slice, grants.size(), page, pageSize))
         .build();
   }
