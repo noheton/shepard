@@ -285,6 +285,76 @@ class SearchV2RestTest {
         Long.valueOf(COLL_NEO4J_ID).equals(body.getScopes()[0].getCollectionId())));
   }
 
+  // --- APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE: cap tests ---
+
+  @Test
+  void combinedResultSetIsCappedAt1000() {
+    // Produce exactly 600 collections + 600 DataObjects = 1200 combined, expect 1000 back.
+    List<Collection> cols = new java.util.ArrayList<>();
+    for (int i = 0; i < 600; i++) {
+      Collection c = new Collection((long) i);
+      c.setAppId("018f9c5a-0000-7000-a000-" + String.format("%012d", i));
+      c.setName("Col-" + i);
+      cols.add(c);
+    }
+    PaginatedCollectionList colPage = new PaginatedCollectionList(
+      cols, 600, "x", Optional.of(0), Optional.of(600), BasicCollectionAttributes.createdAt, true);
+    when(collectionSearchService.search(eq("x"), any(), any(), any(), anyBoolean())).thenReturn(colPage);
+
+    BasicEntityIO[] dos = new BasicEntityIO[600];
+    ResultTriple[] triples = new ResultTriple[600];
+    for (int i = 0; i < 600; i++) {
+      dos[i] = new BasicEntityIO();
+      dos[i].setAppId("019f9c5a-0000-7000-a000-" + String.format("%012d", i));
+      dos[i].setName("DO-" + i);
+      triples[i] = new ResultTriple(null, (long) i);
+    }
+    ResponseBody doResponse = new ResponseBody(triples, dos, new SearchParams("x", QueryType.DataObject));
+    when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+
+    Response resp = resource.search("x", 0, 50, null);
+
+    assertEquals(200, resp.getStatus());
+    SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
+    assertEquals(SearchV2Rest.SEARCH_RESULT_CAP, result.getTotal(),
+        "total must be capped at SEARCH_RESULT_CAP when combined exceeds it");
+    // First page of 50 is still returned correctly.
+    assertEquals(50, result.getItems().size());
+  }
+
+  @Test
+  void combinedResultSetBelowCapIsUncapped() {
+    // 3 collections + 2 DOs = 5 total — no cap should apply.
+    List<Collection> cols = new java.util.ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      Collection c = new Collection((long) i);
+      c.setAppId("018f9c5a-0000-7000-a000-" + String.format("%012d", i));
+      c.setName("Col-" + i);
+      cols.add(c);
+    }
+    PaginatedCollectionList colPage = new PaginatedCollectionList(
+      cols, 3, "y", Optional.of(0), Optional.of(50), BasicCollectionAttributes.createdAt, true);
+    when(collectionSearchService.search(eq("y"), any(), any(), any(), anyBoolean())).thenReturn(colPage);
+
+    BasicEntityIO[] dos = new BasicEntityIO[2];
+    ResultTriple[] triples = new ResultTriple[2];
+    for (int i = 0; i < 2; i++) {
+      dos[i] = new BasicEntityIO();
+      dos[i].setAppId("019f9c5a-0000-7000-a000-" + String.format("%012d", i));
+      dos[i].setName("DO-" + i);
+      triples[i] = new ResultTriple(null, (long) i);
+    }
+    when(dataObjectSearchService.search(any())).thenReturn(
+        new ResponseBody(triples, dos, new SearchParams("y", QueryType.DataObject)));
+
+    Response resp = resource.search("y", 0, 50, null);
+
+    assertEquals(200, resp.getStatus());
+    SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
+    assertEquals(5L, result.getTotal(), "total must be exact count when below cap");
+    assertEquals(5, result.getItems().size());
+  }
+
   // --- helpers ---
 
   private void stubEmptyCollections(String query) {
