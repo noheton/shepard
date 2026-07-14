@@ -5342,7 +5342,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/ProvenanceMcpTools.java:169–170,134,143–144,186–187`; apisimp-sweep-2026-07-14-fire594.md §F2.
 
 ## APISIMP-LJE-NUMERIC-PARENT-ID — replace `isAccessTypeAllowedForUser(dataObject.getId(), …)` with `isAccessAllowedForDataObjectAppId` in lab-journal resources (size: S, sweep: fire-594)
-- **Status:** ⏳ queued
+- **Status:** 🚧 in-progress (branch: `APISIMP-LJE-NUMERIC-PARENT-ID-fire596`)
 - **Why:** Five call sites in `LabJournalEntryRest` (lines 94, 135, 171), `LabJournalHistoryRest` (line 128), and `LabJournalRenderRest` (line 117) pass `dataObject.getId()` (Neo4j numeric id) to `permissionsService.isAccessTypeAllowedForUser()`. The v2 permission method keyed on `appId` is `isAccessAllowedForDataObjectAppId(dataObject.getAppId(), accessType, caller)`. Using the numeric id is the v1 pattern and couples the permission check to Neo4j internal node ids.
 - **AC:** All five call sites use `isAccessAllowedForDataObjectAppId(dataObject.getAppId(), …)`; existing behaviour preserved; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/LabJournalEntryRest.java:94,135,171`; `LabJournalHistoryRest.java:128`; `LabJournalRenderRest.java:117`; apisimp-sweep-2026-07-14-fire594.md §F3.

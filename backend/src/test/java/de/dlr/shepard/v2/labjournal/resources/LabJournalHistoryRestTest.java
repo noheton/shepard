@@ -34,6 +34,7 @@ class LabJournalHistoryRestTest {
 
   static final String ENTRY_APP_ID = "01957000-0000-7000-8000-000000000010";
   static final long DO_OGM_ID = 55L;
+  static final String DO_APP_ID = "01957000-0000-7000-8000-000000000055";
   static final long ENTRY_OGM_ID = 101L;
   static final String CALLER = "bob";
 
@@ -68,6 +69,7 @@ class LabJournalHistoryRestTest {
 
     dataObject = new DataObject();
     dataObject.setId(DO_OGM_ID);
+    dataObject.setAppId(DO_APP_ID);
 
     entry = new LabJournalEntry();
     entry.setId(ENTRY_OGM_ID);
@@ -78,7 +80,7 @@ class LabJournalHistoryRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(ENTRY_APP_ID)).thenReturn(entry);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
     // Default: entry has no revisions
     when(labJournalEntryRevisionDAO.countByEntry(ENTRY_OGM_ID)).thenReturn(0L);
     when(labJournalEntryRevisionDAO.findByEntry(ENTRY_OGM_ID, 0, 50)).thenReturn(List.of());
@@ -147,7 +149,7 @@ class LabJournalHistoryRestTest {
 
   @Test
   void history_returns403_whenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
 
     assertThat(resource.history(ENTRY_APP_ID, 0, 50, sc).getStatus()).isEqualTo(403);
   }
