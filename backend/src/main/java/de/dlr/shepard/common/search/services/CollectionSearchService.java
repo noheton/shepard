@@ -25,6 +25,34 @@ public class CollectionSearchService {
   @Inject
   UserService userService;
 
+  public int count(String collectionSearchQuery) {
+    User user = userService.getCurrentUser();
+    QueryValidator.checkQuery(collectionSearchQuery);
+    Neo4jQuery neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
+      collectionSearchQuery,
+      user.getUsername(),
+      new SortingHelper(BasicCollectionAttributes.createdAt, true)
+    );
+    return searchDAO.getCollectionTotalCount(neo4jSelectionQuery, Constants.COLLECTION_IN_QUERY);
+  }
+
+  public List<Collection> searchSlice(
+    String collectionSearchQuery,
+    int skip,
+    int limit,
+    BasicCollectionAttributes orderBy,
+    Boolean orderDesc
+  ) {
+    User user = userService.getCurrentUser();
+    QueryValidator.checkQuery(collectionSearchQuery);
+    Neo4jQuery neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
+      collectionSearchQuery,
+      user.getUsername(),
+      new SortingHelper(orderBy, orderDesc)
+    );
+    return searchDAO.findCollectionsSlice(neo4jSelectionQuery, skip, limit, Constants.COLLECTION_IN_QUERY);
+  }
+
   public PaginatedCollectionList search(
     String collectionSearchQuery,
     Optional<Integer> page,

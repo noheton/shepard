@@ -50,6 +50,26 @@ public class SearchDAO {
     return ret;
   }
 
+  public Integer countDataObjects(Neo4jQuery selectionQuery, String dataObjectVariable) {
+    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery.cypher(), dataObjectVariable);
+    Iterable<Integer> result = session.query(Integer.class, query, selectionQuery.params());
+    return result.iterator().next();
+  }
+
+  public List<DataObject> findDataObjectsSlice(Neo4jQuery selectionQuery, String dataObjectVariable, int skip, int limit) {
+    String query = selectionQuery.cypher() + emitDataObjectReturnPartSlice(dataObjectVariable, skip, limit);
+    Iterable<DataObject> results = session.query(DataObject.class, query, selectionQuery.params());
+    return StreamSupport.stream(results.spliterator(), false).toList();
+  }
+
+  public List<Collection> findCollectionsSlice(Neo4jQuery selectionQuery, int skip, int limit, String collectionVariable) {
+    String query = selectionQuery.cypher() +
+        " SKIP %d LIMIT %d WITH %s %s".formatted(skip, limit, collectionVariable,
+            CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.EVERYTHING));
+    Iterable<Collection> collections = session.query(Collection.class, query, selectionQuery.params());
+    return StreamSupport.stream(collections.spliterator(), false).toList();
+  }
+
   public List<BasicReference> findReferences(Neo4jQuery selectionQuery, String referenceVariable) {
     String query = selectionQuery.cypher() + emitReferencesReturnPart(referenceVariable);
     Iterable<BasicReference> collections = session.query(BasicReference.class, query, selectionQuery.params());
@@ -156,6 +176,11 @@ public class SearchDAO {
         dataObjectVariable,
         dataObjectVariable
       );
+  }
+
+  private String emitDataObjectReturnPartSlice(String var, int skip, int limit) {
+    return " WITH %s ORDER BY %s.appId ASC SKIP %d LIMIT %d MATCH path=(c:Collection)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)"
+        .formatted(var, var, skip, limit, var, var);
   }
 
   private String emitReferencesReturnPart(String referenceVariable) {
