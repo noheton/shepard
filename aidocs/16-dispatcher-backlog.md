@@ -5240,31 +5240,31 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectListItemV2IO.java`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:326-327`; `frontend/utils/collectionDataObjectTimeline.ts`; `backend-client/src/models/DataObjectListItemV2.ts`; apisimp-sweep (fire-588 dispatch).
 
 ## APISIMP-AAS-REGISTRATION-LONG-TO-ISO — convert `AasRegistrationIO.lastAttemptAt`/`createdAt`/`updatedAt` from epoch-ms `Long` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/io/AasRegistrationIO.java` lines 17, 19–20 expose `lastAttemptAt`, `createdAt`, and `updatedAt` as `Long` epoch-ms values on `GET /v2/admin/aas/registrations`. The entity fields (`AasRegistration.java:71,79,83`) are `Long` ms since epoch. All other v2 admin entity timestamps have been converted to ISO 8601 strings; these three are the last outliers in the AAS plugin.
 - **AC:** `AasRegistrationIO` record components `lastAttemptAt`, `createdAt`, `updatedAt` are `String` ISO 8601 UTC values (e.g. `"2026-07-01T10:00:00Z"`); entity `Long` values converted via `Instant.ofEpochMilli(...).toString()` with null-guard; `mvn verify -pl plugins/aas` green.
 - **First refs:** `plugins/aas/src/main/java/de/dlr/shepard/plugins/aas/admin/io/AasRegistrationIO.java:17,19-20`; apisimp-sweep-2026-07-13-fire586.md follow-on sweep (fire-588).
 
 ## APISIMP-PLUGIN-ENTRY-DATE-TO-ISO — convert `PluginEntryIO.registeredAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-590, branch `apisimp-plugin-lab-dates-to-iso`)
+- **Status:** ✅ shipped (PR #2550, fire-592, SHA 70ef4fba)
 - **Why:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/io/PluginEntryIO.java:54` has `Date registeredAt` as a record component; line 80 sets it via `Date.from(entry.registeredAt())`. Jackson serialises `java.util.Date` as a numeric epoch-ms by default (without `@JsonFormat(shape=STRING)`), diverging from the ISO 8601 convention applied everywhere else on the v2 surface. Fix: change type to `String`; convert via `entry.registeredAt() == null ? null : entry.registeredAt().toString()` (Instant → ISO 8601 string).
 - **AC:** `GET /v2/admin/plugins` response carries `registeredAt` as an ISO 8601 UTC string; `PluginsAdminRestTest` asserts string shape; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/io/PluginEntryIO.java:54,80`; apisimp-sweep (fire-588).
 
 ## APISIMP-LAB-JOURNAL-REVISION-DATE-TO-ISO — convert `LabJournalRevisionIO.revisedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** 🔄 in-flight (PR dispatched fire-590, branch `apisimp-plugin-lab-dates-to-iso`)
+- **Status:** ✅ shipped (PR #2550, fire-592, SHA 70ef4fba)
 - **Why:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalRevisionIO.java:36` has `private Date revisedAt`. Without `@JsonFormat(shape=STRING)` Jackson serialises as numeric epoch-ms. Every other timestamp on the lab-journal surface uses ISO 8601 strings. Fix: change type to `String`; convert in the static `from()` factory via `Instant.ofEpochMilli(entity.getRevisedAt().getTime()).toString()` with null-guard.
 - **AC:** `GET /v2/lab-journal/{entryAppId}/history` response carries `revisedAt` as an ISO 8601 UTC string; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalRevisionIO.java:36`; apisimp-sweep (fire-588).
 
 ## APISIMP-DATACITE-CONFIG-DATE-TO-ISO — convert `DataciteMinterConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/io/DataciteMinterConfigIO.java:32,40,51` wraps the entity's `Long updatedAtMillis` into a `Date` field; Jackson serialises as numeric epoch-ms. Pattern matches the other minter config outlier (APISIMP-EPIC-CONFIG-DATE-TO-ISO). Fix: change `Date updatedAt` to `String updatedAt`; convert via `updatedAtMillis == null ? null : Instant.ofEpochMilli(updatedAtMillis).toString()`.
 - **AC:** `GET /v2/admin/config/datacite` (via AdminConfigRest) returns `updatedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/minter-datacite` green.
 - **First refs:** `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/io/DataciteMinterConfigIO.java:32,40,51`; apisimp-sweep (fire-588).
 
 ## APISIMP-EPIC-CONFIG-DATE-TO-ISO — convert `EpicMinterConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicMinterConfigIO.java:28,36,43` wraps `Long updatedAtMillis` into a `Date` field (same anti-pattern as `DataciteMinterConfigIO`). Fix: same pattern — change `Date updatedAt` to `String updatedAt`; convert via `Instant.ofEpochMilli(updatedAtMillis).toString()`.
 - **AC:** `GET /v2/admin/config/epic` returns `updatedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/minter-epic` green.
 - **First refs:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicMinterConfigIO.java:28,36,43`; apisimp-sweep (fire-588).
@@ -5282,7 +5282,49 @@ picks these up. Terse by design.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/HarvestKeyMintedIO.java:32`; apisimp-sweep (fire-588).
 
 ## APISIMP-LEGACY-V1-STATS-DATE-TO-ISO — convert `LegacyV1StatsIO.firstHitAt`/`mostRecentHitAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (PR #2551, fire-592)
 - **Why:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35` has `Date firstHitAt` and `Date mostRecentHitAt` as record components on `GET /v2/admin/config/legacy-v1/stats`. Without `@JsonFormat(shape=STRING)` both serialise as numeric epoch-ms. Fix: change both to `String`; convert via `Instant.ofEpochMilli(...)`.
 - **AC:** `GET /v2/admin/config/legacy-v1/stats` carries `firstHitAt`/`mostRecentHitAt` as ISO 8601 UTC strings; `mvn verify -pl plugins/v1-compat` green.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35`; apisimp-sweep (fire-588).
+
+## APISIMP-LEGACY-V1-CONFIG-DATE-TO-ISO — convert `LegacyV1ConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39` exposes `Date updatedAt` as a record component on `GET /v2/admin/legacy/v1/config`. The factory at line 44 wraps a `Long updatedAt` entity field via `new Date(updated)`. There is no `@JsonFormat(shape=STRING)` annotation, so Jackson serialises as numeric epoch-ms — the last Date-typed field in the v1-compat plugin's IO surface after `LegacyV1StatsIO` is fixed by PR #2551. Fix: change record component to `String updatedAt`; convert in `from()` via `updated == null ? null : Instant.ofEpochMilli(updated).toString()`.
+- **AC:** `GET /v2/admin/legacy/v1/config` returns `updatedAt` as an ISO 8601 UTC string (e.g. `"2026-07-14T10:00:00Z"`) or `null`; `mvn verify -pl plugins/v1-compat` green.
+- **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39,44`; apisimp-sweep-2026-07-14-fire592.md §Finding1.
+
+## APISIMP-FEED-ENTRY-DATE-TO-ISO — convert `FeedEntryIO.dateCreated`/`dateModified` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82` exposes `Date dateCreated` and `Date dateModified` as record components in the JSON-LD feed at `GET /v2/unhide/feed.jsonld`. No `@JsonFormat(shape=STRING)` annotation is present, so Jackson serialises both as numeric epoch-ms integers — which is invalid schema.org JSON-LD (schema.org `dateCreated`/`dateModified` expects an ISO 8601 dateTime string per its spec). Fix: change both components to `String`; convert at the call site in `UnhideFeedService` via `Instant.ofEpochMilli(collection.getCreatedAt().getTime()).toString()` with null-guard.
+- **AC:** `GET /v2/unhide/feed.jsonld` entries carry `dateCreated`/`dateModified` as ISO 8601 UTC strings conforming to schema.org; `mvn verify -pl plugins/unhide` green.
+- **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82`; apisimp-sweep-2026-07-14-fire592.md §Finding2.
+
+## APISIMP-NOTEBOOK-REF-DATE-TO-ISO — convert `NotebookReferenceIO.createdAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/NotebookReferenceIO.java:83` has `private Date createdAt`. A `@JsonFormat(shape=STRING)` annotation is present (line 75), which causes Jackson to emit a date string — but the exact format depends on the ObjectMapper's configured `DateFormat` and timezone. Converting to `String` via `Instant.ofEpochMilli(...).toString()` in the factory method makes the ISO 8601 UTC format explicit and removes the `java.util.Date` type from the wire shape entirely. The `@Schema(example = "2024-08-15T11:18:44.632+00:00")` confirms the intended format.
+- **AC:** `GET /v2/lab-journal/{dataObjectAppId}/notebooks` response carries `createdAt` as an ISO 8601 UTC string; `NotebookRestTest` asserts string shape; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/NotebookReferenceIO.java:83`; apisimp-sweep-2026-07-14-fire592.md §Finding3.
+
+## APISIMP-INSTANCE-ADMIN-GRANT-DATE-TO-ISO — convert `InstanceAdminGrantIO.grantedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/InstanceAdminGrantIO.java:55` has `private Date grantedAt`. A `@JsonFormat(shape=STRING)` annotation is present (line 48). Same implicit-format concern as `NotebookReferenceIO.createdAt`; converting to `String` makes the ISO 8601 UTC format explicit. The corresponding `InstanceAdminService` builds the IO from a `Date` entity field — that site must also be updated. Fix: change type to `String`; convert via `Instant.ofEpochMilli(entity.getGrantedAt().getTime()).toString()` with null-guard.
+- **AC:** `GET /v2/admin/instance-admins` returns `grantedAt` as an ISO 8601 UTC string or `null`; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/InstanceAdminGrantIO.java:55`; apisimp-sweep-2026-07-14-fire592.md §Finding4.
+
+## APISIMP-USER-GROUP-DATE-TO-ISO — convert `UserGroupV2IO.createdAt`/`updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `backend/src/main/java/de/dlr/shepard/v2/users/io/UserGroupV2IO.java:40,47` has `private Date createdAt` and `private Date updatedAt`. Both carry `@JsonFormat(shape=STRING)` annotations (lines 38, 45). The constructor at lines 52–64 assigns via `group.getCreatedAt()` / `group.getUpdatedAt()`. Converting to `String` makes the ISO 8601 UTC format explicit. Fix: change both fields to `String`; convert in the constructor via `Instant.ofEpochMilli(group.getCreatedAt().getTime()).toString()` with null-guards.
+- **AC:** `GET /v2/user-groups` and `POST /v2/user-groups` responses carry `createdAt`/`updatedAt` as ISO 8601 UTC strings; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/users/io/UserGroupV2IO.java:40,47`; apisimp-sweep-2026-07-14-fire592.md §Finding5.
+
+## APISIMP-DO-SUMMARY-DATE-TO-ISO — convert `DataObjectSummaryIO.createdAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectSummaryIO.java:40` has `private Date createdAt`. A `@JsonFormat(shape=STRING)` annotation is present (line 32). This IO is returned by `GET /v2/dataobjects/{appId}/predecessors` and `/successors` as the compact shape for predecessor/successor DataObject rows. Converting to `String` makes the format explicit. Fix: change field to `String`; update constructor at line 58 via `Instant.ofEpochMilli(d.getCreatedAt().getTime()).toString()` with null-guard.
+- **AC:** `GET /v2/dataobjects/{appId}/predecessors` and `/successors` carry `createdAt` as ISO 8601 UTC strings; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectSummaryIO.java:40`; apisimp-sweep-2026-07-14-fire592.md §Finding6.
+
+## APISIMP-GIT-CREDENTIAL-DATE-TO-ISO — convert `GitCredentialIO.createdAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
+- **Status:** ⏳ queued
+- **Why:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/io/GitCredentialIO.java:33` has `private Date createdAt`. A `@JsonFormat(shape=STRING)` annotation is present (line 31). Constructor at line 40 assigns via `cred.getCreatedAt()`. Converting to `String` makes the ISO 8601 UTC format explicit and removes the last `java.util.Date` from the git plugin's IO surface. Fix: change field to `String`; update constructor via `Instant.ofEpochMilli(cred.getCreatedAt().getTime()).toString()` with null-guard.
+- **AC:** `GET /v2/users/me/git-credentials` returns `createdAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/git` green.
+- **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/io/GitCredentialIO.java:33`; apisimp-sweep-2026-07-14-fire592.md §Finding7.
