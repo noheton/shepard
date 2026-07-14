@@ -3,7 +3,7 @@ package de.dlr.shepard.plugins.v1compat.services;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.plugins.v1compat.io.LegacyV1StatsIO;
-import java.util.Date;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +51,8 @@ class LegacyV1StatsServiceTest {
   @Test
   void recordHit_stampsTimestamps() {
     stats.recordHit("/shepard/api/users", "alice");
-    Date firstHit1 = stats.snapshot().firstHitAt();
-    Date mostRecent1 = stats.snapshot().mostRecentHitAt();
+    String firstHit1 = stats.snapshot().firstHitAt();
+    String mostRecent1 = stats.snapshot().mostRecentHitAt();
     assertThat(firstHit1).isNotNull();
     assertThat(mostRecent1).isEqualTo(firstHit1);
 
@@ -60,7 +60,7 @@ class LegacyV1StatsServiceTest {
     stats.recordHit("/shepard/api/users", "alice");
     LegacyV1StatsIO snap2 = stats.snapshot();
     assertThat(snap2.firstHitAt()).isEqualTo(firstHit1);
-    assertThat(snap2.mostRecentHitAt()).isAfter(firstHit1);
+    assertThat(Instant.parse(snap2.mostRecentHitAt())).isAfter(Instant.parse(firstHit1));
   }
 
   @Test
