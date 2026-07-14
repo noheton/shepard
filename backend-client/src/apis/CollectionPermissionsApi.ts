@@ -109,7 +109,7 @@ export class CollectionPermissionsApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
-        headerParameters['Content-Type'] = 'application/json';
+        headerParameters['Content-Type'] = 'application/merge-patch+json';
 
         if (this.configuration && this.configuration.apiKey) {
             headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY");
@@ -124,7 +124,7 @@ export class CollectionPermissionsApi extends runtime.BaseAPI {
         }
         const response = await this.request({
             path: `/v2/collections/{appId}/permissions`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))),
-            method: 'PUT',
+            method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
             body: PermissionsToJSON(requestParameters['permissions'] as Permissions),

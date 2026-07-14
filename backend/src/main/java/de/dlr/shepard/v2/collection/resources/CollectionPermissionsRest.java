@@ -12,7 +12,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -101,16 +101,17 @@ public class CollectionPermissionsRest {
     return Response.ok(new PermissionsIO(perms)).build();
   }
 
-  @PUT
+  @PATCH
   @Path("/permissions")
+  @Consumes("application/merge-patch+json")
   @Operation(
     operationId = "editCollectionPermissionsV2",
     summary = "[v2] Update permissions for a Collection.",
     description =
       "Replaces the permissions of the Collection identified by `appId` (UUID v7) with the " +
-      "supplied body. Auth: Manage permission required (owner or manager role). Returns 401 " +
-      "when unauthenticated; 403 when the caller lacks Manage access; 404 when no Collection " +
-      "with that appId exists."
+      "supplied body (RFC 7396 merge-patch). Auth: Manage permission required (owner or manager " +
+      "role). Returns 401 when unauthenticated; 403 when the caller lacks Manage access; 404 " +
+      "when no Collection with that appId exists. Send Content-Type: application/merge-patch+json."
   )
   @APIResponse(
     responseCode = "200",
