@@ -104,7 +104,8 @@ public class InstanceAdminRest {
   @Operation(
     operationId = "listInstanceAdmins",
     summary = "List Neo4j-side instance-admin grants.",
-    description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
+    description = "Returns active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields. " +
+    "Paginated via `page` (0-based) and `pageSize` (1–200, default 50)."
   )
   @APIResponse(
     description = "Paged list of active Neo4j-side instance-admin grants with audit metadata.",
@@ -113,10 +114,20 @@ public class InstanceAdminRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
-  public Response listInstanceAdmins(@Context SecurityContext securityContext) {
+  public Response listInstanceAdmins(
+    @Context SecurityContext securityContext,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    return Response.ok(new PagedResponseIO<>(grants, grants.size(), 0, grants.size()))
+    int from = page * pageSize;
+    List<InstanceAdminGrantIO> slice = from >= grants.size()
+        ? List.of()
+        : grants.subList(from, Math.min(from + pageSize, grants.size()));
+    return Response.ok(new PagedResponseIO<>(slice, grants.size(), page, pageSize))
         .build();
   }
 

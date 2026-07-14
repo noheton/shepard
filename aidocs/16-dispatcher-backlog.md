@@ -5388,25 +5388,25 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:107-168`.
 
 ## APISIMP-ADMIN-ONTOLOGIES-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/semantic/ontologies` (size: XS, sweep: fire-599)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
 - **Why:** `SemanticAdminRest.java:276` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — the `page` and `pageSize` query params are absent from the method signature. The response always has `page=0` and `pageSize=total`, so a caller checking `total > pageSize` will incorrectly infer more pages exist. Inconsistent with the rest of the v2 admin surface.
 - **AC:** `listOntologies()` accepts `@QueryParam("page")` + `@QueryParam("pageSize")`; response sliced accordingly; existing callers with no params get page 0 / default size; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/semantic/SemanticAdminRest.java:276`; apisimp-sweep-2026-07-14-fire599.md §Finding1.
 
 ## APISIMP-ADMIN-INSTANCE-ADMINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/instance-admins` (size: XS, sweep: fire-599)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
 - **Why:** `InstanceAdminRest.java:119` returns `new PagedResponseIO<>(grants, grants.size(), 0, grants.size())` — no `page`/`pageSize` params. Same fake-paged pattern. `instanceAdminService.listInstanceAdmins()` fetches all grants into heap on every call.
 - **AC:** `listInstanceAdmins()` accepts `page`/`pageSize`; service or resource slices the list; response shape correct; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:119`; apisimp-sweep-2026-07-14-fire599.md §Finding2.
 
 ## APISIMP-ADMIN-GIT-CREDENTIALS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/users/{username}/git-credentials` (size: XS, sweep: fire-599)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
 - **Why:** `AdminUserGitCredentialRest.java:237` returns `new PagedResponseIO<>(items, items.size(), 0, items.size())` — no `page`/`pageSize` params. `gitCredentialDAO.findAllByUser(username)` fetches all credentials per user into heap.
 - **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/users/AdminUserGitCredentialRest.java:237`; apisimp-sweep-2026-07-14-fire599.md §Finding3.
 
 ## APISIMP-ADMIN-PLUGINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/plugins` (size: XS, sweep: fire-599)
-- **Status:** ⏳ queued
+- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
 - **Why:** `PluginsAdminRest.java:132` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — no `page`/`pageSize` params. Plugin count is bounded but the fake-paged shape is inconsistent with the admin surface contract.
 - **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:132`; apisimp-sweep-2026-07-14-fire599.md §Finding4.
