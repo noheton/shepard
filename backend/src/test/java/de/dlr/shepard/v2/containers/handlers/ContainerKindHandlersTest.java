@@ -211,6 +211,25 @@ class ContainerKindHandlersTest {
     verify(fileService).findLinkedDataObjectsByAppId("file-1");
   }
 
+  @Test
+  void file_countLinkedDataObjects_delegatesToService() {
+    when(fileService.countLinkedDataObjectsByAppId("file-1")).thenReturn(3L);
+    var out = fileHandler.countLinkedDataObjects("file-1");
+    assertTrue(out.isPresent());
+    assertEquals(3L, out.get());
+    verify(fileService).countLinkedDataObjectsByAppId("file-1");
+  }
+
+  @Test
+  void file_listLinkedDataObjectsPaged_delegatesToService() {
+    var d = linkedDataObject("do-1");
+    when(fileService.findLinkedDataObjectsByAppIdPaged("file-1", 0, 10)).thenReturn(List.of(d));
+    var out = fileHandler.listLinkedDataObjectsPaged("file-1", 0, 10);
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(fileService).findLinkedDataObjectsByAppIdPaged("file-1", 0, 10);
+  }
+
   // ─── timeseries handler ────────────────────────────────────────────────────
 
   @Test
@@ -283,6 +302,25 @@ class ContainerKindHandlersTest {
     assertTrue(out.isPresent());
     assertEquals(1, out.get().size());
     verify(tsService).findLinkedDataObjectsByAppId("ts-1");
+  }
+
+  @Test
+  void ts_countLinkedDataObjects_delegatesToService() {
+    when(tsService.countLinkedDataObjectsByAppId("ts-1")).thenReturn(7L);
+    var out = tsHandler.countLinkedDataObjects("ts-1");
+    assertTrue(out.isPresent());
+    assertEquals(7L, out.get());
+    verify(tsService).countLinkedDataObjectsByAppId("ts-1");
+  }
+
+  @Test
+  void ts_listLinkedDataObjectsPaged_delegatesToService() {
+    var d = linkedDataObject("do-2");
+    when(tsService.findLinkedDataObjectsByAppIdPaged("ts-1", 5, 10)).thenReturn(List.of(d));
+    var out = tsHandler.listLinkedDataObjectsPaged("ts-1", 5, 10);
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(tsService).findLinkedDataObjectsByAppIdPaged("ts-1", 5, 10);
   }
 
   // ─── structured-data handler ────────────────────────────────────────────────
@@ -361,6 +399,25 @@ class ContainerKindHandlersTest {
     assertTrue(out.isPresent());
     assertEquals(1, out.get().size());
     verify(sdService).findLinkedDataObjectsByAppId("sd-1");
+  }
+
+  @Test
+  void sd_countLinkedDataObjects_delegatesToService() {
+    when(sdService.countLinkedDataObjectsByAppId("sd-1")).thenReturn(2L);
+    var out = sdHandler.countLinkedDataObjects("sd-1");
+    assertTrue(out.isPresent());
+    assertEquals(2L, out.get());
+    verify(sdService).countLinkedDataObjectsByAppId("sd-1");
+  }
+
+  @Test
+  void sd_listLinkedDataObjectsPaged_delegatesToService() {
+    var d = linkedDataObject("do-3");
+    when(sdService.findLinkedDataObjectsByAppIdPaged("sd-1", 10, 5)).thenReturn(List.of(d));
+    var out = sdHandler.listLinkedDataObjectsPaged("sd-1", 10, 5);
+    assertTrue(out.isPresent());
+    assertEquals(1, out.get().size());
+    verify(sdService).findLinkedDataObjectsByAppIdPaged("sd-1", 10, 5);
   }
 
   // ─── findLinkedDataObjectAppIds ────────────────────────────────────────────

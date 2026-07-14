@@ -82,6 +82,37 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
     return result;
   }
 
+  public long countLinkedDataObjectsByContainerAppId(String containerAppId) {
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:StructuredDataContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN count(DISTINCT do) AS total";
+    var iter = session.query(query, Map.of("containerAppId", containerAppId)).iterator();
+    if (!iter.hasNext()) return 0L;
+    Object val = iter.next().get("total");
+    return val instanceof Number n ? n.longValue() : 0L;
+  }
+
+  public List<DataObject> findLinkedDataObjectsByContainerAppIdPaged(
+      String containerAppId, int skip, int limit) {
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:StructuredDataContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT id(do) AS neo4jId, do.appId AS appId " +
+      "ORDER BY appId SKIP $skip LIMIT $limit";
+    var result = new ArrayList<DataObject>();
+    for (var row : session.query(query,
+        Map.of("containerAppId", containerAppId, "skip", skip, "limit", limit))) {
+      Long neo4jId = (Long) row.get("neo4jId");
+      if (neo4jId == null) continue;
+      DataObject loaded = session.load(DataObject.class, neo4jId, DEPTH_ENTITY);
+      if (loaded != null) result.add(loaded);
+    }
+    return result;
+  }
+
   @Override
   public Class<StructuredDataContainer> getEntityType() {
     return StructuredDataContainer.class;

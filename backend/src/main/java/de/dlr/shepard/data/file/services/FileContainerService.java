@@ -577,6 +577,14 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     return fileContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
   }
 
+  public long countLinkedDataObjectsByAppId(String containerAppId) {
+    return fileContainerDAO.countLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  public List<DataObject> findLinkedDataObjectsByAppIdPaged(String containerAppId, int skip, int limit) {
+    return fileContainerDAO.findLinkedDataObjectsByContainerAppIdPaged(containerAppId, skip, limit);
+  }
+
   /**
    * FS1c — generate a presigned GET URL so the caller can download
    * bytes directly from the storage backend.

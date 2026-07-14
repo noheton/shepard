@@ -5366,7 +5366,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java`; apisimp-sweep-2026-07-14-fire594.md §F6.
 
 ## APISIMP-LINKED-DO-IN-MEMORY-PAGE — push DAO-level SKIP/LIMIT into `getLinkedDataObjects` (size: M, sweep: fire-594)
-- **Status:** ⏳ queued
+- **Status:** 🚧 in-progress (PR #2560, fire-598)
 - **Why:** `ContainersV2Rest.getLinkedDataObjects` (wired by APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED) fetches ALL linked DataObjects from the DAO then slices with `subList(fromIdx, toIdx)` in memory. At MFFD scale a single CFRP container may link to hundreds of DataObjects; each page request materialises the full list in JVM heap.
 - **AC:** DAO-layer `listLinkedDataObjects(appId, skip, limit)` issues `SKIP $skip LIMIT $limit` Cypher; `ContainersV2Rest` removes the in-memory `subList`; existing pagination test still passes; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` (`getLinkedDataObjects` method); apisimp-sweep-2026-07-14-fire594.md §F7.

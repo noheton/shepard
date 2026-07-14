@@ -228,6 +228,20 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     );
   }
 
+  @Override
+  public Optional<Long> countLinkedDataObjects(String appId) {
+    return Optional.of(service.countLinkedDataObjectsByAppId(appId));
+  }
+
+  @Override
+  public Optional<List<DataObjectIO>> listLinkedDataObjectsPaged(
+      String appId, int skip, int limit) {
+    return Optional.of(
+      service.findLinkedDataObjectsByAppIdPaged(appId, skip, limit)
+             .stream().map(DataObjectIO::new).toList()
+    );
+  }
+
   // ── APISIMP-CONT-NS-COLLAPSE-2: channel overrides ─────────────────────────
 
   /**
