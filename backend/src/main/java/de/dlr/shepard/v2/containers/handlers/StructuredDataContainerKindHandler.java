@@ -130,6 +130,20 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
   }
 
   @Override
+  public Optional<Long> countLinkedDataObjects(String appId) {
+    return Optional.of(service.countLinkedDataObjectsByAppId(appId));
+  }
+
+  @Override
+  public Optional<List<DataObjectIO>> listLinkedDataObjectsPaged(
+      String appId, int skip, int limit) {
+    return Optional.of(
+      service.findLinkedDataObjectsByAppIdPaged(appId, skip, limit)
+             .stream().map(DataObjectIO::new).toList()
+    );
+  }
+
+  @Override
   public Optional<ContainerStatsIO> getStats(String appId) {
     StructuredDataContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
     if (c == null) return Optional.empty();

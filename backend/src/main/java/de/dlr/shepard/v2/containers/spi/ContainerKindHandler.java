@@ -273,6 +273,47 @@ public interface ContainerKindHandler {
     return Optional.empty();
   }
 
+  /**
+   * APISIMP-LINKED-DO-IN-MEMORY-PAGE — total count of linked DataObjects for
+   * this container, used to build the {@code total} field in a paged response
+   * without materialising the full list.
+   *
+   * <p>The default falls back to {@link #listLinkedDataObjects(String)} so that
+   * plugin handlers that have not yet overridden this method still work correctly
+   * (at the cost of the full-list materialisation). Core kinds override with a
+   * dedicated {@code COUNT(DISTINCT do)} Cypher query.
+   *
+   * @return the total count, or {@link Optional#empty()} when this kind has no
+   *         linked-DataObject concept (→ 415).
+   */
+  default Optional<Long> countLinkedDataObjects(String appId) {
+    return listLinkedDataObjects(appId).map(list -> (long) list.size());
+  }
+
+  /**
+   * APISIMP-LINKED-DO-IN-MEMORY-PAGE — one page of linked DataObjects, ordered
+   * by {@code do.appId} and sliced at the DAO level via Cypher
+   * {@code SKIP $skip LIMIT $limit}.
+   *
+   * <p>The default falls back to {@link #listLinkedDataObjects(String)} +
+   * in-memory {@code subList} for backward-compatible plugin handlers. Core
+   * kinds override with an efficient paged Cypher query.
+   *
+   * @param skip   number of rows to skip (= {@code page × pageSize})
+   * @param limit  maximum rows to return (= {@code pageSize})
+   * @return one page of DataObjectIO, or {@link Optional#empty()} when this kind
+   *         has no linked-DataObject concept (→ 415).
+   */
+  default Optional<List<DataObjectIO>> listLinkedDataObjectsPaged(
+      String appId, int skip, int limit) {
+    return listLinkedDataObjects(appId).map(all -> {
+      int total = all.size();
+      int fromIdx = Math.min(skip, total);
+      int toIdx = Math.min(fromIdx + limit, total);
+      return all.subList(fromIdx, toIdx);
+    });
+  }
+
   // ── APISIMP-CONT-NS-COLLAPSE-2: channel endpoints ──────────────────────────
 
   /**

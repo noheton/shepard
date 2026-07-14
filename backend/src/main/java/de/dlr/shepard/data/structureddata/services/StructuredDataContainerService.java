@@ -319,4 +319,12 @@ public class StructuredDataContainerService
   public List<DataObject> findLinkedDataObjectsByAppId(String containerAppId) {
     return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
   }
+
+  public long countLinkedDataObjectsByAppId(String containerAppId) {
+    return structuredDataContainerDAO.countLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  public List<DataObject> findLinkedDataObjectsByAppIdPaged(String containerAppId, int skip, int limit) {
+    return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppIdPaged(containerAppId, skip, limit);
+  }
 }

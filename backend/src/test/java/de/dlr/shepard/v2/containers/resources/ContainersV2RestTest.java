@@ -611,7 +611,8 @@ class ContainersV2RestTest {
     dataObject.setAppId("do-app-1");
     dataObject.setCollection(col);
     var doIo = new de.dlr.shepard.context.collection.io.DataObjectIO(dataObject);
-    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of(doIo)));
+    when(handler.countLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(1L));
+    when(handler.listLinkedDataObjectsPaged(eq(APP_ID), eq(0), eq(50))).thenReturn(Optional.of(List.of(doIo)));
     var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     var page = (PagedResponseIO<?>) r.getEntity();
@@ -622,7 +623,8 @@ class ContainersV2RestTest {
   @Test
   void getLinkedDataObjects_returns200WithEmptyList() {
     allowRead();
-    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(List.of()));
+    when(handler.countLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(0L));
+    when(handler.listLinkedDataObjectsPaged(eq(APP_ID), eq(0), eq(50))).thenReturn(Optional.of(List.of()));
     var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     var page = (PagedResponseIO<?>) r.getEntity();
@@ -642,8 +644,12 @@ class ContainersV2RestTest {
       do_.setCollection(col);
       items.add(new de.dlr.shepard.context.collection.io.DataObjectIO(do_));
     }
-    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(items));
-    // page 0, size 2 → items 0–1, total 5
+    when(handler.countLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.of(5L));
+    when(handler.listLinkedDataObjectsPaged(eq(APP_ID), eq(0), eq(2)))
+        .thenReturn(Optional.of(items.subList(0, 2)));
+    when(handler.listLinkedDataObjectsPaged(eq(APP_ID), eq(4), eq(2)))
+        .thenReturn(Optional.of(items.subList(4, 5)));
+    // page 0, size 2 → skip=0, limit=2 → items 0–1, total 5
     var r = resource.getLinkedDataObjects(APP_ID, 0, 2, securityContext);
     assertEquals(200, r.getStatus());
     var page = (PagedResponseIO<?>) r.getEntity();
@@ -651,7 +657,7 @@ class ContainersV2RestTest {
     assertEquals(2, page.items().size());
     assertEquals(0, page.page());
     assertEquals(2, page.pageSize());
-    // page 2, size 2 → items 4–4, total 5
+    // page 2, size 2 → skip=4, limit=2 → item 4, total 5
     var r2 = resource.getLinkedDataObjects(APP_ID, 2, 2, securityContext);
     var page2 = (PagedResponseIO<?>) r2.getEntity();
     assertEquals(5, page2.total());
@@ -662,7 +668,7 @@ class ContainersV2RestTest {
   void getLinkedDataObjects_returns415WhenKindHasNoLinkedConcept() {
     allowRead();
     when(handler.kind()).thenReturn("hdf");
-    when(handler.listLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.empty());
+    when(handler.countLinkedDataObjects(eq(APP_ID))).thenReturn(Optional.empty());
     var r = resource.getLinkedDataObjects(APP_ID, 0, 50, securityContext);
     assertEquals(415, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());

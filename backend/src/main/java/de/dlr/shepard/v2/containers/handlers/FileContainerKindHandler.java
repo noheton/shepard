@@ -158,6 +158,20 @@ public class FileContainerKindHandler implements ContainerKindHandler {
       service.findLinkedDataObjectsByAppId(appId).stream().map(DataObjectIO::new).toList()
     );
   }
+
+  @Override
+  public Optional<Long> countLinkedDataObjects(String appId) {
+    return Optional.of(service.countLinkedDataObjectsByAppId(appId));
+  }
+
+  @Override
+  public Optional<List<DataObjectIO>> listLinkedDataObjectsPaged(
+      String appId, int skip, int limit) {
+    return Optional.of(
+      service.findLinkedDataObjectsByAppIdPaged(appId, skip, limit)
+             .stream().map(DataObjectIO::new).toList()
+    );
+  }
   // ─── APISIMP-CONT-NS-COLLAPSE-5 ──────────────────────────────────────────
 
   private static final int DEFAULT_SIZE = 400;

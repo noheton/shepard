@@ -605,18 +605,18 @@ public class ContainersV2Rest {
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
-    var linkedOpt = resolved.get().handler().listLinkedDataObjects(appId);
-    if (linkedOpt.isEmpty()) {
+    var countOpt = resolved.get().handler().countLinkedDataObjects(appId);
+    if (countOpt.isEmpty()) {
       return problem("/problems/containers.linked-data-objects-unsupported",
           "Container kind does not support linked DataObjects",
           Response.Status.UNSUPPORTED_MEDIA_TYPE,
           "Container kind '" + resolved.get().handler().kind() + "' has no linked-DataObject concept");
     }
-    List<DataObjectIO> linkedList = linkedOpt.get();
-    int total = linkedList.size();
-    int fromIdx = Math.min((int) Math.min((long) page * pageSize, Integer.MAX_VALUE), total);
-    int toIdx = Math.min(fromIdx + pageSize, total);
-    List<DataObjectIO> pageItems = linkedList.subList(fromIdx, toIdx);
+    long total = countOpt.get();
+    int skip = (int) Math.min((long) page * pageSize, Integer.MAX_VALUE);
+    List<DataObjectIO> pageItems = resolved.get().handler()
+        .listLinkedDataObjectsPaged(appId, skip, pageSize)
+        .orElse(List.of());
     return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
   }
 

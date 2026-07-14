@@ -149,6 +149,14 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
     return timeseriesContainerDAO.findLinkedDataObjectsByContainerAppId(containerAppId);
   }
 
+  public long countLinkedDataObjectsByAppId(String containerAppId) {
+    return timeseriesContainerDAO.countLinkedDataObjectsByContainerAppId(containerAppId);
+  }
+
+  public List<DataObject> findLinkedDataObjectsByAppIdPaged(String containerAppId, int skip, int limit) {
+    return timeseriesContainerDAO.findLinkedDataObjectsByContainerAppIdPaged(containerAppId, skip, limit);
+  }
+
   /**
    * Deletes a TimeseriesContainer in Neo4j
    *
