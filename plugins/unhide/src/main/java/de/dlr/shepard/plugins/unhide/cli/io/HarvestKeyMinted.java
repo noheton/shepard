@@ -1,7 +1,5 @@
 package de.dlr.shepard.plugins.unhide.cli.io;
 
-import java.util.Date;
-
 /**
  * CLI mirror of the backend's {@code HarvestKeyMintedIO} —
  * response of {@code POST /v2/admin/unhide/harvest-key/rotate}.
@@ -13,7 +11,7 @@ public final class HarvestKeyMinted {
 
   private String harvestApiKey;
   private String fingerprint;
-  private Date mintedAt;
+  private String mintedAt;
   private String warning;
 
   public String getHarvestApiKey() {
@@ -32,11 +30,11 @@ public final class HarvestKeyMinted {
     this.fingerprint = fingerprint;
   }
 
-  public Date getMintedAt() {
+  public String getMintedAt() {
     return mintedAt;
   }
 
-  public void setMintedAt(Date mintedAt) {
+  public void setMintedAt(String mintedAt) {
     this.mintedAt = mintedAt;
   }
 

@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.minter.datacite.cli.io;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Date;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,6 +29,6 @@ public class DataciteConfig {
   private String publisher;
   private String landingPageBase;
   private String defaultState;
-  private Date updatedAt;
+  private String updatedAt;
   private String updatedBy;
 }
