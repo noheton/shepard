@@ -21,6 +21,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(name = "ProvenanceStats")
 public class ProvenanceStatsIO {
 
+  /** One time-bucket entry in a sparkline series. */
+  @Schema(name = "ProvenanceStatsBucket")
+  public record BucketIO(
+    @Schema(required = true, description = "ISO 8601 UTC start of this bucket (e.g. '2026-07-01T00:00:00Z').") String t,
+    @Schema(required = true, description = "Activity count within this bucket.") long count
+  ) {}
+
   @Schema(required = true, description = "Scope of the query: 'instance', 'collection', 'user'.")
   private String scope;
 
@@ -47,16 +54,16 @@ public class ProvenanceStatsIO {
 
   @Schema(
     required = true,
-    description = "Sparkline buckets: each entry is [bucketStartMillis, count]. Empty buckets within the window are NOT filled."
+    description = "Sparkline buckets ordered by bucket-start time. Empty buckets within the window are NOT filled."
   )
-  private List<long[]> buckets;
+  private List<BucketIO> buckets;
 
   @Schema(
     required = true,
-    description = "Cumulative-integral buckets: each entry is [bucketStartMillis, runningTotal]. Running sum of activity counts up to " +
-    "and including the bucket — useful for 'total captured so far' tiles in the dashboard. Same bucket alignment as `buckets`."
+    description = "Cumulative-integral buckets: running sum of activity counts up to and including each bucket — " +
+    "useful for 'total captured so far' tiles in the dashboard. Same bucket alignment as `buckets`."
   )
-  private List<long[]> cumulative;
+  private List<BucketIO> cumulative;
 
   @Schema(
     required = false,

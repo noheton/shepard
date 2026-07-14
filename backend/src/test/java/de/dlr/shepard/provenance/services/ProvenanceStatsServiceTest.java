@@ -145,9 +145,9 @@ class ProvenanceStatsServiceTest {
 
     assertEquals(60L, out.getTotalCount());
     assertEquals(3, out.getCumulative().size());
-    assertEquals(10L, out.getCumulative().get(0)[1]);
-    assertEquals(30L, out.getCumulative().get(1)[1]);
-    assertEquals(60L, out.getCumulative().get(2)[1]);
+    assertEquals(10L, out.getCumulative().get(0).count());
+    assertEquals(30L, out.getCumulative().get(1).count());
+    assertEquals(60L, out.getCumulative().get(2).count());
   }
 
   @Test
@@ -159,10 +159,11 @@ class ProvenanceStatsServiceTest {
   void cumulativeIntegralHelperKeepsBucketAlignment() {
     var input = List.of(new long[] { 100L, 5L }, new long[] { 200L, 7L });
     var out = ProvenanceStatsService.cumulativeIntegral(input);
-    assertEquals(100L, out.get(0)[0]);
-    assertEquals(5L, out.get(0)[1]);
-    assertEquals(200L, out.get(1)[0]);
-    assertEquals(12L, out.get(1)[1]);
+    // 100 ms after epoch = 1970-01-01T00:00:00.100Z
+    assertEquals("1970-01-01T00:00:00.100Z", out.get(0).t());
+    assertEquals(5L, out.get(0).count());
+    assertEquals("1970-01-01T00:00:00.200Z", out.get(1).t());
+    assertEquals(12L, out.get(1).count());
   }
 
   @Test
