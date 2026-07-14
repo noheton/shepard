@@ -72,7 +72,11 @@ public class ProvenanceStatsService {
       ? (snap.totalCount > 0 ? 1L : 0L)
       : snap.distinctAgents;
 
-    List<long[]> cumulative = cumulativeIntegral(snap.buckets);
+    List<ProvenanceStatsIO.BucketIO> bucketIos = new ArrayList<>(snap.buckets.size());
+    for (long[] b : snap.buckets) {
+      bucketIos.add(new ProvenanceStatsIO.BucketIO(ProvenanceStatsIO.toIso(b[0]), b[1]));
+    }
+    List<ProvenanceStatsIO.BucketIO> cumulative = cumulativeIntegral(snap.buckets);
 
     // Content census + byte totals: not window-filtered ("what's in
     // here today", not "added this window"). PROV1-content-stats v1
@@ -104,7 +108,7 @@ public class ProvenanceStatsService {
       snap.totalCount,
       distinctAgents,
       snap.totalsByActionKind,
-      snap.buckets,
+      bucketIos,
       cumulative,
       census,
       bytes
@@ -113,16 +117,15 @@ public class ProvenanceStatsService {
 
   /**
    * Build the cumulative-integral list from per-bucket counts. Each
-   * output entry is {@code [bucketStart, runningTotal]} — the sum of
-   * every count up to and including the bucket. Same bucket
-   * alignment as the input.
+   * output {@link ProvenanceStatsIO.BucketIO} carries an ISO 8601
+   * bucket-start and the running total up to and including that bucket.
    */
-  static List<long[]> cumulativeIntegral(List<long[]> buckets) {
-    List<long[]> out = new ArrayList<>(buckets.size());
+  static List<ProvenanceStatsIO.BucketIO> cumulativeIntegral(List<long[]> buckets) {
+    List<ProvenanceStatsIO.BucketIO> out = new ArrayList<>(buckets.size());
     long running = 0L;
     for (long[] b : buckets) {
       running += b[1];
-      out.add(new long[] { b[0], running });
+      out.add(new ProvenanceStatsIO.BucketIO(ProvenanceStatsIO.toIso(b[0]), running));
     }
     return out;
   }

@@ -5412,7 +5412,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:132`; apisimp-sweep-2026-07-14-fire599.md §Finding4.
 
 ## APISIMP-PROVENANCE-STATS-BUCKET-ARRAY — replace raw `long[]` bucket entries with typed `BucketIO` records in `ProvenanceStatsIO` (size: S, sweep: fire-599)
-- **Status:** ⏳ queued
+- **Status:** 🚧 in-flight (fire-601, branch `APISIMP-PROVENANCE-STATS-BUCKET-ARRAY-fire601`)
 - **Why:** `ProvenanceStatsIO.java:52,58` exposes `List<long[]> buckets` and `List<long[]> cumulative` where element 0 of each array is `bucketStartMillis` (epoch-ms Long) and element 1 is a count. Callers must know the positional contract; OpenAPI cannot describe the inner-array semantics. Inconsistent with `since`/`until` which are already ISO 8601 `String` on the same IO. The nanosecond-precision concern does not apply here (bucket boundaries are daily/weekly = epoch-ms).
 - **AC:** Introduce `record BucketIO(String t, long count)` (ISO 8601 bucket-start + count); `buckets` and `cumulative` typed as `List<BucketIO>`; OpenAPI schema auto-generated; `GET /v2/provenance/stats` response validated in tests; `mvn verify -pl backend` green. Note in `aidocs/34` — wire-breaking change on `/v2/` (not frozen surface; in-scope to break).
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:52,58`; apisimp-sweep-2026-07-14-fire599.md §Finding5.
