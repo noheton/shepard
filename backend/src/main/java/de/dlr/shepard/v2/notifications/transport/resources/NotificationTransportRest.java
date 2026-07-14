@@ -13,14 +13,19 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -29,6 +34,7 @@ import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -69,8 +75,8 @@ public class NotificationTransportRest {
   @Operation(
     operationId = "listNotificationTransports",
     summary = "List all configured notification transports.",
-    description = "Returns every :NotificationTransport row in the instance, ordered " +
-      "by name ascending. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + " +
+    description = "Returns :NotificationTransport rows in the instance, ordered " +
+      "by name ascending, paged via `page`/`pageSize`. CREDENTIAL FIELDS ARE OMITTED — smtpPassword + " +
       "matrixAccessToken never appear on this response (compile-time guarantee via " +
       "NotificationTransportReadIO). Gated on the instance-admin role."
   )
@@ -81,12 +87,21 @@ public class NotificationTransportRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response list() {
+  public Response list(
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     List<NotificationTransportReadIO> items = service.listAll()
         .stream()
         .map(NotificationTransportReadIO::from)
         .toList();
-    return Response.ok(new PagedResponseIO<>(items, items.size(), 0, items.size()))
+    long from = (long) page * pageSize;
+    List<NotificationTransportReadIO> slice = from >= items.size()
+        ? List.of()
+        : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
+    return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
         .build();
   }
 
