@@ -5270,13 +5270,13 @@ picks these up. Terse by design.
 - **First refs:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicMinterConfigIO.java:28,36,43`; apisimp-sweep (fire-588).
 
 ## APISIMP-UNHIDE-CONFIG-DATE-TO-ISO — convert `UnhideConfigIO.harvestApiKeyMintedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** ✅ shipped (PR #2549, fire-589)
 - **Why:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/UnhideConfigIO.java:30` has `Date harvestApiKeyMintedAt` as a record component. Without `@JsonFormat(shape=STRING)` this serialises as numeric epoch-ms on `GET /v2/admin/config/unhide`. Fix: change type to `String`; convert in the `from()` factory via `entity.getHarvestApiKeyMintedAt() == null ? null : Instant.ofEpochMilli(entity.getHarvestApiKeyMintedAt()).toString()`.
 - **AC:** `GET /v2/admin/config/unhide` carries `harvestApiKeyMintedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/unhide` green.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/UnhideConfigIO.java:30`; apisimp-sweep (fire-588).
 
 ## APISIMP-HARVEST-KEY-MINTED-DATE-TO-ISO — convert `HarvestKeyMintedIO.mintedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-588)
-- **Status:** ⏳ queued
+- **Status:** ✅ shipped (PR #2549, fire-589)
 - **Why:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/HarvestKeyMintedIO.java:32` has `Date mintedAt` as a record component on the `POST /v2/admin/unhide/harvest-key` (key-mint) response. Same Date serialisation issue as `UnhideConfigIO.harvestApiKeyMintedAt`. Fix: change type to `String`; convert via `Instant.ofEpochMilli(...)`.
 - **AC:** Mint response carries `mintedAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/unhide` green.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/HarvestKeyMintedIO.java:32`; apisimp-sweep (fire-588).

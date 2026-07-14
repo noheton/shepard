@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.unhide.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.Date;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -29,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public record HarvestKeyMintedIO(
   String harvestApiKey,
   String fingerprint,
-  Date mintedAt,
+  String mintedAt,
   String warning
 ) {
   /** Default warning message — surfaced verbatim in CLI human output. */

@@ -38,11 +38,11 @@ export interface UnhideConfigIO {
      */
     contactEmail?: string;
     /**
-     * 
-     * @type {Date}
+     * ISO 8601 UTC timestamp of last harvest-key mint/rotation.
+     * @type {string}
      * @memberof UnhideConfigIO
      */
-    harvestApiKeyMintedAt?: Date;
+    harvestApiKeyMintedAt?: string;
     /**
      * 
      * @type {string}
@@ -71,7 +71,7 @@ export function UnhideConfigIOFromJSONTyped(json: any, ignoreDiscriminator: bool
         'enabled': json['enabled'] == null ? undefined : json['enabled'],
         'feedPublic': json['feedPublic'] == null ? undefined : json['feedPublic'],
         'contactEmail': json['contactEmail'] == null ? undefined : json['contactEmail'],
-        'harvestApiKeyMintedAt': json['harvestApiKeyMintedAt'] == null ? undefined : (new Date(json['harvestApiKeyMintedAt'])),
+        'harvestApiKeyMintedAt': json['harvestApiKeyMintedAt'] == null ? undefined : json['harvestApiKeyMintedAt'],
         'harvestApiKeyFingerprint': json['harvestApiKeyFingerprint'] == null ? undefined : json['harvestApiKeyFingerprint'],
     };
 }
@@ -85,7 +85,7 @@ export function UnhideConfigIOToJSON(value?: UnhideConfigIO | null): any {
         'enabled': value['enabled'],
         'feedPublic': value['feedPublic'],
         'contactEmail': value['contactEmail'],
-        'harvestApiKeyMintedAt': value['harvestApiKeyMintedAt'] == null ? undefined : ((value['harvestApiKeyMintedAt']).toISOString().substring(0,10)),
+        'harvestApiKeyMintedAt': value['harvestApiKeyMintedAt'],
         'harvestApiKeyFingerprint': value['harvestApiKeyFingerprint'],
     };
 }
