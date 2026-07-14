@@ -27,13 +27,18 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -44,6 +49,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -250,7 +256,8 @@ public class SemanticAdminRest {
     summary = "List every pre-seeded + operator-uploaded ontology bundle.",
     description = "Built-ins first (manifest declaration order), then user-uploaded bundles " +
     "(id ASC). Each row's `enabled` is the effective state under the precedence rules " +
-    "(required wins; otherwise 'not in runtime disabledBundles ∪ deploy-time skip-bundles')."
+    "(required wins; otherwise 'not in runtime disabledBundles ∪ deploy-time skip-bundles'). " +
+    "Paginated via `page` (0-based) and `pageSize` (1–200, default 50)."
   )
   @APIResponse(
     responseCode = "200",
@@ -258,7 +265,13 @@ public class SemanticAdminRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role (RFC 7807).")
-  public Response listOntologies(@Context SecurityContext securityContext) {
+  public Response listOntologies(
+    @Context SecurityContext securityContext,
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     Response denied = guardAdmin(securityContext);
     if (denied != null) return denied;
 
@@ -273,7 +286,11 @@ public class SemanticAdminRest {
     List<BundleView> merged = configService.listMerged(manifest);
     List<OntologyBundleIO> rows = new ArrayList<>(merged.size());
     for (BundleView v : merged) rows.add(OntologyBundleIO.from(v));
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size()))
+    long from = (long) page * pageSize;
+    List<OntologyBundleIO> slice = from >= rows.size()
+        ? List.of()
+        : rows.subList((int) from, (int) Math.min(from + pageSize, rows.size()));
+    return Response.ok(new PagedResponseIO<>(slice, rows.size(), page, pageSize))
         .build();
   }
 

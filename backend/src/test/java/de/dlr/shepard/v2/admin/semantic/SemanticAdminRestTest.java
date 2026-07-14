@@ -289,7 +289,7 @@ class SemanticAdminRestTest {
       List.of(view("prov-o", "builtin", true, true), view("custom", "user", false, true))
     );
 
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
     List<OntologyBundleIO> body = ((PagedResponseIO<OntologyBundleIO>) r.getEntity()).items();
@@ -301,7 +301,7 @@ class SemanticAdminRestTest {
   @Test
   void list_emptyMerged_still200() {
     when(configService.listMerged(any())).thenReturn(List.of());
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
     assertEquals(200, r.getStatus());
     List<OntologyBundleIO> body = ((PagedResponseIO<OntologyBundleIO>) r.getEntity()).items();
     assertTrue(body.isEmpty());
@@ -310,14 +310,14 @@ class SemanticAdminRestTest {
   @Test
   void list_noPrincipal_returns401Problem() {
     when(securityContext.getUserPrincipal()).thenReturn(null);
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
     assertEquals(401, r.getStatus());
   }
 
   @Test
   void list_principalButNoRole_returns403Problem() {
     when(securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE)).thenReturn(false);
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
     assertEquals(403, r.getStatus());
   }
 
@@ -326,7 +326,7 @@ class SemanticAdminRestTest {
     when(seedService.loadManifest()).thenThrow(new RuntimeException("boom"));
     when(configService.listMerged(any())).thenReturn(List.of());
 
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
   }
@@ -789,7 +789,7 @@ class SemanticAdminRestTest {
     // Production seed service hits the real classpath manifest. We tolerate
     // any RuntimeException from no-classpath-resource — just confirm the
     // endpoint still produces a 200 (manifest-load-failure path is fail-soft).
-    var r = rest.listOntologies(securityContext);
+    var r = rest.listOntologies(securityContext, 0, 50);
     assertEquals(200, r.getStatus());
   }
 }

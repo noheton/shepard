@@ -12,17 +12,23 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -114,7 +120,8 @@ public class PluginsAdminRest {
     "DISABLED + FAILED rows so the operator sees the full state space. Order matches the " +
     "registry's insertion order (classpath scan first, then drop-in JAR walk). The `enabled` " +
     "column reflects the effective runtime toggle (PATCH override wins; falls through to " +
-    "shepard.plugins.<id>.enabled from application.properties)."
+    "shepard.plugins.<id>.enabled from application.properties). " +
+    "Paginated via `page` (0-based) and `pageSize` (1–200, default 50)."
   )
   @APIResponse(
     responseCode = "200",
@@ -123,13 +130,22 @@ public class PluginsAdminRest {
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
-  public Response list() {
+  public Response list(
+    @Parameter(description = "Zero-based page index (default 0).")
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @Parameter(description = "Page size 1–200 (default 50).")
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
+  ) {
     List<PluginEntry> entries = registry.list();
     List<PluginEntryIO> rows = new ArrayList<>(entries.size());
     for (PluginEntry entry : entries) {
       rows.add(PluginEntryIO.from(entry, registry.isEnabled(entry.id())));
     }
-    return Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, rows.size()))
+    long from = (long) page * pageSize;
+    List<PluginEntryIO> slice = from >= rows.size()
+        ? List.of()
+        : rows.subList((int) from, (int) Math.min(from + pageSize, rows.size()));
+    return Response.ok(new PagedResponseIO<>(slice, rows.size(), page, pageSize))
         .build();
   }
 

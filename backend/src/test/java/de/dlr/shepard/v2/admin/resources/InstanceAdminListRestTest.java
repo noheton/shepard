@@ -54,7 +54,7 @@ class InstanceAdminListRestTest {
   void listInstanceAdmins_returnsPagedEnvelope() {
     when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of());
 
-    Response r = resource.listInstanceAdmins(securityContext);
+    Response r = resource.listInstanceAdmins(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
@@ -95,7 +95,7 @@ class InstanceAdminListRestTest {
     InstanceAdminGrantIO grant = new InstanceAdminGrantIO("alice", "Neo4j", "bob", null);
     when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of(grant));
 
-    Response r = resource.listInstanceAdmins(securityContext);
+    Response r = resource.listInstanceAdmins(securityContext, 0, 50);
 
     @SuppressWarnings("unchecked")
     PagedResponseIO<InstanceAdminGrantIO> body = (PagedResponseIO<InstanceAdminGrantIO>) r.getEntity();

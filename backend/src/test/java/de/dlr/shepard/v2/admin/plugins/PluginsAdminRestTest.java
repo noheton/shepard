@@ -79,7 +79,7 @@ class PluginsAdminRestTest {
   void listEmptyReturns200WithEmptyArray() {
     Mockito.when(registry.list()).thenReturn(List.of());
 
-    Response r = resource.list();
+    Response r = resource.list(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -103,7 +103,7 @@ class PluginsAdminRestTest {
     Mockito.when(registry.isEnabled("unhide")).thenReturn(false);
     Mockito.when(registry.isEnabled("hdf-hsds")).thenReturn(true);
 
-    Response r = resource.list();
+    Response r = resource.list(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -111,7 +111,7 @@ class PluginsAdminRestTest {
     assertEquals(2, body.items().size());
     assertEquals(2, body.total());
     assertEquals(0, body.page());
-    assertEquals(2, body.pageSize());
+    assertEquals(50, body.pageSize());
 
     PluginEntryIO unhideRow = body.items().get(0);
     assertEquals("unhide", unhideRow.id());
@@ -135,7 +135,7 @@ class PluginsAdminRestTest {
     Mockito.when(registry.list()).thenReturn(List.of(enriched));
     Mockito.when(registry.isEnabled("rich")).thenReturn(true);
 
-    Response r = resource.list();
+    Response r = resource.list(0, 50);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -169,7 +169,7 @@ class PluginsAdminRestTest {
     Mockito.when(registry.list()).thenReturn(List.of(bare));
     Mockito.when(registry.isEnabled("bare")).thenReturn(true);
 
-    Response r = resource.list();
+    Response r = resource.list(0, 50);
 
     @SuppressWarnings("unchecked")
     PluginEntryIO io = ((PagedResponseIO<PluginEntryIO>) r.getEntity()).items().get(0);
