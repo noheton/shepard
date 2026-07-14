@@ -1,6 +1,5 @@
 package de.dlr.shepard.v2.search.resources;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
 import de.dlr.shepard.common.search.io.QueryType;
 import de.dlr.shepard.common.search.io.ResponseBody;
@@ -10,7 +9,6 @@ import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.io.SearchScope;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.DataObjectSearchService;
-import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.util.TraversalRules;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -33,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -54,9 +51,11 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * via a single {@code page} / {@code pageSize} window on the combined set —
  * no per-kind secondary pagination axes.
  *
- * <p>APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE: the combined result set is capped at
- * {@link #SEARCH_RESULT_CAP} to bound memory use. Queries that would produce more
- * matches should use the scoped {@code collectionAppId} parameter to narrow scope.
+ * <p>APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE (option-b): pagination is pushed to the
+ * DAO layer — only the items in the requested page window are materialised.
+ * The combined result set is still capped at {@link #SEARCH_RESULT_CAP} for the
+ * reported {@code total}; queries exceeding the cap should use {@code collectionAppId}
+ * to narrow scope.
  */
 @Path("/v2/search")
 @RequestScoped
@@ -65,7 +64,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 @Tag(name = "Search")
 public class SearchV2Rest {
 
-  /** Maximum combined results returned across all kinds. Documented in OpenAPI. */
+  /** Maximum combined results reported in {@code total}. Documented in OpenAPI. */
   static final int SEARCH_RESULT_CAP = 1000;
 
   @Inject
@@ -87,7 +86,8 @@ public class SearchV2Rest {
       "`POST /shepard/api/search` endpoint, no internal Neo4j node id is exposed. " +
       "Results are interleaved (collections first, then DataObjects) and paged via a " +
       "single `page` / `pageSize` window on the combined set — no per-kind secondary " +
-      "pagination. When `collectionAppId` is supplied, DataObject results are narrowed " +
+      "pagination. Only items in the requested page window are fetched from the database. " +
+      "When `collectionAppId` is supplied, DataObject results are narrowed " +
       "to that collection and no collection items are returned (scoped DO search). " +
       "The combined result set is capped at 1000 items; use `collectionAppId` to narrow " +
       "scope when a broader query would exceed this limit. " +
@@ -147,60 +147,60 @@ public class SearchV2Rest {
     int safePage = Math.max(page, 0);
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
-    // Build combined list: all collections first, then all DataObjects.
-    List<SearchV2ItemIO> combined = new ArrayList<>();
-    long total = 0;
-
-    // Collections — all matching results; skipped when a collection scope is active.
-    if (scopeCollectionId == null) {
-      PaginatedCollectionList colPage = collectionSearchService.search(
-        q,
-        Optional.empty(),
-        Optional.empty(),
-        BasicCollectionAttributes.createdAt,
-        true
-      );
-      colPage.getResults().forEach(c -> combined.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
-      total += colPage.getTotalResults() != null ? colPage.getTotalResults() : 0L;
-    }
-
-    // DataObjects — scoped to collection when collectionAppId provided, otherwise global.
+    // Search body shared by all DataObject queries below.
     SearchBody body = new SearchBody(
       new SearchScope[] { new SearchScope(scopeCollectionId, null, new TraversalRules[0]) },
       new SearchParams(q, QueryType.DataObject)
     );
-    ResponseBody doResult = dataObjectSearchService.search(body);
-    var allDos = doResult.getResults();
-    ResultTriple[] triples = doResult.getResultSet();
-    // Cache collection appId lookups so N+1 cost stays bounded.
-    Map<Long, String> collectionAppIdCache = new HashMap<>();
-    for (int i = 0; i < allDos.length; i++) {
-      var r = allDos[i];
-      Long colId = (triples != null && i < triples.length) ? triples[i].getCollectionId() : null;
-      String colAppId = null;
-      if (colId != null) {
-        colAppId = collectionAppIdCache.computeIfAbsent(colId, id -> {
-          Collection col = collectionDAO.findLightByNeo4jId(id);
-          return col != null ? col.getAppId() : null;
-        });
+
+    // Phase 1: count-only (cheap COUNT queries — no items materialised yet).
+    long colTotal = scopeCollectionId == null ? collectionSearchService.count(q) : 0L;
+    long doTotal = dataObjectSearchService.count(body);
+    long rawTotal = colTotal + doTotal;
+    long total = Math.min(rawTotal, SEARCH_RESULT_CAP);
+
+    // Collections fill positions [0, effectiveColTotal); DOs fill the rest.
+    long effectiveColTotal = Math.min(colTotal, total);
+
+    // Phase 2: fetch only the items inside the requested page window.
+    long from = Math.min((long) safePage * safeSize, total);
+    long to = Math.min(from + safeSize, total);
+
+    List<SearchV2ItemIO> items = new ArrayList<>();
+
+    // Collection slice — only when the page window overlaps [0, effectiveColTotal).
+    if (scopeCollectionId == null && from < effectiveColTotal) {
+      int colSkip = (int) from;
+      int colLimit = (int) (Math.min(to, effectiveColTotal) - colSkip);
+      if (colLimit > 0) {
+        collectionSearchService
+          .searchSlice(q, colSkip, colLimit, BasicCollectionAttributes.createdAt, true)
+          .forEach(c -> items.add(new SearchV2ItemIO(c.getAppId(), c.getName(), "collection", null)));
       }
-      combined.add(new SearchV2ItemIO(r.getAppId(), r.getName(), "dataobject", colAppId));
-    }
-    total += allDos.length;
-
-    // Cap the combined set to avoid unbounded in-memory accumulation.
-    List<SearchV2ItemIO> capped = combined;
-    if (combined.size() > SEARCH_RESULT_CAP) {
-      capped = combined.subList(0, SEARCH_RESULT_CAP);
-      total = SEARCH_RESULT_CAP;
     }
 
-    // Apply single page/pageSize window to the combined set.
-    int from = (int) Math.min((long) safePage * safeSize, capped.size());
-    int to = Math.min(from + safeSize, capped.size());
-    List<SearchV2ItemIO> paged = capped.subList(from, to);
+    // DataObject slice — only when the page window overlaps [effectiveColTotal, total).
+    if (to > effectiveColTotal) {
+      int doSkip = (int) Math.max(0L, from - effectiveColTotal);
+      int doLimit = (int) (to - Math.max(from, effectiveColTotal));
+      if (doLimit > 0) {
+        ResponseBody doSlice = dataObjectSearchService.searchPaged(body, doSkip, doLimit);
+        var dos = doSlice.getResults();
+        ResultTriple[] triples = doSlice.getResultSet();
+        // Cache collection appId lookups so N+1 cost stays bounded.
+        Map<Long, String> collectionAppIdCache = new HashMap<>();
+        for (int i = 0; i < dos.length; i++) {
+          Long colId = (triples != null && i < triples.length) ? triples[i].getCollectionId() : null;
+          String colAppId = colId == null ? null : collectionAppIdCache.computeIfAbsent(colId, id -> {
+            Collection col = collectionDAO.findLightByNeo4jId(id);
+            return col != null ? col.getAppId() : null;
+          });
+          items.add(new SearchV2ItemIO(dos[i].getAppId(), dos[i].getName(), "dataobject", colAppId));
+        }
+      }
+    }
 
-    return Response.ok(new SearchV2ResultIO(paged, total, safePage, safeSize, q))
+    return Response.ok(new SearchV2ResultIO(items, total, safePage, safeSize, q))
         .build();
   }
 

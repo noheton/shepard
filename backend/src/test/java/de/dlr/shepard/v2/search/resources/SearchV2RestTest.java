@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -18,7 +19,6 @@ import de.dlr.shepard.common.search.io.ResultTriple;
 import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.DataObjectSearchService;
-import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.v2.search.io.SearchV2ItemIO;
@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,17 +77,10 @@ class SearchV2RestTest {
     col.setAppId(COLL_APP_ID);
     col.setName("LUMEN Campaign");
 
-    PaginatedCollectionList page = new PaginatedCollectionList(
-      List.of(col),
-      1,
-      "LUMEN",
-      Optional.of(0),
-      Optional.of(50),
-      BasicCollectionAttributes.createdAt,
-      true
-    );
-    when(collectionSearchService.search(eq("LUMEN"), any(), any(), any(), anyBoolean())).thenReturn(page);
-    stubEmptyDataObjects("LUMEN");
+    when(collectionSearchService.count(eq("LUMEN"))).thenReturn(1);
+    when(collectionSearchService.searchSlice(eq("LUMEN"), anyInt(), anyInt(), any(), anyBoolean()))
+        .thenReturn(List.of(col));
+    stubEmptyDataObjects();
 
     Response resp = resource.search("LUMEN", 0, 50, null);
 
@@ -108,7 +100,7 @@ class SearchV2RestTest {
 
   @Test
   void dataObjectsIncludeAppIdAndParentCollectionAppId() {
-    stubEmptyCollections("TR-004");
+    stubEmptyCollections();
 
     BasicEntityIO doIO = new BasicEntityIO();
     doIO.setAppId(DO_APP_ID);
@@ -118,7 +110,8 @@ class SearchV2RestTest {
       new BasicEntityIO[] { doIO },
       new SearchParams("TR-004", QueryType.DataObject)
     );
-    when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+    when(dataObjectSearchService.count(any())).thenReturn(1);
+    when(dataObjectSearchService.searchPaged(any(), anyInt(), anyInt())).thenReturn(doResponse);
 
     Collection owningCollection = new Collection(COLL_NEO4J_ID);
     owningCollection.setAppId(COLL_APP_ID);
@@ -170,17 +163,8 @@ class SearchV2RestTest {
 
   @Test
   void pageSizeIsCappedAt200() {
-    PaginatedCollectionList page = new PaginatedCollectionList(
-      List.of(),
-      0,
-      "x",
-      Optional.of(0),
-      Optional.of(200),
-      BasicCollectionAttributes.createdAt,
-      true
-    );
-    when(collectionSearchService.search(eq("x"), any(), any(), any(), anyBoolean())).thenReturn(page);
-    stubEmptyDataObjects("x");
+    stubEmptyCollections();
+    stubEmptyDataObjects();
 
     Response resp = resource.search("x", 0, 9999, null);
     assertEquals(200, resp.getStatus());
@@ -205,7 +189,8 @@ class SearchV2RestTest {
       .filter(f -> f.getType() == long.class || f.getType() == Long.class)
       .map(Field::getName)
       .collect(Collectors.toList());
-    assertTrue(longFields.stream().allMatch(n -> n.equals("total")), "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
+    assertTrue(longFields.stream().allMatch(n -> n.equals("total")),
+        "Unexpected long field(s) in SearchV2ResultIO: " + longFields);
   }
 
   /** Regression: pageSize @PathParam on search() must carry @Min(1) and @Max(200). */
@@ -240,7 +225,7 @@ class SearchV2RestTest {
     Collection scopeCol = new Collection(COLL_NEO4J_ID);
     scopeCol.setAppId(COLL_APP_ID);
     when(collectionDAO.findByAppId(COLL_APP_ID)).thenReturn(scopeCol);
-    stubEmptyDataObjects("TR-004");
+    stubEmptyDataObjects();
 
     Response resp = resource.search("TR-004", 0, 50, COLL_APP_ID);
 
@@ -250,7 +235,8 @@ class SearchV2RestTest {
         .filter(i -> "collection".equals(i.getKind())).count();
     assertEquals(0, collectionItems, "Collection items must be omitted when collectionAppId is scoped");
     // CollectionSearchService must not be called when scoped.
-    verify(collectionSearchService, never()).search(any(), any(), any(), any(), anyBoolean());
+    verify(collectionSearchService, never()).count(any());
+    verify(collectionSearchService, never()).searchSlice(any(), anyInt(), anyInt(), any(), anyBoolean());
   }
 
   @Test
@@ -267,7 +253,8 @@ class SearchV2RestTest {
       new BasicEntityIO[] { doIO },
       new SearchParams("TR-004", QueryType.DataObject)
     );
-    when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+    when(dataObjectSearchService.count(any())).thenReturn(1);
+    when(dataObjectSearchService.searchPaged(any(), anyInt(), anyInt())).thenReturn(doResponse);
     when(collectionDAO.findLightByNeo4jId(COLL_NEO4J_ID)).thenReturn(scopeCol);
 
     Response resp = resource.search("TR-004", 0, 50, COLL_APP_ID);
@@ -279,7 +266,7 @@ class SearchV2RestTest {
     assertEquals(1, doItems.size());
     assertEquals(DO_APP_ID, doItems.get(0).getAppId());
     // Verify DataObjectSearchService received a scope with the collection's Neo4j id.
-    verify(dataObjectSearchService).search(argThat(body ->
+    verify(dataObjectSearchService).count(argThat(body ->
         body.getScopes() != null &&
         body.getScopes().length == 1 &&
         Long.valueOf(COLL_NEO4J_ID).equals(body.getScopes()[0].getCollectionId())));
@@ -289,28 +276,19 @@ class SearchV2RestTest {
 
   @Test
   void combinedResultSetIsCappedAt1000() {
-    // Produce exactly 600 collections + 600 DataObjects = 1200 combined, expect 1000 back.
-    List<Collection> cols = new java.util.ArrayList<>();
-    for (int i = 0; i < 600; i++) {
+    // 600 collections + 600 DOs = 1200; capped at 1000. Page 0 of 50 comes entirely from collections.
+    when(collectionSearchService.count(eq("x"))).thenReturn(600);
+    List<Collection> colSlice = new java.util.ArrayList<>();
+    for (int i = 0; i < 50; i++) {
       Collection c = new Collection((long) i);
       c.setAppId("018f9c5a-0000-7000-a000-" + String.format("%012d", i));
       c.setName("Col-" + i);
-      cols.add(c);
+      colSlice.add(c);
     }
-    PaginatedCollectionList colPage = new PaginatedCollectionList(
-      cols, 600, "x", Optional.of(0), Optional.of(600), BasicCollectionAttributes.createdAt, true);
-    when(collectionSearchService.search(eq("x"), any(), any(), any(), anyBoolean())).thenReturn(colPage);
-
-    BasicEntityIO[] dos = new BasicEntityIO[600];
-    ResultTriple[] triples = new ResultTriple[600];
-    for (int i = 0; i < 600; i++) {
-      dos[i] = new BasicEntityIO();
-      dos[i].setAppId("019f9c5a-0000-7000-a000-" + String.format("%012d", i));
-      dos[i].setName("DO-" + i);
-      triples[i] = new ResultTriple(null, (long) i);
-    }
-    ResponseBody doResponse = new ResponseBody(triples, dos, new SearchParams("x", QueryType.DataObject));
-    when(dataObjectSearchService.search(any())).thenReturn(doResponse);
+    when(collectionSearchService.searchSlice(eq("x"), anyInt(), anyInt(), any(), anyBoolean()))
+        .thenReturn(colSlice);
+    when(dataObjectSearchService.count(any())).thenReturn(600);
+    // DO slice not reached on page 0 (all 50 items fall within the collection range).
 
     Response resp = resource.search("x", 0, 50, null);
 
@@ -318,24 +296,24 @@ class SearchV2RestTest {
     SearchV2ResultIO result = (SearchV2ResultIO) resp.getEntity();
     assertEquals(SearchV2Rest.SEARCH_RESULT_CAP, result.getTotal(),
         "total must be capped at SEARCH_RESULT_CAP when combined exceeds it");
-    // First page of 50 is still returned correctly.
     assertEquals(50, result.getItems().size());
   }
 
   @Test
   void combinedResultSetBelowCapIsUncapped() {
     // 3 collections + 2 DOs = 5 total — no cap should apply.
-    List<Collection> cols = new java.util.ArrayList<>();
+    when(collectionSearchService.count(eq("y"))).thenReturn(3);
+    List<Collection> colSlice = new java.util.ArrayList<>();
     for (int i = 0; i < 3; i++) {
       Collection c = new Collection((long) i);
       c.setAppId("018f9c5a-0000-7000-a000-" + String.format("%012d", i));
       c.setName("Col-" + i);
-      cols.add(c);
+      colSlice.add(c);
     }
-    PaginatedCollectionList colPage = new PaginatedCollectionList(
-      cols, 3, "y", Optional.of(0), Optional.of(50), BasicCollectionAttributes.createdAt, true);
-    when(collectionSearchService.search(eq("y"), any(), any(), any(), anyBoolean())).thenReturn(colPage);
+    when(collectionSearchService.searchSlice(eq("y"), anyInt(), anyInt(), any(), anyBoolean()))
+        .thenReturn(colSlice);
 
+    when(dataObjectSearchService.count(any())).thenReturn(2);
     BasicEntityIO[] dos = new BasicEntityIO[2];
     ResultTriple[] triples = new ResultTriple[2];
     for (int i = 0; i < 2; i++) {
@@ -344,8 +322,8 @@ class SearchV2RestTest {
       dos[i].setName("DO-" + i);
       triples[i] = new ResultTriple(null, (long) i);
     }
-    when(dataObjectSearchService.search(any())).thenReturn(
-        new ResponseBody(triples, dos, new SearchParams("y", QueryType.DataObject)));
+    when(dataObjectSearchService.searchPaged(any(), anyInt(), anyInt()))
+        .thenReturn(new ResponseBody(triples, dos, new SearchParams("y", QueryType.DataObject)));
 
     Response resp = resource.search("y", 0, 50, null);
 
@@ -357,25 +335,11 @@ class SearchV2RestTest {
 
   // --- helpers ---
 
-  private void stubEmptyCollections(String query) {
-    PaginatedCollectionList empty = new PaginatedCollectionList(
-      List.of(),
-      0,
-      query,
-      Optional.of(0),
-      Optional.of(50),
-      BasicCollectionAttributes.createdAt,
-      true
-    );
-    when(collectionSearchService.search(eq(query), any(), any(), any(), anyBoolean())).thenReturn(empty);
+  private void stubEmptyCollections() {
+    when(collectionSearchService.count(any())).thenReturn(0);
   }
 
-  private void stubEmptyDataObjects(String query) {
-    ResponseBody empty = new ResponseBody(
-      new ResultTriple[0],
-      new BasicEntityIO[0],
-      new SearchParams(query, QueryType.DataObject)
-    );
-    when(dataObjectSearchService.search(any())).thenReturn(empty);
+  private void stubEmptyDataObjects() {
+    when(dataObjectSearchService.count(any())).thenReturn(0);
   }
 }
