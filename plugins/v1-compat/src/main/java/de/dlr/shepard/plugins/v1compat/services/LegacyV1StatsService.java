@@ -6,7 +6,7 @@ import de.dlr.shepard.plugins.v1compat.io.LegacyV1StatsIO.PrincipalCount;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,8 +123,8 @@ public class LegacyV1StatsService {
       totalHits.get(),
       topByCount(endpointHits, cap, (k, v) -> new EndpointCount(k, v)),
       topByCount(principalHits, cap, (k, v) -> new PrincipalCount(k, v)),
-      first == 0L ? null : new Date(first),
-      recent == 0L ? null : new Date(recent)
+      first == 0L ? null : Instant.ofEpochMilli(first).toString(),
+      recent == 0L ? null : Instant.ofEpochMilli(recent).toString()
     );
   }
 

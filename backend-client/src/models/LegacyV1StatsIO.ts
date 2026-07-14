@@ -51,17 +51,17 @@ export interface LegacyV1StatsIO {
      */
     byPrincipal?: Array<PrincipalCount>;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof LegacyV1StatsIO
      */
-    firstHitAt?: Date;
+    firstHitAt?: string;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof LegacyV1StatsIO
      */
-    mostRecentHitAt?: Date;
+    mostRecentHitAt?: string;
 }
 
 /**
@@ -84,8 +84,8 @@ export function LegacyV1StatsIOFromJSONTyped(json: any, ignoreDiscriminator: boo
         'totalHits': json['totalHits'] == null ? undefined : json['totalHits'],
         'byEndpoint': json['byEndpoint'] == null ? undefined : ((json['byEndpoint'] as Array<any>).map(EndpointCountFromJSON)),
         'byPrincipal': json['byPrincipal'] == null ? undefined : ((json['byPrincipal'] as Array<any>).map(PrincipalCountFromJSON)),
-        'firstHitAt': json['firstHitAt'] == null ? undefined : (new Date(json['firstHitAt'])),
-        'mostRecentHitAt': json['mostRecentHitAt'] == null ? undefined : (new Date(json['mostRecentHitAt'])),
+        'firstHitAt': json['firstHitAt'] == null ? undefined : json['firstHitAt'],
+        'mostRecentHitAt': json['mostRecentHitAt'] == null ? undefined : json['mostRecentHitAt'],
     };
 }
 
@@ -98,8 +98,8 @@ export function LegacyV1StatsIOToJSON(value?: LegacyV1StatsIO | null): any {
         'totalHits': value['totalHits'],
         'byEndpoint': value['byEndpoint'] == null ? undefined : ((value['byEndpoint'] as Array<any>).map(EndpointCountToJSON)),
         'byPrincipal': value['byPrincipal'] == null ? undefined : ((value['byPrincipal'] as Array<any>).map(PrincipalCountToJSON)),
-        'firstHitAt': value['firstHitAt'] == null ? undefined : ((value['firstHitAt']).toISOString().substring(0,10)),
-        'mostRecentHitAt': value['mostRecentHitAt'] == null ? undefined : ((value['mostRecentHitAt']).toISOString().substring(0,10)),
+        'firstHitAt': value['firstHitAt'] == null ? undefined : value['firstHitAt'],
+        'mostRecentHitAt': value['mostRecentHitAt'] == null ? undefined : value['mostRecentHitAt'],
     };
 }
 

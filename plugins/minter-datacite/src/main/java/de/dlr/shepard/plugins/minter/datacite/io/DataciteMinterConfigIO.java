@@ -3,7 +3,7 @@ package de.dlr.shepard.plugins.minter.datacite.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
-import java.util.Date;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -29,7 +29,7 @@ public record DataciteMinterConfigIO(
   String publisher,
   String landingPageBase,
   String defaultState,
-  Date updatedAt,
+  String updatedAt,
   String updatedBy
 ) {
   /**
@@ -48,7 +48,7 @@ public record DataciteMinterConfigIO(
       cfg.getPublisher(),
       cfg.getLandingPageBase(),
       cfg.getDefaultState(),
-      updatedAtMillis == null ? null : new Date(updatedAtMillis),
+      updatedAtMillis == null ? null : Instant.ofEpochMilli(updatedAtMillis).toString(),
       cfg.getUpdatedBy()
     );
   }
