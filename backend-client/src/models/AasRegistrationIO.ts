@@ -51,29 +51,29 @@ export interface AasRegistrationIO {
      */
     status?: Status1;
     /**
-     * 
-     * @type {number}
+     *
+     * @type {string}
      * @memberof AasRegistrationIO
      */
-    lastAttemptAt?: number;
+    lastAttemptAt?: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof AasRegistrationIO
      */
     errorMessage?: string;
     /**
-     * 
-     * @type {number}
+     *
+     * @type {string}
      * @memberof AasRegistrationIO
      */
-    createdAt?: number;
+    createdAt?: string;
     /**
-     * 
-     * @type {number}
+     *
+     * @type {string}
      * @memberof AasRegistrationIO
      */
-    updatedAt?: number;
+    updatedAt?: string;
 }
 
 

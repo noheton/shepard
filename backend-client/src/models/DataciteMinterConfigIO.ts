@@ -74,11 +74,11 @@ export interface DataciteMinterConfigIO {
      */
     defaultState?: string;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof DataciteMinterConfigIO
      */
-    updatedAt?: Date;
+    updatedAt?: string;
     /**
      * 
      * @type {string}
@@ -113,7 +113,7 @@ export function DataciteMinterConfigIOFromJSONTyped(json: any, ignoreDiscriminat
         'publisher': json['publisher'] == null ? undefined : json['publisher'],
         'landingPageBase': json['landingPageBase'] == null ? undefined : json['landingPageBase'],
         'defaultState': json['defaultState'] == null ? undefined : json['defaultState'],
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'updatedAt': json['updatedAt'] == null ? undefined : json['updatedAt'],
         'updatedBy': json['updatedBy'] == null ? undefined : json['updatedBy'],
     };
 }
@@ -133,7 +133,7 @@ export function DataciteMinterConfigIOToJSON(value?: DataciteMinterConfigIO | nu
         'publisher': value['publisher'],
         'landingPageBase': value['landingPageBase'],
         'defaultState': value['defaultState'],
-        'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString().substring(0,10)),
+        'updatedAt': value['updatedAt'] == null ? undefined : value['updatedAt'],
         'updatedBy': value['updatedBy'],
     };
 }

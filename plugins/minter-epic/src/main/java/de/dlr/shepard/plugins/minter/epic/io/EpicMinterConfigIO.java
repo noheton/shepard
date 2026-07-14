@@ -3,7 +3,7 @@ package de.dlr.shepard.plugins.minter.epic.io;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
-import java.util.Date;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -25,7 +25,7 @@ public record EpicMinterConfigIO(
   String handlePrefix,
   boolean credentialSet,
   String credentialFingerprint,
-  Date updatedAt,
+  String updatedAt,
   String updatedBy
 ) {
   /**
@@ -40,7 +40,7 @@ public record EpicMinterConfigIO(
       cfg.getHandlePrefix(),
       cfg.getCredentialHash() != null && !cfg.getCredentialHash().isBlank(),
       EpicMinterConfigService.fingerprint(cfg.getCredentialHash()),
-      updatedAtMillis == null ? null : new Date(updatedAtMillis),
+      updatedAtMillis == null ? null : Instant.ofEpochMilli(updatedAtMillis).toString(),
       cfg.getUpdatedBy()
     );
   }

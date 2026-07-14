@@ -50,11 +50,11 @@ export interface EpicMinterConfigIO {
      */
     credentialFingerprint?: string;
     /**
-     * 
-     * @type {Date}
+     *
+     * @type {string}
      * @memberof EpicMinterConfigIO
      */
-    updatedAt?: Date;
+    updatedAt?: string;
     /**
      * 
      * @type {string}
@@ -85,7 +85,7 @@ export function EpicMinterConfigIOFromJSONTyped(json: any, ignoreDiscriminator: 
         'handlePrefix': json['handlePrefix'] == null ? undefined : json['handlePrefix'],
         'credentialSet': json['credentialSet'] == null ? undefined : json['credentialSet'],
         'credentialFingerprint': json['credentialFingerprint'] == null ? undefined : json['credentialFingerprint'],
-        'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'updatedAt': json['updatedAt'] == null ? undefined : json['updatedAt'],
         'updatedBy': json['updatedBy'] == null ? undefined : json['updatedBy'],
     };
 }
@@ -101,7 +101,7 @@ export function EpicMinterConfigIOToJSON(value?: EpicMinterConfigIO | null): any
         'handlePrefix': value['handlePrefix'],
         'credentialSet': value['credentialSet'],
         'credentialFingerprint': value['credentialFingerprint'],
-        'updatedAt': value['updatedAt'] == null ? undefined : ((value['updatedAt']).toISOString().substring(0,10)),
+        'updatedAt': value['updatedAt'] == null ? undefined : value['updatedAt'],
         'updatedBy': value['updatedBy'],
     };
 }

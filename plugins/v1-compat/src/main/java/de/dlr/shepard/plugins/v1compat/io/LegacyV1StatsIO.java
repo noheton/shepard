@@ -1,7 +1,6 @@
 package de.dlr.shepard.plugins.v1compat.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.Date;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -31,8 +30,8 @@ public record LegacyV1StatsIO(
   long totalHits,
   List<EndpointCount> byEndpoint,
   List<PrincipalCount> byPrincipal,
-  Date firstHitAt,
-  Date mostRecentHitAt
+  String firstHitAt,
+  String mostRecentHitAt
 ) {
   /** One row of the per-endpoint breakdown. */
   public record EndpointCount(String pathPattern, long hits) {}

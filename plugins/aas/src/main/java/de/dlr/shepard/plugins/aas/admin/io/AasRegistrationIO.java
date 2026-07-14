@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.aas.admin.io;
 
 import de.dlr.shepard.plugins.aas.entities.AasRegistration;
 import de.dlr.shepard.plugins.aas.entities.AasRegistration.Status;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -14,10 +15,10 @@ public record AasRegistrationIO(
   String shellAppId,
   String registryUrl,
   Status status,
-  Long lastAttemptAt,
+  String lastAttemptAt,
   String errorMessage,
-  Long createdAt,
-  Long updatedAt
+  String createdAt,
+  String updatedAt
 ) {
 
   public static AasRegistrationIO from(AasRegistration reg) {
@@ -26,10 +27,10 @@ public record AasRegistrationIO(
       reg.getShellAppId(),
       reg.getRegistryUrl(),
       reg.getStatus(),
-      reg.getLastAttemptAt(),
+      reg.getLastAttemptAt() == null ? null : Instant.ofEpochMilli(reg.getLastAttemptAt()).toString(),
       reg.getErrorMessage(),
-      reg.getCreatedAt(),
-      reg.getUpdatedAt()
+      reg.getCreatedAt() == null ? null : Instant.ofEpochMilli(reg.getCreatedAt()).toString(),
+      reg.getUpdatedAt() == null ? null : Instant.ofEpochMilli(reg.getUpdatedAt()).toString()
     );
   }
 }
