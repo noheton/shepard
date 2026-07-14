@@ -6,6 +6,8 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.spi.analytics.AnomalyInterval;
+import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
 import de.dlr.shepard.v2.timeseries.io.AnomalyDetectRequestIO;
 import de.dlr.shepard.v2.timeseries.io.AnomalyDetectResultIO;
@@ -142,13 +144,13 @@ public class AnomalyDetectionService {
     boolean[] anomalyFlags = rollingMadDetect(v, window, k);
     double[] zScores = computeZScores(v, window);
 
-    // 6. Collect contiguous intervals
-    List<AnomalyIntervalIO> intervals = collectIntervals(timestamps, v, zScores, anomalyFlags);
+    // 6. Collect contiguous intervals (raw ns SPI records)
+    List<AnomalyInterval> intervals = collectIntervals(timestamps, v, zScores, anomalyFlags);
 
     // 7. Optionally persist annotations
     int annotationsCreated = 0;
     if (request.isCreateAnnotations()) {
-      for (AnomalyIntervalIO interval : intervals) {
+      for (AnomalyInterval interval : intervals) {
         TimeseriesAnnotation ann = new TimeseriesAnnotation();
         ann.setStartNs(interval.startNs());
         ann.setEndNs(interval.endNs() == interval.startNs() ? null : interval.endNs());
@@ -161,7 +163,9 @@ public class AnomalyDetectionService {
       }
     }
 
-    return new AnomalyDetectResultIO(intervals, window, k, n, annotationsCreated);
+    // 8. Convert raw-ns SPI records to ISO 8601 wire shape
+    List<AnomalyIntervalIO> wireIntervals = intervals.stream().map(AnomalyDetectionService::toIO).toList();
+    return new AnomalyDetectResultIO(wireIntervals, window, k, n, annotationsCreated);
   }
 
   // ── algorithm ─────────────────────────────────────────────────────────────
@@ -236,16 +240,17 @@ public class AnomalyDetectionService {
 
   /**
    * Collect contiguous runs of {@code true} in {@code anomalyFlags} into
-   * {@link AnomalyIntervalIO} records, tracking per-interval peak value
-   * and max |Z-score|.
+   * {@link AnomalyInterval} SPI records (raw nanosecond timestamps), tracking
+   * per-interval peak value and max |Z-score|. Callers convert to the ISO 8601
+   * wire shape via {@link #toIO}.
    */
-  static List<AnomalyIntervalIO> collectIntervals(
+  static List<AnomalyInterval> collectIntervals(
     List<Long> timestamps,
     double[] v,
     double[] zScores,
     boolean[] anomalyFlags
   ) {
-    List<AnomalyIntervalIO> out = new ArrayList<>();
+    List<AnomalyInterval> out = new ArrayList<>();
     int n = anomalyFlags.length;
     int i = 0;
     while (i < n) {
@@ -263,12 +268,21 @@ public class AnomalyDetectionService {
           i++;
         }
         int end = i - 1;
-        out.add(new AnomalyIntervalIO(timestamps.get(start), timestamps.get(end), peakV, maxZ));
+        out.add(new AnomalyInterval(timestamps.get(start), timestamps.get(end), peakV, maxZ));
       } else {
         i++;
       }
     }
     return out;
+  }
+
+  private static AnomalyIntervalIO toIO(AnomalyInterval i) {
+    return new AnomalyIntervalIO(
+      DataObjectListItemV2IO.toIsoNs(i.startNs()),
+      DataObjectListItemV2IO.toIsoNs(i.endNs()),
+      i.peakValue(),
+      i.maxZScore()
+    );
   }
 
   /**
