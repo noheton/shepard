@@ -165,8 +165,8 @@ public class CollectionSnapshotRest {
       "`snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, " +
       "and `entryCount` (number of VersionableEntities recorded in the " +
       "manifest).\n\n" +
-      "Pagination: omit `page` / `size` to get the first 50; supply both " +
-      "to paginate. `size` capped at 200 server-side.\n\n" +
+      "Pagination: omit `page` / `pageSize` to get the first 50; supply both " +
+      "to paginate. `pageSize` capped at 200 server-side.\n\n" +
       "Auth: Read on the Collection.\n\n" +
       "Next step: `GET /v2/snapshots/{appId}/manifest` for the " +
       "per-entity entries of a specific Snapshot, or " +
