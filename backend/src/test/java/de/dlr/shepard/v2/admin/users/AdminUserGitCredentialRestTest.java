@@ -79,7 +79,7 @@ class AdminUserGitCredentialRestTest {
   @Test
   void list_returns200_withEmptyList_whenNoCredentials() {
     when(dao.findAllByUser(USER)).thenReturn(List.of());
-    Response r = rest.list(USER);
+    Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
         (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
@@ -94,7 +94,7 @@ class AdminUserGitCredentialRestTest {
     GitCredential c = cred(CRED_APP_ID, "gitlab.com", "alice", rotated);
     when(dao.findAllByUser(USER)).thenReturn(List.of(c));
 
-    Response r = rest.list(USER);
+    Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
         (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
@@ -119,7 +119,7 @@ class AdminUserGitCredentialRestTest {
   void list_returns200_withNullLastRotatedAt_forLegacyRows() {
     GitCredential legacy = cred(CRED_APP_ID, "github.com", "bob", null);
     when(dao.findAllByUser(USER)).thenReturn(List.of(legacy));
-    Response r = rest.list(USER);
+    Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
         (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
@@ -129,7 +129,7 @@ class AdminUserGitCredentialRestTest {
   @Test
   void list_returns404_whenUserMissing() {
     when(userService.getUserOptional(USER)).thenReturn(Optional.empty());
-    Response r = rest.list(USER);
+    Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
