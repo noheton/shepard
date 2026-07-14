@@ -172,7 +172,7 @@ class ProvenanceMcpToolsTest {
     when(activityDAO.list("flo", "Collection", ENTITY_APP_ID, 1000L, 2000L, 10))
       .thenReturn(List.of());
 
-    tools.activityList("flo", "Collection", ENTITY_APP_ID, 1000L, 2000L, 10);
+    tools.activityList("flo", "Collection", ENTITY_APP_ID, "1970-01-01T00:00:01Z", "1970-01-01T00:00:02Z", 10);
 
     verify(activityDAO).list("flo", "Collection", ENTITY_APP_ID, 1000L, 2000L, 10);
   }
@@ -253,12 +253,20 @@ class ProvenanceMcpToolsTest {
     when(activityDAO.list(eq("flo"), any(), any(), any(), any(), anyInt()))
       .thenReturn(List.of());
 
-    String json = tools.activityList("flo", null, null, 100L, 200L, 5);
+    String json = tools.activityList("flo", null, null, "1970-01-01T00:00:00.100Z", "1970-01-01T00:00:00.200Z", 5);
 
     JsonNode root = new ObjectMapper().readTree(json);
     assertEquals("flo", root.get("agentUsername").asText());
-    assertEquals(100L, root.get("sinceMillis").asLong());
-    assertEquals(200L, root.get("untilMillis").asLong());
+    assertEquals("1970-01-01T00:00:00.100Z", root.get("since").asText());
+    assertEquals("1970-01-01T00:00:00.200Z", root.get("until").asText());
     assertEquals(5, root.get("limit").asInt());
+  }
+
+  @Test
+  void activityListRejectsInvalidIsoDate() {
+    McpException ex = assertThrows(McpException.class,
+      () -> tools.activityList(null, null, null, "not-a-date", null, null));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    assertTrue(ex.getMessage().contains("not-a-date"));
   }
 }

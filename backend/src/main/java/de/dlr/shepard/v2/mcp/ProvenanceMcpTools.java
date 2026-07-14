@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -131,7 +132,7 @@ public class ProvenanceMcpTools {
       "Use this to:\n" +
       "  • Find all actions by a specific user: set agentUsername.\n" +
       "  • Find all mutations on a particular entity kind: set targetKind.\n" +
-      "  • Audit a time window: set sinceMillis + untilMillis.\n" +
+      "  • Audit a time window: set since + until (ISO 8601 UTC, e.g. \"2026-01-01T00:00:00Z\").\n" +
       "  • Combine filters for surgical queries (e.g. all DELETE operations on " +
       "Collections in the last hour).\n\n" +
       "The response is ordered newest-first (descending `startedAt`).\n\n" +
@@ -140,8 +141,8 @@ public class ProvenanceMcpTools {
       "  targetKind    — filter to activities whose target is this entity kind " +
       "(e.g. `Collection`, `DataObject`, `FileReference`).\n" +
       "  targetAppId   — filter to activities targeting this specific entity UUID.\n" +
-      "  sinceMillis   — inclusive lower bound on startedAt (epoch millis).\n" +
-      "  untilMillis   — inclusive upper bound on startedAt (epoch millis).\n" +
+      "  since         — inclusive lower bound on startedAt (ISO 8601 UTC, e.g. 2026-01-01T00:00:00Z).\n" +
+      "  until         — inclusive upper bound on startedAt (ISO 8601 UTC, e.g. 2026-01-01T23:59:59Z).\n" +
       "  limit         — max rows. Default " + DEFAULT_LIMIT + ", max " + MAX_LIMIT + ".\n\n" +
       "Response shape:\n" +
       "{\n" +
@@ -166,8 +167,8 @@ public class ProvenanceMcpTools {
     @ToolArg(required = false, description = "Filter to activities by this agent username.") String agentUsername,
     @ToolArg(required = false, description = "Filter to activities whose target is this entity kind (e.g. `DataObject`).") String targetKind,
     @ToolArg(required = false, description = "Filter to activities targeting this specific entity UUID.") String targetAppId,
-    @ToolArg(required = false, description = "Inclusive lower bound on startedAtMillis (epoch milliseconds).") Long sinceMillis,
-    @ToolArg(required = false, description = "Inclusive upper bound on startedAtMillis (epoch milliseconds).") Long untilMillis,
+    @ToolArg(required = false, description = "Inclusive lower bound on startedAt (ISO 8601 UTC, e.g. 2026-01-01T00:00:00Z).") String since,
+    @ToolArg(required = false, description = "Inclusive upper bound on startedAt (ISO 8601 UTC, e.g. 2026-01-01T23:59:59Z).") String until,
     @ToolArg(required = false, description = "Max rows (default " + DEFAULT_LIMIT + ", max " + MAX_LIMIT + ").") Integer limit
   ) {
     return support.run("activity_list", () -> {
@@ -177,14 +178,16 @@ public class ProvenanceMcpTools {
       String tAppId = blankToNull(targetAppId);
       int effectiveLimit = clamp(limit);
 
-      List<Activity> rows = activityDAO.list(agent, kind, tAppId, sinceMillis, untilMillis, effectiveLimit);
+      Long sinceMs = parseIso(since);
+      Long untilMs = parseIso(until);
+      List<Activity> rows = activityDAO.list(agent, kind, tAppId, sinceMs, untilMs, effectiveLimit);
 
       Map<String, Object> body = new LinkedHashMap<>();
       if (agent != null) body.put("agentUsername", agent);
       if (kind != null) body.put("targetKind", kind);
       if (tAppId != null) body.put("targetAppId", tAppId);
-      if (sinceMillis != null) body.put("sinceMillis", sinceMillis);
-      if (untilMillis != null) body.put("untilMillis", untilMillis);
+      if (sinceMs != null) body.put("since", since.trim());
+      if (untilMs != null) body.put("until", until.trim());
       body.put("limit", effectiveLimit);
       body.put("count", rows.size());
       body.put("activities", toActivityMaps(rows));
@@ -201,6 +204,15 @@ public class ProvenanceMcpTools {
 
   private static String blankToNull(String s) {
     return (s == null || s.isBlank()) ? null : s;
+  }
+
+  private static Long parseIso(String iso) {
+    if (iso == null || iso.isBlank()) return null;
+    try {
+      return Instant.parse(iso.trim()).toEpochMilli();
+    } catch (DateTimeParseException e) {
+      throw McpToolSupport.invalidParams("Invalid ISO 8601 date: \"" + iso.trim() + "\". Expected format: 2026-01-01T00:00:00Z");
+    }
   }
 
   private static String toIso(Long ms) {
