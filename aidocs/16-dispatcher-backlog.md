@@ -5153,7 +5153,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/annotations/io/AnnotationIO.java:72,75`; `backend/src/main/java/de/dlr/shepard/v2/annotations/io/CreateAnnotationIO.java:65,68`; `backend/src/main/java/de/dlr/shepard/v2/annotations/io/UpdateAnnotationIO.java:39,42`; apisimp-sweep-fire572-2026-07-13 §Finding1.
 
 ## APISIMP-ACTIVITY-EPOCH-MS-TO-ISO — convert `startedAtMillis`/`endedAtMillis` from epoch-ms `Long` to ISO 8601 `String` in `ActivityIO` (size: S, fire-572)
-- **Status:** 🔄 in-flight — PR pending CI (fire-576)
+- **Status:** ✅ shipped (verified fire-594 — `ActivityIO.java:42,45` already carries `private String startedAt` / `endedAt`)
 - **Why:** `ActivityIO.java:40,43` exposes `startedAtMillis` and `endedAtMillis` as `Long` values on the `GET /v2/provenance/activities` response. The `@Schema` descriptions already document them as "Millis since epoch when the activity began/ended" — making these the last two explicitly epoch-ms-described Long fields on the v2 activity surface. ISO 8601 is now the convention for all other v2 timestamp response fields. Mapping sites: `ActivityIO.from()` at line ~87 passes `a.getStartedAtMillis()`/`a.getEndedAtMillis()` directly; `metadataOnly()` (line ~112) and `relationsOnly()` (line ~122) pass `startedAtMillis` positionally and set `endedAtMillis` to `null` — all three methods must be updated. Rename the wire fields to `startedAt`/`endedAt` for ISO convention consistency (drop the `Millis` suffix). The `?cursor`-pagination endpoints that accept epoch-ms cursors are a separate concern (APISIMP-PROVENANCE-CURSOR-UNDOCUMENTED) and are not affected — the cursor params use `?from`/`?to` with epoch-ms, not the response body fields.
 - **AC:** `GET /v2/provenance/activities` response body carries `startedAt`/`endedAt` as ISO 8601 UTC strings; `ActivityIO.from()`, `metadataOnly()`, `relationsOnly()` all use `Instant.ofEpochMilli(...).toString()` with null-guard; `@Schema` descriptions updated; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ActivityIO.java:40,43`; apisimp-sweep-fire572-2026-07-13 §Finding2.
@@ -5166,13 +5166,13 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/io/ShepardTemplateIO.java:57,60`; `backend/src/main/java/de/dlr/shepard/v2/notifications/io/NotificationIO.java:41,44`; `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/io/NotificationTransportReadIO.java:34`; `backend/src/main/java/de/dlr/shepard/v2/timeseriescontainer/io/TimeseriesContainerChartViewIO.java:28`; apisimp-sweep-fire572-2026-07-13 §Finding3.
 
 ## APISIMP-PROVENANCE-ENTITYID-TOMBSTONE-DROP — remove hidden `?entityId` tombstone + rejection branch from `ProvenanceRest.stats()` (size: XS, fire-572)
-- **Status:** 🔄 PR open (fire-578)
+- **Status:** ✅ shipped (verified fire-594 — no `legacyEntityId` param or rejection branch found in `ProvenanceRest.java`)
 - **Why:** `ProvenanceRest.java:518,527-530` carries a hidden `@Parameter(hidden=true) @QueryParam("entityId")` param plus a rejection block that returns 400 with "use 'subject' instead". This tombstone was added in fire-568 (PR #2505, sha `ecef299`) when `?entityId=` was renamed to `?subject=`. Per APISIMP-PROV-STATS-ENTITYID-RENAME, the tombstone must stay for a 10-fire stabilization window before removal. The `@APIResponse` at line ~511 includes "or use of removed 'entityId' parameter" which can be simplified to "Bad request" once the tombstone is gone.
 - **AC:** `ProvenanceRest.stats()` signature contains no `legacyEntityId` param; rejection `if` block removed; `@APIResponse` description simplified; `mvn verify -pl backend` green. Gate: fire-578 earliest.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:518,527-530`; apisimp-sweep-fire572-2026-07-13 §Finding4.
 
 ## APISIMP-PROVENANCE-LIMIT-TO-PAGESIZE — decision: rename `?limit` → `?pageSize` on cursor-paginated `ProvenanceRest` endpoints (size: S, fire-572)
-- **Status:** ⏳ queued (decision row — resolve before dispatching)
+- **Status:** ✅ shipped (verified fire-594 — `ProvenanceRest.java` already uses `@QueryParam("pageSize")` throughout with a `?limit=` tombstone returning 400 + rename hint)
 - **Why:** Six `ProvenanceRest` endpoints (`GET /v2/provenance/activities`, `/stats`, `/entities`, `/subjects`, `/relations`, `/graph`) use `?limit=N` as the page-size parameter (lines ~134, 202, 248, 301, 347, 382). All other v2 list endpoints use `?pageSize=N` per the `PagedResponseIO` convention. The `APISIMP-PROVENANCE-CURSOR-UNDOCUMENTED` row (✅ done, PR #2076) argued for keeping `?limit` on cursor-based semantics, but none of these six endpoints actually use a cursor token — they use `?from`/`?to` epoch-ms bounds. The "cursor" justification no longer holds. Decision needed: (a) keep `?limit` as deliberate convention (low priority); (b) rename to `?pageSize` for surface uniformity and add a tombstone for the old name. Recommendation: rename with a 10-fire tombstone.
 - **AC (if rename proceeds):** All six endpoints accept `?pageSize=N`; `?limit=N` rejected with 400 + migration hint for 10 fires; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:134,202,248,301,347,382`; apisimp-sweep-fire572-2026-07-13 §Finding5.
@@ -5202,7 +5202,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/context/references/git/io/GitReferenceIO.java:60`; apisimp-sweep-2026-07-13-fire582.md §F1.
 
 ## APISIMP-SHAPES-PREDICATES-PROBLEM-JSON — convert plain-String 400 in `ShapesPredicatesRest` to RFC 7807 problem+json (size: XS, fire-582)
-- **Status:** 🔄 in-flight (fire-583, PR open)
+- **Status:** ✅ shipped (verified fire-594 — `ShapesPredicatesRest.java:121–122` calls `ProblemResponse.problem(BAD_REQUEST, "Unknown substrate…")` — RFC 7807 shape already in place)
 - **Why:** `ShapesPredicatesRest.java:120–122` returns `Response.status(BAD_REQUEST).entity("Unknown substrate…").build()` — a `text/plain` String body. Prior sweeps (APISIMP-SHAPES-DEDUP-MISSED fire-481, APISIMP-PROBLEM-HELPER-BYPASS-3/4 fire-483/484) covered `ShapesRenderRest`, `ShapesBuildRest`, and 86 other files; `ShapesPredicatesRest` was missed. Breaks error-envelope consistency for clients testing `Content-Type: application/problem+json`.
 - **AC:** `ShapesPredicatesRest.java:120–122` returns `problem(Response.Status.BAD_REQUEST, "Unknown substrate. Allowed values: neo4j, timescaledb, postgres, garage.")`; `mvn verify -pl backend` green; no `text/plain` 4xx bodies in `ShapesPredicatesRest`.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/shapes/resources/ShapesPredicatesRest.java:120-122`; apisimp-sweep-2026-07-13-fire582.md §F2.
@@ -5220,21 +5220,21 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:137,166`; apisimp-sweep-2026-07-13-fire582.md §F4.
 
 ## APISIMP-CONTAINER-VERSIONS-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/files/{fileName}/versions` (size: XS, fire-586)
-- **Status:** 🔄 in-flight — PR `APISIMP-CONTAINER-FAKE-PAGED-587` (fire-587)
+- **Status:** ✅ shipped (verified fire-594 — `ContainersV2Rest.java:525` returns plain list via `Response.ok(versionsOpt.get()).build()`; no `PagedResponseIO` wrapper)
 - **Why:** `ContainersV2Rest.java:522` returns `new PagedResponseIO<>(versionList, versionList.size(), 0, versionList.size())` but accepts no `?page=` or `?pageSize=` query parameters. The pagination envelope is structurally present but semantically inert — callers always receive the full list with `total == items.size()`. This is an incomplete follow-up from `APISIMP-CONTAINER-LIST-ENVELOPES` (fire-324), which added the wrapper without wiring real pagination logic.
 - **Fix:** Dropped `PagedResponseIO` wrapper; endpoint now returns a plain `List<PayloadVersionIO>` (version count is bounded by upload history). OpenAPI description updated to say "Returns all versions (no pagination)". Tests updated accordingly.
 - **AC:** Returns a plain array documented as "returns all" in the OpenAPI description; `mvn verify -pl backend` green. ✓ test-compile green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:522`; apisimp-sweep-2026-07-13-fire586.md §F1.
 
 ## APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED — add real pagination to `GET /v2/containers/{appId}/linked-data-objects` (size: XS, fire-586)
-- **Status:** 🔄 in-flight — PR `APISIMP-CONTAINER-FAKE-PAGED-587` (fire-587)
+- **Status:** ✅ shipped (verified fire-594 — `ContainersV2Rest.java:596–598` has `@QueryParam("page")` + `@QueryParam("pageSize")` wired)
 - **Why:** `ContainersV2Rest.java:603` returns `new PagedResponseIO<>(linkedList, linkedList.size(), 0, linkedList.size())` but accepts no `?page=` or `?pageSize=` query parameters. At MFFD scale (a TimescaleDB container linked to dozens of DataObjects per process step), this will return unbounded payloads. The linked-DataObject set grows proportionally to the collection size, making this more urgent than the versions endpoint.
 - **Fix:** Added `@QueryParam("page") @DefaultValue("0") @PositiveOrZero int page` + `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize`; `linkedList.subList(fromIdx, toIdx)` slices the in-memory result. 3+1 tests updated, new `getLinkedDataObjects_paginatesCorrectly` test added.
 - **AC:** Endpoint accepts `?page=0&pageSize=50` and returns a correctly-sliced `PagedResponseIO`; `mvn verify -pl backend` green. ✓ test-compile green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:603`; apisimp-sweep-2026-07-13-fire586.md §F2.
 
 ## APISIMP-DO-TIME-BOUNDS-NS-TO-ISO — convert `DataObjectListItemV2IO.timeBoundsStart`/`timeBoundsEnd` from nanosecond `Long` to ISO 8601 `String` (size: S, fire-588)
-- **Status:** 🔄 in-flight (fire-588, PR open)
+- **Status:** ✅ shipped (verified fire-594 — `DataObjectListItemV2IO.java:83,94` carries `private String timeBoundsStart` / `timeBoundsEnd`)
 - **Why:** `DataObjectListItemV2IO.timeBoundsStart`/`timeBoundsEnd` were typed `Long` (nanoseconds since Unix epoch) on the `GET /v2/collections/{appId}/data-objects?include=time-bounds` response. Inconsistent with the ISO 8601 conversion wave applied to all other v2 timestamp fields. Additionally, nanosecond epoch values for current dates (~1.7×10^18) exceed JavaScript's `Number.MAX_SAFE_INTEGER` (~9×10^15), causing silent precision loss in frontend arithmetic. Fix: change field types to `String`; add `toIsoNs(long epochNs)` static helper using `Instant.ofEpochSecond(epochNs / 1_000_000_000L, epochNs % 1_000_000_000L).toString()`; update setter calls in `DataObjectV2Rest`; update generated TypeScript client type; update frontend timeline utils and components to parse ISO strings to ms.
 - **AC:** `timeBoundsStart`/`timeBoundsEnd` are ISO 8601 UTC strings with nanosecond precision (e.g. `"2024-06-01T12:00:00.000000001Z"`); `DataObjectV2RestTest.listIncludesTimeBoundsWhenRequested` asserts ISO shape; frontend timeline renders correctly; `mvn verify -pl backend` green; `npm run test` 2678 passed; `npm run typecheck` exit 0.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/io/DataObjectListItemV2IO.java`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:326-327`; `frontend/utils/collectionDataObjectTimeline.ts`; `backend-client/src/models/DataObjectListItemV2.ts`; apisimp-sweep (fire-588 dispatch).
@@ -5328,3 +5328,51 @@ picks these up. Terse by design.
 - **Why:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/io/GitCredentialIO.java:33` has `private Date createdAt`. A `@JsonFormat(shape=STRING)` annotation is present (line 31). Constructor at line 40 assigns via `cred.getCreatedAt()`. Converting to `String` makes the ISO 8601 UTC format explicit and removes the last `java.util.Date` from the git plugin's IO surface. Fix: change field to `String`; update constructor via `Instant.ofEpochMilli(cred.getCreatedAt().getTime()).toString()` with null-guard.
 - **AC:** `GET /v2/users/me/git-credentials` returns `createdAt` as an ISO 8601 UTC string; `mvn verify -pl plugins/git` green.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/io/GitCredentialIO.java:33`; apisimp-sweep-2026-07-14-fire592.md §Finding7.
+
+## APISIMP-SNAPSHOT-LIST-SIZE-DOC — fix `size` → `pageSize` in `CollectionSnapshotRest` `@Operation` description (size: XS, sweep: fire-594)
+- **Status:** 🔄 in-flight (fire-594, branch `APISIMP-SNAPSHOT-LIST-SIZE-DOC-fire594`)
+- **Why:** `CollectionSnapshotRest.java:168–169` description string says `size` in two places (`"omit \`page\` / \`size\`"` and `"\`size\` capped at 200"`) but the actual `@QueryParam` declared at line 191 is `pageSize`. The mismatch causes generated API docs and OpenAPI clients to advertise the wrong parameter name.
+- **AC:** `CollectionSnapshotRest.java:168–169` description strings updated to use `pageSize`; `mvn verify -pl backend` green; no other runtime change.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/CollectionSnapshotRest.java:168–169`; apisimp-sweep-2026-07-14-fire594.md §F1.
+
+## APISIMP-MCP-PROVENANCE-EPOCH-MS — convert `sinceMillis`/`untilMillis` MCP tool args to ISO 8601 strings (size: XS, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** `ProvenanceMcpTools.java:169–170` declares `@ToolArg Long sinceMillis` and `@ToolArg Long untilMillis` for the `query_activity_log` MCP tool. LLM callers must know the epoch unit (milliseconds). ISO 8601 strings are self-describing and consistent with the REST wire format and the rest of the MCP surface. Lines 134, 143–144 `@Operation` description text references `sinceMillis`/`untilMillis` by name; lines 186–187 echo them back in the response dict.
+- **AC:** `query_activity_log` args renamed `since`/`until` typed `String`; parsed via `Instant.parse(since).toEpochMilli()`; `@Operation` description + response echo updated; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/ProvenanceMcpTools.java:169–170,134,143–144,186–187`; apisimp-sweep-2026-07-14-fire594.md §F2.
+
+## APISIMP-LJE-NUMERIC-PARENT-ID — replace `isAccessTypeAllowedForUser(dataObject.getId(), …)` with `isAccessAllowedForDataObjectAppId` in lab-journal resources (size: S, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** Five call sites in `LabJournalEntryRest` (lines 94, 135, 171), `LabJournalHistoryRest` (line 128), and `LabJournalRenderRest` (line 117) pass `dataObject.getId()` (Neo4j numeric id) to `permissionsService.isAccessTypeAllowedForUser()`. The v2 permission method keyed on `appId` is `isAccessAllowedForDataObjectAppId(dataObject.getAppId(), accessType, caller)`. Using the numeric id is the v1 pattern and couples the permission check to Neo4j internal node ids.
+- **AC:** All five call sites use `isAccessAllowedForDataObjectAppId(dataObject.getAppId(), …)`; existing behaviour preserved; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/resources/LabJournalEntryRest.java:94,135,171`; `LabJournalHistoryRest.java:128`; `LabJournalRenderRest.java:117`; apisimp-sweep-2026-07-14-fire594.md §F3.
+
+## APISIMP-MCP-TS-NANOS-ISO — convert nanosecond `Long` MCP tool args to ISO 8601 strings in timeseries/references tools (size: S, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** `TimeseriesMcpTools.java:144–145` and `345–346` expose `@ToolArg Long startNanos` / `Long endNanos`; `ReferencesMcpTools.java:133–134` and `183–184` expose `@ToolArg Long start` / `Long end` (nanoseconds). `TimeseriesMcpTools.java:339` docstring says "Divide by 1_000_000 for ms" — callers must know the unit. Lines 192–193 echo `startNanos`/`endNanos` in response dicts. ISO 8601 strings are self-describing and eliminate the unit ambiguity.
+- **AC:** All eight arg slots renamed and typed `String`; converted at the MCP boundary via nanosecond parse; docstring updated; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/TimeseriesMcpTools.java:144–145,192–193,339,345–346`; `ReferencesMcpTools.java:133–134,183–184`; apisimp-sweep-2026-07-14-fire594.md §F4.
+
+## APISIMP-COLLECTION-PERMISSIONS-PUT-VS-PATCH — change `@PUT` to `@PATCH` on `CollectionPermissionsRest` (size: M, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** `CollectionPermissionsRest.java:104` uses `@PUT /v2/collections/{appId}/permissions`; container permissions use `@PATCH /v2/containers/{appId}/permissions` with RFC 7396 merge-patch. Both endpoints replace the full permissions object, but the HTTP verb inconsistency breaks OpenAPI client ergonomics and violates the RFC 7396 convention established across other mutable admin/config endpoints. Changing to `@PATCH` + `@Consumes("application/merge-patch+json")` aligns collection permissions with container permissions.
+- **AC:** `CollectionPermissionsRest.java` uses `@PATCH`; `@Consumes("application/merge-patch+json")` added; `@Operation` description updated; `mvn verify -pl backend` green. Wire-breaking change — note in `aidocs/34`.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionPermissionsRest.java:104`; apisimp-sweep-2026-07-14-fire594.md §F5.
+
+## APISIMP-PROVENANCE-TRIPLED-HANDLER — extract shared logic from 9 near-identical `@Produces` overloads in `ProvenanceRest` (size: M, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** Three endpoint groups (`/activities`, `/entities`, `/relations`) in `ProvenanceRest` each have three `@GET` overloads differentiated only by `@Produces` annotation (`application/json`, `application/activity+json`, `application/ld+json`). This yields 9 near-identical method bodies with duplicated auth, filter validation, service calls, and response assembly. Adding a field or fixing a bug requires touching 9 methods instead of 3.
+- **AC:** Private helper methods `buildActivitiesResponse(…)`, `buildEntitiesResponse(…)`, `buildRelationsResponse(…)` consolidate the shared logic; each `@Produces` overload delegates to its helper; no wire change; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java`; apisimp-sweep-2026-07-14-fire594.md §F6.
+
+## APISIMP-LINKED-DO-IN-MEMORY-PAGE — push DAO-level SKIP/LIMIT into `getLinkedDataObjects` (size: M, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** `ContainersV2Rest.getLinkedDataObjects` (wired by APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED) fetches ALL linked DataObjects from the DAO then slices with `subList(fromIdx, toIdx)` in memory. At MFFD scale a single CFRP container may link to hundreds of DataObjects; each page request materialises the full list in JVM heap.
+- **AC:** DAO-layer `listLinkedDataObjects(appId, skip, limit)` issues `SKIP $skip LIMIT $limit` Cypher; `ContainersV2Rest` removes the in-memory `subList`; existing pagination test still passes; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` (`getLinkedDataObjects` method); apisimp-sweep-2026-07-14-fire594.md §F7.
+
+## APISIMP-SEARCH-IN-MEMORY-MERGE-PAGE — cap or push DAO pagination into `SearchV2Rest` (size: L, sweep: fire-594)
+- **Status:** ⏳ queued
+- **Why:** `SearchV2Rest.java:139–182` fetches ALL matching Collections and ALL matching DataObjects into JVM heap, merges them, then slices a page with `subList`. At scale (10 000 DataObjects, broad keyword) this materialises the full result set per request and stresses the JVM heap.
+- **AC:** Either (a) server-side result cap (≤1 000 combined results) documented in OpenAPI, or (b) DAO-level `SKIP`/`LIMIT` passed through both service methods; in-memory `subList` removed; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/search/resources/SearchV2Rest.java:139–182`; apisimp-sweep-2026-07-14-fire594.md §F8.
