@@ -11,6 +11,7 @@ import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import java.time.Instant;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.enterprise.context.RequestScoped;
@@ -167,7 +168,7 @@ public class NotebookRest {
           filename,
           file.getFileSize(),
           IPYNB_MIME_TYPE,
-          singleton.getCreatedAt(),
+          singleton.getCreatedAt() != null ? Instant.ofEpochMilli(singleton.getCreatedAt().getTime()).toString() : null,
           singleton.getCreatedBy() != null ? DisplayNameResolver.effectiveDisplayName(singleton.getCreatedBy()) : null,
           ReferenceKind.SINGLETON
         )
@@ -194,7 +195,7 @@ public class NotebookRest {
             filename,
             file.getFileSize(),
             IPYNB_MIME_TYPE,
-            bundle.getCreatedAt(),
+            bundle.getCreatedAt() != null ? Instant.ofEpochMilli(bundle.getCreatedAt().getTime()).toString() : null,
             bundle.getCreatedBy() != null
               ? DisplayNameResolver.effectiveDisplayName(bundle.getCreatedBy())
               : null,

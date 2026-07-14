@@ -1,7 +1,5 @@
 package de.dlr.shepard.v2.admin.io;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -45,12 +43,11 @@ public class InstanceAdminGrantIO {
   )
   private String grantedBy;
 
-  @JsonFormat(shape = JsonFormat.Shape.STRING)
   @Schema(
     required = false,
     nullable = true,
     format = "date-time",
     description = "When the grant was created. Null for IdP-only grants."
   )
-  private Date grantedAt;
+  private String grantedAt;
 }

@@ -52,10 +52,10 @@ export interface NotebookReference {
     readonly mimeType?: string | null;
     /**
      * Creation time of the parent Reference.
-     * @type {Date}
+     * @type {string}
      * @memberof NotebookReference
      */
-    readonly createdAt?: Date | null;
+    readonly createdAt?: string | null;
     /**
      * Creator of the parent Reference.
      * @type {string}
@@ -96,7 +96,7 @@ export function NotebookReferenceFromJSONTyped(json: any, ignoreDiscriminator: b
         'fileName': json['fileName'],
         'fileSize': json['fileSize'] == null ? undefined : json['fileSize'],
         'mimeType': json['mimeType'] == null ? undefined : json['mimeType'],
-        'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
+        'createdAt': json['createdAt'] == null ? undefined : json['createdAt'],
         'createdBy': json['createdBy'] == null ? undefined : json['createdBy'],
         'referenceKind': ReferenceKindFromJSON(json['referenceKind']),
     };

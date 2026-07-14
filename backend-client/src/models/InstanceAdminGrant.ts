@@ -39,10 +39,10 @@ export interface InstanceAdminGrant {
     grantedBy?: string | null;
     /**
      * When the grant was created. Null for IdP-only grants.
-     * @type {Date}
+     * @type {string}
      * @memberof InstanceAdminGrant
      */
-    grantedAt?: Date | null;
+    grantedAt?: string | null;
 }
 
 /**
@@ -67,7 +67,7 @@ export function InstanceAdminGrantFromJSONTyped(json: any, ignoreDiscriminator: 
         'username': json['username'],
         'source': json['source'],
         'grantedBy': json['grantedBy'] == null ? undefined : json['grantedBy'],
-        'grantedAt': json['grantedAt'] == null ? undefined : (new Date(json['grantedAt'])),
+        'grantedAt': json['grantedAt'] == null ? undefined : json['grantedAt'],
     };
 }
 
@@ -80,7 +80,7 @@ export function InstanceAdminGrantToJSON(value?: InstanceAdminGrant | null): any
         'username': value['username'],
         'source': value['source'],
         'grantedBy': value['grantedBy'],
-        'grantedAt': value['grantedAt'] == null ? undefined : ((value['grantedAt'] as any).toISOString()),
+        'grantedAt': value['grantedAt'] == null ? undefined : value['grantedAt'],
     };
 }
 
