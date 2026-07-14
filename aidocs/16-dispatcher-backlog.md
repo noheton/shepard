@@ -5336,7 +5336,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/CollectionSnapshotRest.java:168–169`; apisimp-sweep-2026-07-14-fire594.md §F1.
 
 ## APISIMP-MCP-PROVENANCE-EPOCH-MS — convert `sinceMillis`/`untilMillis` MCP tool args to ISO 8601 strings (size: XS, sweep: fire-594)
-- **Status:** ⏳ queued
+- **Status:** ✅ shipped (fire-595)
 - **Why:** `ProvenanceMcpTools.java:169–170` declares `@ToolArg Long sinceMillis` and `@ToolArg Long untilMillis` for the `query_activity_log` MCP tool. LLM callers must know the epoch unit (milliseconds). ISO 8601 strings are self-describing and consistent with the REST wire format and the rest of the MCP surface. Lines 134, 143–144 `@Operation` description text references `sinceMillis`/`untilMillis` by name; lines 186–187 echo them back in the response dict.
 - **AC:** `query_activity_log` args renamed `since`/`until` typed `String`; parsed via `Instant.parse(since).toEpochMilli()`; `@Operation` description + response echo updated; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/ProvenanceMcpTools.java:169–170,134,143–144,186–187`; apisimp-sweep-2026-07-14-fire594.md §F2.
