@@ -13,12 +13,14 @@ import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,6 +80,7 @@ class CollectionPermissionsRestTest {
   void getPermissions_returns200WithPermissions() {
     Permissions perms = new Permissions();
     perms.setPermissionType(PermissionType.Private);
+    perms.setEntities(List.of(new BasicEntity(OGM_ID)));
     when(dao.findCollectionIdByAppId(APP_ID)).thenReturn(Optional.of(OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong()))
         .thenReturn(true);
@@ -116,6 +119,7 @@ class CollectionPermissionsRestTest {
   void editPermissions_returns200WithUpdatedPermissions() {
     Permissions updated = new Permissions();
     updated.setPermissionType(PermissionType.Public);
+    updated.setEntities(List.of(new BasicEntity(OGM_ID)));
     when(dao.findCollectionIdByAppId(APP_ID)).thenReturn(Optional.of(OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong()))
         .thenReturn(true);
