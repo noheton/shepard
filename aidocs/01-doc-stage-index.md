@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 147 |
+| `deployed` | 148 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **574** |
+| **total docs** | **575** |
 | **UNTAGGED** | **0** |
 
 ## fragment (95)
@@ -456,7 +456,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-07-13 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-07-13 |
 
-## deployed (147)
+## deployed (148)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -507,6 +507,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-10-fire534.md`](agent-findings/apisimp-sweep-2026-07-10-fire534.md) | APISIMP Sweep — Fire 534 (2026-07-10) | 2026-07-10 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-11-fire552.md`](agent-findings/apisimp-sweep-2026-07-11-fire552.md) | APISIMP Sweep — fire-552 (2026-07-11) | 2026-07-11 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-12.md`](agent-findings/apisimp-sweep-2026-07-12.md) | APISIMP sweep — 2026-07-12 (fire-559) | 2026-07-12 | 2026-07-13 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-14-fire599.md`](agent-findings/apisimp-sweep-2026-07-14-fire599.md) | APISIMP Sweep — 2026-07-14 (fire-599) | 2026-07-14 | — |
 | [`aidocs/agent-findings/apisimp-sweep-fire341-2026-07-01.md`](agent-findings/apisimp-sweep-fire341-2026-07-01.md) | API Simplification Sweep — fire-341 (2026-07-01) | 2026-07-01 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire342-2026-07-01.md`](agent-findings/apisimp-sweep-fire342-2026-07-01.md) | APISIMP Sweep — 2026-07-01 (fire-342) | 2026-07-01 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire353-2026-07-01.md`](agent-findings/apisimp-sweep-fire353-2026-07-01.md) | APISIMP Sweep — fire-353 (2026-07-01) | 2026-07-01 | 2026-07-13 |

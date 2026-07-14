@@ -5386,3 +5386,68 @@ picks these up. Terse by design.
 - **Fix:** Extracted a `sealed interface FilterResult { record Ok(resolvedAgent, since, until); record Err(Response); }` and two private helpers: `resolveActivitiesFilter(agent, sinceRaw, untilRaw, sc)` (handles cross-user 403 check for the activities and count groups) and `resolveEntityFilter(sinceRaw, untilRaw, sc)` (agentFilter=null for admins). All 8 public methods replaced the repeated boilerplate with a 3-line delegate (`var f = resolve…; if (f instanceof Err e) return e.response(); var ok = (Ok) f;`) and call the service with `ok.resolvedAgent()`, `ok.since()`, `ok.until()`. The `stats` method retains its own domain-specific logic (scope parameter, collection ACL gate).
 - **AC:** `ProvenanceRest.java` has no repeated caller/isAdmin/parseTimestamp block across the 8 methods; `FilterResult` sealed interface present; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:107-168`.
+
+## APISIMP-ADMIN-ONTOLOGIES-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/semantic/ontologies` (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued
+- **Why:** `SemanticAdminRest.java:276` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — the `page` and `pageSize` query params are absent from the method signature. The response always has `page=0` and `pageSize=total`, so a caller checking `total > pageSize` will incorrectly infer more pages exist. Inconsistent with the rest of the v2 admin surface.
+- **AC:** `listOntologies()` accepts `@QueryParam("page")` + `@QueryParam("pageSize")`; response sliced accordingly; existing callers with no params get page 0 / default size; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/semantic/SemanticAdminRest.java:276`; apisimp-sweep-2026-07-14-fire599.md §Finding1.
+
+## APISIMP-ADMIN-INSTANCE-ADMINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/instance-admins` (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued
+- **Why:** `InstanceAdminRest.java:119` returns `new PagedResponseIO<>(grants, grants.size(), 0, grants.size())` — no `page`/`pageSize` params. Same fake-paged pattern. `instanceAdminService.listInstanceAdmins()` fetches all grants into heap on every call.
+- **AC:** `listInstanceAdmins()` accepts `page`/`pageSize`; service or resource slices the list; response shape correct; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:119`; apisimp-sweep-2026-07-14-fire599.md §Finding2.
+
+## APISIMP-ADMIN-GIT-CREDENTIALS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/users/{username}/git-credentials` (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued
+- **Why:** `AdminUserGitCredentialRest.java:237` returns `new PagedResponseIO<>(items, items.size(), 0, items.size())` — no `page`/`pageSize` params. `gitCredentialDAO.findAllByUser(username)` fetches all credentials per user into heap.
+- **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/users/AdminUserGitCredentialRest.java:237`; apisimp-sweep-2026-07-14-fire599.md §Finding3.
+
+## APISIMP-ADMIN-PLUGINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/plugins` (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued
+- **Why:** `PluginsAdminRest.java:132` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — no `page`/`pageSize` params. Plugin count is bounded but the fake-paged shape is inconsistent with the admin surface contract.
+- **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:132`; apisimp-sweep-2026-07-14-fire599.md §Finding4.
+
+## APISIMP-PROVENANCE-STATS-BUCKET-ARRAY — replace raw `long[]` bucket entries with typed `BucketIO` records in `ProvenanceStatsIO` (size: S, sweep: fire-599)
+- **Status:** ⏳ queued
+- **Why:** `ProvenanceStatsIO.java:52,58` exposes `List<long[]> buckets` and `List<long[]> cumulative` where element 0 of each array is `bucketStartMillis` (epoch-ms Long) and element 1 is a count. Callers must know the positional contract; OpenAPI cannot describe the inner-array semantics. Inconsistent with `since`/`until` which are already ISO 8601 `String` on the same IO. The nanosecond-precision concern does not apply here (bucket boundaries are daily/weekly = epoch-ms).
+- **AC:** Introduce `record BucketIO(String t, long count)` (ISO 8601 bucket-start + count); `buckets` and `cumulative` typed as `List<BucketIO>`; OpenAPI schema auto-generated; `GET /v2/provenance/stats` response validated in tests; `mvn verify -pl backend` green. Note in `aidocs/34` — wire-breaking change on `/v2/` (not frozen surface; in-scope to break).
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:52,58`; apisimp-sweep-2026-07-14-fire599.md §Finding5.
+
+## APISIMP-SPATIAL-CONTAINER-ID-RESPONSE — replace `spatialDataContainerId` Long with `spatialDataContainerAppId` UUID in `SpatialDataReferenceIO` (size: S, sweep: fire-599)
+- **Status:** ⏳ queued — **BLOCKED on SPATIAL-V6-003**
+- **Why:** `SpatialDataReferenceIO.java:25` exposes `long spatialDataContainerId` set from `ref.getSpatialDataContainer().getId()` (Neo4j numeric id, line 75). A caller receiving `GET /v2/dataobjects/{appId}/references` has no appId for the spatial container — only a numeric id unusable with any v2 endpoint. Sentinel `-1` for missing container is non-standard.
+- **BLOCKED:** The existing `SpatialDataReferenceIO` is the response shape for `/collections/{id}/dataObjects/{id}/spatialDataReferences` in `openapi-5.4.0.json`. Changing the field on the existing resource breaks third-party upstream clients. Fix goes on the v2 sibling shelf per SPATIAL-V6-003.
+- **AC (post-SPATIAL-V6-003):** New `/v2/spatial-data-references/{appId}` returns `spatialDataContainerAppId: string` (UUID v7); `null` when no container instead of `-1`; frozen v1 resource unchanged; `mvn verify -pl plugins/spatiotemporal` green.
+- **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/context/references/spatialdata/io/SpatialDataReferenceIO.java:25,75`; apisimp-sweep-2026-07-14-fire599.md §Finding6.
+
+## APISIMP-SPATIAL-CONTAINER-ID-PATHPARAM — replace numeric `Long containerId` path param with `appId` string on spatial data point endpoints (size: M, sweep: fire-599)
+- **Status:** ⏳ queued — **BLOCKED on PLUGIN-V2-001**
+- **Why:** `SpatialDataPointRest.java:247,285` uses `@PathParam Long containerId` (Neo4j numeric id) as the primary identifier for `GET/POST .../payload`. This is the v1 path `/shepard/api/spatialDataContainers/{spatialDataContainerId}`. There is no v2 sibling accepting an appId.
+- **BLOCKED:** `SpatialDataPointRest` is under `@Path(Constants.SHEPARD_API + "/spatialDataContainers")` — the frozen v1 surface. No change to the existing path param type or value. New `/v2/spatial-data-containers/{appId}/payload` endpoints required.
+- **AC (post-PLUGIN-V2-001):** New resource class with `@Path("/v2/spatial-data-containers/{appId}")` endpoints; `{appId}` resolves to Neo4j numeric id via DAO; existing v1 resource unchanged; `mvn verify -pl plugins/spatiotemporal` green.
+- **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/data/spatialdata/endpoints/SpatialDataPointRest.java:247,285`; apisimp-sweep-2026-07-14-fire599.md §Finding7.
+
+## APISIMP-SPATIAL-STARTTIME-ENDTIME-IO — convert `startTime`/`endTime` from epoch-ms `Long` to ISO 8601 `String` in `SpatialDataReferenceIO` (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued — **BLOCKED on SPATIAL-V6-003**
+- **Why:** `SpatialDataReferenceIO.java:50,53` exposes `Long startTime` and `Long endTime` (epoch-ms) without unit annotation. Inconsistent with `since`/`until` ISO 8601 convention on the v2 provenance surface and MCP tool args.
+- **BLOCKED:** Part of the frozen v1 `SpatialDataReference` response shape. Fix on v2 sibling with ISO 8601 strings.
+- **AC (post-SPATIAL-V6-003):** v2 sibling response carries `startTime`/`endTime` as ISO 8601 UTC strings or `null`; frozen v1 resource unchanged.
+- **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/context/references/spatialdata/io/SpatialDataReferenceIO.java:50,53`; apisimp-sweep-2026-07-14-fire599.md §Finding8.
+
+## APISIMP-SPATIAL-STARTTIME-ENDTIME-QUERYPARAM — convert `startTime`/`endTime` query params from epoch-ms `Long` to ISO 8601 `String` on spatial data point query (size: S, sweep: fire-599)
+- **Status:** ⏳ queued — **BLOCKED on PLUGIN-V2-001**
+- **Why:** `SpatialDataPointRest.java:251-252` accepts `@QueryParam("startTime") Long` and `@QueryParam("endTime") Long` (epoch-ms). `SpatialDataPointIO.timestamp` is nanoseconds — creating a silent unit mismatch within the same plugin: a caller who reads the reference's `startTime` (ms) and passes it directly to the query's `startTime` (also ms, but the result timestamp is ns) must know to multiply by 1,000,000 for point-level comparison. ISO 8601 on both sides eliminates the mismatch.
+- **BLOCKED:** Path is under `Constants.SHEPARD_API` — frozen v1 surface. Fix on the v2 sibling endpoint.
+- **AC (post-PLUGIN-V2-001):** v2 sibling query accepts `startTime`/`endTime` as ISO 8601 strings; nanosecond conversion done at the resource boundary; frozen v1 resource unchanged.
+- **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/data/spatialdata/endpoints/SpatialDataPointRest.java:251-252`; apisimp-sweep-2026-07-14-fire599.md §Finding9.
+
+## APISIMP-SPATIAL-POINT-TIMESTAMP-ISO — convert `SpatialDataPointIO.timestamp` from nanosecond `Long` to ISO 8601 `String` with nanosecond precision (size: XS, sweep: fire-599)
+- **Status:** ⏳ queued — **BLOCKED on PLUGIN-V2-001**
+- **Why:** `SpatialDataPointIO.java:17` exposes `Long timestamp` ("nanoseconds since unix epoch"). ISO 8601 supports up to 9 sub-second digits (`2026-07-14T12:00:00.123456789Z`), so nanosecond precision can be preserved in a self-describing string. Current Long is inconsistent with the v2 surface convention and requires callers to divide by 1,000,000 to get ms, or know the ns epoch offset.
+- **BLOCKED:** `SpatialDataPointIO` is consumed by the frozen v1 `POST /shepard/api/spatialDataContainers/{id}/payload`. Fix on the v2 sibling.
+- **AC (post-PLUGIN-V2-001):** v2 sibling `SpatialDataPointV2IO.timestamp` typed `String`; parsed via `Instant.parse(ts)` at ingestion; 9-digit sub-second precision preserved; frozen v1 IO unchanged; `mvn verify -pl plugins/spatiotemporal` green.
+- **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/data/spatialdata/io/SpatialDataPointIO.java:17`; apisimp-sweep-2026-07-14-fire599.md §Finding10.
