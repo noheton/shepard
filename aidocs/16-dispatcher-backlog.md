@@ -5288,13 +5288,13 @@ picks these up. Terse by design.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1StatsIO.java:34-35`; apisimp-sweep (fire-588).
 
 ## APISIMP-LEGACY-V1-CONFIG-DATE-TO-ISO — convert `LegacyV1ConfigIO.updatedAt` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
-- **Status:** 🔄 in-flight (PR #2552, fire-593)
+- **Status:** ✅ merged (fire-593, PR #2552, SHA 3f9858c)
 - **Why:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39` exposes `Date updatedAt` as a record component on `GET /v2/admin/legacy/v1/config`. The factory at line 44 wraps a `Long updatedAt` entity field via `new Date(updated)`. There is no `@JsonFormat(shape=STRING)` annotation, so Jackson serialises as numeric epoch-ms — the last Date-typed field in the v1-compat plugin's IO surface after `LegacyV1StatsIO` is fixed by PR #2551. Fix: change record component to `String updatedAt`; convert in `from()` via `updated == null ? null : Instant.ofEpochMilli(updated).toString()`.
 - **AC:** `GET /v2/admin/legacy/v1/config` returns `updatedAt` as an ISO 8601 UTC string (e.g. `"2026-07-14T10:00:00Z"`) or `null`; `mvn verify -pl plugins/v1-compat` green.
 - **First refs:** `plugins/v1-compat/src/main/java/de/dlr/shepard/plugins/v1compat/io/LegacyV1ConfigIO.java:39,44`; apisimp-sweep-2026-07-14-fire592.md §Finding1.
 
 ## APISIMP-FEED-ENTRY-DATE-TO-ISO — convert `FeedEntryIO.dateCreated`/`dateModified` from `java.util.Date` to ISO 8601 `String` (size: XS, fire-592)
-- **Status:** 🔄 in-flight (PR #2552, fire-593)
+- **Status:** ✅ merged (fire-593, PR #2552, SHA 3f9858c)
 - **Why:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82` exposes `Date dateCreated` and `Date dateModified` as record components in the JSON-LD feed at `GET /v2/unhide/feed.jsonld`. No `@JsonFormat(shape=STRING)` annotation is present, so Jackson serialises both as numeric epoch-ms integers — which is invalid schema.org JSON-LD (schema.org `dateCreated`/`dateModified` expects an ISO 8601 dateTime string per its spec). Fix: change both components to `String`; convert at the call site in `UnhideFeedService` via `Instant.ofEpochMilli(collection.getCreatedAt().getTime()).toString()` with null-guard.
 - **AC:** `GET /v2/unhide/feed.jsonld` entries carry `dateCreated`/`dateModified` as ISO 8601 UTC strings conforming to schema.org; `mvn verify -pl plugins/unhide` green.
 - **First refs:** `plugins/unhide/src/main/java/de/dlr/shepard/plugins/unhide/io/FeedEntryIO.java:81-82`; apisimp-sweep-2026-07-14-fire592.md §Finding2.
@@ -5330,7 +5330,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/io/GitCredentialIO.java:33`; apisimp-sweep-2026-07-14-fire592.md §Finding7.
 
 ## APISIMP-SNAPSHOT-LIST-SIZE-DOC — fix `size` → `pageSize` in `CollectionSnapshotRest` `@Operation` description (size: XS, sweep: fire-594)
-- **Status:** 🔄 in-flight (fire-594, branch `APISIMP-SNAPSHOT-LIST-SIZE-DOC-fire594`)
+- **Status:** ✅ merged (fire-594, PR #2554, SHA 046266ff)
 - **Why:** `CollectionSnapshotRest.java:168–169` description string says `size` in two places (`"omit \`page\` / \`size\`"` and `"\`size\` capped at 200"`) but the actual `@QueryParam` declared at line 191 is `pageSize`. The mismatch causes generated API docs and OpenAPI clients to advertise the wrong parameter name.
 - **AC:** `CollectionSnapshotRest.java:168–169` description strings updated to use `pageSize`; `mvn verify -pl backend` green; no other runtime change.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/CollectionSnapshotRest.java:168–169`; apisimp-sweep-2026-07-14-fire594.md §F1.
@@ -5354,7 +5354,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/TimeseriesMcpTools.java:144–145,192–193,339,345–346`; `ReferencesMcpTools.java:133–134,183–184`; apisimp-sweep-2026-07-14-fire594.md §F4.
 
 ## APISIMP-COLLECTION-PERMISSIONS-PUT-VS-PATCH — change `@PUT` to `@PATCH` on `CollectionPermissionsRest` (size: M, sweep: fire-594)
-- **Status:** 🚧 in-progress (PR #2558, branch: `APISIMP-COLLECTION-PERMISSIONS-PUT-VS-PATCH-fire597`)
+- **Status:** ✅ merged (fire-597, PR #2558, SHA 14903a44)
 - **Why:** `CollectionPermissionsRest.java:104` uses `@PUT /v2/collections/{appId}/permissions`; container permissions use `@PATCH /v2/containers/{appId}/permissions` with RFC 7396 merge-patch. Both endpoints replace the full permissions object, but the HTTP verb inconsistency breaks OpenAPI client ergonomics and violates the RFC 7396 convention established across other mutable admin/config endpoints. Changing to `@PATCH` + `@Consumes("application/merge-patch+json")` aligns collection permissions with container permissions.
 - **AC:** `CollectionPermissionsRest.java` uses `@PATCH`; `@Consumes("application/merge-patch+json")` added; `@Operation` description updated; `mvn verify -pl backend` green. Wire-breaking change — note in `aidocs/34`.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/collection/resources/CollectionPermissionsRest.java:104`; apisimp-sweep-2026-07-14-fire594.md §F5.
@@ -5366,7 +5366,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java`; apisimp-sweep-2026-07-14-fire594.md §F6.
 
 ## APISIMP-LINKED-DO-IN-MEMORY-PAGE — push DAO-level SKIP/LIMIT into `getLinkedDataObjects` (size: M, sweep: fire-594)
-- **Status:** 🚧 in-progress (PR #2560, fire-598)
+- **Status:** ✅ merged (fire-598, PR #2560, SHA f6d1bc9d)
 - **Why:** `ContainersV2Rest.getLinkedDataObjects` (wired by APISIMP-CONTAINER-LINKED-DO-FAKE-PAGED) fetches ALL linked DataObjects from the DAO then slices with `subList(fromIdx, toIdx)` in memory. At MFFD scale a single CFRP container may link to hundreds of DataObjects; each page request materialises the full list in JVM heap.
 - **AC:** DAO-layer `listLinkedDataObjects(appId, skip, limit)` issues `SKIP $skip LIMIT $limit` Cypher; `ContainersV2Rest` removes the in-memory `subList`; existing pagination test still passes; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java` (`getLinkedDataObjects` method); apisimp-sweep-2026-07-14-fire594.md §F7.
@@ -5388,31 +5388,31 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:107-168`.
 
 ## APISIMP-ADMIN-ONTOLOGIES-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/semantic/ontologies` (size: XS, sweep: fire-599)
-- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
+- **Status:** ✅ merged (fire-600, PR #2563, SHA b762a265)
 - **Why:** `SemanticAdminRest.java:276` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — the `page` and `pageSize` query params are absent from the method signature. The response always has `page=0` and `pageSize=total`, so a caller checking `total > pageSize` will incorrectly infer more pages exist. Inconsistent with the rest of the v2 admin surface.
 - **AC:** `listOntologies()` accepts `@QueryParam("page")` + `@QueryParam("pageSize")`; response sliced accordingly; existing callers with no params get page 0 / default size; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/semantic/SemanticAdminRest.java:276`; apisimp-sweep-2026-07-14-fire599.md §Finding1.
 
 ## APISIMP-ADMIN-INSTANCE-ADMINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/instance-admins` (size: XS, sweep: fire-599)
-- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
+- **Status:** ✅ merged (fire-600, PR #2563, SHA b762a265)
 - **Why:** `InstanceAdminRest.java:119` returns `new PagedResponseIO<>(grants, grants.size(), 0, grants.size())` — no `page`/`pageSize` params. Same fake-paged pattern. `instanceAdminService.listInstanceAdmins()` fetches all grants into heap on every call.
 - **AC:** `listInstanceAdmins()` accepts `page`/`pageSize`; service or resource slices the list; response shape correct; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:119`; apisimp-sweep-2026-07-14-fire599.md §Finding2.
 
 ## APISIMP-ADMIN-GIT-CREDENTIALS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/users/{username}/git-credentials` (size: XS, sweep: fire-599)
-- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
+- **Status:** ✅ merged (fire-600, PR #2563, SHA b762a265)
 - **Why:** `AdminUserGitCredentialRest.java:237` returns `new PagedResponseIO<>(items, items.size(), 0, items.size())` — no `page`/`pageSize` params. `gitCredentialDAO.findAllByUser(username)` fetches all credentials per user into heap.
 - **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/users/AdminUserGitCredentialRest.java:237`; apisimp-sweep-2026-07-14-fire599.md §Finding3.
 
 ## APISIMP-ADMIN-PLUGINS-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/plugins` (size: XS, sweep: fire-599)
-- **Status:** 🔄 in-flight (fire-600, branch `APISIMP-ADMIN-NO-PAGINATION-fire600`)
+- **Status:** ✅ merged (fire-600, PR #2563, SHA b762a265)
 - **Why:** `PluginsAdminRest.java:132` returns `new PagedResponseIO<>(rows, rows.size(), 0, rows.size())` — no `page`/`pageSize` params. Plugin count is bounded but the fake-paged shape is inconsistent with the admin surface contract.
 - **AC:** `list()` accepts `page`/`pageSize`; sliced before wrap; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:132`; apisimp-sweep-2026-07-14-fire599.md §Finding4.
 
 ## APISIMP-PROVENANCE-STATS-BUCKET-ARRAY — replace raw `long[]` bucket entries with typed `BucketIO` records in `ProvenanceStatsIO` (size: S, sweep: fire-599)
-- **Status:** 🚧 in-flight (fire-601, branch `APISIMP-PROVENANCE-STATS-BUCKET-ARRAY-fire601`)
+- **Status:** ✅ merged (fire-601, PR #2564, SHA 709fee1c)
 - **Why:** `ProvenanceStatsIO.java:52,58` exposes `List<long[]> buckets` and `List<long[]> cumulative` where element 0 of each array is `bucketStartMillis` (epoch-ms Long) and element 1 is a count. Callers must know the positional contract; OpenAPI cannot describe the inner-array semantics. Inconsistent with `since`/`until` which are already ISO 8601 `String` on the same IO. The nanosecond-precision concern does not apply here (bucket boundaries are daily/weekly = epoch-ms).
 - **AC:** Introduce `record BucketIO(String t, long count)` (ISO 8601 bucket-start + count); `buckets` and `cumulative` typed as `List<BucketIO>`; OpenAPI schema auto-generated; `GET /v2/provenance/stats` response validated in tests; `mvn verify -pl backend` green. Note in `aidocs/34` — wire-breaking change on `/v2/` (not frozen surface; in-scope to break).
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/io/ProvenanceStatsIO.java:52,58`; apisimp-sweep-2026-07-14-fire599.md §Finding5.
@@ -5451,3 +5451,9 @@ picks these up. Terse by design.
 - **BLOCKED:** `SpatialDataPointIO` is consumed by the frozen v1 `POST /shepard/api/spatialDataContainers/{id}/payload`. Fix on the v2 sibling.
 - **AC (post-PLUGIN-V2-001):** v2 sibling `SpatialDataPointV2IO.timestamp` typed `String`; parsed via `Instant.parse(ts)` at ingestion; 9-digit sub-second precision preserved; frozen v1 IO unchanged; `mvn verify -pl plugins/spatiotemporal` green.
 - **First refs:** `plugins/spatiotemporal/src/main/java/de/dlr/shepard/data/spatialdata/io/SpatialDataPointIO.java:17`; apisimp-sweep-2026-07-14-fire599.md §Finding10.
+
+## APISIMP-NOTIF-TRANSPORT-NO-PAGINATION — add real page/pageSize to `GET /v2/admin/notifications/transports` (size: XS, fire-602)
+- **Status:** 🔄 in-flight (fire-602, branch `APISIMP-NOTIF-TRANSPORT-NO-PAGINATION-fire602`)
+- **Why:** `NotificationTransportRest.list()` at line 84 returned `new PagedResponseIO<>(items, items.size(), 0, items.size())` with no `?page=`/`?pageSize=` query params — always reporting `page=0, pageSize=total`. Identical anti-pattern to the four admin-list endpoints fixed in PR #2563 (fire-600). Inconsistent with every other paged v2 admin endpoint; a caller checking `total > pageSize` incorrectly infers more pages exist.
+- **AC:** `list()` accepts `@QueryParam("page") @DefaultValue("0") @PositiveOrZero int page` and `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize`; list sliced with safe `long from = (long) page * pageSize` arithmetic (avoids CWE-190 overflow); response `{items, total, page, pageSize}` correct; existing callers without params get page-0/50 default; `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/resources/NotificationTransportRest.java:84`; fire-602 codebase sweep.
