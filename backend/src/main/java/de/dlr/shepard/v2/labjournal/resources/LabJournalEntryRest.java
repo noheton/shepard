@@ -91,7 +91,7 @@ public class LabJournalEntryRest {
 
     var dataObject = entry.getDataObject();
     if (dataObject == null) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "LabJournalEntry has no parent DataObject.");
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Read, caller)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObject.getAppId(), AccessType.Read, caller)) {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject.");
     }
 
@@ -132,7 +132,7 @@ public class LabJournalEntryRest {
 
     var dataObject = entry.getDataObject();
     if (dataObject == null) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "LabJournalEntry has no parent DataObject.");
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Write, caller)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObject.getAppId(), AccessType.Write, caller)) {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Write permission on the parent DataObject.");
     }
 
@@ -168,7 +168,7 @@ public class LabJournalEntryRest {
 
     var dataObject = entry.getDataObject();
     if (dataObject == null) return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "LabJournalEntry has no parent DataObject.");
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Write, caller)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObject.getAppId(), AccessType.Write, caller)) {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Write permission on the parent DataObject.");
     }
 

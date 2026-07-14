@@ -27,6 +27,7 @@ class LabJournalRenderRestTest {
 
   static final String APP_ID = "01957000-0000-7000-8000-000000000001";
   static final long DO_OGM_ID = 42L;
+  static final String DO_APP_ID = "01957000-0000-7000-8000-000000000042";
   static final String CALLER = "alice";
   static final String MARKDOWN = "**hello**";
 
@@ -60,6 +61,7 @@ class LabJournalRenderRestTest {
 
     dataObject = new DataObject();
     dataObject.setId(DO_OGM_ID);
+    dataObject.setAppId(DO_APP_ID);
 
     entry = new LabJournalEntry();
     entry.setAppId(APP_ID);
@@ -69,7 +71,7 @@ class LabJournalRenderRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(labJournalEntryDAO.findByAppId(APP_ID)).thenReturn(entry);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
     when(renderService.renderToHtml(MARKDOWN)).thenReturn("<p><strong>hello</strong></p>\n");
   }
 
@@ -96,7 +98,7 @@ class LabJournalRenderRestTest {
 
   @Test
   void render_returns403_whenCallerLacksReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
     assertThat(resource.render(APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
