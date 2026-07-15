@@ -14,7 +14,7 @@ public class EpicTestConnection {
 
   private boolean reachable;
   private int statusCode;
-  private long latencyMs;
+  private String latency;
   private String apiBaseUrl;
   private String detail;
 }

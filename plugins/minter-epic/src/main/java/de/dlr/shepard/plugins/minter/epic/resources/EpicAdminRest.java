@@ -8,6 +8,7 @@ import de.dlr.shepard.plugins.minter.epic.entities.EpicMinterConfig;
 import de.dlr.shepard.plugins.minter.epic.io.EpicCredentialIO;
 import de.dlr.shepard.plugins.minter.epic.io.EpicTestConnectionIO;
 import de.dlr.shepard.plugins.minter.epic.services.EpicMinterConfigService;
+import java.time.Duration;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -114,7 +115,7 @@ public class EpicAdminRest {
     String baseUrl = cfg.getApiBaseUrl();
     if (baseUrl == null || baseUrl.isBlank()) {
       return Response.ok(
-        new EpicTestConnectionIO(false, 0, 0L, null, "apiBaseUrl is not configured")
+        new EpicTestConnectionIO(false, 0, "PT0S", null, "apiBaseUrl is not configured")
       ).build();
     }
     // Probe the API root — B2HANDLE-compatible servers respond to GET at
@@ -126,7 +127,8 @@ public class EpicAdminRest {
     boolean reachable = response.statusCode() >= 200 && response.statusCode() < 400;
     String detail = reachable ? null : response.body();
     return Response.ok(
-      new EpicTestConnectionIO(reachable, response.statusCode(), latencyMs, baseUrl, detail)
+      new EpicTestConnectionIO(reachable, response.statusCode(),
+          Duration.ofMillis(latencyMs).toString(), baseUrl, detail)
     ).build();
   }
 

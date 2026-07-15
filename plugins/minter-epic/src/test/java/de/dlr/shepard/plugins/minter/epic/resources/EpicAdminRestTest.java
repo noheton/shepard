@@ -99,6 +99,7 @@ class EpicAdminRestTest {
     EpicTestConnectionIO body = (EpicTestConnectionIO) r.getEntity();
     assertThat(body.reachable()).isTrue();
     assertThat(body.statusCode()).isEqualTo(200);
+    assertThat(body.latency()).startsWith("PT");
     assertThat(body.apiBaseUrl()).isEqualTo("https://handle.argo.grnet.gr/api");
   }
 
