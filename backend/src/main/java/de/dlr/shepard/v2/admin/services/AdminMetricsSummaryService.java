@@ -44,6 +44,9 @@ public class AdminMetricsSummaryService {
       httpTotalMillis += t.totalTime(TimeUnit.MILLISECONDS);
     }
     Double httpMeanMillis = httpTotal == 0 ? null : httpTotalMillis / httpTotal;
+    String httpMeanRequestDuration = httpMeanMillis == null
+        ? null
+        : Duration.ofNanos(Math.round(httpMeanMillis * 1_000_000)).toString();
 
     // Permissions cache hits / misses.
     long hits = (long) sum(registry.find(CACHE_GETS_METER).tag(CACHE_TAG, PERMISSIONS_CACHE).tag(RESULT_TAG, "hit").counters().stream());
@@ -51,7 +54,7 @@ public class AdminMetricsSummaryService {
     long totalGets = hits + misses;
     Double hitRatio = totalGets == 0 ? null : (double) hits / (double) totalGets;
 
-    return new AdminMetricsSummaryIO(heapUsed, heapMax, uptime, httpTotal, httpMeanMillis, hits, misses, hitRatio);
+    return new AdminMetricsSummaryIO(heapUsed, heapMax, uptime, httpTotal, httpMeanRequestDuration, hits, misses, hitRatio);
   }
 
   private static double sum(java.util.stream.Stream<io.micrometer.core.instrument.Counter> counters) {

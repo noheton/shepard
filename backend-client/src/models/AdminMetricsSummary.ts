@@ -44,11 +44,11 @@ export interface AdminMetricsSummary {
      */
     httpRequestsTotal: number;
     /**
-     * HTTP request total-time avg, milliseconds, since startup. Null when no requests yet.
-     * @type {number}
+     * HTTP request total-time mean since startup, as ISO 8601 duration (e.g. "PT0.005S"). Null when no requests yet.
+     * @type {string}
      * @memberof AdminMetricsSummary
      */
-    httpMeanRequestMillis?: number | null;
+    httpMeanRequestDuration?: string | null;
     /**
      * Permissions cache cumulative hits since startup.
      * @type {number}
@@ -96,7 +96,7 @@ export function AdminMetricsSummaryFromJSONTyped(json: any, ignoreDiscriminator:
         'jvmHeapMaxBytes': json['jvmHeapMaxBytes'],
         'uptime': json['uptime'],
         'httpRequestsTotal': json['httpRequestsTotal'],
-        'httpMeanRequestMillis': json['httpMeanRequestMillis'] == null ? undefined : json['httpMeanRequestMillis'],
+        'httpMeanRequestDuration': json['httpMeanRequestDuration'] == null ? undefined : json['httpMeanRequestDuration'],
         'permissionsCacheHits': json['permissionsCacheHits'],
         'permissionsCacheMisses': json['permissionsCacheMisses'],
         'permissionsCacheHitRatio': json['permissionsCacheHitRatio'] == null ? undefined : json['permissionsCacheHitRatio'],
@@ -113,7 +113,7 @@ export function AdminMetricsSummaryToJSON(value?: AdminMetricsSummary | null): a
         'jvmHeapMaxBytes': value['jvmHeapMaxBytes'],
         'uptime': value['uptime'],
         'httpRequestsTotal': value['httpRequestsTotal'],
-        'httpMeanRequestMillis': value['httpMeanRequestMillis'],
+        'httpMeanRequestDuration': value['httpMeanRequestDuration'],
         'permissionsCacheHits': value['permissionsCacheHits'],
         'permissionsCacheMisses': value['permissionsCacheMisses'],
         'permissionsCacheHitRatio': value['permissionsCacheHitRatio'],

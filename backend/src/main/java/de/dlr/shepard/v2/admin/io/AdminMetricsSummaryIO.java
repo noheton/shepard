@@ -35,8 +35,8 @@ public class AdminMetricsSummaryIO {
   @Schema(required = true, description = "Total HTTP requests observed by the embedded server since startup.")
   private long httpRequestsTotal;
 
-  @Schema(required = false, nullable = true, description = "HTTP request total-time avg, milliseconds, since startup. Null when no requests yet.")
-  private Double httpMeanRequestMillis;
+  @Schema(required = false, nullable = true, description = "HTTP request total-time mean since startup, as ISO 8601 duration (e.g. \"PT0.005S\"). Null when no requests yet.")
+  private String httpMeanRequestDuration;
 
   @Schema(required = true, description = "Permissions cache cumulative hits since startup.")
   private long permissionsCacheHits;

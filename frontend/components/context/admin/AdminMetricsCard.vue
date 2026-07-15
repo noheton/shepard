@@ -31,6 +31,17 @@ function formatBytes(bytes: number): string {
   return `${mb.toFixed(0)} MB`;
 }
 
+function formatRequestDuration(iso: string): string {
+  // ISO 8601 duration like PT0.2S → extract total seconds → render as ms
+  const m = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?$/);
+  if (!m) return iso;
+  const h = parseInt(m[1] ?? '0', 10);
+  const min = parseInt(m[2] ?? '0', 10);
+  const sec = parseFloat(m[3] ?? '0');
+  const ms = (h * 3600 + min * 60 + sec) * 1000;
+  return `${ms.toFixed(1)} ms`;
+}
+
 function formatUptime(iso: string): string {
   // Java Duration.toString() emits PTxHxMx.xS — no days component, hours can exceed 24.
   const match = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:[\d.]+S)?$/);
@@ -107,12 +118,12 @@ function heapColor(m: AdminMetricsSummary): string {
                 {{ metrics.httpRequestsTotal.toLocaleString() }} total
               </v-chip>
               <v-chip
-                v-if="metrics.httpMeanRequestMillis != null"
+                v-if="metrics.httpMeanRequestDuration != null"
                 color="secondary"
                 variant="tonal"
                 size="small"
               >
-                {{ metrics.httpMeanRequestMillis.toFixed(1) }} ms avg
+                {{ formatRequestDuration(metrics.httpMeanRequestDuration) }} avg
               </v-chip>
             </div>
           </v-col>
