@@ -7,6 +7,7 @@ import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO.DiffEntry;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.Consumes;
@@ -215,8 +216,8 @@ public class SnapshotDiffRest {
     SnapshotDiffIO diff = new SnapshotDiffIO(
       snapshotA.getAppId(),
       snapshotB.getAppId(),
-      snapshotA.getSnapshotCapturedAtMs(),
-      snapshotB.getSnapshotCapturedAtMs(),
+      Instant.ofEpochMilli(snapshotA.getSnapshotCapturedAtMs()).toString(),
+      Instant.ofEpochMilli(snapshotB.getSnapshotCapturedAtMs()).toString(),
       added,
       removed,
       changed,

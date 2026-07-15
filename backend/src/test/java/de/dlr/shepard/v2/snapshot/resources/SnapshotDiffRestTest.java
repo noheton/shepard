@@ -262,8 +262,8 @@ class SnapshotDiffRestTest {
     SnapshotDiffIO body = (SnapshotDiffIO) r.getEntity();
     assertThat(body.snapshotAAppId()).isEqualTo(SNAP_A_APP_ID);
     assertThat(body.snapshotBAppId()).isEqualTo(SNAP_B_APP_ID);
-    assertThat(body.snapshotACapturedAtMs()).isEqualTo(SNAP_A_CAPTURED_AT);
-    assertThat(body.snapshotBCapturedAtMs()).isEqualTo(SNAP_B_CAPTURED_AT);
+    assertThat(body.snapshotACapturedAt()).isEqualTo("2023-11-14T22:13:20Z");
+    assertThat(body.snapshotBCapturedAt()).isEqualTo("2023-11-14T22:30:00Z");
   }
 
   // ── APISIMP-SNAPSHOT-DIFF-UNCAPPED: truncation cap ───────────────────────

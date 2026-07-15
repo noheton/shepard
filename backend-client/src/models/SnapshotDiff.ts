@@ -39,17 +39,17 @@ export interface SnapshotDiff {
      */
     snapshotBAppId?: string;
     /**
-     * Epoch milliseconds at which snapshot A was captured.
-     * @type {number}
+     * ISO 8601 UTC timestamp at which snapshot A was captured.
+     * @type {string}
      * @memberof SnapshotDiff
      */
-    snapshotACapturedAtMs?: number;
+    snapshotACapturedAt?: string;
     /**
-     * Epoch milliseconds at which snapshot B was captured.
-     * @type {number}
+     * ISO 8601 UTC timestamp at which snapshot B was captured.
+     * @type {string}
      * @memberof SnapshotDiff
      */
-    snapshotBCapturedAtMs?: number;
+    snapshotBCapturedAt?: string;
     /**
      * entityAppIds present in B but not in A (created between snapshots). Sorted ascending.
      * @type {Array<string>}
@@ -95,8 +95,8 @@ export function SnapshotDiffFromJSONTyped(json: any, ignoreDiscriminator: boolea
         
         'snapshotAAppId': json['snapshotAAppId'] == null ? undefined : json['snapshotAAppId'],
         'snapshotBAppId': json['snapshotBAppId'] == null ? undefined : json['snapshotBAppId'],
-        'snapshotACapturedAtMs': json['snapshotACapturedAtMs'] == null ? undefined : json['snapshotACapturedAtMs'],
-        'snapshotBCapturedAtMs': json['snapshotBCapturedAtMs'] == null ? undefined : json['snapshotBCapturedAtMs'],
+        'snapshotACapturedAt': json['snapshotACapturedAt'] == null ? undefined : json['snapshotACapturedAt'],
+        'snapshotBCapturedAt': json['snapshotBCapturedAt'] == null ? undefined : json['snapshotBCapturedAt'],
         'added': json['added'] == null ? undefined : json['added'],
         'removed': json['removed'] == null ? undefined : json['removed'],
         'changed': json['changed'] == null ? undefined : ((json['changed'] as Array<any>).map(SnapshotDiffEntryFromJSON)),
@@ -112,8 +112,8 @@ export function SnapshotDiffToJSON(value?: SnapshotDiff | null): any {
         
         'snapshotAAppId': value['snapshotAAppId'],
         'snapshotBAppId': value['snapshotBAppId'],
-        'snapshotACapturedAtMs': value['snapshotACapturedAtMs'],
-        'snapshotBCapturedAtMs': value['snapshotBCapturedAtMs'],
+        'snapshotACapturedAt': value['snapshotACapturedAt'],
+        'snapshotBCapturedAt': value['snapshotBCapturedAt'],
         'added': value['added'],
         'removed': value['removed'],
         'changed': value['changed'] == null ? undefined : ((value['changed'] as Array<any>).map(SnapshotDiffEntryToJSON)),
