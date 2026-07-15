@@ -63,13 +63,13 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  *
  * <p>Canonical paths:
  * <ul>
- *   <li>{@code GET    /v2/references/{bundleAppId}/groups} — list groups.</li>
- *   <li>{@code POST   /v2/references/{bundleAppId}/groups} — create a group.</li>
- *   <li>{@code GET    /v2/references/{bundleAppId}/groups/{groupAppId}} — get a group.</li>
- *   <li>{@code PATCH  /v2/references/{bundleAppId}/groups/{groupAppId}} — RFC 7396 patch.</li>
- *   <li>{@code DELETE /v2/references/{bundleAppId}/groups/{groupAppId}} — delete a group.</li>
- *   <li>{@code GET    /v2/references/{bundleAppId}/groups/{groupAppId}/files} — list files.</li>
- *   <li>{@code POST   /v2/references/{bundleAppId}/groups/{groupAppId}/files} — upload file.</li>
+ *   <li>{@code GET    /v2/references/{appId}/groups} — list groups.</li>
+ *   <li>{@code POST   /v2/references/{appId}/groups} — create a group.</li>
+ *   <li>{@code GET    /v2/references/{appId}/groups/{groupAppId}} — get a group.</li>
+ *   <li>{@code PATCH  /v2/references/{appId}/groups/{groupAppId}} — RFC 7396 patch.</li>
+ *   <li>{@code DELETE /v2/references/{appId}/groups/{groupAppId}} — delete a group.</li>
+ *   <li>{@code GET    /v2/references/{appId}/groups/{groupAppId}/files} — list files.</li>
+ *   <li>{@code POST   /v2/references/{appId}/groups/{groupAppId}/files} — upload file.</li>
  * </ul>
  *
  * <p>The legacy {@code /v2/bundles/{bundleAppId}/groups} paths were retired by
@@ -79,7 +79,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/v2/references/{bundleAppId}/groups")
+@Path("/v2/references/{appId}/groups")
 @RequestScoped
 @Tag(name = "References")
 public class BundleGroupsV2Rest {
@@ -118,7 +118,7 @@ public class BundleGroupsV2Rest {
     description =
       "Canonical path (APISIMP-BUNDLE-REF-KIND-UNIFY). " +
       "Returns a paged list of `:FileGroup` nodes belonging to the " +
-      "`:FileBundleReference` identified by `bundleAppId` (UUID v7). " +
+      "`:FileBundleReference` identified by `appId` (UUID v7). " +
       "Groups are sorted by `index` ascending. " +
       "Pagination: `?page=0&pageSize=50` (pageSize capped at 200 server-side). " +
       "Auth: Read permission on the parent DataObject."
@@ -137,18 +137,18 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response listGroups(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize,
     @Context SecurityContext securityContext
   ) {
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
-    long total = fileGroupService.countGroups(bundleAppId);
-    List<FileGroupIO> items = fileGroupService.listGroups(bundleAppId, page, pageSize)
+    long total = fileGroupService.countGroups(appId);
+    List<FileGroupIO> items = fileGroupService.listGroups(appId, page, pageSize)
         .stream().map(FileGroupIO::new).toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
         .header("X-Total-Count", total)
@@ -163,7 +163,7 @@ public class BundleGroupsV2Rest {
     summary = "Create a new FileGroup under a FileBundleReference.",
     description =
       "Canonical path (APISIMP-BUNDLE-REF-KIND-UNIFY). " +
-      "Creates a `:FileGroup` and links it to the `:FileBundleReference` identified by `bundleAppId`. " +
+      "Creates a `:FileGroup` and links it to the `:FileBundleReference` identified by `appId`. " +
       "Body: `name` (required, non-blank), `description`, `attributes`, `startedAt`, `endedAt`, `index`. " +
       "Auth: Write permission on the parent DataObject."
   )
@@ -177,7 +177,7 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response createGroup(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = CreateFileGroupIO.class)))
       CreateFileGroupIO body,
     @Context SecurityContext securityContext
@@ -185,18 +185,18 @@ public class BundleGroupsV2Rest {
     if (body == null || body.getName() == null || body.getName().isBlank()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing field", Response.Status.BAD_REQUEST, "name is required and must be non-blank");
     }
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     try {
-      FileGroup created = fileGroupService.createGroup(bundleAppId, body);
+      FileGroup created = fileGroupService.createGroup(appId, body);
       return Response.status(Response.Status.CREATED).entity(new FileGroupIO(created)).build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
     } catch (NotFoundException nfe) {
-      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+      return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     }
   }
 
@@ -210,7 +210,7 @@ public class BundleGroupsV2Rest {
     description =
       "Canonical path (APISIMP-BUNDLE-REF-KIND-UNIFY). " +
       "Returns the `FileGroupIO` for the `:FileGroup` identified by `groupAppId` " +
-      "within the bundle identified by `bundleAppId`. " +
+      "within the bundle identified by `appId`. " +
       "404 if either is unknown or the group does not belong to the bundle. " +
       "Auth: Read permission on the parent DataObject."
   )
@@ -223,19 +223,19 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
   @APIResponse(responseCode = "404", description = "Bundle or group not found, or group not in bundle.")
   public Response getGroup(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @PathParam("groupAppId") String groupAppId,
     @Context SecurityContext securityContext
   ) {
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
     FileGroup group = fileGroupService.getByAppId(groupAppId);
     if (group == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+    if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
     return Response.ok(new FileGroupIO(group)).build();
   }
 
@@ -263,7 +263,7 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
   @APIResponse(responseCode = "404", description = "Bundle or group not found, or group not in bundle.")
   public Response patchGroup(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @PathParam("groupAppId") String groupAppId,
     @RequestBody(required = true, content = @Content(mediaType = "application/merge-patch+json")) JsonNode body,
     @Context SecurityContext securityContext
@@ -271,13 +271,13 @@ public class BundleGroupsV2Rest {
     if (body == null || !body.isObject()) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Invalid request body", Response.Status.BAD_REQUEST, "PATCH body must be a JSON object");
     }
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+    if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
 
     try {
       Map<String, Object> patch = jsonNodeToMap(body);
@@ -309,19 +309,19 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
   @APIResponse(responseCode = "404", description = "Bundle or group not found, or group not in bundle.")
   public Response deleteGroup(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @PathParam("groupAppId") String groupAppId,
     @Parameter(description = "When true, also permanently deletes all files in the group.")
     @QueryParam("force") boolean force,
     @Context SecurityContext securityContext
   ) {
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+    if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
 
     try {
       fileGroupService.deleteGroup(groupAppId, force);
@@ -355,7 +355,7 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
   @APIResponse(responseCode = "404", description = "Bundle or group not found, or group not in bundle.")
   public Response listGroupFiles(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @PathParam("groupAppId") String groupAppId,
     @Parameter(
       description = "Zero-based page index (default 0).",
@@ -369,14 +369,14 @@ public class BundleGroupsV2Rest {
     @QueryParam("pageSize") @DefaultValue("200") @Min(1) @Max(1000) int pageSize,
     @Context SecurityContext securityContext
   ) {
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Read, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
     if (parent == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not found", Response.Status.NOT_FOUND, "No FileGroup with appId '" + groupAppId + "'.");
-    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+    if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
 
     long total = fileGroupService.countFiles(groupAppId);
     int totalPages = (int) ((total + pageSize - 1) / pageSize);
@@ -410,18 +410,18 @@ public class BundleGroupsV2Rest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
   @APIResponse(responseCode = "404", description = "Bundle or group not found, or group not in bundle.")
   public Response uploadFileIntoGroup(
-    @PathParam("bundleAppId") String bundleAppId,
+    @PathParam("appId") String appId,
     @PathParam("groupAppId") String groupAppId,
     @RestForm("file") FileUpload upload,
     @Context SecurityContext securityContext
   ) {
-    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(bundleAppId);
-    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + bundleAppId + "'.");
+    FileBundleReference bundle = fileBundleReferenceDAO.findByAppId(appId);
+    if (bundle == null) return problem(PROBLEM_TYPE_NOT_FOUND, "Bundle not found", Response.Status.NOT_FOUND, "No FileBundleReference with appId '" + appId + "'.");
     Response gate = checkAccess(bundle, AccessType.Write, securityContext);
     if (gate != null) return gate;
 
     String parent = fileGroupService.findBundleAppIdForGroup(groupAppId);
-    if (!bundleAppId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + bundleAppId + "'.");
+    if (!appId.equals(parent)) return problem(PROBLEM_TYPE_NOT_FOUND, "Group not in bundle", Response.Status.NOT_FOUND, "FileGroup '" + groupAppId + "' does not belong to bundle '" + appId + "'.");
 
     if (upload == null || upload.uploadedFile() == null) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Missing upload part", Response.Status.BAD_REQUEST, "file part is required");
