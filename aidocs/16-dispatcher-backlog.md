@@ -5515,7 +5515,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseriescontainer/io/BulkChannelDataRequestIO.java:40,45`; apisimp-sweep-2026-07-14-fire608.md §Finding1.
 
 ## APISIMP-LIVE-WINDOW-MS-TO-ISO — convert `windowStart`/`windowEnd`/`timestamp` in live-window IO from epoch-millisecond `long` to ISO 8601 `String` (size: XS, sweep: fire-608)
-- **Status:** ✅ done — PR #TBD (fire-610)
+- **Status:** ✅ done — PR #2571 (fire-610)
 - **Why:** `LiveWindowResponseIO.java:15,18` carries `long windowStart` and `long windowEnd` (epoch milliseconds per Javadoc); `LiveWindowPointIO.java:13` carries `long timestamp` (epoch milliseconds per OpenAPI schema). These are response-only fields for the live-window endpoint. Even though they are millisecond resolution (not nanoseconds), raw numeric epoch timestamps in an otherwise ISO-8601-converging surface are a consistency smell: a caller parsing the live-window response must know these are ms while other v2 timestamps are ISO 8601 strings. Converting to ISO 8601 eliminates the dual convention and aligns with the rest of the v2 surface.
 - **Fix:** Change `long windowStart` / `long windowEnd` in `LiveWindowResponseIO` and `long timestamp` in `LiveWindowPointIO` to `String`; emit via `Instant.ofEpochMilli(ms).toString()`; update `@Schema(description)`. Update frontend callers that parse the live-window timestamp to use `new Date(ts)` on the ISO string instead of treating it as a number.
 - **AC:** Live-window response carries ISO 8601 timestamps; frontend live-view chart still renders correctly; `mvn verify -pl backend` + `npm run typecheck` green.
