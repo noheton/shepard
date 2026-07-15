@@ -870,7 +870,7 @@ class ContainersV2RestTest {
     // Regression guard: @QueryParam on maxPoints parameter must be "maxPoints" (camelCase),
     // not "max_points" (snake_case). All other v2 query params use camelCase.
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     String actual = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -918,9 +918,9 @@ class ContainersV2RestTest {
   // ─── APISIMP-CHANNEL-DATA-TIME-UNIT-UNDOCUMENTED regression ───────────────
 
   @Test
-  void getChannelData_startParamHasNanosecondsInDescription() throws NoSuchMethodException {
+  void getChannelData_startParamHasIso8601InDescription() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     String startDesc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -931,14 +931,14 @@ class ContainersV2RestTest {
         })
         .findFirst().orElse("");
     org.junit.jupiter.api.Assertions.assertTrue(
-        startDesc.toLowerCase().contains("nanosecond"),
-        "start @Parameter description must mention 'nanosecond' — got: " + startDesc);
+        startDesc.toLowerCase().contains("iso 8601"),
+        "start @Parameter description must mention 'ISO 8601' — got: " + startDesc);
   }
 
   @Test
-  void getChannelData_endParamHasNanosecondsInDescription() throws NoSuchMethodException {
+  void getChannelData_endParamHasIso8601InDescription() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     String endDesc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -949,8 +949,8 @@ class ContainersV2RestTest {
         })
         .findFirst().orElse("");
     org.junit.jupiter.api.Assertions.assertTrue(
-        endDesc.toLowerCase().contains("nanosecond"),
-        "end @Parameter description must mention 'nanosecond' — got: " + endDesc);
+        endDesc.toLowerCase().contains("iso 8601"),
+        "end @Parameter description must mention 'ISO 8601' — got: " + endDesc);
   }
 
   // ─── APISIMP-CHANNEL-DOWNSAMPLE-UNDOCUMENTED regression ─────────────────────
@@ -958,7 +958,7 @@ class ContainersV2RestTest {
   @Test
   void getChannelData_downsampleParamHasParameterAnnotation() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     String desc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -976,7 +976,7 @@ class ContainersV2RestTest {
   @Test
   void getChannelData_maxPointsParamHasParameterAnnotation() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     String desc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -1221,7 +1221,7 @@ class ContainersV2RestTest {
   @Test
   void getChannelData_maxPointsParamHasMinConstraint() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     Min min = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
@@ -1236,7 +1236,7 @@ class ContainersV2RestTest {
   @Test
   void getChannelData_maxPointsParamHasMaxConstraint() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
-        "getChannelData", String.class, UUID.class, Long.class, Long.class,
+        "getChannelData", String.class, UUID.class, String.class, String.class,
         String.class, Integer.class, jakarta.ws.rs.core.SecurityContext.class);
     Max max = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
