@@ -2275,7 +2275,9 @@
           },
           "timeseriesContainerId": {
             "format": "int64",
-            "type": "integer"
+            "type": "integer",
+            "deprecated": true,
+            "description": "Deprecated — use timeseriesContainerAppId. Will be removed after L2e migration window."
           },
           "qualityScore": {
             "format": "double",
