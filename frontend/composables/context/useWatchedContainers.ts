@@ -21,7 +21,7 @@ export interface WatchDto {
   containerAppId: string;
   containerName?: string;
   containerAvailability?: ContainerAvailability;
-  since?: number;
+  since?: string;
   addedBy?: string;
 }
 

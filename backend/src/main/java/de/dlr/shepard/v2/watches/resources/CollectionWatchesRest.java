@@ -79,7 +79,7 @@ public class CollectionWatchesRest {
       "  - `containerAvailability` (`available` / `forbidden` / `deleted` / " +
       "`error`) — tells the UI whether to render the row as clickable, " +
       "permission-denied, tombstoned, or error.\n" +
-      "  - `since` (millis when the watch was added).\n" +
+      "  - `since` (ISO 8601 UTC timestamp when the watch was added).\n" +
       "  - `addedBy` (username).\n\n" +
       "Auth: Read on the Collection. The per-container availability check " +
       "filters out container details the caller can't see, but the watch " +

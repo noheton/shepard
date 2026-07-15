@@ -5105,7 +5105,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/labJournal/io/LabJournalEntryIO.java:39`; apisimp-sweep-fire568-2026-07-12 §Finding1.
 
 ## APISIMP-LJE-ENTRY-V2-CRUD — add v2 lab-journal CRUD by `entryAppId` + migrate frontend (size: M, gate: APISIMP-LJE-ENTRY-ID-SUPPRESS + 10-fire stabilization)
-- **Status:** 🔁 PR open (fire-582, branch `APISIMP-LJE-ENTRY-V2-CRUD`)
+- **Status:** ✅ merged (fire-582, PR #2541, merged 2026-07-13)
 - **Why:** `LabJournalExistingEntry.vue` uses `useShepardApi(LabJournalEntryApi)` (v1 path) with numeric `model.value.id` for get/update/delete. No v2 endpoints exist for individual lab journal entry CRUD by `entryAppId`. This is Step B of the two-step plan. Add `GET/PUT/DELETE /v2/lab-journal/{entryAppId}` backend endpoints; migrate frontend to `useV2ShepardApi` + `appId`; add `@JsonIgnore` to `LabJournalEntryIO.id` once no frontend caller uses it.
 - **AC:** `GET /v2/lab-journal/{entryAppId}` 200; `PUT` updates content; `DELETE` removes entry; `LabJournalExistingEntry.vue` uses `useV2ShepardApi` throughout; `LabJournalEntryIO.id` carries `@JsonIgnore`; numeric `id` absent from v2 OpenAPI spec; `mvn verify -pl backend` + `npm run typecheck` green.
 - **First refs:** `frontend/components/context/lab-journal/LabJournalExistingEntry.vue:44,58,75`; apisimp-sweep-fire568-2026-07-12 §Finding1 Step B.
@@ -5527,6 +5527,20 @@ picks these up. Terse by design.
 - **Fix:** Once L2e migration is complete and all rows in the target Neo4j DB carry a non-null `appId`, remove `neo4jNodeId` from `PermissionAuditEntryIO`; remove the `@Schema(deprecated = true)` entry; update the admin permission-audit frontend component to no longer display the field.
 - **AC:** `GET /v2/admin/permission-audit` response no longer includes `neo4jNodeId`; all entries carry non-null `appId`; `mvn verify -pl backend` green. **Not mergeable until L2e is shipped.**
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/PermissionAuditEntryIO.java:28`; apisimp-sweep-2026-07-14-fire608.md §Finding3.
+
+## APISIMP-WATCH-SINCE-EPOCH-MS-TO-ISO — convert `since: Long` (epoch-ms) to ISO 8601 `String` in `WatchIO` and `CollectionWatcherIO` (size: XS, sweep: fire-612)
+- **Status:** ✅ shipped (fire-612, branch `APISIMP-WATCH-SINCE-EPOCH-MS-TO-ISO`)
+- **Why:** `WatchIO.java:39` and `CollectionWatcherIO.java:23` both carry a `Long since` field (epoch-milliseconds) on the v2 REST wire. The APISIMP mandate requires all timestamp fields on the wire to be ISO 8601 strings. These fields were documented with `@Schema(example = "1751400000000")` (a raw millis value), violating the campaign rule.
+- **Fix:** Changed both `Long since` components to `String since`; emit via `Instant.ofEpochMilli(w.getSince()).toString()` in the respective `from(W)` factory methods; updated `@Schema` descriptions and examples; updated prose in `CollectionWatchersRest` (lines 67/113) and `CollectionWatchesRest` (line 82) to say "ISO 8601 UTC timestamp" instead of "epoch millis"; updated test fixtures in `CollectionWatchesRestTest`, `WatchMcpToolsTest`, `CollectionWatchersRestTest`; updated `WatchDto.since?: number` → `since?: string` in `useWatchedContainers.ts`.
+- **AC:** `WatchIO.since` and `CollectionWatcherIO.since` serialize as `"2026-06-01T00:00:00Z"`-style strings; 5677 backend tests pass; `npm run typecheck` confirms no TS regressions introduced by this change (pre-existing `mapPermissions.ts` error unrelated to APISIMP campaign).
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/watches/io/WatchIO.java:39`; `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/io/CollectionWatcherIO.java:23`; apisimp-sweep-fire612-2026-07-15.md §Finding1-2.
+
+## APISIMP-VIDEO-WALL-CLOCK-TO-ISO — convert `wallClockTimestamp: Long` (nanoseconds) to ISO 8601 `String` in `VideoStreamReferenceIO` (size: XS, sweep: fire-612)
+- **Status:** 🔲 queued
+- **Why:** `plugins/video/src/main/java/de/dlr/shepard/context/references/videostreamreference/io/VideoStreamReferenceIO.java:85` carries `private Long wallClockTimestamp` — a UTC nanosecond wall-clock timestamp derived from ffprobe's `creation_time`. This is a metadata instant (equivalent to `recordedAt`), not raw sensor channel data. The APISIMP mandate applies: emit as ISO 8601 UTC string.
+- **Fix:** Change `Long wallClockTimestamp` to `String wallClockTimestamp`; in the `VideoStreamReferenceIO(VideoStreamReference ref)` constructor replace `this.wallClockTimestamp = ref.getWallClockTimestamp()` with `Long ns = ref.getWallClockTimestamp(); this.wallClockTimestamp = ns != null ? Instant.ofEpochSecond(ns / 1_000_000_000L, ns % 1_000_000_000L).toString() : null;`; also update the handler in `VideoStreamReferenceKindHandlerLogic` (line 74) that writes the raw long into the generic map. Update `@Schema` description. Check if any frontend/MCP consumer parses this as a number and update those.
+- **AC:** `GET /v2/…/video-stream-references/{appId}` response `wallClockTimestamp` is a valid ISO 8601 string; `mvn verify -pl backend` + `npm run typecheck` green.
+- **First refs:** `plugins/video/src/main/java/de/dlr/shepard/context/references/videostreamreference/io/VideoStreamReferenceIO.java:85`; apisimp-sweep-fire612-2026-07-15.md §Finding3.
 
 ## APISIMP-METRICS-UPTIME-MILLIS-TO-ISO — convert `uptimeMillis` in `AdminMetricsSummaryIO` to ISO 8601 duration `String` (size: XS, sweep: fire-608)
 - **Status:** ✅ shipped (fire-611, branch `APISIMP-METRICS-UPTIME-MILLIS-TO-ISO-1`)

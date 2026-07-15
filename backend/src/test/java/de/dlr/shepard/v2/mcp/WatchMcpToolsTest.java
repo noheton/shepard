@@ -101,7 +101,7 @@ class WatchMcpToolsTest {
 
   @Test
   void addReturnsCreatedRow() throws Exception {
-    CollectionWatcherIO io = new CollectionWatcherIO(WATCH_APP_ID, CALLER, COLL_APP_ID, 1700000000_000L);
+    CollectionWatcherIO io = new CollectionWatcherIO(WATCH_APP_ID, CALLER, COLL_APP_ID, "2023-11-14T22:13:20Z");
     when(collectionWatcherService.watch(COLL_APP_ID, CALLER)).thenReturn(io);
 
     String json = tools.watchAdd(COLL_APP_ID);

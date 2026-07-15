@@ -64,7 +64,7 @@ public class CollectionWatchersRest {
     summary = "List all watchers for this Collection (CW1).",
     description =
       "Returns the list of users currently watching this Collection. Each " +
-      "item carries `username` and `since` (epoch millis when the watch was registered).\n\n" +
+      "item carries `username` and `since` (ISO 8601 UTC timestamp when the watch was registered).\n\n" +
       "Pagination (APISIMP-PAGINATION-LIST-WATCHERS): supply both `page` (0-based) and " +
       "`pageSize` (1–200) to receive a slice. Omit both to return all watchers. " +
       "Auth: Read permission on the Collection."
@@ -110,7 +110,7 @@ public class CollectionWatchersRest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "The caller is watching. Body is a CollectionWatcherIO with `username` and `since` (epoch millis).",
+    description = "The caller is watching. Body is a CollectionWatcherIO with `username` and `since` (ISO 8601 UTC timestamp).",
     content = @Content(schema = @Schema(implementation = CollectionWatcherIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
