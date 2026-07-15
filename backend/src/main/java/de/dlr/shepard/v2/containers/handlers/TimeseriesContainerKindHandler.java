@@ -34,7 +34,6 @@ import de.dlr.shepard.v2.containers.spi.ContainerKindHandler;
 import de.dlr.shepard.v2.timeseries.daos.TimeseriesAnnotationDAO;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowPointIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowResponseIO;
@@ -341,16 +340,19 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
    * APISIMP-CONT-NS-COLLAPSE-2 — bulk channel data fetch.
    * Mirrors the logic from the deleted
    * {@code TimeseriesContainerChannelsRest.getBulkChannelData}.
+   *
+   * <p>APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO — {@code startNs} and {@code endNs}
+   * are pre-parsed by the REST layer; this method receives them directly.
    */
   @Override
   public Optional<List<TimeseriesWithDataPoints>> getBulkChannelData(
-      String containerAppId, BulkChannelDataRequestIO body) {
+      String containerAppId, List<UUID> shepardIds, long startNs, long endNs) {
     long containerId = service.getContainerByAppId(containerAppId).getId();
 
-    var entities = tsChannelResolver.bulkFindByShepardIds(body.shepardIds());
+    var entities = tsChannelResolver.bulkFindByShepardIds(shepardIds);
     List<TimeseriesWithDataPoints> results = timeseriesService.getManyDataPointsByEntities(
         containerId, entities,
-        new TimeseriesDataPointsQueryParams(body.start(), body.end(), null, null, null));
+        new TimeseriesDataPointsQueryParams(startNs, endNs, null, null, null));
 
     return Optional.of(results);
   }

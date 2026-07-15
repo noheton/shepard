@@ -11,7 +11,6 @@ import de.dlr.shepard.v2.file.io.PayloadVersionIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
 import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
@@ -365,12 +364,18 @@ public interface ContainerKindHandler {
    * APISIMP-CONT-NS-COLLAPSE-2 — bulk channel data fetch.
    * Default returns {@link Optional#empty()} (→ 415 for non-timeseries kinds).
    *
+   * <p>APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO — {@code startNs} and {@code endNs}
+   * are pre-parsed nanosecond timestamps supplied by the REST resource after it
+   * validates the ISO 8601 strings from the request body and returns 400 on error.
+   *
    * @param containerAppId appId of the container.
-   * @param body           the bulk request carrying shepardIds and time window.
+   * @param shepardIds     channel UUIDs to fetch (from the request body).
+   * @param startNs        window start in nanoseconds since Unix epoch.
+   * @param endNs          window end in nanoseconds since Unix epoch.
    * @return the list of per-channel data, or empty when this kind has no channels.
    */
   default Optional<List<TimeseriesWithDataPoints>> getBulkChannelData(
-      String containerAppId, BulkChannelDataRequestIO body) {
+      String containerAppId, List<UUID> shepardIds, long startNs, long endNs) {
     return Optional.empty();
   }
 

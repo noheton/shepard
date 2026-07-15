@@ -109,20 +109,23 @@ describe("fetchBulkTraceByAppId (UX612-C2)", () => {
   it("resolves role 5-tuples to shepardIds and bulk-fetches by container appId", async () => {
     const { client, getBulkChannelData } = mockClient();
 
+    // APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO: use timestamps with ms-level difference.
+    const START_NS = 1_000_000_000; // 1s after epoch → 1970-01-01T00:00:01.000Z
+    const END_NS   = 2_000_000_000; // 2s after epoch → 1970-01-01T00:00:02.000Z
     const { byRole } = await fetchBulkTraceByAppId(
       client,
       CONTAINER_APP_ID,
       ROLE_CHANNELS,
-      1_000,
-      2_000,
+      START_NS,
+      END_NS,
     );
 
     expect(getBulkChannelData).toHaveBeenCalledWith({
       appId: CONTAINER_APP_ID,
       bulkChannelDataRequest: {
         shepardIds: ["ch-x", "ch-y"],
-        start: 1_000,
-        end: 2_000,
+        start: new Date(1_000).toISOString(), // 1970-01-01T00:00:01.000Z
+        end:   new Date(2_000).toISOString(), // 1970-01-01T00:00:02.000Z
       },
     });
     expect(byRole.get("x")).toEqual([

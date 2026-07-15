@@ -26,17 +26,17 @@ export interface BulkChannelDataRequest {
      */
     shepardIds: Array<string>;
     /**
-     * Window start, nanoseconds since epoch.
-     * @type {number}
+     * Window start as ISO 8601 UTC, nanosecond precision supported. E.g. '2024-06-01T08:00:00Z'.
+     * @type {string}
      * @memberof BulkChannelDataRequest
      */
-    start: number;
+    start: string;
     /**
-     * Window end, nanoseconds since epoch.
-     * @type {number}
+     * Window end as ISO 8601 UTC, nanosecond precision supported. Must be after start.
+     * @type {string}
      * @memberof BulkChannelDataRequest
      */
-    end: number;
+    end: string;
 }
 
 /**

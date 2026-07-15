@@ -786,7 +786,7 @@ public class ContainersV2Rest {
     responseCode = "200",
     description = "Raw data for all resolved channels.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
-  @APIResponse(responseCode = "400", description = "Validation error on request body.")
+  @APIResponse(responseCode = "400", description = "Validation error on request body, or start/end not a valid ISO 8601 UTC timestamp.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -798,12 +798,22 @@ public class ContainersV2Rest {
   ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No valid JWT or API key was provided");
+    final long startNs;
+    final long endNs;
+    try {
+      startNs = parseChannelNs(body.start());
+      endNs   = parseChannelNs(body.end());
+    } catch (java.time.format.DateTimeParseException e) {
+      return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad Request", Response.Status.BAD_REQUEST,
+        "Invalid ISO 8601 timestamp in 'start' or 'end': " + e.getParsedString() +
+        ". Expected format: '2024-06-01T08:00:00Z' or '2024-06-01T08:00:00.123456789Z'.");
+    }
     var resolved = containersService.resolveByAppId(appId);
     if (resolved.isEmpty()) return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
-    var result = resolved.get().handler().getBulkChannelData(appId, body);
+    var result = resolved.get().handler().getBulkChannelData(appId, body.shepardIds(), startNs, endNs);
     if (result.isEmpty()) {
       return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
           Response.Status.UNSUPPORTED_MEDIA_TYPE,

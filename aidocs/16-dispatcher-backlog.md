@@ -5508,7 +5508,7 @@ picks these up. Terse by design.
 - **First refs:** `plugins/git/src/main/java/de/dlr/shepard/v2/users/resources/MeCredentialsRest.java:76-77`; apisimp-sweep-2026-07-14-fire605.md §Finding1.
 
 ## APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO — convert `start`/`end` in `BulkChannelDataRequestIO` from nanosecond `Long` to ISO 8601 `String` (size: XS–S, sweep: fire-608)
-- **Status:** 🔲 queued
+- **Status:** ✅ done — PR #TBD (fire-609)
 - **Why:** `BulkChannelDataRequestIO.java:40,45` defines `@NotNull @PositiveOrZero Long start` and `Long end` with OpenAPI description "nanoseconds since epoch" for the request body of `POST /v2/containers/{appId}/channels/data/bulk`. This is the sister endpoint of the single-channel `GET /v2/containers/{appId}/channels/{channelId}/data` whose `start`/`end` params are being converted in PR #2569 (APISIMP-REST-CHANNEL-DATA-NANOS-TO-ISO). Having the bulk endpoint accept nanosecond longs while the single-channel endpoint accepts ISO 8601 strings creates a split convention for callers that use both. Natural companion to PR #2569 — should be batched with or immediately after it.
 - **Fix:** Change `Long start` / `Long end` to `@NotBlank String start` / `String end`; parse with `Instant.parse(s)` at the resource boundary in `ContainersV2Rest` (or wherever `BulkChannelDataRequestIO` is consumed); convert to nanoseconds via `instant.getEpochSecond() * 1_000_000_000L + instant.getNano()`. Update `@Schema(description)` and example values. Update frontend caller `useBulkChannelData.ts` (or equivalent) to format timestamps as ISO 8601 before POST.
 - **AC:** `POST /v2/containers/{appId}/channels/data/bulk` with ISO 8601 `start`/`end` returns correct data; `mvn verify -pl backend` green; frontend `npm run typecheck` green.
