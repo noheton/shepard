@@ -15,7 +15,6 @@ import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.containers.handlers.TimeseriesContainerKindHandler;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
@@ -77,8 +76,7 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.resolveTuple(any())).thenReturn(Optional.empty());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(UNKNOWN), START_NS, END_NS));
+    handler.getBulkChannelData(CONTAINER_APP_ID, List.of(UNKNOWN), START_NS, END_NS);
 
     verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
@@ -90,8 +88,8 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    Optional<List<TimeseriesWithDataPoints>> result = handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(UNKNOWN), START_NS, END_NS));
+    Optional<List<TimeseriesWithDataPoints>> result =
+        handler.getBulkChannelData(CONTAINER_APP_ID, List.of(UNKNOWN), START_NS, END_NS);
 
     assert result.isPresent();
     assertEquals(0, result.get().size());
@@ -107,8 +105,8 @@ public class TimeseriesBulkChannelDataRestTest {
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
       .thenReturn(List.of(expected));
 
-    Optional<List<TimeseriesWithDataPoints>> result = handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(KNOWN_A, UNKNOWN), START_NS, END_NS));
+    Optional<List<TimeseriesWithDataPoints>> result =
+        handler.getBulkChannelData(CONTAINER_APP_ID, List.of(KNOWN_A, UNKNOWN), START_NS, END_NS);
 
     assert result.isPresent();
     assertEquals(1, result.get().size());
@@ -127,8 +125,8 @@ public class TimeseriesBulkChannelDataRestTest {
         new TimeseriesWithDataPoints(ta, List.of()),
         new TimeseriesWithDataPoints(tb, List.of())));
 
-    Optional<List<TimeseriesWithDataPoints>> result = handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(KNOWN_A, KNOWN_B), START_NS, END_NS));
+    Optional<List<TimeseriesWithDataPoints>> result =
+        handler.getBulkChannelData(CONTAINER_APP_ID, List.of(KNOWN_A, KNOWN_B), START_NS, END_NS);
 
     assert result.isPresent();
     assertEquals(2, result.get().size());
@@ -143,8 +141,7 @@ public class TimeseriesBulkChannelDataRestTest {
     when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(KNOWN_A), START_NS, END_NS));
+    handler.getBulkChannelData(CONTAINER_APP_ID, List.of(KNOWN_A), START_NS, END_NS);
 
     verify(serviceMock).getManyDataPointsByEntities(
       anyLong(),

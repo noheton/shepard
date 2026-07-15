@@ -340,7 +340,12 @@ async function loadBulkChannelData() {
   try {
     const data = await channelListingApi.value.getContainerBulkChannelData({
       appId,
-      bulkChannelDataRequest: { shepardIds, start: ref.start, end: ref.end },
+      bulkChannelDataRequest: {
+        shepardIds,
+        // APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO: ref.start/end are ns; API now takes ISO.
+        start: new Date(Math.floor(ref.start / 1_000_000)).toISOString(),
+        end: new Date(Math.floor(ref.end / 1_000_000)).toISOString(),
+      },
     });
     chartPayload.value = (data ?? []) as TimeseriesWithDataPoints[];
     applyMetrics(chartPayload.value);

@@ -50,10 +50,16 @@ export interface ChannelListingClient {
     appId: string;
     pageSize?: number;
   }): Promise<Array<TimeseriesChannelV2>>;
+  // APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO: start/end are ISO 8601 strings.
   getContainerBulkChannelData(req: {
     appId: string;
-    bulkChannelDataRequest: { shepardIds: string[]; start: number; end: number };
+    bulkChannelDataRequest: { shepardIds: string[]; start: string; end: string };
   }): Promise<Array<TimeseriesWithDataPoints>>;
+}
+
+/** Converts nanoseconds since Unix epoch to an ISO 8601 UTC string. */
+function nsToIso(ns: number): string {
+  return new Date(Math.floor(ns / 1_000_000)).toISOString();
 }
 
 const norm = (s: string | null | undefined) => (s ?? "").trim();
@@ -145,7 +151,7 @@ export async function fetchBulkTraceByAppId(
 
     const body = await api.getContainerBulkChannelData({
       appId,
-      bulkChannelDataRequest: { shepardIds, start: startNs, end: endNs },
+      bulkChannelDataRequest: { shepardIds, start: nsToIso(startNs), end: nsToIso(endNs) },
     });
 
     for (const entry of body) {

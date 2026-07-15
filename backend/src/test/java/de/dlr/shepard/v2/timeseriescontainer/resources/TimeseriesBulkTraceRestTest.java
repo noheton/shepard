@@ -12,7 +12,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.containers.handlers.TimeseriesContainerKindHandler;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -70,8 +69,7 @@ class TimeseriesBulkTraceRestTest {
 
   @Test
   void alwaysChecksContainerPermission() {
-    handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
+    handler.getBulkChannelData(CONTAINER_APP_ID, List.of(UUID.randomUUID()), START_NS, END_NS);
 
     verify(containerServiceMock).getContainerByAppId(CONTAINER_APP_ID);
   }
@@ -84,8 +82,8 @@ class TimeseriesBulkTraceRestTest {
     when(resolverMock.bulkFindByShepardIds(List.of(unknown))).thenReturn(List.of());
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    Optional<List<TimeseriesWithDataPoints>> result = handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(unknown), START_NS, END_NS));
+    Optional<List<TimeseriesWithDataPoints>> result =
+        handler.getBulkChannelData(CONTAINER_APP_ID, List.of(unknown), START_NS, END_NS);
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEmpty();
@@ -99,8 +97,8 @@ class TimeseriesBulkTraceRestTest {
     when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
       .thenReturn(List.of(resultItem));
 
-    Optional<List<TimeseriesWithDataPoints>> result = handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
+    Optional<List<TimeseriesWithDataPoints>> result =
+        handler.getBulkChannelData(CONTAINER_APP_ID, List.of(UUID.randomUUID()), START_NS, END_NS);
 
     assertThat(result).isPresent();
     assertThat(result.get()).hasSize(1).contains(resultItem);
@@ -114,8 +112,7 @@ class TimeseriesBulkTraceRestTest {
     UUID id2 = UUID.randomUUID();
     UUID id3 = UUID.randomUUID();
 
-    handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(id1, id2, id3), START_NS, END_NS));
+    handler.getBulkChannelData(CONTAINER_APP_ID, List.of(id1, id2, id3), START_NS, END_NS);
 
     verify(resolverMock).bulkFindByShepardIds(List.of(id1, id2, id3));
   }
@@ -124,8 +121,7 @@ class TimeseriesBulkTraceRestTest {
 
   @Test
   void delegatesToManyPointsService() {
-    handler.getBulkChannelData(CONTAINER_APP_ID,
-      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
+    handler.getBulkChannelData(CONTAINER_APP_ID, List.of(UUID.randomUUID()), START_NS, END_NS);
 
     verify(serviceMock).getManyDataPointsByEntities(anyLong(), any(), any());
   }

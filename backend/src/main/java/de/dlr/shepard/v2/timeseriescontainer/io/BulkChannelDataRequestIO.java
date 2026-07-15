@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.timeseriescontainer.io;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +17,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>Unknown shepardIds are silently skipped so a caller can pass a
  * stale channel list without getting a 404. Max 200 channels per call.
+ *
+ * <p>APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO — {@code start} and {@code end}
+ * are ISO 8601 UTC strings with optional nanosecond precision, e.g.
+ * {@code "2024-06-01T08:00:00Z"} or {@code "2024-06-01T08:00:00.123456789Z"}.
+ * Replaces the previous nanosecond-Long shape to align with
+ * {@code GET /v2/containers/{appId}/channels/{channelId}/data} (fire-607).
  */
 @Schema(
   name = "BulkChannelDataRequest",
@@ -35,12 +40,18 @@ public record BulkChannelDataRequestIO(
   List<@NotNull UUID> shepardIds,
 
   @NotNull
-  @PositiveOrZero
-  @Schema(description = "Window start, nanoseconds since epoch.", required = true, example = "1700000000000000000")
-  Long start,
+  @Schema(
+    description = "Window start as ISO 8601 UTC, nanosecond precision supported. E.g. '2024-06-01T08:00:00Z'.",
+    required = true,
+    example = "2024-06-01T08:00:00Z"
+  )
+  String start,
 
   @NotNull
-  @PositiveOrZero
-  @Schema(description = "Window end, nanoseconds since epoch.", required = true, example = "1700003600000000000")
-  Long end
+  @Schema(
+    description = "Window end as ISO 8601 UTC, nanosecond precision supported. Must be after start.",
+    required = true,
+    example = "2024-06-01T09:00:00Z"
+  )
+  String end
 ) {}
