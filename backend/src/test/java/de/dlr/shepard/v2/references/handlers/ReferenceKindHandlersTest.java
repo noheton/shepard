@@ -301,8 +301,8 @@ class ReferenceKindHandlersTest {
   void ts_toIO_flattensPayload() {
     var io = tsHandler.toIO(tsRef());
     assertEquals("timeseries", io.getKind());
-    assertEquals(1000L, io.getPayload().get("start"));
-    assertEquals(2000L, io.getPayload().get("end"));
+    assertEquals("1970-01-01T00:00:00.000001Z", io.getPayload().get("start"));
+    assertEquals("1970-01-01T00:00:00.000002Z", io.getPayload().get("end"));
     assertEquals("WALL_CLOCK", io.getPayload().get("timeReference"));
   }
 
