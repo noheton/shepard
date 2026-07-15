@@ -36,6 +36,7 @@ import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowPointIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesDataPointIngestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.LiveWindowResponseIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
@@ -378,7 +379,8 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
           "No channel with shepardId " + shepardId + " in container " + containerAppId);
     }
 
-    timeseriesService.ingestDataPointsCopy(containerId, entity, body.dataPoints());
+    timeseriesService.ingestDataPointsCopy(containerId, entity,
+        body.dataPoints().stream().map(TimeseriesDataPointIngestIO::toDataPoint).toList());
     return true;
   }
 

@@ -28,6 +28,7 @@ import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesContainerChartViewIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesWithDataPointsV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -720,7 +721,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Data points for the channel.",
-    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPointsV2IO.class))
   )
   @APIResponse(responseCode = "400", description = "start or end missing or not a valid ISO 8601 UTC timestamp, or maxPoints out of range [1–5000].")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -764,7 +765,7 @@ public class ContainersV2Rest {
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
             "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
       }
-      return Response.ok(result.get()).build();
+      return Response.ok(TimeseriesWithDataPointsV2IO.from(result.get())).build();
     } catch (NotFoundException nfe) {
       return problem(PROBLEM_TYPE_NOT_FOUND, "Not found", Response.Status.NOT_FOUND,
           nfe.getMessage() != null ? nfe.getMessage() : "Channel not found");

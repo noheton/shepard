@@ -1,6 +1,6 @@
 package de.dlr.shepard.v2.timeseries.io;
 
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesDataPointV2IO;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * {@code points} list — the consumer can render an "empty cell" placeholder
  * without re-querying.
  *
- * <p>Point timestamps are absolute UTC nanoseconds; the consumer normalises
+ * <p>Point timestamps are ISO 8601 UTC strings; the consumer normalises
  * to within-DO relative time at render (e.g. subtract the series' first
  * timestamp). Keeping absolute timestamps server-side preserves the caller's
  * ability to align series on wall clock when desired.
@@ -37,6 +37,6 @@ public record CrossDoSeriesIO(
   @Schema(description = "Symbolic name of the resolved channel, or null when no channel matched.")
   String channelSymbolicName,
 
-  @Schema(description = "LTTB-downsampled data points; absolute UTC nanoseconds.")
-  List<TimeseriesDataPoint> points
+  @Schema(description = "LTTB-downsampled data points; timestamps as ISO 8601 UTC strings.")
+  List<TimeseriesDataPointV2IO> points
 ) {}
