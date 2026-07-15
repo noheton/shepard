@@ -5,6 +5,7 @@ import de.dlr.shepard.provenance.daos.ContentCensusDAO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,7 @@ public class ProvenanceStatsService {
       id,
       ProvenanceStatsIO.toIso(sinceMillis),
       ProvenanceStatsIO.toIso(untilMillis),
-      bucketMillis,
+      Duration.ofMillis(bucketMillis).toString(),
       snap.totalCount,
       distinctAgents,
       snap.totalsByActionKind,

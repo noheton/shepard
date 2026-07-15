@@ -44,11 +44,11 @@ export interface ProvenanceStats {
      */
     until: string;
     /**
-     * Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000).
-     * @type {number}
+     * Width of one sparkline bucket as an ISO 8601 duration (daily = 'PT86400S'; weekly = 'PT604800S').
+     * @type {string}
      * @memberof ProvenanceStats
      */
-    bucketMillis: number;
+    bucketDuration: string;
     /**
      * Total activity count over the window.
      * @type {number}
@@ -100,7 +100,7 @@ export function instanceOfProvenanceStats(value: object): value is ProvenanceSta
     if (!('scope' in value) || value['scope'] === undefined) return false;
     if (!('since' in value) || value['since'] === undefined) return false;
     if (!('until' in value) || value['until'] === undefined) return false;
-    if (!('bucketMillis' in value) || value['bucketMillis'] === undefined) return false;
+    if (!('bucketDuration' in value) || value['bucketDuration'] === undefined) return false;
     if (!('totalCount' in value) || value['totalCount'] === undefined) return false;
     if (!('distinctAgents' in value) || value['distinctAgents'] === undefined) return false;
     if (!('totalsByActionKind' in value) || value['totalsByActionKind'] === undefined) return false;
@@ -123,7 +123,7 @@ export function ProvenanceStatsFromJSONTyped(json: any, ignoreDiscriminator: boo
         'id': json['id'] == null ? undefined : json['id'],
         'since': json['since'],
         'until': json['until'],
-        'bucketMillis': json['bucketMillis'],
+        'bucketDuration': json['bucketDuration'],
         'totalCount': json['totalCount'],
         'distinctAgents': json['distinctAgents'],
         'totalsByActionKind': json['totalsByActionKind'],
@@ -144,7 +144,7 @@ export function ProvenanceStatsToJSON(value?: ProvenanceStats | null): any {
         'id': value['id'],
         'since': value['since'],
         'until': value['until'],
-        'bucketMillis': value['bucketMillis'],
+        'bucketDuration': value['bucketDuration'],
         'totalCount': value['totalCount'],
         'distinctAgents': value['distinctAgents'],
         'totalsByActionKind': value['totalsByActionKind'],
