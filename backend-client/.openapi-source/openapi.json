@@ -11543,10 +11543,9 @@
             "description": "Total HTTP requests observed by the embedded server since startup.",
             "type": "integer"
           },
-          "httpMeanRequestMillis": {
-            "format": "double",
-            "description": "HTTP request total-time avg, milliseconds, since startup. Null when no requests yet.",
-            "type": "number",
+          "httpMeanRequestDuration": {
+            "description": "HTTP request total-time mean since startup, as ISO 8601 duration (e.g. \"PT0.005S\"). Null when no requests yet.",
+            "type": "string",
             "nullable": true
           },
           "permissionsCacheHits": {

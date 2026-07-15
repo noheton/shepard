@@ -38,7 +38,7 @@ class AdminMetricsSummaryServiceTest {
   void snapshotReturnsZerosWhenNoMetersRegistered() {
     var snap = service.snapshot();
     assertEquals(0L, snap.getHttpRequestsTotal());
-    assertNull(snap.getHttpMeanRequestMillis());
+    assertNull(snap.getHttpMeanRequestDuration());
     assertEquals(0L, snap.getPermissionsCacheHits());
     assertEquals(0L, snap.getPermissionsCacheMisses());
     assertNull(snap.getPermissionsCacheHitRatio());
@@ -54,8 +54,11 @@ class AdminMetricsSummaryServiceTest {
 
     var snap = service.snapshot();
     assertEquals(3L, snap.getHttpRequestsTotal());
-    assertNotNull(snap.getHttpMeanRequestMillis());
-    assertTrue(snap.getHttpMeanRequestMillis() > 150 && snap.getHttpMeanRequestMillis() < 250);
+    assertNotNull(snap.getHttpMeanRequestDuration());
+    assertTrue(snap.getHttpMeanRequestDuration().startsWith("PT"),
+        "expected ISO 8601 duration, got: " + snap.getHttpMeanRequestDuration());
+    // 3 requests totalling 600 ms → mean 200 ms → PT0.2S
+    assertEquals("PT0.2S", snap.getHttpMeanRequestDuration());
   }
 
   @Test
