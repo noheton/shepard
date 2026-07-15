@@ -5,8 +5,8 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesDataPointV2IO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoBulkDataRequestIO;
 import de.dlr.shepard.v2.timeseries.io.CrossDoSeriesIO;
@@ -103,7 +103,7 @@ public class CrossDoBulkDataRest {
       "DataObjects the caller can't read are silently dropped (no 403 for the whole request). " +
       "Where a single DataObject has multiple channels matching the predicate, the first by " +
       "`symbolicName` ascending is picked (deterministic). " +
-      "Response timestamps are absolute UTC nanoseconds; clients render within-DO relative time on the " +
+      "Response timestamps are ISO 8601 UTC strings; clients render within-DO relative time on the " +
       "frontend by subtracting each series' first timestamp. The request `start`/`end` fields " +
       "accept ISO 8601 UTC strings (e.g. '2024-06-01T08:00:00Z').\n\n" +
       "The `kind` query parameter discriminates the payload family. Currently only `timeseries` " +
@@ -186,11 +186,11 @@ public class CrossDoBulkDataRest {
         pick.measurement(), pick.device(), pick.location(),
         pick.symbolicName(), pick.field()
       );
-      List<TimeseriesDataPoint> points;
+      List<TimeseriesDataPointV2IO> points;
       try {
         points = timeseriesService.getDataPointsLttbOptimised(
           pick.containerId(), tuple, start, end, downsampleTo
-        );
+        ).stream().map(TimeseriesDataPointV2IO::from).toList();
       } catch (RuntimeException ex) {
         points = List.of();
       }
