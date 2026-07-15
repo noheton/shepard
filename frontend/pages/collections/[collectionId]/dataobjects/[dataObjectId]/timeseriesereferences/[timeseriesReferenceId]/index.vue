@@ -104,7 +104,14 @@ const timeseriesReference = computed<TsRefView | undefined>(() => {
       p.timeseriesContainerId != null ? Number(p.timeseriesContainerId) : undefined,
     timeseriesContainerAppId: (p.timeseriesContainerAppId as string | undefined) ?? undefined,
     timeReference: (p.timeReference as string | undefined) ?? undefined,
-    wallClockOffset: (p.wallClockOffset as number | undefined) ?? null,
+    // APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS: v2 wire now emits ISO 8601 string; parse to ns.
+    wallClockOffset: (() => {
+      const wco = p.wallClockOffset;
+      if (wco == null) return null;
+      if (typeof wco === "number") return wco;
+      const ms = new Date(wco as string).getTime();
+      return isNaN(ms) ? null : ms * 1_000_000;
+    })(),
     wallClockOffsetSource: (p.wallClockOffsetSource as string | undefined) ?? null,
     qualityScore: (p.qualityScore as number | undefined) ?? null,
   };

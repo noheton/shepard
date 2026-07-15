@@ -17,6 +17,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
@@ -146,6 +147,97 @@ class TimeseriesReferenceKindHandlerTest {
     var io = handler.toIO(ref);
     assertEquals("1970-01-01T00:00:01Z", io.getPayload().get("start"));
     assertEquals("1970-01-01T00:00:02Z", io.getPayload().get("end"));
+  }
+
+  // ─── toIO: wallClockOffset / lastScoredAt (APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS / APISIMP-TSREF-LASTSCOREDAT-MS-TO-ISO) ──
+
+  @Test
+  void toIO_wallClockOffsetNullEmitsNull() {
+    var ref = makeRef();
+    ref.setWallClockOffset(null);
+    var io = handler.toIO(ref);
+    assertNull(io.getPayload().get("wallClockOffset"));
+  }
+
+  @Test
+  void toIO_wallClockOffsetNanosToIso8601() {
+    // 1_000_000_000 ns = 1970-01-01T00:00:01Z
+    var ref = makeRef();
+    ref.setWallClockOffset(1_000_000_000L);
+    var io = handler.toIO(ref);
+    assertEquals("1970-01-01T00:00:01Z", io.getPayload().get("wallClockOffset"));
+  }
+
+  @Test
+  void toIO_wallClockOffsetSubSecondPrecision() {
+    // 1_500_000_000 ns = 1.5 s; Instant.toString() trims trailing zeros → ".500"
+    var ref = makeRef();
+    ref.setWallClockOffset(1_500_000_000L);
+    var io = handler.toIO(ref);
+    assertEquals("1970-01-01T00:00:01.500Z", io.getPayload().get("wallClockOffset"));
+  }
+
+  @Test
+  void toIO_lastScoredAtNullEmitsNull() {
+    var ref = makeRef();
+    ref.setLastScoredAt(null);
+    var io = handler.toIO(ref);
+    assertNull(io.getPayload().get("lastScoredAt"));
+  }
+
+  @Test
+  void toIO_lastScoredAtEpochMsToIso8601() {
+    // 1000 ms = 1970-01-01T00:00:01Z
+    var ref = makeRef();
+    ref.setLastScoredAt(1000L);
+    var io = handler.toIO(ref);
+    assertEquals("1970-01-01T00:00:01Z", io.getPayload().get("lastScoredAt"));
+  }
+
+  // ─── create: wallClockOffset ISO 8601 (APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS) ─
+
+  @Test
+  void create_acceptsIso8601WallClockOffset() {
+    var coll = new Collection(1L);
+    coll.setShepardId(1L);
+    var parent = new DataObject(10L);
+    parent.setShepardId(10L);
+    parent.setCollection(coll);
+    when(dataObjectDAO.findByAppId("do-app-1")).thenReturn(parent);
+    when(timeseriesReferenceService.createReference(anyLong(), anyLong(), any())).thenAnswer(inv -> {
+      var io = (de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO) inv.getArgument(2);
+      // 1970-01-01T00:00:03Z = 3_000_000_000 ns
+      assertEquals(3_000_000_000L, io.getWallClockOffset());
+      return makeRef();
+    });
+
+    var body = new java.util.HashMap<String, Object>();
+    body.put("start", 1_000_000_000L);
+    body.put("end",   2_000_000_000L);
+    body.put("timeseriesContainerId", 5L);
+    body.put("wallClockOffset", "1970-01-01T00:00:03Z");
+    body.put("timeseries", List.of(Map.of(
+        "measurement", "m", "device", "d", "location", "l", "symbolicName", "s", "field", "f"
+    )));
+
+    handler.create("do-app-1", body);
+  }
+
+  // ─── patch: wallClockOffset ISO 8601 (APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS) ──
+
+  @Test
+  void patch_acceptsIso8601WallClockOffset() {
+    var ref = makeRef();
+    ref.setTimeReference("EXPERIMENT_RELATIVE");
+    when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
+    when(timeseriesReferenceService.updateTimeReference(any(), any())).thenAnswer(inv -> inv.getArgument(0));
+
+    // 1970-01-01T00:00:05Z = 5_000_000_000 ns
+    handler.patch(REF_APP_ID, Map.of("wallClockOffset", "1970-01-01T00:00:05Z"));
+
+    // Verify the service received the nanosecond value via body.getWallClockOffset()
+    // (ObjectMapper binds the normalised long back into TimeseriesReferenceIO.wallClockOffset)
+    // The ref itself isn't mutated by PATCH for wallClockOffset (service does it); just assert no throw.
   }
 
   // ─── patch: bounds update ───────────────────────────────────────────────────

@@ -42,7 +42,7 @@ const TS_REFERENCE_IO = {
       },
     ],
     qualityScore: 0.91,
-    lastScoredAt: 1670493071720,
+    lastScoredAt: "2022-12-08T11:51:11.720Z",
   },
 };
 
