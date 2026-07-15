@@ -87,8 +87,9 @@ public class SpatialDataReferenceKindHandler implements ReferenceKindHandler {
     ReferenceV2IO io = new ReferenceV2IO(ref, kind());
     io.put("geometryFilter", ref.getGeometryFilter());
     io.put("measurementsFilter", ref.getMeasurementsFilter());
-    io.put("startTime", ref.getStartTime());
-    io.put("endTime", ref.getEndTime());
+    // APISIMP-SPATIAL-TIMEWINDOW-NANOS: emit ISO 8601 instead of raw nanoseconds.
+    io.put("startTime", nanosToIso(ref.getStartTime()));
+    io.put("endTime", nanosToIso(ref.getEndTime()));
     io.put("metadata", ref.getMetadata());
     io.put("limit", ref.getLimit());
     io.put("skip", ref.getSkip());
@@ -142,8 +143,9 @@ public class SpatialDataReferenceKindHandler implements ReferenceKindHandler {
     toCreate.setGeometryFilter(asString(body.get("geometryFilter")));
     toCreate.setMeasurementsFilter(asString(body.get("measurementsFilter")));
     toCreate.setMetadata(asString(body.get("metadata")));
-    toCreate.setStartTime(asLong(body.get("startTime")));
-    toCreate.setEndTime(asLong(body.get("endTime")));
+    // APISIMP-SPATIAL-TIMEWINDOW-NANOS: accept ISO 8601 strings or legacy nanosecond Longs.
+    toCreate.setStartTime(isoOrLongToNanos(body.get("startTime"), "startTime"));
+    toCreate.setEndTime(isoOrLongToNanos(body.get("endTime"), "endTime"));
     toCreate.setLimit(asInteger(body.get("limit")));
     toCreate.setSkip(asInteger(body.get("skip")));
     toCreate.setSpatialDataContainer(container);
@@ -222,5 +224,27 @@ public class SpatialDataReferenceKindHandler implements ReferenceKindHandler {
     } catch (NumberFormatException nfe) {
       throw new BadRequestException("expected an integer value but got: " + v);
     }
+  }
+
+  /** APISIMP-SPATIAL-TIMEWINDOW-NANOS: nanosecond epoch → ISO 8601 UTC string; null-safe. */
+  private static String nanosToIso(Long ns) {
+    if (ns == null) return null;
+    return java.time.Instant.ofEpochSecond(ns / 1_000_000_000L, ns % 1_000_000_000L).toString();
+  }
+
+  /** APISIMP-SPATIAL-TIMEWINDOW-NANOS: accept ISO 8601 string or legacy nanosecond Long. */
+  private static Long isoOrLongToNanos(Object v, String field) {
+    if (v == null) return null;
+    if (v instanceof Number n) return n.longValue();
+    if (v instanceof String s) {
+      try {
+        java.time.Instant instant = java.time.Instant.parse(s);
+        return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
+      } catch (java.time.format.DateTimeParseException ignored) { /* fall through */ }
+      try {
+        return Long.parseLong(s);
+      } catch (NumberFormatException ignored) { /* fall through */ }
+    }
+    throw new BadRequestException("'" + field + "' must be an ISO 8601 timestamp or nanosecond Long, got: " + v);
   }
 }
