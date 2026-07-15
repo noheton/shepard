@@ -134,23 +134,33 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     TimeseriesReference ref = timeseriesReferenceDAO.findByAppId(appId);
     if (ref == null) throw new NotFoundException("No TimeseriesReference with appId " + appId);
 
+    // APISIMP-TSREF-TIMEWINDOW-NANOS: normalise ISO 8601 start/end strings to nanosecond longs
+    // before ObjectMapper deserialises into TimeseriesReferenceIO (primitive long fields).
+    Map<String, Object> normalized = new HashMap<>(patch);
+    if (normalized.containsKey("start") && normalized.get("start") instanceof String) {
+      normalized.put("start", isoOrLongToNanos(normalized.get("start"), "start"));
+    }
+    if (normalized.containsKey("end") && normalized.get("end") instanceof String) {
+      normalized.put("end", isoOrLongToNanos(normalized.get("end"), "end"));
+    }
+
     TimeseriesReferenceIO body;
     try {
-      body = objectMapper.convertValue(patch, TimeseriesReferenceIO.class);
+      body = objectMapper.convertValue(normalized, TimeseriesReferenceIO.class);
     } catch (IllegalArgumentException iae) {
       throw new BadRequestException("invalid timeseries patch body: " + iae.getMessage());
     }
 
-    // REF-EDIT-1: apply basic scalar fields from the raw map so that absent keys
+    // REF-EDIT-1: apply basic scalar fields from the normalised map so that absent keys
     // are distinguished from explicit zero/null (primitive long can't express absence).
-    if (patch.containsKey("name") && patch.get("name") instanceof String s && !s.isBlank()) {
+    if (normalized.containsKey("name") && normalized.get("name") instanceof String s && !s.isBlank()) {
       ref.setName(s.strip());
     }
-    if (patch.containsKey("start") && patch.get("start") != null) {
-      ref.setStart(isoOrLongToNanos(patch.get("start"), "start"));
+    if (normalized.containsKey("start") && normalized.get("start") != null) {
+      ref.setStart(isoOrLongToNanos(normalized.get("start"), "start"));
     }
-    if (patch.containsKey("end") && patch.get("end") != null) {
-      ref.setEnd(isoOrLongToNanos(patch.get("end"), "end"));
+    if (normalized.containsKey("end") && normalized.get("end") != null) {
+      ref.setEnd(isoOrLongToNanos(normalized.get("end"), "end"));
     }
 
     // REF-EDIT-1: replace the channel list when provided.

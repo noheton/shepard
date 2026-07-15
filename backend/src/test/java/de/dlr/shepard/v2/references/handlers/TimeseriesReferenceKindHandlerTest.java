@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -208,7 +209,7 @@ class TimeseriesReferenceKindHandlerTest {
     parent.setShepardId(10L);
     parent.setCollection(coll);
     when(dataObjectDAO.findByAppId("do-app-1")).thenReturn(parent);
-    when(timeseriesReferenceService.createReference(any(), any(), any())).thenReturn(makeRef());
+    when(timeseriesReferenceService.createReference(anyLong(), anyLong(), any())).thenReturn(makeRef());
 
     var body = new java.util.HashMap<String, Object>();
     body.put("start", "1970-01-01T00:00:01Z");
