@@ -301,8 +301,8 @@ class SnapshotMcpToolsTest {
     JsonNode root = new ObjectMapper().readTree(json);
     assertEquals(SNAP_A_ID, root.get("snapshotAAppId").asText());
     assertEquals(SNAP_B_ID, root.get("snapshotBAppId").asText());
-    assertEquals(CAP_AT_MS_A, root.get("snapshotACapturedAtMs").asLong());
-    assertEquals(CAP_AT_MS_B, root.get("snapshotBCapturedAtMs").asLong());
+    assertEquals("2023-11-14T22:13:20Z", root.get("snapshotACapturedAt").asText());
+    assertEquals("2023-11-14T22:13:21Z", root.get("snapshotBCapturedAt").asText());
 
     // entity-3 was added
     JsonNode added = root.get("added");

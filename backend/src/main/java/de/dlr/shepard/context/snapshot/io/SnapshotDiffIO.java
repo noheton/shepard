@@ -34,11 +34,11 @@ public record SnapshotDiffIO(
   @Schema(description = "appId of the head snapshot (B).")
   String snapshotBAppId,
 
-  @Schema(description = "Epoch milliseconds at which snapshot A was captured.")
-  long snapshotACapturedAtMs,
+  @Schema(description = "ISO 8601 UTC timestamp at which snapshot A was captured.", example = "2023-11-15T04:53:20Z")
+  String snapshotACapturedAt,
 
-  @Schema(description = "Epoch milliseconds at which snapshot B was captured.")
-  long snapshotBCapturedAtMs,
+  @Schema(description = "ISO 8601 UTC timestamp at which snapshot B was captured.", example = "2023-11-15T05:10:00Z")
+  String snapshotBCapturedAt,
 
   @Schema(description = "entityAppIds present in B but not in A (created between snapshots). Sorted ascending. Capped at ceil(?maxItems/3) entries when truncated=true.")
   List<String> added,

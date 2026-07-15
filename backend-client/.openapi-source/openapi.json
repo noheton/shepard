@@ -1075,15 +1075,15 @@
             "description": "appId of the head snapshot (B).",
             "type": "string"
           },
-          "snapshotACapturedAtMs": {
-            "format": "int64",
-            "description": "Epoch milliseconds at which snapshot A was captured.",
-            "type": "integer"
+          "snapshotACapturedAt": {
+            "description": "ISO 8601 UTC timestamp at which snapshot A was captured.",
+            "example": "2023-11-15T04:53:20Z",
+            "type": "string"
           },
-          "snapshotBCapturedAtMs": {
-            "format": "int64",
-            "description": "Epoch milliseconds at which snapshot B was captured.",
-            "type": "integer"
+          "snapshotBCapturedAt": {
+            "description": "ISO 8601 UTC timestamp at which snapshot B was captured.",
+            "example": "2023-11-15T05:10:00Z",
+            "type": "string"
           },
           "added": {
             "description": "entityAppIds present in B but not in A (created between snapshots). Sorted ascending.",

@@ -5,6 +5,10 @@ import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO;
 import de.dlr.shepard.context.snapshot.io.SnapshotDiffIO.DiffEntry;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
@@ -20,9 +24,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -215,8 +216,8 @@ public class SnapshotDiffRest {
     SnapshotDiffIO diff = new SnapshotDiffIO(
       snapshotA.getAppId(),
       snapshotB.getAppId(),
-      snapshotA.getSnapshotCapturedAtMs(),
-      snapshotB.getSnapshotCapturedAtMs(),
+      Instant.ofEpochMilli(snapshotA.getSnapshotCapturedAtMs()).toString(),
+      Instant.ofEpochMilli(snapshotB.getSnapshotCapturedAtMs()).toString(),
       added,
       removed,
       changed,
