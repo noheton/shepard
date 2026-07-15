@@ -136,8 +136,9 @@ public class ReferenceAnnotationRest {
     summary = "List all annotations on a reference.",
     description =
       "Returns annotations attached to the reference identified by `appId` (UUID v7). " +
-      "The response shape is kind-specific: timeseries annotations carry `startNs`/`endNs` " +
-      "(nanoseconds since Unix epoch); video annotations carry `startSeconds`/`endSeconds` " +
+      "The response shape is kind-specific: timeseries annotations carry `start`/`end` " +
+      "(ISO 8601 UTC strings, e.g. `\"2024-03-15T10:30:00.123456789Z\"`); " +
+      "video annotations carry `startSeconds`/`endSeconds` " +
       "(seconds from the start of the video). Common fields across all kinds: `appId`, " +
       "`label`, `description`, `aiGenerated`, `confidence`.\n\n" +
       "Pagination: `?page=0&pageSize=200` (default). `pageSize` is capped at 200.\n\n" +
@@ -173,8 +174,9 @@ public class ReferenceAnnotationRest {
     summary = "Create an annotation on a reference.",
     description =
       "Creates an annotation on the reference identified by `appId`. The body is kind-specific:\n\n" +
-      "**Timeseries** (`kind=timeseries`): `startNs` (long, required), `endNs` (long, optional — " +
-      "omit for a point annotation), `label` (string, required, non-blank), `description` (optional), " +
+      "**Timeseries** (`kind=timeseries`): `start` (ISO 8601 string, required; also accepts legacy `startNs` nanosecond long), " +
+      "`end` (ISO 8601 string, optional — omit for a point annotation; also accepts legacy `endNs`), " +
+      "`label` (string, required, non-blank), `description` (optional), " +
       "`aiGenerated` (boolean, default false), `confidence` (double [0.0, 1.0], optional).\n\n" +
       "**Video** (`kind=video`): `startSeconds` (double, required), `endSeconds` (double, optional), " +
       "`label` (string, required, non-blank), `description` (optional), `aiGenerated`, `confidence`.\n\n" +
