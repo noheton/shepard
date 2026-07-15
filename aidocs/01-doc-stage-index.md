@@ -547,7 +547,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire568-2026-07-12.md`](agent-findings/apisimp-sweep-fire568-2026-07-12.md) | APISIMP Sweep — fire-568 (2026-07-12) | 2026-07-12 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire568-bg-2026-07-12.md`](agent-findings/apisimp-sweep-fire568-bg-2026-07-12.md) | APISIMP Sweep — fire-568 background agent (2026-07-12) | 2026-07-12 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire577-2026-07-13.md`](agent-findings/apisimp-sweep-fire577-2026-07-13.md) | APISIMP sweep — fire-577 (2026-07-13) | 2026-07-13 | 2026-07-13 |
-| [`aidocs/agent-findings/apisimp-sweep-fire612-2026-07-15.md`](agent-findings/apisimp-sweep-fire612-2026-07-15.md) | APISIMP Sweep — fire-612 (2026-07-15) | 2026-07-15 | — |
+| [`aidocs/agent-findings/apisimp-sweep-fire612-2026-07-15.md`](agent-findings/apisimp-sweep-fire612-2026-07-15.md) | APISIMP Sweep — fire-612 (2026-07-15) | 2026-07-15 | 2026-07-15 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-07-13 |
 | [`aidocs/agent-findings/db-baseline-post-mffd.md`](agent-findings/db-baseline-post-mffd.md) | DB Baseline: post-MFFD ingest (2026-05-26) | 2026-05-26 | 2026-07-13 |
 | [`aidocs/agent-findings/db-opt2-hot-path-analysis.md`](agent-findings/db-opt2-hot-path-analysis.md) | DB-OPT2: Hot-path index analysis | 2026-05-26 | 2026-07-13 |
