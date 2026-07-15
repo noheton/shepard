@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.references.handlers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -9,6 +10,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -295,5 +297,62 @@ class TimeseriesReferenceKindHandlerTest {
     // "field" intentionally omitted → TimeseriesValidator throws InvalidBodyException (a WebApplicationException).
     assertThrows(WebApplicationException.class,
         () -> handler.patch(REF_APP_ID, Map.of("timeseries", List.of(badChannel))));
+  }
+
+  // ─── annotation map: ISO 8601 (APISIMP-TSREF-ANNOT-MAP-NS-TO-ISO) ───────────
+
+  private TimeseriesAnnotation makeAnnotation(long startNs, Long endNs) {
+    var a = new TimeseriesAnnotation();
+    a.setAppId("ann-app-id");
+    a.setStartNs(startNs);
+    a.setEndNs(endNs);
+    a.setLabel("spike");
+    return a;
+  }
+
+  @Test
+  void createAnnotation_acceptsIso8601Start_emitsIso8601Response() {
+    var body = new java.util.HashMap<String, Object>();
+    body.put("start", "1970-01-01T00:00:01Z");  // = 1_000_000_000 ns
+    body.put("label", "spike");
+    when(tsAnnotationDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var result = handler.createAnnotation(REF_APP_ID, body);
+
+    assertEquals("1970-01-01T00:00:01Z", result.get("start"));
+    assertNull(result.get("end"));
+  }
+
+  @Test
+  void createAnnotation_acceptsLegacyStartNs_emitsIso8601Response() {
+    var body = new java.util.HashMap<String, Object>();
+    body.put("startNs", 2_000_000_000L);  // = 1970-01-01T00:00:02Z
+    body.put("label", "ramp");
+    when(tsAnnotationDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var result = handler.createAnnotation(REF_APP_ID, body);
+
+    assertEquals("1970-01-01T00:00:02Z", result.get("start"));
+  }
+
+  @Test
+  void createAnnotation_missingStart_throwsBadRequest() {
+    assertThrows(BadRequestException.class,
+        () -> handler.createAnnotation(REF_APP_ID, Map.of("label", "no-start")));
+  }
+
+  @Test
+  void patchAnnotation_acceptsIso8601StartAndEnd() {
+    var a = makeAnnotation(1_000_000_000L, null);
+    when(tsAnnotationDAO.findByAppId("ann-app-id")).thenReturn(a);
+    when(tsAnnotationDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var patch = new java.util.HashMap<String, Object>();
+    patch.put("start", "1970-01-01T00:00:05Z"); // 5_000_000_000 ns
+    patch.put("end",   "1970-01-01T00:00:09Z"); // 9_000_000_000 ns
+    var result = handler.patchAnnotation(REF_APP_ID, "ann-app-id", patch);
+
+    assertEquals("1970-01-01T00:00:05Z", result.get("start"));
+    assertEquals("1970-01-01T00:00:09Z", result.get("end"));
   }
 }

@@ -56,9 +56,9 @@ class TimeseriesAnnotationKindHandlerTest {
 
     assertThat(result).hasSize(1);
     assertThat(result.get(0)).containsEntry("appId", ANN_ID)
-      .containsEntry("startNs", 1_000L)
+      .containsEntry("start", "1970-01-01T00:00:00.000001Z")
       .containsEntry("label", "spike")
-      .containsKey("endNs");
+      .containsKey("end");
   }
 
   @Test
@@ -76,7 +76,7 @@ class TimeseriesAnnotationKindHandlerTest {
     List<Map<String, Object>> result = handler.listAnnotations(REF_ID, 6L, 3);
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0)).containsEntry("startNs", 1_000L);
+    assertThat(result.get(0)).containsEntry("start", "1970-01-01T00:00:00.000001Z");
     verify(dao).findByTimeseriesReferenceAppId(REF_ID, 6L, 3);
   }
 
@@ -90,7 +90,7 @@ class TimeseriesAnnotationKindHandlerTest {
     verify(dao).createOrUpdate(any(TimeseriesAnnotation.class));
     verify(dao).linkToReference(eq(REF_ID), any());
     assertThat(result).containsEntry("label", "anomaly")
-      .containsEntry("startNs", 1_000L);
+      .containsEntry("start", "1970-01-01T00:00:00.000001Z");
   }
 
   @Test
@@ -122,7 +122,7 @@ class TimeseriesAnnotationKindHandlerTest {
     when(dao.findByAppId(ANN_ID)).thenReturn(a);
 
     Map<String, Object> result = handler.getAnnotation(REF_ID, ANN_ID);
-    assertThat(result).containsEntry("endNs", 2_000L)
+    assertThat(result).containsEntry("end", "1970-01-01T00:00:00.000002Z")
       .containsEntry("label", "interval");
   }
 

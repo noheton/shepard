@@ -251,14 +251,16 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
 
   @Override
   public Map<String, Object> createAnnotation(String refAppId, Map<String, Object> body) {
-    if (body == null || !body.containsKey("startNs") || body.get("startNs") == null) {
-      throw new BadRequestException("startNs is required for timeseries annotations");
+    Object startVal = body != null ? (body.containsKey("start") ? body.get("start") : body.get("startNs")) : null;
+    if (startVal == null) {
+      throw new BadRequestException("start (ISO 8601) or startNs (nanoseconds) is required for timeseries annotations");
     }
     String label = requireLabel(body);
     TimeseriesAnnotation a = new TimeseriesAnnotation();
-    a.setStartNs(toLong(body.get("startNs"), "startNs"));
-    if (body.containsKey("endNs") && body.get("endNs") != null) {
-      a.setEndNs(toLong(body.get("endNs"), "endNs"));
+    a.setStartNs(isoOrLongToNanos(startVal, "start"));
+    Object endVal = body.containsKey("end") ? body.get("end") : body.get("endNs");
+    if (endVal != null) {
+      a.setEndNs(isoOrLongToNanos(endVal, "end"));
     }
     a.setLabel(label);
     if (body.containsKey("description")) a.setDescription(asString(body.get("description")));
@@ -283,11 +285,13 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     TimeseriesAnnotation a = tsAnnotationDAO.findByAppId(annotationAppId);
     if (a == null) throw new NotFoundException("Annotation not found: " + annotationAppId);
     if (patch == null) return annotationToMap(a);
-    if (patch.containsKey("startNs") && patch.get("startNs") != null) {
-      a.setStartNs(toLong(patch.get("startNs"), "startNs"));
+    String startKey = patch.containsKey("start") ? "start" : "startNs";
+    if (patch.containsKey(startKey) && patch.get(startKey) != null) {
+      a.setStartNs(isoOrLongToNanos(patch.get(startKey), startKey));
     }
-    if (patch.containsKey("endNs")) {
-      a.setEndNs(patch.get("endNs") == null ? null : toLong(patch.get("endNs"), "endNs"));
+    String endKey = patch.containsKey("end") ? "end" : "endNs";
+    if (patch.containsKey(endKey)) {
+      a.setEndNs(patch.get(endKey) == null ? null : isoOrLongToNanos(patch.get(endKey), endKey));
     }
     if (patch.containsKey("label")) {
       String lbl = patch.get("label") instanceof String s ? s : null;
@@ -312,8 +316,8 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
   private static Map<String, Object> annotationToMap(TimeseriesAnnotation a) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("appId", a.getAppId());
-    m.put("startNs", a.getStartNs());
-    m.put("endNs", a.getEndNs());
+    m.put("start", nanosToIso(a.getStartNs()));
+    m.put("end", a.getEndNs() != null ? nanosToIso(a.getEndNs()) : null);
     m.put("label", a.getLabel());
     m.put("description", a.getDescription());
     m.put("aiGenerated", a.isAiGenerated());
