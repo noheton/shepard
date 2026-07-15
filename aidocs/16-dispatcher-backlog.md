@@ -5529,7 +5529,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/PermissionAuditEntryIO.java:28`; apisimp-sweep-2026-07-14-fire608.md §Finding3.
 
 ## APISIMP-METRICS-UPTIME-MILLIS-TO-ISO — convert `uptimeMillis` in `AdminMetricsSummaryIO` to ISO 8601 duration `String` (size: XS, sweep: fire-608)
-- **Status:** 🔲 queued
+- **Status:** ✅ shipped (fire-611, branch `APISIMP-METRICS-UPTIME-MILLIS-TO-ISO-1`)
 - **Why:** `AdminMetricsSummaryIO.java:33` carries `private long uptimeMillis` — a JVM uptime value in milliseconds. This is a duration, not a point-in-time timestamp. The canonical ISO 8601 representation for a duration is `PThh:mm:ss.sssS` form (e.g. `"PT3600.123S"`). While less critical than nanosecond timestamp fields, converting this to an ISO 8601 duration string (`java.time.Duration.ofMillis(uptimeMillis).toString()`) is self-describing and eliminates the unit ambiguity inherent in naming a field `*Millis`. Low priority; batch opportunistically with the next admin-metrics endpoint change.
 - **Fix:** Change `private long uptimeMillis` to `private String uptime`; emit via `Duration.ofMillis(uptime).toString()`; update `@Schema(description)` to document ISO 8601 duration format. Update admin-metrics frontend card to parse the string with `Duration.parse()` or display as-is.
 - **AC:** `GET /v2/admin/metrics-summary` response `uptime` field is a valid ISO 8601 duration string; admin dashboard card still shows human-readable uptime; `mvn verify -pl backend` green.

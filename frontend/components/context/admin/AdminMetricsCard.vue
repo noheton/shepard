@@ -31,11 +31,14 @@ function formatBytes(bytes: number): string {
   return `${mb.toFixed(0)} MB`;
 }
 
-function formatUptime(millis: number): string {
-  const totalSeconds = Math.floor(millis / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
+function formatUptime(iso: string): string {
+  // Java Duration.toString() emits PTxHxMx.xS — no days component, hours can exceed 24.
+  const match = iso.match(/^PT(?:(\d+)H)?(?:(\d+)M)?(?:[\d.]+S)?$/);
+  if (!match) return iso;
+  const totalHours = parseInt(match[1] ?? '0', 10);
+  const minutes = parseInt(match[2] ?? '0', 10);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
   const parts: string[] = [];
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
@@ -92,7 +95,7 @@ function heapColor(m: AdminMetricsSummary): string {
             <div class="text-caption text-medium-emphasis mb-1">Uptime</div>
             <v-chip color="primary" variant="tonal" size="small">
               <v-icon start icon="mdi-clock-outline" />
-              {{ formatUptime(metrics.uptimeMillis) }}
+              {{ formatUptime(metrics.uptime) }}
             </v-chip>
           </v-col>
 

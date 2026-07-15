@@ -30,7 +30,8 @@ class AdminMetricsSummaryServiceTest {
     var snap = service.snapshot();
     assertTrue(snap.getJvmHeapUsedBytes() > 0);
     assertTrue(snap.getJvmHeapMaxBytes() >= snap.getJvmHeapUsedBytes());
-    assertTrue(snap.getUptimeMillis() >= 0);
+    assertNotNull(snap.getUptime());
+    assertTrue(snap.getUptime().startsWith("PT"), "uptime must be ISO 8601 duration, got: " + snap.getUptime());
   }
 
   @Test

@@ -32,11 +32,11 @@ export interface AdminMetricsSummary {
      */
     jvmHeapMaxBytes: number;
     /**
-     * JVM uptime in milliseconds.
-     * @type {number}
+     * JVM uptime as an ISO 8601 duration string (e.g. "PT5H30M").
+     * @type {string}
      * @memberof AdminMetricsSummary
      */
-    uptimeMillis: number;
+    uptime: string;
     /**
      * Total HTTP requests observed by the embedded server since startup.
      * @type {number}
@@ -75,7 +75,7 @@ export interface AdminMetricsSummary {
 export function instanceOfAdminMetricsSummary(value: object): value is AdminMetricsSummary {
     if (!('jvmHeapUsedBytes' in value) || value['jvmHeapUsedBytes'] === undefined) return false;
     if (!('jvmHeapMaxBytes' in value) || value['jvmHeapMaxBytes'] === undefined) return false;
-    if (!('uptimeMillis' in value) || value['uptimeMillis'] === undefined) return false;
+    if (!('uptime' in value) || value['uptime'] === undefined) return false;
     if (!('httpRequestsTotal' in value) || value['httpRequestsTotal'] === undefined) return false;
     if (!('permissionsCacheHits' in value) || value['permissionsCacheHits'] === undefined) return false;
     if (!('permissionsCacheMisses' in value) || value['permissionsCacheMisses'] === undefined) return false;
@@ -94,7 +94,7 @@ export function AdminMetricsSummaryFromJSONTyped(json: any, ignoreDiscriminator:
         
         'jvmHeapUsedBytes': json['jvmHeapUsedBytes'],
         'jvmHeapMaxBytes': json['jvmHeapMaxBytes'],
-        'uptimeMillis': json['uptimeMillis'],
+        'uptime': json['uptime'],
         'httpRequestsTotal': json['httpRequestsTotal'],
         'httpMeanRequestMillis': json['httpMeanRequestMillis'] == null ? undefined : json['httpMeanRequestMillis'],
         'permissionsCacheHits': json['permissionsCacheHits'],
@@ -111,7 +111,7 @@ export function AdminMetricsSummaryToJSON(value?: AdminMetricsSummary | null): a
         
         'jvmHeapUsedBytes': value['jvmHeapUsedBytes'],
         'jvmHeapMaxBytes': value['jvmHeapMaxBytes'],
-        'uptimeMillis': value['uptimeMillis'],
+        'uptime': value['uptime'],
         'httpRequestsTotal': value['httpRequestsTotal'],
         'httpMeanRequestMillis': value['httpMeanRequestMillis'],
         'permissionsCacheHits': value['permissionsCacheHits'],

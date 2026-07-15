@@ -29,8 +29,8 @@ public class AdminMetricsSummaryIO {
   @Schema(required = true, description = "Heap bytes maximum the JVM can grow to.")
   private long jvmHeapMaxBytes;
 
-  @Schema(required = true, description = "JVM uptime in milliseconds.")
-  private long uptimeMillis;
+  @Schema(required = true, description = "JVM uptime as an ISO 8601 duration string (e.g. \"PT5H30M\").")
+  private String uptime;
 
   @Schema(required = true, description = "Total HTTP requests observed by the embedded server since startup.")
   private long httpRequestsTotal;
