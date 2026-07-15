@@ -31,7 +31,11 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
   private List<Timeseries> timeseries;
 
   @NotNull
-  @Schema(required = true)
+  @Schema(
+      required = true,
+      deprecated = true,
+      description =
+          "Deprecated — use timeseriesContainerAppId. Will be removed after L2e migration window.")
   private long timeseriesContainerId;
 
   /**
