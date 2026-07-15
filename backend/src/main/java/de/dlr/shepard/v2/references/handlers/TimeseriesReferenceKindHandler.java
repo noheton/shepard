@@ -91,10 +91,14 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
         ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getAppId() : null);
     io.put("timeseries", kindIO.getTimeseries());
     io.put("timeReference", kindIO.getTimeReference());
-    io.put("wallClockOffset", kindIO.getWallClockOffset());
+    // APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS: nanosecond epoch → ISO 8601 UTC instant
+    Long wco = kindIO.getWallClockOffset();
+    io.put("wallClockOffset", wco != null ? nanosToIso(wco) : null);
     io.put("wallClockOffsetSource", kindIO.getWallClockOffsetSource());
     io.put("qualityScore", kindIO.getQualityScore());
-    io.put("lastScoredAt", kindIO.getLastScoredAt());
+    // APISIMP-TSREF-LASTSCOREDAT-MS-TO-ISO: epoch-ms → ISO 8601 UTC instant (response-only)
+    Long lsa = kindIO.getLastScoredAt();
+    io.put("lastScoredAt", lsa != null ? Instant.ofEpochMilli(lsa).toString() : null);
     return io;
   }
 
@@ -103,15 +107,18 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     if (body == null) throw new BadRequestException("create body is required for kind=timeseries");
     DataObject parent = resolveParent(dataObjectAppId);
 
-    // APISIMP-TSREF-TIMEWINDOW-NANOS: accept ISO 8601 start/end; normalise to nanosecond longs
-    // before ObjectMapper deserialization so TimeseriesReferenceIO.start/end (long primitives) bind
-    // correctly regardless of whether the caller sends ISO 8601 strings or legacy nanosecond longs.
+    // APISIMP-TSREF-TIMEWINDOW-NANOS / APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS: accept ISO 8601 for
+    // start/end/wallClockOffset; normalise to nanosecond longs before ObjectMapper deserialization
+    // so TimeseriesReferenceIO long primitives / Long fields bind correctly.
     Map<String, Object> normalized = new HashMap<>(body);
     if (normalized.containsKey("start") && normalized.get("start") != null) {
       normalized.put("start", isoOrLongToNanos(normalized.get("start"), "start"));
     }
     if (normalized.containsKey("end") && normalized.get("end") != null) {
       normalized.put("end", isoOrLongToNanos(normalized.get("end"), "end"));
+    }
+    if (normalized.containsKey("wallClockOffset") && normalized.get("wallClockOffset") instanceof String) {
+      normalized.put("wallClockOffset", isoOrLongToNanos(normalized.get("wallClockOffset"), "wallClockOffset"));
     }
 
     TimeseriesReferenceIO ioIn;
@@ -134,14 +141,17 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     TimeseriesReference ref = timeseriesReferenceDAO.findByAppId(appId);
     if (ref == null) throw new NotFoundException("No TimeseriesReference with appId " + appId);
 
-    // APISIMP-TSREF-TIMEWINDOW-NANOS: normalise ISO 8601 start/end strings to nanosecond longs
-    // before ObjectMapper deserialises into TimeseriesReferenceIO (primitive long fields).
+    // APISIMP-TSREF-TIMEWINDOW-NANOS / APISIMP-TSREF-WALLCLOCK-OFFSET-NANOS: normalise ISO 8601
+    // start/end/wallClockOffset strings to nanosecond longs before ObjectMapper deserialises.
     Map<String, Object> normalized = new HashMap<>(patch);
     if (normalized.containsKey("start") && normalized.get("start") instanceof String) {
       normalized.put("start", isoOrLongToNanos(normalized.get("start"), "start"));
     }
     if (normalized.containsKey("end") && normalized.get("end") instanceof String) {
       normalized.put("end", isoOrLongToNanos(normalized.get("end"), "end"));
+    }
+    if (normalized.containsKey("wallClockOffset") && normalized.get("wallClockOffset") instanceof String) {
+      normalized.put("wallClockOffset", isoOrLongToNanos(normalized.get("wallClockOffset"), "wallClockOffset"));
     }
 
     TimeseriesReferenceIO body;

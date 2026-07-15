@@ -58,7 +58,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
    * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Schema(description = "Epoch millis of the last quality-score run. null = never scored. Read-only.")
+  @Schema(description = "ISO 8601 UTC instant of the last quality-score run. null = never scored. Read-only. (v1 wire: epoch-ms Long; v2 handler converts to ISO 8601.)")
   private Long lastScoredAt;
 
   /**
@@ -80,7 +80,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
    * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Schema(description = "TM1: UTC nanoseconds of experiment t=0. Only meaningful when timeReference=EXPERIMENT_RELATIVE.")
+  @Schema(description = "TM1: ISO 8601 UTC instant of experiment t=0. Only meaningful when timeReference=EXPERIMENT_RELATIVE. (v1 wire: epoch-ns Long; v2 handler converts to ISO 8601.)")
   private Long wallClockOffset;
 
   /**
