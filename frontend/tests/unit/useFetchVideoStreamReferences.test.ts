@@ -42,7 +42,7 @@ const RAW_VIDEO_REF = {
     frameRate: 29.97,
     videoCodec: "h264",
     audioCodec: "aac",
-    wallClockTimestamp: 1700000000,
+    wallClockTimestamp: "2023-11-14T22:13:20Z",
   },
 };
 
@@ -103,7 +103,7 @@ describe("useFetchVideoStreamReferences", () => {
     expect(ref.frameRate).toBe(29.97);
     expect(ref.videoCodec).toBe("h264");
     expect(ref.audioCodec).toBe("aac");
-    expect(ref.wallClockTimestamp).toBe(1700000000);
+    expect(ref.wallClockTimestamp).toBe("2023-11-14T22:13:20Z");
   });
 
   it("leaves references empty and clears isLoading on API error", async () => {

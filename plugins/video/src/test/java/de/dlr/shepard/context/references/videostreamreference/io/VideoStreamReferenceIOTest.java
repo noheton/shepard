@@ -50,7 +50,7 @@ class VideoStreamReferenceIOTest {
     assertThat(io.getFrameRate()).isEqualTo(30.0);
     assertThat(io.getVideoCodec()).isEqualTo("h264");
     assertThat(io.getAudioCodec()).isEqualTo("aac");
-    assertThat(io.getWallClockTimestamp()).isEqualTo(1_710_495_000_000_000_000L);
+    assertThat(io.getWallClockTimestamp()).isEqualTo("2024-03-15T09:30:00Z");
   }
 
   @Test

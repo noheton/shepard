@@ -33,7 +33,7 @@ export interface VideoStreamReferenceIO {
   frameRate?: number | null;
   videoCodec?: string | null;
   audioCodec?: string | null;
-  wallClockTimestamp?: number | null;
+  wallClockTimestamp?: string | null;
 }
 
 interface ReferenceV2IO {
@@ -71,7 +71,7 @@ function toVideoStreamReferenceIO(r: ReferenceV2IO): VideoStreamReferenceIO {
     frameRate: (p.frameRate as number | null | undefined) ?? null,
     videoCodec: (p.videoCodec as string | null | undefined) ?? null,
     audioCodec: (p.audioCodec as string | null | undefined) ?? null,
-    wallClockTimestamp: (p.wallClockTimestamp as number | null | undefined) ?? null,
+    wallClockTimestamp: (p.wallClockTimestamp as string | null | undefined) ?? null,
   };
 }
 

@@ -19,6 +19,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,8 @@ class VideoStreamReferenceKindHandlerLogic {
     io.put("proxyStatus", proxyStatusRaw);
     io.put("proxyAvailable", proxyAvailable);
     io.put("proxyOid", proxyLocator);
-    io.put("wallClockTimestamp", ref.getWallClockTimestamp());
+    Long wct = ref.getWallClockTimestamp();
+    io.put("wallClockTimestamp", wct != null ? Instant.ofEpochSecond(0L, wct).toString() : null);
     return io;
   }
 

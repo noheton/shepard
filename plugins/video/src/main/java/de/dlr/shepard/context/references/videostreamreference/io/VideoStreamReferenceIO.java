@@ -2,6 +2,7 @@ package de.dlr.shepard.context.references.videostreamreference.io;
 
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
+import java.time.Instant;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -69,8 +70,9 @@ public class VideoStreamReferenceIO extends BasicReferenceIO {
   private String audioCodec;
 
   /**
-   * Wall-clock timestamp as nanoseconds since the Unix epoch (UTC).
-   * Extracted from ffprobe's {@code format.tags.creation_time} ISO-8601 tag.
+   * Wall-clock timestamp as an ISO 8601 UTC string (e.g. {@code "2024-03-15T09:30:00Z"}).
+   * Extracted from ffprobe's {@code format.tags.creation_time} tag, stored internally as
+   * nanoseconds since Unix epoch, emitted on the wire as a self-describing instant string.
    * Null if the tag is absent or unparseable.
    *
    * <p>This is the temporal anchor connecting the video to the TM1
@@ -78,11 +80,12 @@ public class VideoStreamReferenceIO extends BasicReferenceIO {
    */
   @Schema(
     readOnly = true,
-    description = "Wall-clock timestamp as UTC nanoseconds since epoch, from ffprobe creation_time. " +
-                  "Null if not present in the video file. " +
-                  "TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset."
+    description = "Wall-clock timestamp as ISO 8601 UTC string (e.g. '2024-03-15T09:30:00Z'), " +
+                  "from ffprobe creation_time. Null if not present in the video file. " +
+                  "TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset.",
+    example = "2024-03-15T09:30:00Z"
   )
-  private Long wallClockTimestamp;
+  private String wallClockTimestamp;
 
   public VideoStreamReferenceIO(VideoStreamReference ref) {
     super(ref);
@@ -94,7 +97,8 @@ public class VideoStreamReferenceIO extends BasicReferenceIO {
     this.frameRate = ref.getFrameRate();
     this.videoCodec = ref.getVideoCodec();
     this.audioCodec = ref.getAudioCodec();
-    this.wallClockTimestamp = ref.getWallClockTimestamp();
+    Long wct = ref.getWallClockTimestamp();
+    this.wallClockTimestamp = wct != null ? Instant.ofEpochSecond(0L, wct).toString() : null;
   }
 
   @Override

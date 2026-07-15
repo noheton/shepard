@@ -5536,7 +5536,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/watches/io/WatchIO.java:39`; `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/io/CollectionWatcherIO.java:23`; apisimp-sweep-fire612-2026-07-15.md §Finding1-2.
 
 ## APISIMP-VIDEO-WALL-CLOCK-TO-ISO — convert `wallClockTimestamp: Long` (nanoseconds) to ISO 8601 `String` in `VideoStreamReferenceIO` (size: XS, sweep: fire-612)
-- **Status:** 🔲 queued
+- **Status:** 🚧 in-flight (fire-612, branch `APISIMP-VIDEO-WALL-CLOCK-TO-ISO`)
 - **Why:** `plugins/video/src/main/java/de/dlr/shepard/context/references/videostreamreference/io/VideoStreamReferenceIO.java:85` carries `private Long wallClockTimestamp` — a UTC nanosecond wall-clock timestamp derived from ffprobe's `creation_time`. This is a metadata instant (equivalent to `recordedAt`), not raw sensor channel data. The APISIMP mandate applies: emit as ISO 8601 UTC string.
 - **Fix:** Change `Long wallClockTimestamp` to `String wallClockTimestamp`; in the `VideoStreamReferenceIO(VideoStreamReference ref)` constructor replace `this.wallClockTimestamp = ref.getWallClockTimestamp()` with `Long ns = ref.getWallClockTimestamp(); this.wallClockTimestamp = ns != null ? Instant.ofEpochSecond(ns / 1_000_000_000L, ns % 1_000_000_000L).toString() : null;`; also update the handler in `VideoStreamReferenceKindHandlerLogic` (line 74) that writes the raw long into the generic map. Update `@Schema` description. Check if any frontend/MCP consumer parses this as a number and update those.
 - **AC:** `GET /v2/…/video-stream-references/{appId}` response `wallClockTimestamp` is a valid ISO 8601 string; `mvn verify -pl backend` + `npm run typecheck` green.
