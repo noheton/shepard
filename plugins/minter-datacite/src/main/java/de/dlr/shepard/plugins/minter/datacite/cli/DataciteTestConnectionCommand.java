@@ -43,7 +43,7 @@ public final class DataciteTestConnectionCommand extends AbstractCommand {
     TableFormatter table = new TableFormatter("FIELD", "VALUE");
     table.addRow("reachable", Boolean.toString(result.isReachable()));
     table.addRow("statusCode", Integer.toString(result.getStatusCode()));
-    table.addRow("latencyMs", Long.toString(result.getLatencyMs()));
+    table.addRow("latency", result.getLatency() == null ? "(unavailable)" : result.getLatency());
     table.addRow("apiBaseUrl", result.getApiBaseUrl() == null ? "(unset)" : result.getApiBaseUrl());
     if (result.getDetail() != null) {
       table.addRow("detail", result.getDetail());

@@ -114,12 +114,13 @@ class DataciteIoTest {
 
   @Test
   void testConnectionIO_serialisesAllFields() throws Exception {
-    DataciteTestConnectionIO io = new DataciteTestConnectionIO(true, 200, 42L, "https://api.test.datacite.org", null);
+    DataciteTestConnectionIO io = new DataciteTestConnectionIO(true, 200, "PT0.042S", "https://api.test.datacite.org", null);
     String json = mapper.writeValueAsString(io);
     JsonNode tree = mapper.readTree(json);
     assertThat(tree.path("reachable").asBoolean()).isTrue();
     assertThat(tree.path("statusCode").asInt()).isEqualTo(200);
-    assertThat(tree.path("latencyMs").asLong()).isEqualTo(42L);
+    assertThat(tree.path("latency").asText()).isEqualTo("PT0.042S");
+    assertThat(tree.has("latencyMs")).isFalse();
     assertThat(tree.path("apiBaseUrl").asText()).isEqualTo("https://api.test.datacite.org");
     // NON_NULL — `detail` is omitted entirely.
     assertThat(tree.has("detail")).isFalse();

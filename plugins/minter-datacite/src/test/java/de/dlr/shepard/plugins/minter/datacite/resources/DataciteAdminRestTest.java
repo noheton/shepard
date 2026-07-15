@@ -99,6 +99,7 @@ class DataciteAdminRestTest {
     DataciteTestConnectionIO body = (DataciteTestConnectionIO) r.getEntity();
     assertThat(body.reachable()).isTrue();
     assertThat(body.statusCode()).isEqualTo(200);
+    assertThat(body.latency()).startsWith("PT");
     assertThat(body.apiBaseUrl()).isEqualTo("https://api.test.datacite.org");
   }
 

@@ -5599,7 +5599,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/AdminMetricsSummaryIO.java:39`; sibling of APISIMP-METRICS-UPTIME-MILLIS-TO-ISO.
 
 ## APISIMP-MCP-ANNOTATION-VALID-EPOCH — rename `update_annotation` MCP tool args `validFromMillis`/`validUntilMillis` (epoch-ms `Long`) to `validFrom`/`validUntil` (ISO 8601 UTC `String`) (size: XS, sweep: fire-616)
-- **Status:** 🔄 in PR (fire-616, branch APISIMP-MCP-ANNOTATION-VALID-EPOCH, PR #2581)
+- **Status:** ✅ merged PR #2581 (fire-617)
 - **Why:** `AnnotationMcpTools.updateAnnotation()` at lines 356–357 accepted `@ToolArg(name = "validFromMillis") Long validFromMillis` and `@ToolArg(name = "validUntilMillis") Long validUntilMillis` — raw epoch-millisecond inputs on the MCP `update_annotation` tool. The `get_annotation` tool's description (line 225) also referenced `validFromMillis, validUntilMillis`. The REST wire (`UpdateAnnotationIO.java`, `AnnotationIO.java`) already uses ISO 8601 strings (`validFrom`/`validUntil`) since APISIMP-ANNOT-VALID-MILLIS (fire-601). The `toDetailMap()` output at lines 703–704 likewise already emitted ISO 8601 strings via `toIso()`. Only the write input args were inconsistent — the last remaining epoch-millis-as-numeric slot on the annotation MCP surface.
 - **Fix:** Rename `@ToolArg` params from `validFromMillis`/`validUntilMillis` (`Long`) to `validFrom`/`validUntil` (`String`). Update `get_annotation` and `update_annotation` tool descriptions. In `updateAnnotation()` body, call `parseIso(validFrom)` / `parseIso(validUntil)` via new private `parseIso(String iso)` helper: `Instant.parse(iso.trim()).toEpochMilli()` with `DateTimeParseException` → `McpToolSupport.invalidParams()`. Add import `java.time.format.DateTimeParseException`. MCP args are not part of the generated TypeScript client or openapi.json — no client regeneration needed.
 - **AC:** `update_annotation` MCP tool arg `validFromMillis` (Long, epoch-ms) replaced by `validFrom` (String, ISO 8601 UTC, e.g. `"2026-01-01T00:00:00Z"`); `validUntilMillis` → `validUntil` likewise. `get_annotation` description updated to reference `validFrom`/`validUntil`. `mvn verify -pl backend` green. No v1 REST surface affected. No openapi.json change needed.
@@ -5611,3 +5611,26 @@ picks these up. Terse by design.
 - **Fix:** In `openapi.json`: (a) `VideoStreamReferenceIO.wallClockTimestamp` — remove `"format":"int64"`, change `"type":"integer"` → `"type":"string"`, update description to say ISO 8601 UTC instant; (b) `ProvenanceStats.bucketMillis` → `bucketDuration`, remove `"format":"int64"`, change `"type":"integer"` → `"type":"string"`, update description + `required` array; (c) `AdminMetricsSummary.uptimeMillis` → `uptime`, same type change, update description + `required` array. In `VideoStreamReference.ts`: change `readonly wallClockTimestamp?: number` → `string`. No Java backend changes needed — Java is already correct.
 - **AC:** `openapi.json` declares `wallClockTimestamp` as `string`, `bucketDuration` as `string`, `uptime` as `string`; no stale `int64` fields for these names; `VideoStreamReference.ts` property type is `string`; `npm run typecheck` green.
 - **First refs:** `backend-client/.openapi-source/openapi.json:527,2614,11519`; `backend-client/src/models/VideoStreamReference.ts:135`; discovered during fire-618 openapi audit.
+
+## APISIMP-SNAPSHOT-CAPTURED-AT-MS — `SnapshotDiffIO` emits epoch-ms longs for `snapshotACapturedAtMs` / `snapshotBCapturedAtMs` (size: XS, sweep: fire-617)
+- **Status:** 🔄 in PR (fire-618, PR #2582, branch APISIMP-SNAPSHOT-CAPTURED-AT-MS)
+- **Why:** `SnapshotDiffIO.java` used `long snapshotACapturedAtMs` / `long snapshotBCapturedAtMs` (epoch milliseconds) instead of ISO 8601 strings. Callers had to divide by 1000 and convert client-side. Fixed per APISIMP mandate.
+- **Fix:** Renamed fields to `snapshotACapturedAt` / `snapshotBCapturedAt` (type `String`); `SnapshotDiffRest` converts via `Instant.ofEpochMilli(...).toString()`; `SnapshotDiffRestTest` asserts ISO strings (`"2023-11-14T22:13:20Z"` / `"2023-11-14T22:30:00Z"`); TypeScript model + openapi.json updated.
+- **AC:** `GET /v2/snapshots/{a}/diff/{b}` response carries `snapshotACapturedAt: "2023-11-14T22:13:20Z"` (not a number); `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/context/snapshot/io/SnapshotDiffIO.java`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotDiffRest.java`.
+
+
+## APISIMP-DATACITE-LATENCY-MS — `DataciteTestConnectionIO` emits epoch-ms long for `latencyMs` (size: XS, sweep: fire-617)
+- **Status:** 🔄 in PR (fire-618, PR #2583, branch APISIMP-DATACITE-LATENCY-MS)
+- **Why:** `DataciteTestConnectionIO.java` used `long latencyMs` (milliseconds since epoch — actually a duration, but serialised as a plain long). Callers had to format the duration client-side. Fixed per APISIMP mandate.
+- **Fix:** Renamed `latencyMs` → `latency` (type `String`); `DataciteAdminRest` converts via `Duration.ofMillis(latencyMs).toString()`; unconfigured case emits `"PT0S"`; `DataciteAdminRestTest` and `DataciteIoTest` updated; CLI DTO `DataciteTestConnection.latencyMs` → `latency`; CLI table row label `"latencyMs"` → `"latency"`; openapi.json + TypeScript model updated.
+- **AC:** `POST /v2/admin/minters/datacite/test-connection` response carries `latency: "PT0.123S"` (not a number); `mvn verify -pl plugins/minter-datacite` green.
+- **First refs:** `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/io/DataciteTestConnectionIO.java`; `plugins/minter-datacite/src/main/java/de/dlr/shepard/plugins/minter/datacite/resources/DataciteAdminRest.java`.
+
+
+## APISIMP-EPIC-LATENCY-MS — `EpicTestConnectionIO` emits epoch-ms long for `latencyMs` (size: XS, sweep: fire-617)
+- **Status:** 🔄 in PR (fire-618, PR #2583, branch APISIMP-DATACITE-LATENCY-MS)
+- **Why:** `EpicTestConnectionIO.java` used `long latencyMs` (same shape as APISIMP-DATACITE-LATENCY-MS). Fixed in the same PR.
+- **Fix:** Renamed `latencyMs` → `latency` (type `String`); `EpicAdminRest` converts via `Duration.ofMillis(latencyMs).toString()`; unconfigured case emits `"PT0S"`; `EpicAdminRestTest` updated; CLI DTO `EpicTestConnection.latencyMs` → `latency`; CLI table row label `"latencyMs"` → `"latency"`; openapi.json + TypeScript model updated.
+- **AC:** `POST /v2/admin/minters/epic/test-connection` response carries `latency: "PT0.123S"` (not a number); `mvn verify -pl plugins/minter-epic` green.
+- **First refs:** `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/io/EpicTestConnectionIO.java`; `plugins/minter-epic/src/main/java/de/dlr/shepard/plugins/minter/epic/resources/EpicAdminRest.java`.

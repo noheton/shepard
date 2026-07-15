@@ -7765,9 +7765,10 @@
             "format": "int32",
             "type": "integer"
           },
-          "latencyMs": {
-            "format": "int64",
-            "type": "integer"
+          "latency" : {
+            "description" : "ISO 8601 duration of the round-trip probe, e.g. PT0.123S.",
+            "example" : "PT0.123S",
+            "type" : "string"
           },
           "apiBaseUrl": {
             "type": "string"
@@ -12197,9 +12198,10 @@
             "format": "int32",
             "type": "integer"
           },
-          "latencyMs": {
-            "format": "int64",
-            "type": "integer"
+          "latency" : {
+            "description" : "ISO 8601 duration of the round-trip probe, e.g. PT0.123S.",
+            "example" : "PT0.123S",
+            "type" : "string"
           },
           "apiBaseUrl": {
             "type": "string"
