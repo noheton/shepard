@@ -27,9 +27,18 @@ export interface CrossDoSeries {
 export interface CrossDoRequest {
   dataObjectAppIds: string[];
   channelPredicate: string;
-  start: number; // ns since epoch
-  end: number;
+  start: string; // ISO 8601 UTC (e.g. "2024-06-01T08:00:00Z")
+  end: string;
   downsampleTo?: number;
+}
+
+/** Convert nanoseconds-since-epoch to an ISO 8601 UTC string with nanosecond precision. */
+export function nsToIso(epochNs: number): string {
+  const sec = Math.floor(epochNs / 1_000_000_000);
+  const nano = epochNs % 1_000_000_000;
+  const d = new Date(sec * 1000);
+  const base = d.toISOString().replace(/\.\d{3}Z$/, "");
+  return `${base}.${String(nano).padStart(9, "0")}Z`;
 }
 
 function v2BaseUrl(): string {

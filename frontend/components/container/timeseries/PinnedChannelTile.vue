@@ -11,6 +11,7 @@
  */
 import type { PinnedChannel } from "~/composables/container/usePinnedChannels";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
+import { nsToIso } from "~/composables/containers/useCrossDoBulkData";
 
 const props = defineProps<{
   channel: PinnedChannel;
@@ -111,7 +112,7 @@ async function fetchLatest() {
     const url =
       `${v2Base()}/v2/containers/${containerKey}` +
       `/channels/${props.channel.shepardId}/data` +
-      `?start=${startNs}&end=${endNs}&downsample=lttb&maxPoints=60`;
+      `?start=${nsToIso(startNs)}&end=${nsToIso(endNs)}&downsample=lttb&maxPoints=60`;
     const res = await fetch(url, { headers: authHeaders() });
     if (!res.ok) {
       error.value = true;
