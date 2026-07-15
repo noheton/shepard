@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.lang.management.ManagementFactory;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,7 +33,8 @@ public class AdminMetricsSummaryService {
     Runtime rt = Runtime.getRuntime();
     long heapUsed = rt.totalMemory() - rt.freeMemory();
     long heapMax = rt.maxMemory();
-    long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+    long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
+    String uptime = Duration.ofMillis(uptimeMillis).toString();
 
     // HTTP requests — sum across all per-tag Timers.
     long httpTotal = 0L;
