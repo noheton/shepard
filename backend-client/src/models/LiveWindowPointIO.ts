@@ -20,11 +20,11 @@ import { mapValues } from '../runtime';
  */
 export interface LiveWindowPointIO {
     /**
-     * Epoch milliseconds (UTC).
-     * @type {number}
+     * ISO 8601 UTC timestamp of this data point.
+     * @type {string}
      * @memberof LiveWindowPointIO
      */
-    timestamp?: number;
+    timestamp?: string;
     /**
      * The channel value at this timestamp.
      * @type {any}
