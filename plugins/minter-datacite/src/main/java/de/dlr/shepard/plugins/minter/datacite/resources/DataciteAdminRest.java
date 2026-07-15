@@ -8,6 +8,7 @@ import de.dlr.shepard.plugins.minter.datacite.entities.DataciteMinterConfig;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteCredentialIO;
 import de.dlr.shepard.plugins.minter.datacite.io.DataciteTestConnectionIO;
 import de.dlr.shepard.plugins.minter.datacite.services.DataciteMinterConfigService;
+import java.time.Duration;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -114,7 +115,7 @@ public class DataciteAdminRest {
     String baseUrl = cfg.getApiBaseUrl();
     if (baseUrl == null || baseUrl.isBlank()) {
       return Response.ok(
-        new DataciteTestConnectionIO(false, 0, 0L, null, "apiBaseUrl is not configured")
+        new DataciteTestConnectionIO(false, 0, "PT0S", null, "apiBaseUrl is not configured")
       ).build();
     }
     String url = stripTrailingSlash(baseUrl) + "/heartbeat";
@@ -124,7 +125,8 @@ public class DataciteAdminRest {
     boolean reachable = response.statusCode() >= 200 && response.statusCode() < 400;
     String detail = reachable ? null : response.body();
     return Response.ok(
-      new DataciteTestConnectionIO(reachable, response.statusCode(), latencyMs, baseUrl, detail)
+      new DataciteTestConnectionIO(reachable, response.statusCode(),
+          Duration.ofMillis(latencyMs).toString(), baseUrl, detail)
     ).build();
   }
 
