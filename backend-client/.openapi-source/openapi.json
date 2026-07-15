@@ -525,9 +525,8 @@
             "readOnly": true
           },
           "wallClockTimestamp": {
-            "format": "int64",
-            "description": "Wall-clock timestamp as UTC nanoseconds since epoch, from ffprobe creation_time. Null if not present in the video file. TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset.",
-            "type": "integer",
+            "description": "Wall-clock timestamp as ISO 8601 UTC instant (e.g. \"2024-06-01T12:34:56.789Z\"), derived from ffprobe creation_time. Null if not present in the video file. TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset.",
+            "type": "string",
             "readOnly": true
           }
         }
@@ -2611,7 +2610,7 @@
           "scope",
           "since",
           "until",
-          "bucketMillis",
+          "bucketDuration",
           "totalCount",
           "distinctAgents",
           "totalsByActionKind",
@@ -2637,10 +2636,9 @@
             "description": "Inclusive upper bound of the window (ISO 8601 UTC, e.g. '2026-12-31T23:59:59Z').",
             "type": "string"
           },
-          "bucketMillis": {
-            "format": "int64",
-            "description": "Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000).",
-            "type": "integer"
+          "bucketDuration": {
+            "description": "Width of one sparkline bucket as ISO 8601 duration (e.g. \"PT86400S\" for daily, \"PT604800S\" for weekly).",
+            "type": "string"
           },
           "totalCount": {
             "format": "int64",
@@ -11516,7 +11514,7 @@
         "required": [
           "jvmHeapUsedBytes",
           "jvmHeapMaxBytes",
-          "uptimeMillis",
+          "uptime",
           "httpRequestsTotal",
           "permissionsCacheHits",
           "permissionsCacheMisses"
@@ -11533,10 +11531,9 @@
             "description": "Heap bytes maximum the JVM can grow to.",
             "type": "integer"
           },
-          "uptimeMillis": {
-            "format": "int64",
-            "description": "JVM uptime in milliseconds.",
-            "type": "integer"
+          "uptime": {
+            "description": "JVM uptime as an ISO 8601 duration string (e.g. \"PT5H30M\").",
+            "type": "string"
           },
           "httpRequestsTotal": {
             "format": "int64",

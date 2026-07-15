@@ -128,11 +128,11 @@ export interface VideoStreamReference {
      */
     readonly audioCodec?: string;
     /**
-     * Wall-clock timestamp as UTC nanoseconds since epoch, from ffprobe creation_time. Null if not present in the video file. TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset.
-     * @type {number}
+     * Wall-clock timestamp as ISO 8601 UTC instant, derived from ffprobe creation_time. Null if not present in the video file. TM1 temporal anchor: use to align with TimeseriesReference.wallClockOffset.
+     * @type {string}
      * @memberof VideoStreamReference
      */
-    readonly wallClockTimestamp?: number;
+    readonly wallClockTimestamp?: string;
 }
 
 /**
