@@ -12,6 +12,7 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -284,8 +285,8 @@ public class SnapshotMcpTools {
       SnapshotDiffIO diff = new SnapshotDiffIO(
         snapshotA.getAppId(),
         snapshotB.getAppId(),
-        snapshotA.getSnapshotCapturedAtMs(),
-        snapshotB.getSnapshotCapturedAtMs(),
+        Instant.ofEpochMilli(snapshotA.getSnapshotCapturedAtMs()).toString(),
+        Instant.ofEpochMilli(snapshotB.getSnapshotCapturedAtMs()).toString(),
         added,
         removed,
         changed,
