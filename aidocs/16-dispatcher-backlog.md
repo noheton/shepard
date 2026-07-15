@@ -5550,7 +5550,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/io/AdminMetricsSummaryIO.java:33`; apisimp-sweep-2026-07-14-fire608.md §Finding4.
 
 ## APISIMP-PROVSTATS-BUCKET-MILLIS — rename `bucketMillis` in `ProvenanceStatsIO` to `bucketDuration` (ISO 8601 duration `String`) (size: XS, sweep: fire-613)
-- **Status:** 🔲 queued
+- **Status:** 🔄 in PR #2575 (fire-613, branch APISIMP-PROVSTATS-BUCKET-MILLIS)
 - **Why:** `ProvenanceStatsIO.java:44` carries `private long bucketMillis` — the sparkline bucket-width duration exposed as raw milliseconds on `GET /v2/provenance/stats`. The `@Schema` description reads "Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000)." This is a duration-as-number violation of the APISIMP mandate — the same mandate that required ISO 8601 for `uptimeMillis` (APISIMP-METRICS-UPTIME-MILLIS-TO-ISO, fire-611). The `APISIMP-PROVENANCE-STATS-BUCKET-ARRAY` row replaced raw `long[]` arrays with typed `BucketIO` records but left this field unconverted.
 - **Fix:** Rename to `bucketDuration`, change type to `String`, emit via `Duration.ofMillis(bucketMs).toString()` (e.g. `"PT86400S"` daily, `"PT604800S"` weekly). Update `ProvenanceStatsService.compute()` to pass the ISO 8601 string. Update `@Schema(description)` and `example`. Update any frontend consumer that parses `bucketMillis` as a number (use `Duration.parse(bucketDuration).toMillis()` if ms is still needed client-side).
 - **AC:** `GET /v2/provenance/stats` returns `"bucketDuration": "PT86400S"` (not `"bucketMillis": 86400000`). OpenAPI schema shows `type: string`. `mvn verify -pl backend` green; `npm run typecheck` green.
