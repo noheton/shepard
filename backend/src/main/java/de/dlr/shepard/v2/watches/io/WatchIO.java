@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.watches.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.watches.entities.Watch;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -35,8 +36,8 @@ public record WatchIO(
   String containerName,
   @Schema(description = "Availability of the watched container for the current caller. One of: 'available', 'forbidden', 'deleted', 'error'.", nullable = true)
   String containerAvailability,
-  @Schema(description = "Epoch-milliseconds when this watch was created.", example = "1751400000000")
-  Long since,
+  @Schema(description = "ISO 8601 UTC timestamp when this watch was created.", example = "2026-06-01T00:00:00Z")
+  String since,
   @Schema(description = "Username of the user who created this watch.")
   String addedBy
 ) {
@@ -48,7 +49,7 @@ public record WatchIO(
       w.getContainerAppId(),
       null,
       null,
-      w.getSince(),
+      w.getSince() == null ? null : Instant.ofEpochMilli(w.getSince()).toString(),
       w.getAddedBy()
     );
   }

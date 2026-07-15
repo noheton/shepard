@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.collectionwatchers.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
+import java.time.Instant;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -19,15 +20,15 @@ public record CollectionWatcherIO(
   String username,
   @Schema(description = "Stable application-level identifier of the watched collection (UUID v7).")
   String collectionAppId,
-  @Schema(description = "Epoch-milliseconds when this watch subscription was created.", example = "1751400000000")
-  Long since
+  @Schema(description = "ISO 8601 UTC timestamp when this watch subscription was created.", example = "2026-06-01T00:00:00Z")
+  String since
 ) {
   public static CollectionWatcherIO from(CollectionWatcher w) {
     return new CollectionWatcherIO(
       w.getAppId(),
       w.getUsername(),
       w.getCollectionAppId(),
-      w.getSince()
+      w.getSince() == null ? null : Instant.ofEpochMilli(w.getSince()).toString()
     );
   }
 }

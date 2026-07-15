@@ -40,7 +40,7 @@ class CollectionWatchesRestTest {
   static WatchIO watch(String appId) {
     return new WatchIO(appId, Watch.Kind.TIMESERIES,
       "018f9c5a-0000-0000-0000-000000000099",
-      "Live sensors", "available", 1L, "test");
+      "Live sensors", "available", "1970-01-01T00:00:00.001Z", "test");
   }
 
   @BeforeEach

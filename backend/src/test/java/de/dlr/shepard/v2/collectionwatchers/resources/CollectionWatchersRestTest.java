@@ -220,6 +220,6 @@ class CollectionWatchersRestTest {
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   private CollectionWatcherIO makeIO(String appId, String username, String collectionAppId) {
-    return new CollectionWatcherIO(appId, username, collectionAppId, System.currentTimeMillis());
+    return new CollectionWatcherIO(appId, username, collectionAppId, java.time.Instant.now().toString());
   }
 }
