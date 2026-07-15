@@ -184,6 +184,7 @@ public class ReferencesV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope of accessible URDF references.",
+    headers = @Header(name = "X-Total-Count", description = "Total accessible URDF reference count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -201,7 +202,8 @@ public class ReferencesV2Rest {
   ) {
     String caller = callerOrNull(sc);
     if (caller == null) return problem(PROBLEM_TYPE_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "authentication is required to list URDF references");
-    return Response.ok(accessibleUrdfService.listAccessible(caller, q, page, pageSize)).build();
+    var urdfPage = accessibleUrdfService.listAccessible(caller, q, page, pageSize);
+    return Response.ok(urdfPage).header("X-Total-Count", urdfPage.total()).build();
   }
 
   // ─── get-one ───────────────────────────────────────────────────────────
@@ -503,6 +505,7 @@ public class ReferencesV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
+    headers = @Header(name = "X-Total-Count", description = "Total reference count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -547,6 +550,7 @@ public class ReferencesV2Rest {
       int total = referencesService.countByDataObject(kind, dataObjectAppId, fileKind);
       List<ReferenceV2IO> pageItems = referencesService.listByDataObject(kind, dataObjectAppId, fileKind, skip, pageSize);
       return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
+          .header("X-Total-Count", total)
           .build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());

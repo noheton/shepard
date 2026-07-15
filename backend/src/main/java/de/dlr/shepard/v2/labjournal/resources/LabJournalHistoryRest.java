@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -96,6 +97,7 @@ public class LabJournalHistoryRest {
   @APIResponse(
     responseCode = "200",
     description = "Paginated revision history (items may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total revision count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -138,6 +140,7 @@ public class LabJournalHistoryRest {
       .map(LabJournalRevisionIO::new)
       .toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

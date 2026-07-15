@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -116,6 +117,7 @@ public class NotebookRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope of .ipynb file references (items may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total .ipynb reference count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -210,7 +212,9 @@ public class NotebookRest {
     List<NotebookReferenceIO> pageItems = skip >= total
       ? List.of()
       : result.subList((int) skip, (int) Math.min(skip + pageSize, total));
-    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   /**

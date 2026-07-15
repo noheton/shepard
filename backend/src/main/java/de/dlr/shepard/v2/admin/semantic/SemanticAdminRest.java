@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -261,6 +262,8 @@ public class SemanticAdminRest {
   )
   @APIResponse(
     responseCode = "200",
+    description = "Paged envelope: items + total + page + pageSize.",
+    headers = @Header(name = "X-Total-Count", description = "Total ontology bundle count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
@@ -291,6 +294,7 @@ public class SemanticAdminRest {
         ? List.of()
         : rows.subList((int) from, (int) Math.min(from + pageSize, rows.size()));
     return Response.ok(new PagedResponseIO<>(slice, rows.size(), page, pageSize))
+        .header("X-Total-Count", rows.size())
         .build();
   }
 
