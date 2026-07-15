@@ -92,7 +92,7 @@ export interface CommitUploadRequest {
 
 export interface CreateChannelAnnotationRequest {
     appId: string;
-    channelShepardId: string;
+    channelAppId: string;
     semanticAnnotation: Omit<SemanticAnnotation, 'id'|'appId'|'name'|'propertyName'|'valueName'>;
 }
 
@@ -109,7 +109,7 @@ export interface CreateTemporalAnnotationRequest {
 export interface DeleteChannelAnnotationRequest {
     annotationAppId: string;
     appId: string;
-    channelShepardId: string;
+    channelAppId: string;
 }
 
 export interface DeleteContainerRequest {
@@ -142,7 +142,7 @@ export interface GetContainerBulkChannelDataRequest {
 
 export interface GetContainerChannelDataRequest {
     appId: string;
-    shepardId: string;
+    channelAppId: string;
     end: number;
     start: number;
     downsample?: string;
@@ -172,11 +172,11 @@ export interface GetDownloadUrlRequest {
 
 export interface GetLiveWindowRequest {
     appId: string;
+    channelAppId?: string;
     device?: string;
     field?: string;
     location?: string;
     measurement?: string;
-    shepardId?: string;
     symbolicName?: string;
     windowSeconds?: number;
     withBoundaryPoints?: boolean;
@@ -204,13 +204,13 @@ export interface GetUploadUrlRequest {
 
 export interface IngestContainerChannelDataRequest {
     appId: string;
-    shepardId: string;
+    channelAppId: string;
     copyIngestRequest: CopyIngestRequest;
 }
 
 export interface ListChannelAnnotationsRequest {
     appId: string;
-    channelShepardId: string;
+    channelAppId: string;
 }
 
 export interface ListContainerChannelsRequest {
@@ -337,10 +337,10 @@ export class ContainersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['channelShepardId'] == null) {
+        if (requestParameters['channelAppId'] == null) {
             throw new runtime.RequiredError(
-                'channelShepardId',
-                'Required parameter "channelShepardId" was null or undefined when calling createChannelAnnotation().'
+                'channelAppId',
+                'Required parameter "channelAppId" was null or undefined when calling createChannelAnnotation().'
             );
         }
 
@@ -370,7 +370,7 @@ export class ContainersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            path: `/v2/containers/{appId}/channels/{channelAppId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelAppId"}}`, encodeURIComponent(String(requestParameters['channelAppId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -526,10 +526,10 @@ export class ContainersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['channelShepardId'] == null) {
+        if (requestParameters['channelAppId'] == null) {
             throw new runtime.RequiredError(
-                'channelShepardId',
-                'Required parameter "channelShepardId" was null or undefined when calling deleteChannelAnnotation().'
+                'channelAppId',
+                'Required parameter "channelAppId" was null or undefined when calling deleteChannelAnnotation().'
             );
         }
 
@@ -550,7 +550,7 @@ export class ContainersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            path: `/v2/containers/{appId}/channels/{channelAppId}/annotations/{annotationAppId}`.replace(`{${"annotationAppId"}}`, encodeURIComponent(String(requestParameters['annotationAppId']))).replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelAppId"}}`, encodeURIComponent(String(requestParameters['channelAppId']))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -815,7 +815,7 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * Accepts a list of channelAppIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
      * [v2] Fetch raw data for multiple channels in one call.
      */
     async getContainerBulkChannelDataRaw(requestParameters: GetContainerBulkChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<TimeseriesWithDataPoints>>> {
@@ -863,7 +863,7 @@ export class ContainersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
+     * Accepts a list of channelAppIds (max 200) plus a shared time window and returns raw data points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are silently skipped. Non-timeseries container kinds answer 415.  Auth: Read on the container.
      * [v2] Fetch raw data for multiple channels in one call.
      */
     async getContainerBulkChannelData(requestParameters: GetContainerBulkChannelDataRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesWithDataPoints>> {
@@ -883,10 +883,10 @@ export class ContainersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['shepardId'] == null) {
+        if (requestParameters['channelAppId'] == null) {
             throw new runtime.RequiredError(
-                'shepardId',
-                'Required parameter "shepardId" was null or undefined when calling getContainerChannelData().'
+                'channelAppId',
+                'Required parameter "channelAppId" was null or undefined when calling getContainerChannelData().'
             );
         }
 
@@ -937,7 +937,7 @@ export class ContainersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/containers/{appId}/channels/{shepardId}/data`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"shepardId"}}`, encodeURIComponent(String(requestParameters['shepardId']))),
+            path: `/v2/containers/{appId}/channels/{channelAppId}/data`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelAppId"}}`, encodeURIComponent(String(requestParameters['channelAppId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1227,8 +1227,8 @@ export class ContainersApi extends runtime.BaseAPI {
             queryParameters['measurement'] = requestParameters['measurement'];
         }
 
-        if (requestParameters['shepardId'] != null) {
-            queryParameters['shepardId'] = requestParameters['shepardId'];
+        if (requestParameters['channelAppId'] != null) {
+            queryParameters['channelAppId'] = requestParameters['channelAppId'];
         }
 
         if (requestParameters['symbolicName'] != null) {
@@ -1504,10 +1504,10 @@ export class ContainersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['shepardId'] == null) {
+        if (requestParameters['channelAppId'] == null) {
             throw new runtime.RequiredError(
-                'shepardId',
-                'Required parameter "shepardId" was null or undefined when calling ingestContainerChannelData().'
+                'channelAppId',
+                'Required parameter "channelAppId" was null or undefined when calling ingestContainerChannelData().'
             );
         }
 
@@ -1537,7 +1537,7 @@ export class ContainersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/containers/{appId}/channels/{shepardId}/data/ingest`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"shepardId"}}`, encodeURIComponent(String(requestParameters['shepardId']))),
+            path: `/v2/containers/{appId}/channels/{channelAppId}/data/ingest`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelAppId"}}`, encodeURIComponent(String(requestParameters['channelAppId']))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -1567,10 +1567,10 @@ export class ContainersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['channelShepardId'] == null) {
+        if (requestParameters['channelAppId'] == null) {
             throw new runtime.RequiredError(
-                'channelShepardId',
-                'Required parameter "channelShepardId" was null or undefined when calling listChannelAnnotations().'
+                'channelAppId',
+                'Required parameter "channelAppId" was null or undefined when calling listChannelAnnotations().'
             );
         }
 
@@ -1591,7 +1591,7 @@ export class ContainersApi extends runtime.BaseAPI {
             }
         }
         const response = await this.request({
-            path: `/v2/containers/{appId}/channels/{channelShepardId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelShepardId"}}`, encodeURIComponent(String(requestParameters['channelShepardId']))),
+            path: `/v2/containers/{appId}/channels/{channelAppId}/annotations`.replace(`{${"appId"}}`, encodeURIComponent(String(requestParameters['appId']))).replace(`{${"channelAppId"}}`, encodeURIComponent(String(requestParameters['channelAppId']))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

@@ -578,44 +578,44 @@ public interface ContainerKindHandler {
   /**
    * APISIMP-CONT-NS-COLLAPSE-4 / APISIMP-CONTAINER-CHANNEL-ANNOTATIONS-UNCAPPED —
    * list channel annotations behind the unified
-   * {@code GET /v2/containers/{appId}/channels/{channelShepardId}/annotations} route.
+   * {@code GET /v2/containers/{appId}/channels/{channelAppId}/annotations} route.
    *
-   * @param appId            UUID v7 of the container.
-   * @param channelShepardId UUID v7 of the timeseries channel.
-   * @param page             zero-based page index (default 0).
-   * @param pageSize         items per page, capped at 500 (default 200).
+   * @param appId          UUID v7 of the container.
+   * @param channelAppId   UUID v7 of the timeseries channel.
+   * @param page           zero-based page index (default 0).
+   * @param pageSize       items per page, capped at 500 (default 200).
    * @return the paged response, or empty when this kind has no channel-annotation concept (→ 415).
    */
   default Optional<Response> listChannelAnnotations(
-      String appId, String channelShepardId, int page, int pageSize) {
+      String appId, String channelAppId, int page, int pageSize) {
     return Optional.empty();
   }
 
   /**
    * APISIMP-CONT-NS-COLLAPSE-4 — create channel annotation behind the unified
-   * {@code POST /v2/containers/{appId}/channels/{channelShepardId}/annotations} route.
+   * {@code POST /v2/containers/{appId}/channels/{channelAppId}/annotations} route.
    *
-   * @param appId            UUID v7 of the container.
-   * @param channelShepardId UUID v7 of the timeseries channel.
-   * @param body             the annotation to create.
+   * @param appId          UUID v7 of the container.
+   * @param channelAppId   UUID v7 of the timeseries channel.
+   * @param body           the annotation to create.
    * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
    */
   default Optional<Response> createChannelAnnotation(
-      String appId, String channelShepardId, SemanticAnnotationIO body) {
+      String appId, String channelAppId, SemanticAnnotationIO body) {
     return Optional.empty();
   }
 
   /**
    * APISIMP-CONT-NS-COLLAPSE-4 — delete channel annotation behind the unified
-   * {@code DELETE /v2/containers/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}} route.
+   * {@code DELETE /v2/containers/{appId}/channels/{channelAppId}/annotations/{annotationAppId}} route.
    *
-   * @param appId             UUID v7 of the container.
-   * @param channelShepardId  UUID v7 of the timeseries channel.
-   * @param annotationAppId   UUID v7 of the annotation to delete.
+   * @param appId           UUID v7 of the container.
+   * @param channelAppId    UUID v7 of the timeseries channel.
+   * @param annotationAppId UUID v7 of the annotation to delete.
    * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
    */
   default Optional<Response> deleteChannelAnnotation(
-      String appId, String channelShepardId, String annotationAppId) {
+      String appId, String channelAppId, String annotationAppId) {
     return Optional.empty();
   }
 

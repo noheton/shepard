@@ -155,10 +155,10 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
   readonly subjectKind = "StructuredDataContainer";
 }
 
-// ─── TS-SEMANTIC-REST: channelShepardId-keyed channel annotations (v2) ──────
+// ─── TS-SEMANTIC-REST: channelAppId-keyed channel annotations (v2) ──────────
 //
-// Wraps `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations`
-// via the typed `TimeseriesChannelAnnotationsApi` (V2UI-CHANNEL-ANNO-CLIENT).
+// Wraps `/v2/containers/{containerAppId}/channels/{channelAppId}/annotations`
+// via the typed `ContainersApi` (V2UI-CHANNEL-ANNO-CLIENT).
 // Channels created before TS-SEMANTIC-01 dual-write shipped will return 404 on
 // GET/POST — treated as "no annotations yet" (empty list).
 //
@@ -169,20 +169,20 @@ export class AnnotatedStructuredDataContainer extends SubjectAnnotated {
 
 export class AnnotatedChannel implements Annotated {
   readonly containerAppId: string;
-  readonly channelShepardId: string;
+  readonly channelAppId: string;
   channelAnnotationsApi = useV2ShepardApi(ContainersApi);
   private readonly _appIdMap = new Map<number, string>();
 
-  constructor(containerAppId: string, channelShepardId: string) {
+  constructor(containerAppId: string, channelAppId: string) {
     this.containerAppId = containerAppId;
-    this.channelShepardId = channelShepardId;
+    this.channelAppId = channelAppId;
   }
 
   async fetchAnnotations(): Promise<SemanticAnnotation[]> {
     try {
       const items = await this.channelAnnotationsApi.value.listChannelAnnotations({
         appId: this.containerAppId,
-        channelShepardId: this.channelShepardId,
+        channelAppId: this.channelAppId,
       });
       this._appIdMap.clear();
       for (const item of items) {
@@ -207,7 +207,7 @@ export class AnnotatedChannel implements Annotated {
       throw new Error(`No appId cached for channel annotation id=${annotationId}; call fetchAnnotations() first`);
     await this.channelAnnotationsApi.value.deleteChannelAnnotation({
       appId: this.containerAppId,
-      channelShepardId: this.channelShepardId,
+      channelAppId: this.channelAppId,
       annotationAppId,
     });
     this._appIdMap.delete(annotationId);
@@ -216,7 +216,7 @@ export class AnnotatedChannel implements Annotated {
   async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
     return this.channelAnnotationsApi.value.createChannelAnnotation({
       appId: this.containerAppId,
-      channelShepardId: this.channelShepardId,
+      channelAppId: this.channelAppId,
       // Deprecated numeric IDs are required by the generated v1-compat client
       // type; fill as 0 until the next client regen drops them.
       semanticAnnotation: { ...annotation, propertyRepositoryId: 0, valueRepositoryId: 0 },

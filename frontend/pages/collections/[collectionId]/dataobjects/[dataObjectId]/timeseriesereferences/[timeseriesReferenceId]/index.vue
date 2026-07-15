@@ -158,7 +158,7 @@ const canVisualize3D = computed(
 // ── V2CONV: appId-keyed channel listing + bulk data ──────────────────────
 // The /channels endpoint is appId-keyed. The container appId comes from the
 // v2 reference payload (UX612-C1). Matching the reference's 5-tuple channels
-// against the container's channel shepardIds lets us pull all points in one
+// against the container's channel appIds lets us pull all points in one
 // bulk POST — no numeric-id path, which is what spun forever (L2).
 interface ChannelV2 {
   shepardId: string;
@@ -315,7 +315,7 @@ function applyMetrics(data: TimeseriesWithDataPoints[]) {
   }
 }
 
-// V2CONV — resolve shepardIds for the reference's channels by matching the
+// V2CONV — resolve channelAppIds for the reference's channels by matching the
 // payload 5-tuples against the container's v2 channels, then pull every
 // channel's points in one bulk POST.
 async function loadBulkChannelData() {
@@ -324,7 +324,7 @@ async function loadBulkChannelData() {
   if (!ref || !appId || ref.timeseries.length === 0) return;
   if (channelsV2.value.length === 0) return;
   const wantKeys = new Set(ref.timeseries.map(ts => timeseriesKey(ts)));
-  const shepardIds = channelsV2.value
+  const channelAppIds = channelsV2.value
     .filter(ch =>
       wantKeys.has(
         timeseriesKey({
@@ -338,7 +338,7 @@ async function loadBulkChannelData() {
     )
     .map(ch => ch.shepardId)
     .slice(0, 200);
-  if (shepardIds.length === 0) {
+  if (channelAppIds.length === 0) {
     chartPayload.value = [];
     applyMetrics([]);
     return;
@@ -348,7 +348,7 @@ async function loadBulkChannelData() {
     const data = await channelListingApi.value.getContainerBulkChannelData({
       appId,
       bulkChannelDataRequest: {
-        shepardIds,
+        channelAppIds,
         // APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO: ref.start/end are ns; API now takes ISO.
         start: new Date(Math.floor(ref.start / 1_000_000)).toISOString(),
         end: new Date(Math.floor(ref.end / 1_000_000)).toISOString(),

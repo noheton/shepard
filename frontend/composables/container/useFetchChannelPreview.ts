@@ -51,7 +51,7 @@ function v2Base(publicConfig: Record<string, unknown>): string {
 /**
  * Build a stable cache key for a given preview request.
  *
- * When {@code channelShepardId} is present the key uses that single
+ * When {@code channelAppId} is present the key uses that single
  * field — two distinct 5-tuples that resolve to the same shepardId
  * (after a channel rename, say) collapse to one cache entry. When
  * shepardId is absent the key falls back to the legacy 5-tuple.
@@ -61,10 +61,10 @@ function previewKey(
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
-  channelShepardId?: string | null,
+  channelAppId?: string | null,
 ): string {
-  if (channelShepardId) {
-    return [containerAppId, "sid", channelShepardId, String(downsample), String(maxPoints)].join("|");
+  if (channelAppId) {
+    return [containerAppId, "sid", channelAppId, String(downsample), String(maxPoints)].join("|");
   }
   return [
     containerAppId,
@@ -92,9 +92,9 @@ async function fetchPreviewData(
   channel: TimeseriesEntity,
   downsample: boolean,
   maxPoints: number,
-  channelShepardId?: string | null,
+  channelAppId?: string | null,
 ): Promise<Array<[number, number]>> {
-  const key = previewKey(containerAppId, channel, downsample, maxPoints, channelShepardId);
+  const key = previewKey(containerAppId, channel, downsample, maxPoints, channelAppId);
 
   const existing = inFlight.get(key);
   if (existing) return existing;
@@ -103,7 +103,7 @@ async function fetchPreviewData(
     const endNs = Date.now() * 1e6; // ms → ns
 
     // TS-IDc preferred path: single-field shepardId against the appId-keyed v2 endpoint.
-    if (channelShepardId) {
+    if (channelAppId) {
       const { public: publicConfig } = useRuntimeConfig();
       const { data: authData } = useAuth();
       const token = authData.value?.accessToken;
@@ -118,7 +118,7 @@ async function fetchPreviewData(
       }
       const url =
         `${v2Base(publicConfig as Record<string, unknown>)}/v2/containers/${containerAppId}` +
-        `/channels/${channelShepardId}/data?${qs.toString()}`;
+        `/channels/${channelAppId}/data?${qs.toString()}`;
 
       const res = await fetch(url, { headers });
       if (!res.ok) throw new Error(`HTTP ${res.status} on TS-IDc preview fetch`);
@@ -159,7 +159,7 @@ export interface UseFetchChannelPreviewOptions {
    * instead of the legacy 5-tuple endpoint. Source: the v2 channels
    * listing populated by {@link useFetchV2Channels}.
    */
-  channelShepardId?: string | null;
+  channelAppId?: string | null;
 }
 
 /**
@@ -175,7 +175,7 @@ export function useFetchChannelPreview(
 ) {
   const downsampleOpt = options?.downsample ?? true;
   const maxPoints = options?.maxPoints ?? 2000;
-  const channelShepardId = options?.channelShepardId ?? null;
+  const channelAppId = options?.channelAppId ?? null;
 
   const data = ref<Array<[number, number]>>([]);
   const loading = ref(false);
@@ -185,7 +185,7 @@ export function useFetchChannelPreview(
     loading.value = true;
     try {
       data.value = await fetchPreviewData(
-        containerAppId, channel, downsample, maxPoints, channelShepardId);
+        containerAppId, channel, downsample, maxPoints, channelAppId);
       downsampled.value = downsample;
     } catch {
       data.value = [];
@@ -231,7 +231,7 @@ export function useChannelPreviewLazy(
 ) {
   const downsampleOpt = options?.downsample ?? true;
   const maxPoints = options?.maxPoints ?? 2000;
-  const channelShepardId = options?.channelShepardId ?? null;
+  const channelAppId = options?.channelAppId ?? null;
 
   const data = ref<Array<[number, number]>>([]);
   const loading = ref(false);
@@ -243,7 +243,7 @@ export function useChannelPreviewLazy(
     loading.value = true;
     try {
       data.value = await fetchPreviewData(
-        containerAppId, channel, downsample, maxPoints, channelShepardId);
+        containerAppId, channel, downsample, maxPoints, channelAppId);
       downsampled.value = downsample;
     } catch {
       data.value = [];

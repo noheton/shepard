@@ -52,13 +52,13 @@ function togglePin(ch: TimeseriesEntity) {
   }
 }
 
-function channelShepardId(ch: TimeseriesEntity): string | null {
+function channelAppId(ch: TimeseriesEntity): string | null {
   return resolveShepardId(ch.measurement, ch.device, ch.location, ch.symbolicName, ch.field);
 }
 
-// Called only inside v-if="channelShepardId(item)" blocks — sid is always truthy here.
+// Called only inside v-if="channelAppId(item)" blocks — sid is always truthy here.
 function annotatedFor(ch: TimeseriesEntity): Annotated {
-  return new AnnotatedChannel(props.containerAppId, channelShepardId(ch)!);
+  return new AnnotatedChannel(props.containerAppId, channelAppId(ch)!);
 }
 
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
@@ -101,13 +101,13 @@ const itemsPerPage = 10;
     <!-- UX-PIN1: pin/unpin button in every non-expanded row -->
     <template #[`item.pin-action`]="{ item }">
       <v-btn
-        :icon="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'mdi-pin' : 'mdi-pin-outline'"
-        :color="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'primary' : undefined"
+        :icon="channelAppId(item) && isPinned(channelAppId(item)!) ? 'mdi-pin' : 'mdi-pin-outline'"
+        :color="channelAppId(item) && isPinned(channelAppId(item)!) ? 'primary' : undefined"
         variant="text"
         size="x-small"
         density="compact"
-        :title="channelShepardId(item) && isPinned(channelShepardId(item)!) ? 'Unpin channel from home page' : 'Pin channel to home page'"
-        :disabled="!channelShepardId(item)"
+        :title="channelAppId(item) && isPinned(channelAppId(item)!) ? 'Unpin channel from home page' : 'Pin channel to home page'"
+        :disabled="!channelAppId(item)"
         @click.stop="togglePin(item)"
       />
     </template>
@@ -119,11 +119,11 @@ const itemsPerPage = 10;
           <ChannelPreviewChart
             :channel="item"
             :container-app-id="containerAppId"
-            :channel-shepard-id="channelShepardId(item)"
+            :channel-app-id="channelAppId(item)"
           />
 
           <!-- annotations: only for v2 channels that have a shepardId -->
-          <v-table v-if="channelShepardId(item)">
+          <v-table v-if="channelAppId(item)">
             <tbody>
               <tr class="semantic-row">
                 <td

@@ -11,7 +11,7 @@
 // TimeseriesMeasurementsTable, which still uses the legacy numeric-id-keyed
 // AnnotatedTimeseries (upstream `/shepard/api/...`). This pane uses the
 // shepardId-keyed v2 endpoint
-// `/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations`
+// `/v2/containers/{containerAppId}/channels/{channelAppId}/annotations`
 // (TimeseriesChannelAnnotationRest) which is the post-TS-CORE-SCHEMA-01 contract.
 //
 // Channels without a backing AnnotatableTimeseries node (pre-TS-SEMANTIC-01
