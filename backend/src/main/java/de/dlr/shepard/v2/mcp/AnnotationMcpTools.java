@@ -19,6 +19,7 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -222,7 +223,7 @@ public class AnnotationMcpTools {
       "  sourceMode                 — 'human' | 'ai' | 'collaborative' (may be null)\n" +
       "  confidence                 — AI confidence score in [0.0, 1.0] (may be null)\n" +
       "  sourceActivityAppId        — provenance activity back-pointer (may be null)\n" +
-      "  validFromMillis, validUntilMillis — temporal validity window (may be null)\n" +
+      "  validFrom, validUntil — temporal validity window as ISO 8601 UTC strings (may be null)\n" +
       "  source                     — legacy source tag (may be null)"
   )
   public String getAnnotation(
@@ -338,7 +339,7 @@ public class AnnotationMcpTools {
       "  vocabularyId  — linking to a vocabulary.\n" +
       "  sourceMode    — 'human' | 'ai' | 'collaborative'.\n" +
       "  confidence    — AI confidence score.\n" +
-      "  validFromMillis, validUntilMillis — temporal validity window (epoch millis).\n\n" +
+      "  validFrom, validUntil — temporal validity window as ISO 8601 UTC strings (e.g. \"2026-01-01T00:00:00Z\").\n\n" +
       "The annotation's subjectAppId / subjectKind / propertyIRI are immutable — " +
       "delete and recreate to change the predicate.\n\n" +
       "Note: collection-level WRITE permission check is deferred (TODO SEMA-V6-007)."
@@ -353,8 +354,8 @@ public class AnnotationMcpTools {
     @ToolArg(name = "vocabularyId", description = "New vocabulary link (null = keep existing).", required = false) String vocabularyId,
     @ToolArg(name = "sourceMode", description = "New provenance mode (null = keep existing).", required = false) String sourceMode,
     @ToolArg(name = "confidence", description = "New confidence score (null = keep existing).", required = false) Double confidence,
-    @ToolArg(name = "validFromMillis", description = "New valid-from epoch millis (null = keep existing).", required = false) Long validFromMillis,
-    @ToolArg(name = "validUntilMillis", description = "New valid-until epoch millis (null = keep existing).", required = false) Long validUntilMillis
+    @ToolArg(name = "validFrom", description = "New valid-from as ISO 8601 UTC string (e.g. \"2026-01-01T00:00:00Z\"). Null = keep existing.", required = false) String validFrom,
+    @ToolArg(name = "validUntil", description = "New valid-until as ISO 8601 UTC string (e.g. \"2026-12-31T23:59:59Z\"). Null = keep existing.", required = false) String validUntil
   ) {
     return support.run("update_annotation", () -> {
       contextBridge.bind();
@@ -376,8 +377,8 @@ public class AnnotationMcpTools {
       if (vocabularyId != null)   ann.setVocabularyId(vocabularyId);
       if (sourceMode != null)     ann.setSourceMode(sourceMode);
       if (confidence != null)     ann.setConfidence(confidence);
-      if (validFromMillis != null) ann.setValidFromMillis(validFromMillis);
-      if (validUntilMillis != null) ann.setValidUntilMillis(validUntilMillis);
+      if (validFrom != null) ann.setValidFromMillis(parseIso(validFrom));
+      if (validUntil != null) ann.setValidUntilMillis(parseIso(validUntil));
 
       SemanticAnnotation saved = annotationDAO.createOrUpdate(ann);
       return support.toJson(toDetailMap(saved));
@@ -721,6 +722,15 @@ public class AnnotationMcpTools {
       return h != null && !h.isBlank();
     } catch (RuntimeException e) {
       return false;
+    }
+  }
+
+  private static Long parseIso(String iso) {
+    if (iso == null || iso.isBlank()) return null;
+    try {
+      return Instant.parse(iso.trim()).toEpochMilli();
+    } catch (DateTimeParseException e) {
+      throw McpToolSupport.invalidParams("Invalid ISO 8601 timestamp: \"" + iso.trim() + "\". Expected format: 2026-01-01T00:00:00Z");
     }
   }
 
