@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 96 |
+| `fragment` | 97 |
 | `concept` | 43 |
 | `idea` | 13 |
 | `feature-defined` | 136 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 151 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **579** |
+| **total docs** | **580** |
 | **UNTAGGED** | **0** |
 
-## fragment (96)
+## fragment (97)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -88,6 +88,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-13-fire586.md`](agent-findings/apisimp-sweep-2026-07-13-fire586.md) | APISIMP sweep — fire-586 (2026-07-13) | 2026-07-13 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-14-fire594.md`](agent-findings/apisimp-sweep-2026-07-14-fire594.md) | API-Simplification Sweep — fire-594 (2026-07-14) | 2026-07-14 | 2026-07-14 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-14-fire608.md`](agent-findings/apisimp-sweep-2026-07-14-fire608.md) | APISIMP Sweep — fire-608 (2026-07-14) | 2026-07-14 | 2026-07-14 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-15-fire613.md`](agent-findings/apisimp-sweep-2026-07-15-fire613.md) | APISIMP Sweep — fire-613 (2026-07-15) | 2026-07-15 | — |
 | [`aidocs/agent-findings/apisimp-sweep-fire355-2026-07-02.md`](agent-findings/apisimp-sweep-fire355-2026-07-02.md) | APISIMP REST Surface Sweep — fire-355 (2026-07-02) | 2026-07-02 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire367-2026-07-02.md`](agent-findings/apisimp-sweep-fire367-2026-07-02.md) | APISIMP REST Surface Sweep — fire-367 (2026-07-02) | 2026-07-02 | 2026-07-13 |
 | [`aidocs/agent-findings/apisimp-sweep-fire373-2026-07-02.md`](agent-findings/apisimp-sweep-fire373-2026-07-02.md) | APISIMP REST Surface Sweep — fire-373 (2026-07-02) | 2026-07-02 | 2026-07-13 |
