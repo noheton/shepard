@@ -133,6 +133,18 @@ class TimeseriesReferenceKindHandlerTest {
     assertEquals("new-name", ref.getName());
   }
 
+  // ─── toIO: ISO 8601 start/end (APISIMP-TSREF-TIMEWINDOW-NANOS) ─────────────
+
+  @Test
+  void toIO_convertsStartAndEndToIso8601() {
+    // ref.start = 1_000_000_000 ns = 1 s since epoch → 1970-01-01T00:00:01Z
+    // ref.end   = 2_000_000_000 ns = 2 s since epoch → 1970-01-01T00:00:02Z
+    var ref = makeRef();
+    var io = handler.toIO(ref);
+    assertEquals("1970-01-01T00:00:01Z", io.getPayload().get("start"));
+    assertEquals("1970-01-01T00:00:02Z", io.getPayload().get("end"));
+  }
+
   // ─── patch: bounds update ───────────────────────────────────────────────────
 
   @Test
@@ -145,6 +157,28 @@ class TimeseriesReferenceKindHandlerTest {
 
     assertEquals(5_000_000_000L, ref.getStart());
     assertEquals(9_000_000_000L, ref.getEnd());
+  }
+
+  @Test
+  void patch_boundsUpdateIso8601_appliesStartAndEnd() {
+    var ref = makeRef();
+    when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
+    when(timeseriesReferenceService.updateTimeReference(any(), any())).thenAnswer(inv -> inv.getArgument(0));
+
+    // 1970-01-01T00:00:05Z = 5_000_000_000 ns; 1970-01-01T00:00:09Z = 9_000_000_000 ns
+    handler.patch(REF_APP_ID, Map.of("start", "1970-01-01T00:00:05Z", "end", "1970-01-01T00:00:09Z"));
+
+    assertEquals(5_000_000_000L, ref.getStart());
+    assertEquals(9_000_000_000L, ref.getEnd());
+  }
+
+  @Test
+  void patch_boundsUpdateInvalidString_throwsBadRequest() {
+    var ref = makeRef();
+    when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
+
+    assertThrows(BadRequestException.class,
+        () -> handler.patch(REF_APP_ID, Map.of("start", "not-a-date")));
   }
 
   // ─── patch: absent bounds ───────────────────────────────────────────────────
@@ -162,6 +196,30 @@ class TimeseriesReferenceKindHandlerTest {
 
     assertEquals(originalStart, ref.getStart());
     assertEquals(originalEnd,   ref.getEnd());
+  }
+
+  // ─── create: ISO 8601 start/end (APISIMP-TSREF-TIMEWINDOW-NANOS) ───────────
+
+  @Test
+  void create_acceptsIso8601StartAndEnd() {
+    var coll = new Collection(1L);
+    coll.setShepardId(1L);
+    var parent = new DataObject(10L);
+    parent.setShepardId(10L);
+    parent.setCollection(coll);
+    when(dataObjectDAO.findByAppId("do-app-1")).thenReturn(parent);
+    when(timeseriesReferenceService.createReference(any(), any(), any())).thenReturn(makeRef());
+
+    var body = new java.util.HashMap<String, Object>();
+    body.put("start", "1970-01-01T00:00:01Z");
+    body.put("end",   "1970-01-01T00:00:02Z");
+    body.put("timeseriesContainerId", 5L);
+    body.put("timeseries", List.of(Map.of(
+        "measurement", "m", "device", "d", "location", "l", "symbolicName", "s", "field", "f"
+    )));
+
+    // Should not throw — ISO 8601 strings are accepted and normalised to nanosecond longs.
+    handler.create("do-app-1", body);
   }
 
   // ─── patch: channel flip ────────────────────────────────────────────────────

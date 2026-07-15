@@ -21,7 +21,10 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,8 +83,8 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     TimeseriesReference ref = (TimeseriesReference) reference;
     TimeseriesReferenceIO kindIO = new TimeseriesReferenceIO(ref);
     ReferenceV2IO io = new ReferenceV2IO(ref, kind());
-    io.put("start", kindIO.getStart());
-    io.put("end", kindIO.getEnd());
+    io.put("start", nanosToIso(kindIO.getStart()));
+    io.put("end", nanosToIso(kindIO.getEnd()));
     io.put("timeseriesContainerId", kindIO.getTimeseriesContainerId());
     // APISIMP-TSCONT-APPID-KEY-3: expose container appId so callers can reach /v2/channels
     io.put("timeseriesContainerAppId",
@@ -100,9 +103,20 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     if (body == null) throw new BadRequestException("create body is required for kind=timeseries");
     DataObject parent = resolveParent(dataObjectAppId);
 
+    // APISIMP-TSREF-TIMEWINDOW-NANOS: accept ISO 8601 start/end; normalise to nanosecond longs
+    // before ObjectMapper deserialization so TimeseriesReferenceIO.start/end (long primitives) bind
+    // correctly regardless of whether the caller sends ISO 8601 strings or legacy nanosecond longs.
+    Map<String, Object> normalized = new HashMap<>(body);
+    if (normalized.containsKey("start") && normalized.get("start") != null) {
+      normalized.put("start", isoOrLongToNanos(normalized.get("start"), "start"));
+    }
+    if (normalized.containsKey("end") && normalized.get("end") != null) {
+      normalized.put("end", isoOrLongToNanos(normalized.get("end"), "end"));
+    }
+
     TimeseriesReferenceIO ioIn;
     try {
-      ioIn = objectMapper.convertValue(body, TimeseriesReferenceIO.class);
+      ioIn = objectMapper.convertValue(normalized, TimeseriesReferenceIO.class);
     } catch (IllegalArgumentException iae) {
       throw new BadRequestException("invalid timeseries create body: " + iae.getMessage());
     }
@@ -133,10 +147,10 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
       ref.setName(s.strip());
     }
     if (patch.containsKey("start") && patch.get("start") != null) {
-      ref.setStart(toLong(patch.get("start"), "start"));
+      ref.setStart(isoOrLongToNanos(patch.get("start"), "start"));
     }
     if (patch.containsKey("end") && patch.get("end") != null) {
-      ref.setEnd(toLong(patch.get("end"), "end"));
+      ref.setEnd(isoOrLongToNanos(patch.get("end"), "end"));
     }
 
     // REF-EDIT-1: replace the channel list when provided.
@@ -303,6 +317,27 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
       throw new BadRequestException("label is required and must be non-blank");
     }
     return s.strip();
+  }
+
+  /** APISIMP-TSREF-TIMEWINDOW-NANOS: convert nanosecond epoch to ISO 8601 UTC string. */
+  private static String nanosToIso(long ns) {
+    return Instant.ofEpochSecond(ns / 1_000_000_000L, ns % 1_000_000_000L).toString();
+  }
+
+  /**
+   * APISIMP-TSREF-TIMEWINDOW-NANOS: accept ISO 8601 strings or legacy nanosecond longs for
+   * {@code start}/{@code end}. Tries ISO 8601 parse first, then plain long parse.
+   */
+  private static long isoOrLongToNanos(Object v, String field) {
+    if (v instanceof Number n) return n.longValue();
+    if (v instanceof String s) {
+      try {
+        Instant inst = Instant.parse(s);
+        return inst.getEpochSecond() * 1_000_000_000L + inst.getNano();
+      } catch (DateTimeParseException ignored) { /* fall through to numeric parse */ }
+      try { return Long.parseLong(s); } catch (NumberFormatException e) { /* fall through */ }
+    }
+    throw new BadRequestException("'" + field + "' must be an ISO 8601 timestamp or nanosecond long, got: " + v);
   }
 
   private static Long toLong(Object v, String field) {
