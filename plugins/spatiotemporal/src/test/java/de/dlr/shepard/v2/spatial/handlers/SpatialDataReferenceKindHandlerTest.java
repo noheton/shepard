@@ -109,8 +109,9 @@ class SpatialDataReferenceKindHandlerTest {
 
     assertEquals("spatial", io.getKind());
     assertEquals(CONTAINER_APP_ID, io.getPayload().get("spatialDataContainerAppId"));
-    assertEquals(10L, io.getPayload().get("startTime"));
-    assertEquals(20L, io.getPayload().get("endTime"));
+    // APISIMP-SPATIAL-TIMEWINDOW-NANOS: toIO() now emits ISO 8601 strings.
+    assertEquals("1970-01-01T00:00:00.000000010Z", io.getPayload().get("startTime"));
+    assertEquals("1970-01-01T00:00:00.000000020Z", io.getPayload().get("endTime"));
     assertEquals(100, io.getPayload().get("limit"));
     assertNull(io.getReferenceShape());
   }
@@ -191,6 +192,28 @@ class SpatialDataReferenceKindHandlerTest {
 
     assertEquals("spatial", io.getKind());
     assertEquals(CONTAINER_APP_ID, io.getPayload().get("spatialDataContainerAppId"));
+  }
+
+  @Test
+  void create_acceptsIso8601StartAndEndTime() {
+    DataObject parent = new DataObject();
+    SpatialDataContainer container = new SpatialDataContainer();
+    container.setName("cont");
+    container.setAppId(CONTAINER_APP_ID);
+    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
+    when(spatialDataContainerDAO.findByAppId(CONTAINER_APP_ID)).thenReturn(container);
+    when(spatialDataReferenceDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(userService.getCurrentUser()).thenReturn(new de.dlr.shepard.auth.users.entities.User());
+
+    ReferenceV2IO io = handler.create(DO_APP_ID, Map.of(
+        "spatialDataContainerAppId", CONTAINER_APP_ID,
+        "startTime", "2024-06-02T10:00:00Z",
+        "endTime",   "2024-06-02T11:00:00Z"
+    ));
+
+    // APISIMP-SPATIAL-TIMEWINDOW-NANOS: ISO strings round-trip through nanoseconds → ISO.
+    assertEquals("2024-06-02T10:00:00Z", io.getPayload().get("startTime"));
+    assertEquals("2024-06-02T11:00:00Z", io.getPayload().get("endTime"));
   }
 
   @Test

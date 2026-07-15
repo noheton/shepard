@@ -156,8 +156,9 @@ public class SpatialPromoteService {
     ReferenceV2IO io = new ReferenceV2IO(ref, "spatial");
     io.put("geometryFilter", ref.getGeometryFilter());
     io.put("measurementsFilter", ref.getMeasurementsFilter());
-    io.put("startTime", ref.getStartTime());
-    io.put("endTime", ref.getEndTime());
+    // APISIMP-SPATIAL-TIMEWINDOW-NANOS: emit ISO 8601 instead of raw nanoseconds.
+    io.put("startTime", nanosToIso(ref.getStartTime()));
+    io.put("endTime", nanosToIso(ref.getEndTime()));
     io.put("metadata", ref.getMetadata());
     io.put("limit", ref.getLimit());
     io.put("skip", ref.getSkip());
@@ -165,6 +166,12 @@ public class SpatialPromoteService {
     io.put("spatialDataContainerAppId", c == null ? null : c.getAppId());
     io.put("promotionState", c == null ? null : c.getPromotionState());
     return io;
+  }
+
+  /** APISIMP-SPATIAL-TIMEWINDOW-NANOS: nanosecond epoch → ISO 8601 UTC string; null-safe. */
+  private static String nanosToIso(Long ns) {
+    if (ns == null) return null;
+    return java.time.Instant.ofEpochSecond(ns / 1_000_000_000L, ns % 1_000_000_000L).toString();
   }
 
   /** Result wrapper: the unified IO + whether a new spatial reference was minted. */
