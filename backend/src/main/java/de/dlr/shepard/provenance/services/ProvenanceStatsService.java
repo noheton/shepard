@@ -104,7 +104,7 @@ public class ProvenanceStatsService {
       id,
       ProvenanceStatsIO.toIso(sinceMillis),
       ProvenanceStatsIO.toIso(untilMillis),
-      bucketMillis,
+      "PT" + (bucketMillis / 1000L) + "S",
       snap.totalCount,
       distinctAgents,
       snap.totalsByActionKind,

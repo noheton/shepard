@@ -64,7 +64,7 @@ class ProvenanceStatsServiceTest {
     assertEquals(Map.of("CREATE", 4L, "UPDATE", 4L), out.getTotalsByActionKind());
     assertEquals(2, out.getBuckets().size());
     assertEquals(2, out.getCumulative().size());
-    assertEquals(ProvenanceStatsService.DAY_MILLIS, out.getBucketMillis());
+    assertEquals("PT86400S", out.getBucketDuration());
   }
 
   @Test
@@ -113,7 +113,7 @@ class ProvenanceStatsServiceTest {
 
     var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
 
-    assertEquals(ProvenanceStatsService.WEEK_MILLIS, out.getBucketMillis());
+    assertEquals("PT604800S", out.getBucketDuration());
     verify(activityDAO).aggregateStats(null, null, since, now, ProvenanceStatsService.WEEK_MILLIS);
   }
 

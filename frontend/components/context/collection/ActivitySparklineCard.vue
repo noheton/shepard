@@ -24,6 +24,11 @@ const props = defineProps<{
 
 const DAY_MILLIS = 24 * 60 * 60 * 1000;
 
+function isoDurationToMs(iso: string): number {
+  const m = iso.match(/^PT(\d+)S$/);
+  return m ? parseInt(m[1]) * 1000 : DAY_MILLIS;
+}
+
 /** Preset window options for the picker. */
 // UIRULE-DROPDOWN-SEARCH-SORT exception: 4-option time-range enum in deliberate
 // ascending order (7d→1y) — kept as v-select, not natural-sorted.
@@ -144,7 +149,7 @@ const sparklineBars = computed<Bar[]>(() => {
   const innerH = SVG_H - PAD_Y_TOP - PAD_Y_BOTTOM;
 
   // Width of one bucket bar — keep at least 2 px, no more than 24 px.
-  const totalBuckets = Math.max(1, Math.floor(windowMs / s.bucketMillis));
+  const totalBuckets = Math.max(1, Math.floor(windowMs / isoDurationToMs(s.bucketDuration)));
   const barW = Math.min(24, Math.max(2, innerW / totalBuckets - 1));
 
   return s.buckets.map(entry => {
@@ -198,7 +203,7 @@ const isEmpty = computed(
  * windows. Communicate this in the tooltip + the empty-state hint.
  */
 const bucketLabel = computed<string>(() => {
-  const w = stats.value?.bucketMillis ?? DAY_MILLIS;
+  const w = stats.value ? isoDurationToMs(stats.value.bucketDuration) : DAY_MILLIS;
   if (w >= 7 * DAY_MILLIS) return "weekly";
   return "daily";
 });

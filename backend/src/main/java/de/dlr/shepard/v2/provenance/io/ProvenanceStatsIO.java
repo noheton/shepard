@@ -40,8 +40,8 @@ public class ProvenanceStatsIO {
   @Schema(required = true, description = "Inclusive upper bound of the window (ISO 8601 UTC, e.g. '2026-12-31T23:59:59Z').")
   private String until;
 
-  @Schema(required = true, description = "Width of one sparkline bucket in millis (daily = 86_400_000; weekly = 604_800_000).")
-  private long bucketMillis;
+  @Schema(required = true, example = "PT86400S", description = "Width of one sparkline bucket as an ISO 8601 duration (daily = 'PT86400S'; weekly = 'PT604800S').")
+  private String bucketDuration;
 
   @Schema(required = true, description = "Total activity count over the window.")
   private long totalCount;
