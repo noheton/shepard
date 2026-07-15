@@ -9,8 +9,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Raw data points have {@code interpolated=false}.
  */
 public record LiveWindowPointIO(
-  @Schema(description = "Epoch milliseconds (UTC).")
-  long timestamp,
+  @Schema(description = "ISO 8601 UTC timestamp of this data point.",
+    example = "2024-06-01T07:58:32.001Z")
+  String timestamp,
 
   @Schema(description = "The channel value at this timestamp.")
   Object value,

@@ -415,12 +415,12 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     var container = service.getContainerByAppId(appId);
     long containerId = container.getId();
 
-    // Build the window boundaries in nanoseconds (storage unit) and milliseconds (response unit).
+    // Build the window boundaries in nanoseconds (storage unit).
     long nowNs = System.currentTimeMillis() * NS_PER_MS;
     long windowNs = (long) windowSeconds * 1_000_000_000L;
     long startNs = nowNs - windowNs;
-    long windowStartMs = startNs / NS_PER_MS;
-    long windowEndMs = nowNs / NS_PER_MS;
+    String windowStartIso = Instant.ofEpochMilli(startNs / NS_PER_MS).toString();
+    String windowEndIso   = Instant.ofEpochMilli(nowNs   / NS_PER_MS).toString();
 
     // TS-IDc — shepardId wins when both shapes are supplied.
     TimeseriesEntity entity;
@@ -461,7 +461,7 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
         raw, tsId, valueType, startNs, nowNs, withBoundaryPoints);
 
     return Optional.of(
-        Response.ok(new LiveWindowResponseIO(windowStartMs, windowEndMs, points)).build());
+        Response.ok(new LiveWindowResponseIO(windowStartIso, windowEndIso, points)).build());
   }
 
   /**
@@ -487,13 +487,13 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
             dataPointRepository.findLatestBefore(tsId, valueType, startNs);
         if (before.isPresent()) {
           double interpolated = lerp(before.get(), first, startNs);
-          result.add(new LiveWindowPointIO(startNs / 1_000_000L, interpolated, true));
+          result.add(new LiveWindowPointIO(nsToIso(startNs), interpolated, true));
         }
       }
     }
 
     for (TimeseriesDataPoint dp : raw) {
-      result.add(new LiveWindowPointIO(dp.getTimestamp() / 1_000_000L, dp.getValue(), false));
+      result.add(new LiveWindowPointIO(nsToIso(dp.getTimestamp()), dp.getValue(), false));
     }
 
     if (canInterpolate && !raw.isEmpty()) {
@@ -503,12 +503,17 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
             dataPointRepository.findEarliestAfter(tsId, valueType, endNs);
         if (after.isPresent()) {
           double interpolated = lerp(last, after.get(), endNs);
-          result.add(new LiveWindowPointIO(endNs / 1_000_000L, interpolated, true));
+          result.add(new LiveWindowPointIO(nsToIso(endNs), interpolated, true));
         }
       }
     }
 
     return result;
+  }
+
+  /** Converts a nanosecond epoch timestamp to an ISO 8601 UTC string. */
+  private static String nsToIso(long ns) {
+    return Instant.ofEpochMilli(ns / NS_PER_MS).toString();
   }
 
   /**
