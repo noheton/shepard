@@ -203,14 +203,18 @@ class SemanticTermSearchRestTest {
 
   @Test
   void sessionThrowsOnFulltext_fallsBackToContains_returns200() {
-    // First query call (fulltext) throws; second call (CONTAINS) succeeds with empty.
+    // Fulltext search + count throw; CONTAINS path succeeds with empty.
     Result emptyResult = mock(Result.class);
     when(emptyResult.queryResults()).thenReturn(Collections.emptyList());
 
     when(session.query(eq(SemanticTermSearchRest.FULLTEXT_CYPHER), anyMap()))
       .thenThrow(new RuntimeException("index not found"));
+    when(session.query(eq(SemanticTermSearchRest.FULLTEXT_COUNT_CYPHER), anyMap()))
+      .thenThrow(new RuntimeException("index not found"));
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap()))
       .thenReturn(emptyResult);
+    when(session.query(eq(SemanticTermSearchRest.CONTAINS_COUNT_CYPHER), anyMap()))
+      .thenReturn(emptyResult); // queryResults() returns empty → count = 0
 
     Response r = rest.search("label", 20, 0, sc);
     assertEquals(200, r.getStatus());
@@ -224,7 +228,11 @@ class SemanticTermSearchRestTest {
   void bothQueriesThrow_returns200EmptyList() {
     when(session.query(eq(SemanticTermSearchRest.FULLTEXT_CYPHER), anyMap()))
       .thenThrow(new RuntimeException("index not found"));
+    when(session.query(eq(SemanticTermSearchRest.FULLTEXT_COUNT_CYPHER), anyMap()))
+      .thenThrow(new RuntimeException("index not found"));
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap()))
+      .thenThrow(new RuntimeException("contains failed"));
+    when(session.query(eq(SemanticTermSearchRest.CONTAINS_COUNT_CYPHER), anyMap()))
       .thenThrow(new RuntimeException("contains failed"));
 
     Response r = rest.search("label", 20, 0, sc);
@@ -233,6 +241,42 @@ class SemanticTermSearchRestTest {
     PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
     assertNotNull(body);
     assertTrue(body.items().isEmpty());
+    assertEquals(0L, body.total(), "Both count queries failed → total must be 0");
+  }
+
+  // ─── APISIMP-TERM-SEARCH-FAKE-TOTAL regression ───────────────────────────
+
+  @Test
+  void total_reflectsCountQuery_notResultsSize() {
+    // Simulate: 60 total matches, but page 0 returns only 50 items (pageSize cap).
+    // total must come from the count query (60), not from results.size() (50).
+    Map<String, Object> countRow = new LinkedHashMap<>();
+    countRow.put("total", 60L);
+    Result countResult = mock(Result.class);
+    when(countResult.queryResults()).thenReturn(List.of(countRow));
+    when(session.query(eq(SemanticTermSearchRest.FULLTEXT_COUNT_CYPHER), anyMap()))
+      .thenReturn(countResult);
+
+    List<Map<String, Object>> rows = new java.util.ArrayList<>();
+    for (int i = 0; i < 50; i++) {
+      Map<String, Object> row = new LinkedHashMap<>();
+      row.put("uri", "http://example.org/term" + i);
+      row.put("label", "Term " + i);
+      row.put("description", null);
+      rows.add(row);
+    }
+    Result pagedResult = mock(Result.class);
+    when(pagedResult.queryResults()).thenReturn(rows);
+    when(session.query(eq(SemanticTermSearchRest.FULLTEXT_CYPHER), anyMap()))
+      .thenReturn(pagedResult);
+
+    Response r = rest.search("term", 50, 0, sc);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<TermSuggestionIO> body = (PagedResponseIO<TermSuggestionIO>) r.getEntity();
+    assertEquals(50, body.items().size(), "Page must contain 50 items");
+    assertEquals(60L, body.total(), "total must come from the count query, not from items.size()");
+    assertEquals("60", r.getHeaderString("X-Total-Count"), "X-Total-Count must reflect count query result");
   }
 
   // ─── stripLangSuffix ──────────────────────────────────────────────────────
@@ -352,14 +396,26 @@ class SemanticTermSearchRestTest {
     when(emptyResult.queryResults()).thenReturn(Collections.emptyList());
     when(session.query(eq(SemanticTermSearchRest.FULLTEXT_CYPHER), anyMap())).thenReturn(emptyResult);
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap())).thenReturn(emptyResult);
+    stubCount(0L);
   }
 
   private void stubResultRows(List<Map<String, Object>> rows) {
     Result result = mock(Result.class);
     when(result.queryResults()).thenReturn(rows);
-    // Fulltext query succeeds with the given rows
     when(session.query(eq(SemanticTermSearchRest.FULLTEXT_CYPHER), anyMap())).thenReturn(result);
     when(session.query(eq(SemanticTermSearchRest.CONTAINS_CYPHER), anyMap())).thenReturn(result);
+    // Count = rows with non-null URI (mirrors the Cypher WHERE r.uri IS NOT NULL predicate)
+    long count = rows.stream().filter(r -> r.get("uri") != null).count();
+    stubCount(count);
+  }
+
+  private void stubCount(long count) {
+    Map<String, Object> countRow = new LinkedHashMap<>();
+    countRow.put("total", count);
+    Result countResult = mock(Result.class);
+    when(countResult.queryResults()).thenReturn(List.of(countRow));
+    when(session.query(eq(SemanticTermSearchRest.FULLTEXT_COUNT_CYPHER), anyMap())).thenReturn(countResult);
+    when(session.query(eq(SemanticTermSearchRest.CONTAINS_COUNT_CYPHER), anyMap())).thenReturn(countResult);
   }
 
   private static void assertProblemJson(Response r, String expectedType, int expectedStatus) {

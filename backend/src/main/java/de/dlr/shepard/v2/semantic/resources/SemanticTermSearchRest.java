@@ -104,6 +104,12 @@ public class SemanticTermSearchRest {
     "       coalesce(r.comment[0], r.definition[0]) AS description " +
     "SKIP $skip LIMIT $pageSize";
 
+  static final String FULLTEXT_COUNT_CYPHER =
+    "CALL db.index.fulltext.queryNodes('resource_labels', $q + '*') " +
+    "YIELD node AS r " +
+    "WHERE r.uri IS NOT NULL " +
+    "RETURN count(r) AS total";
+
   /**
    * CONTAINS-based fallback used when the fulltext index is absent.
    *
@@ -153,6 +159,29 @@ public class SemanticTermSearchRest {
     "       coalesce(r.label[0], r.prefLabel[0], r.altLabel[0], r.name[0], r.title[0], r.uri) AS label, " +
     "       coalesce(r.comment[0], r.definition[0]) AS description " +
     "SKIP $skip LIMIT $pageSize";
+
+  static final String CONTAINS_COUNT_CYPHER =
+    "MATCH (r:Resource) " +
+    "WHERE r.uri IS NOT NULL " +
+    "  AND (" +
+    "    any(v IN coalesce(r.label, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.prefLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.altLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.name, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.title, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.comment, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.definition, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hiddenLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasExactSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasRelatedSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasBroadSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasNarrowSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.alternateName, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.notation, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.scopeNote, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR toLower(r.uri) CONTAINS toLower($q) " +
+    "  ) " +
+    "RETURN count(r) AS total";
 
   // ─── endpoint ─────────────────────────────────────────────────────────────
 
@@ -241,14 +270,45 @@ public class SemanticTermSearchRest {
     int effectivePage = Math.max(page, 0);
     long skip = (long) effectivePage * effectiveLimit;
 
-    // 4 — query
+    // 4 — count then page
+    long total = runCount(q.trim());
     List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit, skip);
-    return Response.ok(new PagedResponseIO<>(results, results.size(), effectivePage, effectiveLimit))
-        .header("X-Total-Count", (long) results.size())
+    return Response.ok(new PagedResponseIO<>(results, total, effectivePage, effectiveLimit))
+        .header("X-Total-Count", total)
         .build();
   }
 
   // ─── query logic ──────────────────────────────────────────────────────────
+
+  /**
+   * Run the COUNT variant of the term search — same predicates as
+   * {@link #runSearch} but returns the total match count rather than a page.
+   * Tries the fulltext-index count first; falls back to the CONTAINS count.
+   * Returns 0 on any failure (fail-soft, same as {@link #runSearch}).
+   *
+   * <p>Package-private for test injection.
+   */
+  long runCount(String q) {
+    Session session = getSession();
+    if (session == null) return 0L;
+    try {
+      return executeCount(session, FULLTEXT_COUNT_CYPHER, q);
+    } catch (RuntimeException fulltextEx) {
+      Log.debugf(
+        "SemanticTermSearchRest.runCount: fulltext index unavailable (%s), falling back to CONTAINS count.",
+        fulltextEx.getClass().getSimpleName()
+      );
+      try {
+        return executeCount(session, CONTAINS_COUNT_CYPHER, q);
+      } catch (RuntimeException containsEx) {
+        Log.warnf(
+          "SemanticTermSearchRest.runCount: CONTAINS count also failed (%s); returning 0.",
+          containsEx.getClass().getSimpleName()
+        );
+        return 0L;
+      }
+    }
+  }
 
   /**
    * Run the term search against the OGM session, trying the fulltext index
@@ -299,6 +359,19 @@ public class SemanticTermSearchRest {
   static String stripLangSuffix(String raw) {
     if (raw == null || raw.isBlank()) return raw;
     return LANG_SUFFIX.matcher(raw).replaceAll("").trim();
+  }
+
+  /**
+   * Execute a COUNT Cypher query and return the {@code total} column value.
+   * Returns 0 when the result set is empty or the {@code total} column is missing.
+   */
+  private static long executeCount(Session session, String cypher, String q) {
+    var result = session.query(cypher, Map.of("q", q));
+    for (Map<String, Object> row : result.queryResults()) {
+      Object cnt = row.get("total");
+      if (cnt instanceof Number n) return n.longValue();
+    }
+    return 0L;
   }
 
   /**
