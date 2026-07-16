@@ -227,11 +227,10 @@ public class VocabularyBrowseRest {
           .header("X-Total-Count", 0L)
           .build();
     }
-    List<Vocabulary> used = vocabularyDAO.findVocabulariesUsedByEntity(appId, scope);
-    long total = used.size();
-    int skip = (int) Math.min((long) page * pageSize, total);
-    List<Vocabulary> slice = used.subList(skip, (int) Math.min((long) skip + pageSize, total));
-    List<VocabularyIO> out = slice.stream().map(VocabularyIO::from).toList();
+    long total = vocabularyDAO.countVocabulariesUsedByEntity(appId, scope);
+    long skip = Math.min((long) page * pageSize, total);
+    List<Vocabulary> rows = vocabularyDAO.listVocabulariesUsedByEntityPaged(appId, scope, skip, pageSize);
+    List<VocabularyIO> out = rows.stream().map(VocabularyIO::from).toList();
     return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
         .header("X-Total-Count", total)
         .build();
