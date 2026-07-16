@@ -14,8 +14,12 @@ import de.dlr.shepard.v2.timeseries.services.CrossDoChannelResolver;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -33,6 +37,7 @@ import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -113,6 +118,7 @@ public class CrossDoBulkDataRest {
   @APIResponse(
     responseCode = "200",
     description = "Resolved series across the requested DataObjects.",
+    headers = @Header(name = "X-Total-Count", description = "Total resolved DataObjects before page-slicing.", schema = @Schema(type = SchemaType.INTEGER)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
   @APIResponse(responseCode = "400", description = "Validation error on request body, or unsupported/missing `kind`.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -123,6 +129,8 @@ public class CrossDoBulkDataRest {
       schema = @Schema(enumeration = {"timeseries"}, defaultValue = "timeseries")
     )
     @QueryParam("kind") String kind,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(100) int pageSize,
     @NotNull @Valid CrossDoBulkDataRequestIO body,
     @Context SecurityContext sc
   ) {
@@ -198,7 +206,11 @@ public class CrossDoBulkDataRest {
       out.add(new CrossDoSeriesIO(doAppId, doName, predicate, pick.symbolicName(), points));
     }
 
-    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
+    int fromIndex = page * pageSize;
+    int toIndex = Math.min(fromIndex + pageSize, out.size());
+    List<CrossDoSeriesIO> pageData = fromIndex >= out.size() ? List.of() : out.subList(fromIndex, toIndex);
+    return Response.ok(new PagedResponseIO<>(pageData, out.size(), page, pageSize))
+        .header("X-Total-Count", (long) out.size())
         .build();
   }
 
