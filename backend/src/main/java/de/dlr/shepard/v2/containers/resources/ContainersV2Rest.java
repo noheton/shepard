@@ -445,6 +445,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -473,6 +474,7 @@ public class ContainersV2Rest {
       int total = containersService.count(kind, q);
       List<ContainerV2IO> pageItems = containersService.list(kind, q, skip, pageSize);
       Response.ResponseBuilder rb = Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize));
+      rb.header("X-Total-Count", total);
       return rb.build();
     } catch (BadRequestException bre) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Bad request", Response.Status.BAD_REQUEST, bre.getMessage());
@@ -583,6 +585,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of linked DataObjects (may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
@@ -618,7 +621,7 @@ public class ContainersV2Rest {
     List<DataObjectIO> pageItems = resolved.get().handler()
         .listLinkedDataObjectsPaged(appId, skip, pageSize)
         .orElse(List.of());
-    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize)).header("X-Total-Count", total).build();
   }
 
   // ─── channel endpoints (APISIMP-CONT-NS-COLLAPSE-2) ────────────────────────
@@ -636,6 +639,7 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged per-channel listing.",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -663,7 +667,8 @@ public class ContainersV2Rest {
           Response.Status.UNSUPPORTED_MEDIA_TYPE,
           "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
     }
-    return Response.ok(result.get()).build();
+    var paged = result.get();
+    return Response.ok(paged).header("X-Total-Count", paged.total()).build();
   }
 
   @GET

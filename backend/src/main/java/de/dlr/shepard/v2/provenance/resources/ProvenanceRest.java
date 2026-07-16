@@ -38,6 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
@@ -190,7 +191,8 @@ public class ProvenanceRest {
     description = "Matching activities, sorted by startedAt DESC. " +
     "Envelope: `pageSize` reflects the `?pageSize=` window; `total` reflects rows returned (not true DB total — cursor mode). " +
     "Response header `X-Has-More: true` when the window is full and more rows may exist; use the `X-Next-Cursor` epoch-ms value as `?until=` on the next call.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -226,6 +228,7 @@ public class ProvenanceRest {
     if (hasMore) {
       rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
     }
+    rb.header("X-Total-Count", (long) rows.size());
     return rb.build();
   }
 
@@ -336,7 +339,8 @@ public class ProvenanceRest {
     description = "Activities targeting the entity, sorted by startedAt DESC. " +
     "Envelope: `pageSize` reflects the `?pageSize=` window; `total` reflects rows returned (cursor mode, not true DB total). " +
     "Header `X-Has-More: true` when window is full; use `X-Next-Cursor` epoch-ms as `?until=` on the next call.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -367,6 +371,7 @@ public class ProvenanceRest {
     if (hasMore) {
       rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
     }
+    rb.header("X-Total-Count", (long) rows.size());
     return rb.build();
   }
 

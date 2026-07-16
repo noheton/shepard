@@ -38,6 +38,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 
 /**
  * PM1b — admin REST surface for the PM1a {@link PluginRegistry}.
@@ -126,7 +127,8 @@ public class PluginsAdminRest {
   @APIResponse(
     responseCode = "200",
     description = "Current plugin registry snapshot.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -146,6 +148,7 @@ public class PluginsAdminRest {
         ? List.of()
         : rows.subList((int) from, (int) Math.min(from + pageSize, rows.size()));
     return Response.ok(new PagedResponseIO<>(slice, rows.size(), page, pageSize))
+        .header("X-Total-Count", (long) rows.size())
         .build();
   }
 

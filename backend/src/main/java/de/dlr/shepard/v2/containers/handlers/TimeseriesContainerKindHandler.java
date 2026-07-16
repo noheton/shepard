@@ -549,6 +549,7 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
         .map(SemanticAnnotationIO::new)
         .collect(Collectors.toList());
     return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build());
   }
 
@@ -585,6 +586,7 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
         .map(TimeseriesAnnotationIO::new)
         .collect(Collectors.toList());
     return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build());
   }
 

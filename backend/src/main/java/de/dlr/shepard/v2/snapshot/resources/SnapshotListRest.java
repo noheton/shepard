@@ -33,6 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -115,7 +116,8 @@ public class SnapshotListRest {
   @APIResponse(
     responseCode = "200",
     description = "Snapshot page (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "collectionAppId supplied but does not resolve to an existing Collection.")
@@ -174,6 +176,7 @@ public class SnapshotListRest {
     }
 
     return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize))
+        .header("X-Total-Count", total)
         .build();
   }
 }
