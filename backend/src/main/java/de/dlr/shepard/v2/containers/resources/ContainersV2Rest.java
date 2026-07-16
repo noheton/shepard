@@ -791,7 +791,8 @@ public class ContainersV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Raw data for all resolved channels.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total resolved channels.", schema = @Schema(implementation = Long.class)))
   @APIResponse(responseCode = "400", description = "Validation error on request body, or start/end not a valid ISO 8601 UTC timestamp.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -827,6 +828,7 @@ public class ContainersV2Rest {
     }
     var out = result.get();
     return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
+        .header("X-Total-Count", (long) out.size())
         .build();
   }
 
@@ -1034,7 +1036,8 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of channel annotations (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
@@ -1151,7 +1154,8 @@ public class ContainersV2Rest {
   )
   @APIResponse(responseCode = "200",
     description = "Paged list of temporal annotations (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
   @APIResponse(responseCode = "404", description = "No container with that appId.")
