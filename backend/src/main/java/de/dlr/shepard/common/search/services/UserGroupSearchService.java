@@ -13,6 +13,7 @@ import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.search.query.QueryValidator;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.PaginationHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -43,6 +44,23 @@ public class UserGroupSearchService {
     QueryValidator.checkQuery(jsonQuery);
     Neo4jQuery selectionQuery = Neo4jQueryBuilder.userGroupSelectionQuery(jsonQuery);
     return searchDAO.findUserGroups(selectionQuery, Constants.USERGROUP_IN_QUERY);
+  }
+
+  /** APISIMP-USERGROUP-SEARCH-PAGING — total count for a text search, used by the paged path. */
+  public long countByText(String text) {
+    String jsonQuery = buildNameContainsQuery(text);
+    QueryValidator.checkQuery(jsonQuery);
+    Neo4jQuery selectionQuery = Neo4jQueryBuilder.userGroupSelectionQuery(jsonQuery);
+    return searchDAO.countUserGroups(selectionQuery, Constants.USERGROUP_IN_QUERY);
+  }
+
+  /** APISIMP-USERGROUP-SEARCH-PAGING — DB-backed paged text search; honours page + pageSize at Cypher level. */
+  public List<UserGroup> searchByTextPaged(String text, int page, int pageSize) {
+    String jsonQuery = buildNameContainsQuery(text);
+    QueryValidator.checkQuery(jsonQuery);
+    Neo4jQuery selectionQuery = Neo4jQueryBuilder.userGroupSelectionQuery(jsonQuery);
+    PaginationHelper pagination = new PaginationHelper(page, pageSize);
+    return searchDAO.findUserGroupsPaged(selectionQuery, Constants.USERGROUP_IN_QUERY, pagination);
   }
 
   private static String buildNameContainsQuery(String value) {

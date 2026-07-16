@@ -125,6 +125,20 @@ public class SearchDAO {
     return ret;
   }
 
+  public long countUserGroups(Neo4jQuery selectionQuery, String userGroupVariable) {
+    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery.cypher(), userGroupVariable);
+    Iterable<Long> result = session.query(Long.class, query, selectionQuery.params());
+    return result.iterator().next();
+  }
+
+  public List<UserGroup> findUserGroupsPaged(Neo4jQuery selectionQuery, String userGroupVariable, PaginationHelper pagination) {
+    String query = selectionQuery.cypher() + emitBoundedUserGroupReturnPart(userGroupVariable, pagination);
+    Iterable<UserGroup> userGroups = session.query(UserGroup.class, query, selectionQuery.params());
+    List<UserGroup> ret = new ArrayList<>();
+    userGroups.forEach(ret::add);
+    return ret;
+  }
+
   private String emitTotalCountReturnPart(String containerVariable) {
     return (
       " WITH " +
@@ -215,6 +229,17 @@ public class SearchDAO {
         userGroupVariable,
         userGroupVariable,
         userGroupVariable
+      );
+  }
+
+  private String emitBoundedUserGroupReturnPart(String var, PaginationHelper pagination) {
+    return " ORDER BY %s.name ASC SKIP %d LIMIT %d WITH %s MATCH path=(%s:UserGroup)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)".formatted(
+        var,
+        pagination.getOffset(),
+        pagination.getSize(),
+        var,
+        var,
+        var
       );
   }
 }
