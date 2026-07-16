@@ -69,6 +69,34 @@ public class InstanceAdminService {
   }
 
   /**
+   * Paginated variant — delegates {@code skip}/{@code limit} to the DAO so
+   * only one page of grant rows is loaded.
+   *
+   * @param skip  rows to skip (page × pageSize).
+   * @param limit maximum rows to return.
+   */
+  public List<InstanceAdminGrantIO> listInstanceAdmins(long skip, long limit) {
+    List<RoleDAO.RoleGrant> grants = roleDAO.listGrants(Constants.INSTANCE_ADMIN_ROLE, skip, limit);
+    List<InstanceAdminGrantIO> out = new ArrayList<>(grants.size());
+    for (var g : grants) {
+      out.add(
+        new InstanceAdminGrantIO(
+          g.username(),
+          "Neo4j",
+          g.grantedBy(),
+          g.grantedAtMillis() == null ? null : Instant.ofEpochMilli(g.grantedAtMillis()).toString()
+        )
+      );
+    }
+    return out;
+  }
+
+  /** Total Neo4j-side instance-admin grants for pagination headers. */
+  public long countInstanceAdmins() {
+    return roleDAO.countGrants(Constants.INSTANCE_ADMIN_ROLE);
+  }
+
+  /**
    * Grant the {@code instance-admin} role to the named user. The user
    * must exist in Neo4j (i.e. they must have logged in at least once
    * via OIDC, or been pre-created). The grantor is the calling

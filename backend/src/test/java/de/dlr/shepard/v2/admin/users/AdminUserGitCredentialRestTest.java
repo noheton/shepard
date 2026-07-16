@@ -78,13 +78,14 @@ class AdminUserGitCredentialRestTest {
   @SuppressWarnings("unchecked")
   @Test
   void list_returns200_withEmptyList_whenNoCredentials() {
-    when(dao.findAllByUser(USER)).thenReturn(List.of());
+    when(dao.countByUser(USER)).thenReturn(0L);
+    when(dao.findByUser(USER, 0L, 50)).thenReturn(List.of());
     Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
         (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
     assertThat(body.items()).isEmpty();
-    assertThat(body.total()).isEqualTo(0);
+    assertThat(body.total()).isEqualTo(0L);
   }
 
   @SuppressWarnings("unchecked")
@@ -92,14 +93,15 @@ class AdminUserGitCredentialRestTest {
   void list_returns200_withItems_andOmitsPat() {
     Date rotated = new Date(2000L);
     GitCredential c = cred(CRED_APP_ID, "gitlab.com", "alice", rotated);
-    when(dao.findAllByUser(USER)).thenReturn(List.of(c));
+    when(dao.countByUser(USER)).thenReturn(1L);
+    when(dao.findByUser(USER, 0L, 50)).thenReturn(List.of(c));
 
     Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
         (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
-    assertThat(body.total()).isEqualTo(1);
+    assertThat(body.total()).isEqualTo(1L);
     var item = body.items().get(0);
     assertThat(item.appId()).isEqualTo(CRED_APP_ID);
     assertThat(item.host()).isEqualTo("gitlab.com");
@@ -118,7 +120,8 @@ class AdminUserGitCredentialRestTest {
   @Test
   void list_returns200_withNullLastRotatedAt_forLegacyRows() {
     GitCredential legacy = cred(CRED_APP_ID, "github.com", "bob", null);
-    when(dao.findAllByUser(USER)).thenReturn(List.of(legacy));
+    when(dao.countByUser(USER)).thenReturn(1L);
+    when(dao.findByUser(USER, 0L, 50)).thenReturn(List.of(legacy));
     Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(200);
     PagedResponseIO<AdminGitCredentialListItemIO> body =
@@ -131,6 +134,23 @@ class AdminUserGitCredentialRestTest {
     when(userService.getUserOptional(USER)).thenReturn(Optional.empty());
     Response r = rest.list(USER, 0, 50);
     assertThat(r.getStatus()).isEqualTo(404);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  void list_paginationParamsForwardedToDao() {
+    GitCredential c = cred(CRED_APP_ID, "bitbucket.org", "eve", new Date(3000L));
+    when(dao.countByUser(USER)).thenReturn(25L);
+    when(dao.findByUser(USER, 20L, 10)).thenReturn(List.of(c));
+
+    Response r = rest.list(USER, 2, 10);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    PagedResponseIO<AdminGitCredentialListItemIO> body =
+        (PagedResponseIO<AdminGitCredentialListItemIO>) r.getEntity();
+    assertThat(body.total()).isEqualTo(25L);
+    assertThat(body.items()).hasSize(1);
+    assertThat(r.getHeaderString("X-Total-Count")).isEqualTo("25");
   }
 
   // ── POST rotate ──────────────────────────────────────────────────────────

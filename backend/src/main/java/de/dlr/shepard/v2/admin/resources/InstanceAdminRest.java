@@ -124,13 +124,11 @@ public class InstanceAdminRest {
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
     requireInstanceAdmin(securityContext);
-    List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
-    long from = (long) page * pageSize;
-    List<InstanceAdminGrantIO> slice = from >= grants.size()
-        ? List.of()
-        : grants.subList((int) from, (int) Math.min(from + pageSize, grants.size()));
-    return Response.ok(new PagedResponseIO<>(slice, grants.size(), page, pageSize))
-        .header("X-Total-Count", (long) grants.size())
+    long total = instanceAdminService.countInstanceAdmins();
+    long skip = (long) page * pageSize;
+    List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins(skip, pageSize);
+    return Response.ok(new PagedResponseIO<>(grants, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
