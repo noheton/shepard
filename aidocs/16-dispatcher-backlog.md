@@ -5748,14 +5748,14 @@ picks these up. Terse by design.
 - **Status:** ✅ merged (fire-631, PR #2599, SHA 95b591969)
 
 ## APISIMP-TERM-SEARCH-FAKE-TOTAL — SemanticTermSearchRest.search() sets total = results.size() which is always ≤ pageSize (size: XS, sweep: fire-631)
-- **Status:** 🔧 in-PR (fire-631, branch APISIMP-TERM-SEARCH-FAKE-TOTAL)
+- **Status:** ✅ merged (fire-632, PR #2600)
 - **Why:** `GET /v2/semantic/terms/search?q=…&page=0&pageSize=50` runs a properly SKIP/LIMIT-bounded Cypher but then sets `total = results.size()` at line 246 — always ≤ 50. A client requesting page 0 of a 500-term ontology gets `{total: 50}` and cannot distinguish "exactly 50 results" from "50+ results with more pages". `X-Total-Count` header is also wrong for the same reason.
 - **Fix:** Add `FULLTEXT_COUNT_CYPHER` + `CONTAINS_COUNT_CYPHER` constants and a `runCount(q)` method (mirrors `runSearch` with fallback); execute before the paged query; use result as `total` in the `PagedResponseIO` envelope and `X-Total-Count` header.
 - **AC:** Seed 60 ontology terms matching `"mat"`. `GET /v2/semantic/terms/search?q=mat&page=0&pageSize=50` must return `total >= 60` (not `total == 50`). `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticTermSearchRest.java:246`; apisimp-sweep-2026-07-16-fire631.md §Finding F3.
 
 ## APISIMP-URDF-INMEM-PAGING — AccessibleUrdfService loads up to 5 000 URDF candidates then subList-slices in memory (size: S, sweep: fire-631)
-- **Status:** queued
+- **Status:** 🔧 in-PR (fire-632, branch APISIMP-URDF-INMEM-PAGING)
 - **Why:** `GET /v2/references/urdf` (URDF picker autocomplete) calls `singletonFileReferenceDAO.findAllUrdfCandidates()` with no `q` filter or LIMIT, fetching up to `MAX_CANDIDATES = 5_000` rows. After a permission filter (in-memory) and an optional Java substring filter, `visible.subList(from, to)` is called. Every autocomplete keystroke pays the full 5 000-row fetch cost even when `q` matches only a handful of files.
 - **Fix:** Push `q` filter and `LIMIT` into `findAllUrdfCandidates(q, limit)` as Cypher `WHERE name CONTAINS $q … LIMIT`. Permission filtering stays in Java but operates on a smaller set.
 - **AC:** With > 200 URDF FileReferences in DB, `GET /v2/references/urdf?q=kr210&pageSize=10` must show a bounded query in the Neo4j log.

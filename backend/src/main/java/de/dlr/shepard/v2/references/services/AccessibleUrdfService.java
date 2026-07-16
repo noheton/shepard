@@ -26,12 +26,13 @@ import java.util.Set;
  * whole instance, so the picker is genuinely populated and the user never has to
  * paste a UUID (see the "the user never types an ID" rule in CLAUDE.md).
  *
- * <p>Flow: fetch the instance-wide URDF candidates (DAO, unfiltered) → narrow to
- * the collections the caller may {@link AccessType#Read} via
- * {@link PermissionsService#filterAllowedDataObjectAppIds} → apply the optional
- * {@code q} name filter (case-insensitive substring) → page. The result
- * {@code total} reflects the count <em>after</em> permission + {@code q}
- * filtering (what the user can actually see), so the frontend can key off it.
+ * <p>Flow: fetch instance-wide URDF candidates from Neo4j with the optional
+ * {@code q} filter and a {@code MAX_CANDIDATES} row ceiling pushed into the
+ * Cypher (APISIMP-URDF-INMEM-PAGING) → narrow to the collections the caller
+ * may {@link AccessType#Read} via
+ * {@link PermissionsService#filterAllowedDataObjectAppIds} → page. The result
+ * {@code total} reflects the count <em>after</em> permission filtering
+ * (what the user can actually see), so the frontend can key off it.
  *
  * <p><strong>Fail-soft:</strong> any read failure (Neo4j down, permission
  * lookup error) yields an empty page, never a 500 — a broken picker degrades to
@@ -68,16 +69,16 @@ public class AccessibleUrdfService {
       return new PagedResponseIO<>(List.of(), 0, safePage, safeSize);
     }
     try {
-      List<UrdfCandidate> candidates = singletonFileReferenceDAO.findAllUrdfCandidates();
+      // APISIMP-URDF-INMEM-PAGING: push q filter + LIMIT into Cypher so the
+      // permission-narrowing loop below operates on a bounded, pre-filtered set.
+      List<UrdfCandidate> candidates = singletonFileReferenceDAO.findUrdfCandidates(q, MAX_CANDIDATES);
       if (candidates.isEmpty()) {
         return new PagedResponseIO<>(List.of(), 0, safePage, safeSize);
       }
-      // Defense-in-depth: the DAO already filters to URDFs in Cypher, but re-apply
-      // the predicate here so a future DAO refactor can't silently leak non-URDFs.
+      // Defense-in-depth: the DAO already filters by URDF predicate in Cypher,
+      // but re-apply here so a future DAO refactor can't silently leak non-URDFs.
       List<UrdfCandidate> urdfs = candidates.stream()
-        .limit(MAX_CANDIDATES)
         .filter(c -> isUrdfCandidate(c.name(), c.fileKind()))
-        .filter(c -> matchesQuery(c.name(), q))
         .toList();
       if (urdfs.isEmpty()) {
         return new PagedResponseIO<>(List.of(), 0, safePage, safeSize);
@@ -116,10 +117,4 @@ public class AccessibleUrdfService {
     return name != null && name.toLowerCase(Locale.ROOT).endsWith(".urdf");
   }
 
-  /** Case-insensitive substring match; a blank/null query matches everything. */
-  static boolean matchesQuery(String name, String q) {
-    if (q == null || q.isBlank()) return true;
-    if (name == null) return false;
-    return name.toLowerCase(Locale.ROOT).contains(q.toLowerCase(Locale.ROOT).trim());
-  }
 }
