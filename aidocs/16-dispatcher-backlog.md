@@ -5762,7 +5762,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/services/AccessibleUrdfService.java:71`; apisimp-sweep-2026-07-16-fire631.md §Finding F2.
 
 ## APISIMP-REFS-INMEM-PAGING — ReferenceKindHandler SPI default paging loads all references then subList-slices (size: M, sweep: fire-631)
-- **Status:** queued
+- **Status:** 🔧 in-PR (fire-634, 2026-07-16)
 - **Why:** `ReferencesV2Rest.list()` delegates to `handler.listByDataObject(…, skip, limit)` and `handler.countByDataObject(…)`. Both are default methods on `ReferenceKindHandler` that call the unparameterised `listByDataObject(collectionAppId, dataObjectAppId)` (loading ALL references) and then slice in Java. All 7 concrete handlers use only these defaults. Every paginated `GET /v2/references?...&page=X&pageSize=Y` request triggers a full load. A comment at line 146 already flags this as `APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING`. The container SPI already solved this pattern — mirror it.
 - **Fix:** Each handler overrides `countByDataObject` and `listByDataObject(…, int skip, int limit)` with a Cypher SKIP/LIMIT DAO method. Start with `FileReferenceKindHandler` (kind=file) and `UriReferenceKindHandler` (kind=uri).
 - **AC:** `GET /v2/references?kind=uri&dataObjectAppId=<id-with-50-refs>&page=0&pageSize=1` returns `total=50`, not `total=1`. Neo4j PROFILE shows SKIP/LIMIT Cypher.

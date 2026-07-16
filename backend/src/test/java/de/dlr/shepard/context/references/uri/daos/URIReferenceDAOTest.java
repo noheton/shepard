@@ -1,6 +1,8 @@
 package de.dlr.shepard.context.references.uri.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +16,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 public class URIReferenceDAOTest extends BaseTestCase {
@@ -57,6 +60,80 @@ public class URIReferenceDAOTest extends BaseTestCase {
     var actual = dao.findByDataObjectNeo4jId(1L);
     verify(session).query(URIReference.class, query, paramsMap);
     assertEquals(List.of(ref), actual);
+  }
+
+  // ── APISIMP-REFS-INMEM-PAGING ────────────────────────────────────────────
+
+  @Test
+  public void countByDataObjectAppIdTest() {
+    String doAppId = "do-app-uri-1";
+    String expectedQuery =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:URIReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN count(r) AS cnt";
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("cnt", 7L)).iterator()
+    );
+    when(session.query(expectedQuery, Map.of("aid", doAppId))).thenReturn(r);
+
+    int count = dao.countByDataObjectAppId(doAppId);
+
+    verify(session).query(expectedQuery, Map.of("aid", doAppId));
+    assertEquals(7, count);
+  }
+
+  @Test
+  public void countByDataObjectAppIdEmptyResultTest() {
+    String doAppId = "do-app-uri-empty";
+    String expectedQuery =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:URIReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN count(r) AS cnt";
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(Collections.<Map<String, Object>>emptyList().iterator());
+    when(session.query(expectedQuery, Map.of("aid", doAppId))).thenReturn(r);
+
+    assertEquals(0, dao.countByDataObjectAppId(doAppId));
+  }
+
+  @Test
+  public void findByDataObjectAppIdTest_pushesSkipLimit() {
+    String doAppId = "do-app-uri-2";
+    int skip = 5;
+    int limit = 3;
+    String expectedQuery =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:URIReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN r, d, hr " +
+      "ORDER BY r.createdAt ASC " +
+      "SKIP $skip LIMIT $limit";
+    Map<String, Object> params = Map.of("aid", doAppId, "skip", 5L, "limit", 3L);
+    var ref = new URIReference(10L);
+    when(session.query(URIReference.class, expectedQuery, params)).thenReturn(List.of(ref));
+
+    List<URIReference> result = dao.findByDataObjectAppId(doAppId, skip, limit);
+
+    verify(session).query(URIReference.class, expectedQuery, params);
+    assertEquals(1, result.size());
+    assertEquals(ref, result.get(0));
+  }
+
+  @Test
+  public void findByDataObjectAppIdTest_emptyPage() {
+    String doAppId = "do-app-uri-3";
+    String expectedQuery =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:URIReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN r, d, hr " +
+      "ORDER BY r.createdAt ASC " +
+      "SKIP $skip LIMIT $limit";
+    Map<String, Object> params = Map.of("aid", doAppId, "skip", 0L, "limit", 10L);
+    when(session.query(URIReference.class, expectedQuery, params)).thenReturn(List.of());
+
+    List<URIReference> result = dao.findByDataObjectAppId(doAppId, 0, 10);
+
+    assertTrue(result.isEmpty());
   }
 
   @Test

@@ -200,4 +200,33 @@ public class FileReferenceKindHandler implements ReferenceKindHandler {
     }
     return out;
   }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — delegates COUNT to Neo4j rather than loading
+   * all rows and calling {@code .size()} in Java.
+   */
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    return singletonService.countByDataObject(dataObjectAppId, subKind);
+  }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — pushes SKIP/LIMIT to Neo4j; never loads the
+   * full list then subList-slices in Java.
+   */
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<FileReference> refs = singletonService.listByDataObject(dataObjectAppId, subKind, skip, limit);
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (FileReference ref : refs) {
+      if (ref != null) out.add(toIO(ref));
+    }
+    return out;
+  }
 }
