@@ -148,6 +148,66 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
     return mapRows(session.query(query, params));
   }
 
+  // ─── APISIMP-REFS-INMEM-PAGING ────────────────────────────────────────────
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — count of non-deleted singletons under a DataObject,
+   * optionally filtered by fileKind. Pushes the predicate to Neo4j so the caller
+   * never loads all rows just to count them.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @param subKind optional fileKind filter; null / blank means "all kinds".
+   * @return total count of matching, non-deleted singletons.
+   */
+  public int countByDataObjectAppId(String dataObjectAppId, String subKind) {
+    boolean hasSubKind = subKind != null && !subKind.isBlank();
+    String subKindClause = hasSubKind ? "AND r.fileKind = $subKind " : "";
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:SingletonFileReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      subKindClause +
+      "RETURN count(r) AS cnt";
+    Map<String, Object> params = hasSubKind
+      ? Map.of("aid", dataObjectAppId, "subKind", subKind)
+      : Map.of("aid", dataObjectAppId);
+    for (var row : session.query(query, params)) {
+      Object cnt = row.get("cnt");
+      return cnt instanceof Number n ? n.intValue() : 0;
+    }
+    return 0;
+  }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — paginated list of non-deleted singletons under a
+   * DataObject, optionally filtered by fileKind. Pushes SKIP/LIMIT to Neo4j.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @param subKind optional fileKind filter; null / blank means "all kinds".
+   * @param skip 0-based offset.
+   * @param limit maximum rows (must be &gt; 0).
+   * @return the singletons for the requested page; never null.
+   */
+  public List<FileReference> findByDataObjectAppId(String dataObjectAppId, String subKind, int skip, int limit) {
+    boolean hasSubKind = subKind != null && !subKind.isBlank();
+    String subKindClause = hasSubKind ? "AND r.fileKind = $subKind " : "";
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:SingletonFileReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      subKindClause +
+      "OPTIONAL MATCH (r)-[:has_payload]->(f:ShepardFile) " +
+      "RETURN r, f, d, hr, [(r)-[r_p:has_payload]->(f) | [r_p, f]] AS rels " +
+      "ORDER BY r.createdAt ASC " +
+      "SKIP $skip LIMIT $limit";
+    Map<String, Object> params;
+    if (hasSubKind) {
+      params = Map.of("aid", dataObjectAppId, "subKind", subKind, "skip", (long) skip, "limit", (long) limit);
+    } else {
+      params = Map.of("aid", dataObjectAppId, "skip", (long) skip, "limit", (long) limit);
+    }
+    var queryResult = findByQuery(query, params);
+    return StreamSupport.stream(queryResult.spliterator(), false).toList();
+  }
+
   // ─── notebook projection ─────────────────────────────────────────────────
 
   /**

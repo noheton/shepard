@@ -195,6 +195,30 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
   }
 
   /**
+   * APISIMP-REFS-INMEM-PAGING — count of non-deleted URIReferences under a DataObject
+   * without loading them all. Delegates the COUNT to Neo4j via the DAO.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @return total count of matching, non-deleted URIReferences.
+   */
+  public int countByDataObjectAppId(String dataObjectAppId) {
+    return uRIReferenceDAO.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — paginated list of non-deleted URIReferences under a
+   * DataObject. Delegates SKIP/LIMIT to Neo4j via the DAO.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @param skip 0-based offset.
+   * @param limit maximum rows (must be &gt; 0).
+   * @return the URIReferences for the requested page; never null.
+   */
+  public List<URIReference> listByDataObjectAppId(String dataObjectAppId, int skip, int limit) {
+    return uRIReferenceDAO.findByDataObjectAppId(dataObjectAppId, skip, limit);
+  }
+
+  /**
    * Deletes the URI reference.
    *
    * @param collectionShepardId

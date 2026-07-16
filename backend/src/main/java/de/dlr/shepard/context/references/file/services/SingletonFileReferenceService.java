@@ -116,6 +116,33 @@ public class SingletonFileReferenceService {
   }
 
   /**
+   * APISIMP-REFS-INMEM-PAGING — count of non-deleted singletons under a DataObject,
+   * optionally filtered by fileKind. Delegates the predicate to the DAO so Neo4j
+   * evaluates it rather than loading all rows into the JVM.
+   *
+   * @param dataObjectAppId parent DataObject's appId.
+   * @param subKind optional fileKind filter; null / blank means "all kinds".
+   * @return total count of matching, non-deleted singletons.
+   */
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    return singletonFileReferenceDAO.countByDataObjectAppId(dataObjectAppId, subKind);
+  }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — paginated list of non-deleted singletons under a
+   * DataObject, optionally filtered by fileKind. Delegates SKIP/LIMIT to Neo4j.
+   *
+   * @param dataObjectAppId parent DataObject's appId.
+   * @param subKind optional fileKind filter; null / blank means "all kinds".
+   * @param skip 0-based offset.
+   * @param limit maximum rows (must be &gt; 0).
+   * @return the singletons for the requested page; never null.
+   */
+  public List<FileReference> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    return singletonFileReferenceDAO.findByDataObjectAppId(dataObjectAppId, subKind, skip, limit);
+  }
+
+  /**
    * APISIMP-KIND-DISCRIMINATOR Option C — phase 1 of the two-step file create.
    *
    * <p>Creates a metadata-only {@link FileReference} node (no bytes, no GridFS

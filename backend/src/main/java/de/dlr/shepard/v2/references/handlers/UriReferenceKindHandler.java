@@ -108,6 +108,32 @@ public class UriReferenceKindHandler implements ReferenceKindHandler {
     return out;
   }
 
+  /**
+   * APISIMP-REFS-INMEM-PAGING — delegates COUNT to Neo4j rather than loading all rows.
+   * URI references carry no sub-kind discriminator so {@code subKind} is ignored.
+   */
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    resolveParent(dataObjectAppId); // validates existence; throws NotFoundException if absent
+    return uriReferenceService.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  /**
+   * APISIMP-REFS-INMEM-PAGING — pushes SKIP/LIMIT to Neo4j; never loads the full list
+   * then subList-slices in Java.
+   * URI references carry no sub-kind discriminator so {@code subKind} is ignored.
+   */
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    resolveParent(dataObjectAppId); // validates existence; throws NotFoundException if absent
+    List<URIReference> refs = uriReferenceService.listByDataObjectAppId(dataObjectAppId, skip, limit);
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (URIReference ref : refs) {
+      if (ref != null && !ref.isDeleted()) out.add(toIO(ref));
+    }
+    return out;
+  }
+
   private DataObject resolveParent(String dataObjectAppId) {
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
       throw new BadRequestException("dataObjectAppId is required");
