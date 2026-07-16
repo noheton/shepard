@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -198,7 +199,8 @@ public class SemanticTermSearchRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Items carry `uri`, `label`, and optionally `description`.",
-    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
@@ -242,6 +244,7 @@ public class SemanticTermSearchRest {
     // 4 — query
     List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit, skip);
     return Response.ok(new PagedResponseIO<>(results, results.size(), effectivePage, effectiveLimit))
+        .header("X-Total-Count", (long) results.size())
         .build();
   }
 
