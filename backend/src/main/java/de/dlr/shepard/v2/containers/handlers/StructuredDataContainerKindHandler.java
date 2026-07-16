@@ -110,6 +110,24 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
     return service.getAllContainers(params).stream().map(this::toIO).toList();
   }
 
+  // ── APISIMP-CONT-LIST-INMEM-PAGING ──────────────────────────────────────
+
+  @Override
+  public int count(String nameFilter) {
+    User user = userService.getCurrentUser();
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    return dao.countStructuredDataContainers(params, user.getUsername());
+  }
+
+  @Override
+  public List<ContainerV2IO> list(String nameFilter, int skip, int limit) {
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    params = params.withPageAndSize(limit > 0 ? skip / limit : 0, limit);
+    return service.getAllContainers(params).stream().map(this::toIO).toList();
+  }
+
   @Override
   public Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
     return Optional.of(

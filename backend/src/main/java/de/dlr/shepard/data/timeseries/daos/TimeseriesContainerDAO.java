@@ -113,6 +113,25 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
     return result;
   }
 
+  /**
+   * APISIMP-CONT-LIST-INMEM-PAGING — count containers matching the filter
+   * without loading any entity graph. Runs a single Cypher COUNT query so
+   * {@link de.dlr.shepard.v2.containers.handlers.TimeseriesContainerKindHandler#count}
+   * avoids a full-table load.
+   */
+  public int countTimeseriesContainers(QueryParamHelper params, String username) {
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", params.getName());
+    String query = "MATCH %s WHERE %s RETURN count(c) AS total".formatted(
+        CypherQueryHelper.getObjectPart("c", "TimeseriesContainer", params.hasName()),
+        CypherQueryHelper.getReadableByQuery("c", username)
+    );
+    var iter = session.query(query, paramsMap).iterator();
+    if (!iter.hasNext()) return 0;
+    Object val = iter.next().get("total");
+    return val instanceof Number n ? n.intValue() : 0;
+  }
+
   @Override
   public Class<TimeseriesContainer> getEntityType() {
     return TimeseriesContainer.class;
