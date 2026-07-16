@@ -654,6 +654,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct predecessors (may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -683,6 +684,7 @@ public class DataObjectV2Rest {
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
       .header("Cache-Control", "max-age=300, must-revalidate")
+      .header("X-Total-Count", total)
       .build();
   }
 
@@ -763,6 +765,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct successors (may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -791,6 +794,7 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listSuccessors(appId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
@@ -808,6 +812,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Direct children (may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -836,6 +841,7 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> items = dataObjectService.listChildren(appId, skip, pageSize)
         .stream().map(DataObjectSummaryIO::new).collect(java.util.stream.Collectors.toList());
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
@@ -856,6 +862,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -878,6 +885,7 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
     return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+        .header("X-Total-Count", (long) result.size())
         .build();
   }
 
@@ -898,6 +906,7 @@ public class DataObjectV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -920,6 +929,7 @@ public class DataObjectV2Rest {
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
     return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+        .header("X-Total-Count", (long) result.size())
         .build();
   }
 

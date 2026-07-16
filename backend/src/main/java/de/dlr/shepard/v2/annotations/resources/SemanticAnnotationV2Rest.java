@@ -155,6 +155,7 @@ public class SemanticAnnotationV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "PagedResponse of AnnotationV2 matching the filters.",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Bad pagination params (RFC 7807).")
@@ -203,6 +204,7 @@ public class SemanticAnnotationV2Rest {
       .toList();
     long total = annotationDAO.countFiltered(subjectAppId, subjectKind, predicateIri, vocabId);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
@@ -223,6 +225,7 @@ public class SemanticAnnotationV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "PagedResponse of AnnotationV2 matching the text query.",
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400", description = "Query string is blank (RFC 7807).")
@@ -260,6 +263,7 @@ public class SemanticAnnotationV2Rest {
       .toList();
     long total = annotationDAO.countTextSearch(q, vocabId);
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

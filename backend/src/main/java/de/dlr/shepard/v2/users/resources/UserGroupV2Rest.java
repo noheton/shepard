@@ -41,6 +41,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
@@ -87,7 +88,8 @@ public class UserGroupV2Rest {
     responseCode = "200",
     description = "Paged list of user groups (`PagedResponseIO<UserGroupV2IO>`). " +
       "When `q` is set, `total=items.size(), page=0, pageSize=items.size()`.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @Parameter(name = "q", description = "Optional name filter. When set, returns a PagedResponseIO with all matching groups; ordering and pagination are ignored.")
@@ -107,6 +109,7 @@ public class UserGroupV2Rest {
         .map(UserGroupV2IO::new)
         .toList();
       return Response.ok(new PagedResponseIO<>(items, (long) items.size(), 0, items.size()))
+          .header("X-Total-Count", (long) items.size())
           .build();
     }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);
@@ -116,6 +119,7 @@ public class UserGroupV2Rest {
       .map(UserGroupV2IO::new)
       .toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

@@ -36,6 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
@@ -83,7 +84,8 @@ public class NotificationTransportRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of transports (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
@@ -102,6 +104,7 @@ public class NotificationTransportRest {
         ? List.of()
         : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
     return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
+        .header("X-Total-Count", (long) items.size())
         .build();
   }
 

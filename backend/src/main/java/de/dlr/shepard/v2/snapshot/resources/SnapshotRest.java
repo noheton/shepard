@@ -34,6 +34,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -139,7 +140,8 @@ public class SnapshotRest {
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(implementation = PagedResponseIO.class)
-    )
+    ),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the root Collection.")
@@ -170,6 +172,7 @@ public class SnapshotRest {
       .toList();
 
     return Response.ok(new PagedResponseIO<>(pageEntries, total, page, pageSize))
+        .header("X-Total-Count", (long) total)
         .build();
   }
 

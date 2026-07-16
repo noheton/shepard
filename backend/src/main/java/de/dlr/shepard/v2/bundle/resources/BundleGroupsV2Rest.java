@@ -50,6 +50,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
@@ -124,7 +125,8 @@ public class BundleGroupsV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope of FileGroupIO records ordered by index ascending.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -152,6 +154,7 @@ public class BundleGroupsV2Rest {
     List<FileGroupIO> items = fileGroupService.listGroups(appId, page, pageSize)
         .stream().map(FileGroupIO::new).toList();
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
@@ -349,7 +352,8 @@ public class BundleGroupsV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "PagedFilesIO envelope.",
-    content = @Content(schema = @Schema(implementation = PagedFilesIO.class))
+    content = @Content(schema = @Schema(implementation = PagedFilesIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -382,7 +386,7 @@ public class BundleGroupsV2Rest {
     int skip = page * pageSize;
     List<ShepardFile> items = skip < total ? fileGroupService.listFiles(groupAppId, skip, pageSize) : List.of();
 
-    return Response.ok(new PagedFilesIO(items, page, pageSize, total)).build();
+    return Response.ok(new PagedFilesIO(items, page, pageSize, total)).header("X-Total-Count", total).build();
   }
 
   // ─── upload file into a group ─────────────────────────────────────────────
