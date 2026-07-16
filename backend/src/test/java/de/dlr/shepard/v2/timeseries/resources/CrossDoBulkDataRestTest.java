@@ -93,7 +93,7 @@ public class CrossDoBulkDataRestTest {
   @Test
   void missingKind_returns400() {
     Response resp = resource.getCrossDoBulkData(
-      null,
+      null, 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -104,7 +104,7 @@ public class CrossDoBulkDataRestTest {
   @Test
   void unknownKind_returns400() {
     Response resp = resource.getCrossDoBulkData(
-      "file",
+      "file", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -117,7 +117,7 @@ public class CrossDoBulkDataRestTest {
   @Test
   void badIsoTimestamp_returns400() {
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, "not-a-timestamp", END_ISO, 500),
       securityContext
     );
@@ -133,7 +133,7 @@ public class CrossDoBulkDataRestTest {
     when(anon.getUserPrincipal()).thenReturn(null);
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       anon
     );
@@ -161,7 +161,7 @@ public class CrossDoBulkDataRestTest {
       .thenReturn(points);
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -188,7 +188,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_B), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -216,7 +216,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_A, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_FORBIDDEN, DO_A), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -238,7 +238,7 @@ public class CrossDoBulkDataRestTest {
     when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of());
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_UNKNOWN), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );
@@ -272,7 +272,7 @@ public class CrossDoBulkDataRestTest {
     when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE)).thenReturn(List.of());
 
     Response resp = resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(
         List.of(DO_A, DO_B, DO_FORBIDDEN, DO_C),
         PREDICATE, START_ISO, END_ISO, 500
@@ -315,6 +315,73 @@ public class CrossDoBulkDataRestTest {
     assertEquals(1234, CrossDoBulkDataRest.clampDownsample(1234));
   }
 
+  // ── Pagination: page/pageSize slice the results correctly ────────────────
+
+  @Test
+  void pagination_page0PageSize1_returnsFirstItemOfThree() {
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A, DO_B, DO_C));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "A", DO_B, "B", DO_C, "C"));
+    when(resolverMock.resolveChannelsByPredicate(any(), eq(PREDICATE))).thenReturn(List.of());
+
+    Response resp = resource.getCrossDoBulkData(
+      "timeseries", 0, 1,
+      new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B, DO_C), PREDICATE, START_ISO, END_ISO, 500),
+      securityContext
+    );
+
+    assertEquals(200, resp.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CrossDoSeriesIO> body = (PagedResponseIO<CrossDoSeriesIO>) resp.getEntity();
+    assertEquals(3L, body.total(), "total must count all resolved DOs, not just the page");
+    assertEquals(1, body.pageSize());
+    assertEquals(0, body.page());
+    assertEquals(1, body.items().size());
+    assertEquals(DO_A, body.items().get(0).dataObjectAppId());
+    assertEquals(3L, resp.getHeaders().getFirst("X-Total-Count"), "X-Total-Count must equal total");
+  }
+
+  @Test
+  void pagination_page1PageSize1_returnsSecondItem() {
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A, DO_B, DO_C));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "A", DO_B, "B", DO_C, "C"));
+    when(resolverMock.resolveChannelsByPredicate(any(), eq(PREDICATE))).thenReturn(List.of());
+
+    Response resp = resource.getCrossDoBulkData(
+      "timeseries", 1, 1,
+      new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B, DO_C), PREDICATE, START_ISO, END_ISO, 500),
+      securityContext
+    );
+
+    assertEquals(200, resp.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CrossDoSeriesIO> body = (PagedResponseIO<CrossDoSeriesIO>) resp.getEntity();
+    assertEquals(3L, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals(DO_B, body.items().get(0).dataObjectAppId());
+  }
+
+  @Test
+  void pagination_beyondEnd_returnsEmptyItemsWithCorrectTotal() {
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_A, "A"));
+    when(resolverMock.resolveChannelsByPredicate(any(), eq(PREDICATE))).thenReturn(List.of());
+
+    Response resp = resource.getCrossDoBulkData(
+      "timeseries", 5, 10,
+      new CrossDoBulkDataRequestIO(List.of(DO_A), PREDICATE, START_ISO, END_ISO, 500),
+      securityContext
+    );
+
+    assertEquals(200, resp.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CrossDoSeriesIO> body = (PagedResponseIO<CrossDoSeriesIO>) resp.getEntity();
+    assertEquals(1L, body.total(), "total must still reflect all resolved DOs even when page is beyond end");
+    assertTrue(body.items().isEmpty(), "items must be empty when page is beyond last item");
+  }
+
   // ── Multi-DO LTTB-routing is called once per channel-bearing DO ──────────
 
   @Test
@@ -331,7 +398,7 @@ public class CrossDoBulkDataRestTest {
       .thenReturn(List.of());
 
     resource.getCrossDoBulkData(
-      "timeseries",
+      "timeseries", 0, 50,
       new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B), PREDICATE, START_ISO, END_ISO, 500),
       securityContext
     );

@@ -5703,7 +5703,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java:88,101`; `backend/src/main/java/de/dlr/shepard/v2/publish/resources/FlatPublicationsRest.java:89,137`; `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:114,166,220,228`; `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticTermSearchRest.java:244`; apisimp-sweep-2026-07-16-fire623.md §Finding F1.
 
 ## APISIMP-CROSSDO-PAGED-MISUSE — CrossDoBulkDataRest wraps non-paged result in PagedResponseIO (size: XS, sweep: fire-623)
-- **Status:** 🔲 queued
+- **Status:** 🔧 in-PR (fire-625)
 - **Why:** `POST /v2/data-objects/cross-bulk` (`CrossDoBulkDataRest.java:201`) returns `new PagedResponseIO<>(out, out.size(), 0, out.size())` — always `page=0, pageSize=N`. There are no `page`/`pageSize` query params, so callers see a paging envelope with no way to page. The `@APIResponse(200)` declares `@Schema(implementation = PagedResponseIO.class)` but the semantic is misleading: total == pageSize == items.size().
 - **Fix (Option A, preferred):** Add `@QueryParam("page") @DefaultValue("0") int page` and `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(100) int pageSize` to `getCrossDoBulkData()`; slice `out` accordingly; chain `.header("X-Total-Count", out.size())`. Option B: return plain `List<CrossDoSeriesIO>` + update `@APIResponse(200)` schema.
 - **AC:** `@APIResponse(200)` schema matches the actual JSON shape. No degenerate `{total=N, page=0, pageSize=N}` envelope when paging is not offered. `mvn verify -pl backend` green.
