@@ -114,11 +114,13 @@ class VocabularyDAOTest extends BaseTestCase {
     assertTrue(result.isEmpty());
   }
 
-  // ─── findVocabulariesUsedByEntity (TOOLS-CONTEXT-VOCAB-BACKEND-1) ────────
+  // ─── countVocabulariesUsedByEntity / listVocabulariesUsedByEntityPaged ──
 
   @Test
-  void findVocabulariesUsedByEntityReturnsEmptyForBlankAppId() {
-    assertTrue(dao.findVocabulariesUsedByEntity("  ", "collection").isEmpty());
-    assertTrue(dao.findVocabulariesUsedByEntity(null, "collection").isEmpty());
+  void countAndListVocabulariesUsedByEntityReturnEmptyForBlankOrNullAppId() {
+    assertEquals(0L, dao.countVocabulariesUsedByEntity("  ", "collection"));
+    assertEquals(0L, dao.countVocabulariesUsedByEntity(null, "collection"));
+    assertTrue(dao.listVocabulariesUsedByEntityPaged("  ", "collection", 0L, 50).isEmpty());
+    assertTrue(dao.listVocabulariesUsedByEntityPaged(null, "collection", 0L, 50).isEmpty());
   }
 }

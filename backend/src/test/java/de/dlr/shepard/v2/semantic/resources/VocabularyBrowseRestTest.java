@@ -254,7 +254,7 @@ class VocabularyBrowseRestTest {
     assertEquals("p-4", body2.items().get(0).appId());
   }
 
-  // ─── listVocabulariesUsedBy (TOOLS-CONTEXT-VOCAB-BACKEND-1 + APISIMP-VOCAB-USED-BY-BARE-LIST) ──
+  // ─── listVocabulariesUsedBy (APISIMP-VOCAB-USED-BY-INMEM: DAO-level SKIP/LIMIT) ──
 
   @Test
   void listVocabulariesUsedByReturnsEmptyWhenAppIdBlank() {
@@ -264,7 +264,8 @@ class VocabularyBrowseRestTest {
     PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertTrue(out.items().isEmpty());
     assertEquals(0L, out.total());
-    verify(vocabularyDAO, never()).findVocabulariesUsedByEntity("  ", "collection");
+    verify(vocabularyDAO, never()).countVocabulariesUsedByEntity(any(), any());
+    verify(vocabularyDAO, never()).listVocabulariesUsedByEntityPaged(any(), any(), anyLong(), anyInt());
   }
 
   @Test
@@ -275,12 +276,15 @@ class VocabularyBrowseRestTest {
     PagedResponseIO<VocabularyIO> out = (PagedResponseIO<VocabularyIO>) response.getEntity();
     assertTrue(out.items().isEmpty());
     assertEquals(0L, out.total());
+    verify(vocabularyDAO, never()).countVocabulariesUsedByEntity(any(), any());
+    verify(vocabularyDAO, never()).listVocabulariesUsedByEntityPaged(any(), any(), anyLong(), anyInt());
   }
 
   @Test
   void listVocabulariesUsedByForwardsScopeToDao() {
     String appId = "c-123";
-    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "collection")).thenReturn(List.of(
+    when(vocabularyDAO.countVocabulariesUsedByEntity(appId, "collection")).thenReturn(1L);
+    when(vocabularyDAO.listVocabulariesUsedByEntityPaged(appId, "collection", 0L, 50)).thenReturn(List.of(
       vocab("v-dcterms", "http://purl.org/dc/terms/", "Dublin Core Terms", true)
     ));
 
@@ -292,13 +296,15 @@ class VocabularyBrowseRestTest {
     assertEquals(1, out.items().size());
     assertEquals(1L, out.total());
     assertEquals("v-dcterms", out.items().get(0).getAppId());
-    verify(vocabularyDAO).findVocabulariesUsedByEntity(appId, "collection");
+    verify(vocabularyDAO).countVocabulariesUsedByEntity(appId, "collection");
+    verify(vocabularyDAO).listVocabulariesUsedByEntityPaged(appId, "collection", 0L, 50);
   }
 
   @Test
   void listVocabulariesUsedByReturnsEmptyWhenDaoReturnsEmpty() {
     String appId = "d-no-annotations";
-    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "data-object")).thenReturn(List.of());
+    when(vocabularyDAO.countVocabulariesUsedByEntity(appId, "data-object")).thenReturn(0L);
+    when(vocabularyDAO.listVocabulariesUsedByEntityPaged(appId, "data-object", 0L, 50)).thenReturn(List.of());
 
     Response response = rest.listVocabulariesUsedBy(appId, "data-object", 0, 50);
 
@@ -310,16 +316,18 @@ class VocabularyBrowseRestTest {
   }
 
   @Test
-  void listVocabulariesUsedByPaginatesInMemory() {
+  void listVocabulariesUsedByDelegatesToDaoForPaging() {
     String appId = "c-many-annots";
-    List<Vocabulary> all = List.of(
-      vocab("v-a", "http://ex/a#", "Alpha",   true),
-      vocab("v-b", "http://ex/b#", "Beta",    true),
-      vocab("v-c", "http://ex/c#", "Gamma",   true)
-    );
-    when(vocabularyDAO.findVocabulariesUsedByEntity(appId, "data-object")).thenReturn(all);
+    when(vocabularyDAO.countVocabulariesUsedByEntity(appId, "data-object")).thenReturn(3L);
+    when(vocabularyDAO.listVocabulariesUsedByEntityPaged(appId, "data-object", 0L, 2)).thenReturn(List.of(
+      vocab("v-a", "http://ex/a#", "Alpha", true),
+      vocab("v-b", "http://ex/b#", "Beta",  true)
+    ));
+    when(vocabularyDAO.listVocabulariesUsedByEntityPaged(appId, "data-object", 2L, 2)).thenReturn(List.of(
+      vocab("v-c", "http://ex/c#", "Gamma", true)
+    ));
 
-    // page 0, pageSize 2 → items v-a, v-b
+    // page 0, pageSize 2 → DAO called with skip=0, limit=2
     Response p0 = rest.listVocabulariesUsedBy(appId, "data-object", 0, 2);
     assertEquals(200, p0.getStatus());
     @SuppressWarnings("unchecked")
@@ -329,13 +337,16 @@ class VocabularyBrowseRestTest {
     assertEquals("v-a", body0.items().get(0).getAppId());
     assertEquals("v-b", body0.items().get(1).getAppId());
 
-    // page 1, pageSize 2 → item v-c only
+    // page 1, pageSize 2 → DAO called with skip=2, limit=2
     Response p1 = rest.listVocabulariesUsedBy(appId, "data-object", 1, 2);
     @SuppressWarnings("unchecked")
     PagedResponseIO<VocabularyIO> body1 = (PagedResponseIO<VocabularyIO>) p1.getEntity();
     assertEquals(3L, body1.total());
     assertEquals(1, body1.items().size());
     assertEquals("v-c", body1.items().get(0).getAppId());
+
+    verify(vocabularyDAO).listVocabulariesUsedByEntityPaged(appId, "data-object", 0L, 2);
+    verify(vocabularyDAO).listVocabulariesUsedByEntityPaged(appId, "data-object", 2L, 2);
   }
 
   // ─── APISIMP-VOCABBROWSE-PATHPARAM: path-annotation regressions ──────────

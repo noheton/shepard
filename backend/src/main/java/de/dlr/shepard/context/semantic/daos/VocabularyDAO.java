@@ -5,10 +5,8 @@ import de.dlr.shepard.context.semantic.entities.Vocabulary;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
@@ -164,49 +162,83 @@ public class VocabularyDAO extends GenericDAO<Vocabulary> {
     return out;
   }
 
-  // ─── TOOLS-CONTEXT-VOCAB-BACKEND-1 ───────────────────────────────────────
+  // ─── TOOLS-CONTEXT-VOCAB-BACKEND-1 + APISIMP-VOCAB-USED-BY-INMEM ────────
 
   /**
-   * Cypher used to discover which vocabulary {@code appId}s have at least
-   * one {@code :SemanticAnnotation} on the requested entity (and — when
-   * {@code scope = "collection"} — on every {@code DataObject} reachable
-   * through the {@code [:HAS_DATAOBJECT*0..]} hierarchy).
+   * Counts the distinct vocabularies whose terms appear in at least one
+   * {@code :SemanticAnnotation} on the requested entity. Used by
+   * {@link de.dlr.shepard.v2.semantic.resources.VocabularyBrowseRest}
+   * to populate the paged-response {@code total} without loading all nodes.
    */
-  static final String VOCAB_USED_BY_CYPHER =
+  static final String COUNT_VOCAB_USED_BY_CYPHER =
     "MATCH (e {appId: $appId}) " +
     "WITH e, $scope AS scope " +
     "OPTIONAL MATCH (e)-[:HAS_DATAOBJECT*0..]->(d:DataObject) WHERE scope = 'collection' " +
     "WITH collect(DISTINCT e.appId) + collect(DISTINCT d.appId) AS subjectAppIds " +
     "MATCH (a:SemanticAnnotation) " +
     "WHERE a.subjectAppId IN subjectAppIds AND a.vocabularyId IS NOT NULL " +
-    "RETURN DISTINCT a.vocabularyId AS vocabularyId";
+    "WITH DISTINCT a.vocabularyId AS vocabId " +
+    "MATCH (v:Vocabulary {appId: vocabId}) " +
+    "RETURN count(v) AS c";
 
   /**
-   * TOOLS-CONTEXT-VOCAB-BACKEND-1 — return the vocabularies whose terms
-   * are referenced by at least one {@code :SemanticAnnotation} attached to
-   * the given entity (and, when {@code scope = "collection"}, on any of
-   * its descendant {@code DataObject}s).
+   * Returns a bounded, label-ASC page of vocabularies used by the entity.
+   * SKIP/LIMIT are pushed to the database; no full vocabulary load occurs.
+   */
+  static final String LIST_VOCAB_USED_BY_PAGED_CYPHER =
+    "MATCH (e {appId: $appId}) " +
+    "WITH e, $scope AS scope " +
+    "OPTIONAL MATCH (e)-[:HAS_DATAOBJECT*0..]->(d:DataObject) WHERE scope = 'collection' " +
+    "WITH collect(DISTINCT e.appId) + collect(DISTINCT d.appId) AS subjectAppIds " +
+    "MATCH (a:SemanticAnnotation) " +
+    "WHERE a.subjectAppId IN subjectAppIds AND a.vocabularyId IS NOT NULL " +
+    "WITH DISTINCT a.vocabularyId AS vocabId " +
+    "MATCH (v:Vocabulary {appId: vocabId}) " +
+    "RETURN v ORDER BY toLower(coalesce(v.label, '')) ASC " +
+    "SKIP $skip LIMIT $limit";
+
+  /**
+   * APISIMP-VOCAB-USED-BY-INMEM — count of distinct vocabularies whose
+   * terms are referenced by at least one {@code :SemanticAnnotation} on the
+   * given entity (and, when {@code scope = "collection"}, on its descendant
+   * {@code DataObject}s). DB-side count replaces the previous
+   * {@link #listAll()} load + in-memory filter.
    *
    * @param entityAppId application-level identifier of the entity
    * @param scope       {@code "collection"} to walk descendants,
    *                    {@code "data-object"} for the entity only
-   * @return vocabularies in scope; empty list when the entity has no
-   *         {@code vocabularyId}-tagged annotations
+   * @return count of distinct vocabularies in scope; 0 when none match
    */
-  public List<Vocabulary> findVocabulariesUsedByEntity(String entityAppId, String scope) {
+  public long countVocabulariesUsedByEntity(String entityAppId, String scope) {
+    if (entityAppId == null || entityAppId.isBlank()) return 0L;
+    String normScope = "collection".equalsIgnoreCase(scope) ? "collection" : "data-object";
+    var result = session.query(COUNT_VOCAB_USED_BY_CYPHER, Map.of("appId", entityAppId, "scope", normScope));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * APISIMP-VOCAB-USED-BY-INMEM — a bounded, label-ASC page of vocabularies
+   * whose terms are referenced by at least one {@code :SemanticAnnotation} on
+   * the given entity. SKIP/LIMIT are pushed to the DB; no full vocabulary load
+   * occurs.
+   *
+   * @param entityAppId application-level identifier of the entity
+   * @param scope       {@code "collection"} to walk descendants,
+   *                    {@code "data-object"} for the entity only
+   * @param skip        rows to skip (0-based; caller ensures ≥ 0)
+   * @param limit       maximum rows to return (caller ensures &gt; 0)
+   * @return page of vocabularies ordered by label ASC; empty list when none match
+   */
+  public List<Vocabulary> listVocabulariesUsedByEntityPaged(String entityAppId, String scope, long skip, int limit) {
     if (entityAppId == null || entityAppId.isBlank()) return java.util.Collections.emptyList();
     String normScope = "collection".equalsIgnoreCase(scope) ? "collection" : "data-object";
-    var rows = session.query(VOCAB_USED_BY_CYPHER, Map.of("appId", entityAppId, "scope", normScope));
-    Set<String> vocabIds = new HashSet<>();
-    for (Map<String, Object> row : rows.queryResults()) {
-      Object v = row.get("vocabularyId");
-      if (v != null && !v.toString().isBlank()) vocabIds.add(v.toString());
-    }
-    if (vocabIds.isEmpty()) return java.util.Collections.emptyList();
-    List<Vocabulary> all = listAll();
-    List<Vocabulary> out = new ArrayList<>(vocabIds.size());
-    for (Vocabulary v : all) {
-      if (v != null && vocabIds.contains(v.getAppId())) out.add(v);
+    List<Vocabulary> out = new ArrayList<>();
+    for (Vocabulary v : findByQuery(LIST_VOCAB_USED_BY_PAGED_CYPHER,
+        Map.of("appId", entityAppId, "scope", normScope, "skip", skip, "limit", limit))) {
+      out.add(v);
     }
     return out;
   }
