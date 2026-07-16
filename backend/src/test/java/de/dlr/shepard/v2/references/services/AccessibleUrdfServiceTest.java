@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
@@ -24,8 +26,8 @@ import org.mockito.MockitoAnnotations;
 /**
  * URDF-FILEREF-PICKER-SEARCHABLE — plain-Mockito unit tests for
  * {@link AccessibleUrdfService}. Covers the permission narrowing, the {@code q}
- * name filter, pagination, the URDF exclusion predicate, and the fail-soft
- * empty-page contract.
+ * name filter (pushed to DAO, APISIMP-URDF-INMEM-PAGING), pagination, the URDF
+ * exclusion predicate, and the fail-soft empty-page contract.
  */
 class AccessibleUrdfServiceTest {
 
@@ -64,7 +66,7 @@ class AccessibleUrdfServiceTest {
   @Test
   void returnsAccessibleUrdfs_matchingByFileKindAndBySuffix() {
     var candidates = List.of(kr210(), namedUrdf());
-    when(dao.findAllUrdfCandidates()).thenReturn(candidates);
+    when(dao.findUrdfCandidates(any(), anyLong())).thenReturn(candidates);
     allowAll(candidates);
 
     PagedResponseIO<AccessibleUrdfIO> res = service.listAccessible(CALLER, null, 0, 50);
@@ -81,7 +83,7 @@ class AccessibleUrdfServiceTest {
   @Test
   void excludesReferencesTheCallerCannotRead() {
     var candidates = List.of(kr210(), namedUrdf());
-    when(dao.findAllUrdfCandidates()).thenReturn(candidates);
+    when(dao.findUrdfCandidates(any(), anyLong())).thenReturn(candidates);
     // only do-A (kr210) is readable
     when(permissionsService.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(Set.of("do-A"));
@@ -97,7 +99,7 @@ class AccessibleUrdfServiceTest {
     // Defense-in-depth: even if the DAO leaks a non-URDF row, the service drops it.
     var leaked = new UrdfCandidate("ref-pdf", "report.pdf", "pdf", "do-C", "coll-C", "Docs");
     var candidates = List.of(kr210(), leaked);
-    when(dao.findAllUrdfCandidates()).thenReturn(candidates);
+    when(dao.findUrdfCandidates(any(), anyLong())).thenReturn(candidates);
     when(permissionsService.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(Set.of("do-A", "do-C"));
 
@@ -108,15 +110,31 @@ class AccessibleUrdfServiceTest {
   }
 
   @Test
-  void appliesCaseInsensitiveNameQuery() {
-    var candidates = List.of(kr210(), namedUrdf());
-    when(dao.findAllUrdfCandidates()).thenReturn(candidates);
-    allowAll(candidates);
+  void queryIsPassedToDao_whenNonBlank() {
+    // APISIMP-URDF-INMEM-PAGING regression: q must be forwarded to the DAO so
+    // Cypher does the filtering, not an in-memory stream pass.
+    when(dao.findUrdfCandidates(eq("KR210"), anyLong())).thenReturn(List.of(kr210()));
+    when(permissionsService.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of("do-A"));
 
     PagedResponseIO<AccessibleUrdfIO> res = service.listAccessible(CALLER, "KR210", 0, 50);
 
+    // DAO must be called with the exact q string — not a blank/null (which would fetch all)
+    verify(dao).findUrdfCandidates(eq("KR210"), anyLong());
     assertEquals(1, res.total());
     assertEquals("ref-kr210", res.items().get(0).appId());
+  }
+
+  @Test
+  void nullQuery_passedToDao_asNull() {
+    // Null q is passed through to DAO (DAO interprets null as "no filter").
+    when(dao.findUrdfCandidates(eq(null), anyLong())).thenReturn(List.of(kr210()));
+    when(permissionsService.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of("do-A"));
+
+    service.listAccessible(CALLER, null, 0, 50);
+
+    verify(dao).findUrdfCandidates(eq(null), anyLong());
   }
 
   @Test
@@ -125,7 +143,7 @@ class AccessibleUrdfServiceTest {
     var b = new UrdfCandidate("r2", "b.urdf", "urdf", "do2", "c", "C");
     var c = new UrdfCandidate("r3", "c.urdf", "urdf", "do3", "c", "C");
     var candidates = List.of(a, b, c);
-    when(dao.findAllUrdfCandidates()).thenReturn(candidates);
+    when(dao.findUrdfCandidates(any(), anyLong())).thenReturn(candidates);
     allowAll(candidates);
 
     PagedResponseIO<AccessibleUrdfIO> page0 = service.listAccessible(CALLER, null, 0, 2);
@@ -146,7 +164,7 @@ class AccessibleUrdfServiceTest {
 
   @Test
   void failSoft_onDaoException_returnsEmptyNotThrow() {
-    when(dao.findAllUrdfCandidates()).thenThrow(new RuntimeException("neo4j down"));
+    when(dao.findUrdfCandidates(any(), anyLong())).thenThrow(new RuntimeException("neo4j down"));
     PagedResponseIO<AccessibleUrdfIO> res = service.listAccessible(CALLER, null, 0, 50);
     assertEquals(0, res.total());
     assertTrue(res.items().isEmpty());

@@ -113,6 +113,41 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
     return mapRows(session.query(query, Map.of()));
   }
 
+  /**
+   * APISIMP-URDF-INMEM-PAGING — like {@link #findAllUrdfCandidates()} but
+   * pushes an optional case-insensitive name filter and a hard row ceiling into
+   * Cypher so the permission-filtering loop in {@link
+   * de.dlr.shepard.v2.references.services.AccessibleUrdfService} operates on a
+   * bounded, already-filtered candidate set rather than the full instance-wide
+   * list.
+   *
+   * @param q     optional case-insensitive substring on {@code r.name}; null or
+   *              blank means "no filter".
+   * @param limit maximum rows to return from Neo4j (LIMIT clause); use
+   *              {@code AccessibleUrdfService.MAX_CANDIDATES} as the ceiling.
+   * @return filtered candidate projections, insertion-order preserved; never null.
+   */
+  public List<UrdfCandidate> findUrdfCandidates(String q, long limit) {
+    boolean hasQ = q != null && !q.isBlank();
+    String qFilter = hasQ ? "AND toLower(r.name) CONTAINS toLower($q) " : "";
+    String query =
+      "MATCH (c:Collection)-[:" + Constants.HAS_DATAOBJECT + "]->(d:DataObject)" +
+      "-[:" + Constants.HAS_REFERENCE + "]->(r:SingletonFileReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND (d.deleted IS NULL OR d.deleted = false) " +
+      "AND (c.deleted IS NULL OR c.deleted = false) " +
+      "AND (toLower(r.name) ENDS WITH '.urdf' OR r.fileKind = 'urdf') " +
+      qFilter +
+      "RETURN r.appId AS refAppId, r.name AS name, r.fileKind AS fileKind, " +
+      "d.appId AS doAppId, c.appId AS collAppId, c.name AS collName " +
+      "ORDER BY toLower(r.name) ASC " +
+      "LIMIT $limit";
+    Map<String, Object> params = hasQ
+      ? Map.of("q", q.trim(), "limit", limit)
+      : Map.of("limit", limit);
+    return mapRows(session.query(query, params));
+  }
+
   // ─── notebook projection ─────────────────────────────────────────────────
 
   /**
