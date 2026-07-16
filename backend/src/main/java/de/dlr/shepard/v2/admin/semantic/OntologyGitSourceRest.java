@@ -35,6 +35,7 @@ import jakarta.ws.rs.DefaultValue;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -95,6 +96,7 @@ public class OntologyGitSourceRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
+    headers = @Header(name = "X-Total-Count", description = "Total git source count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (RFC 7807).")
@@ -115,6 +117,7 @@ public class OntologyGitSourceRest {
     List<OntologyGitSourceIO> items = new ArrayList<>(sources.size());
     for (OntologyGitSource s : sources) items.add(OntologyGitSourceIO.from(s));
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

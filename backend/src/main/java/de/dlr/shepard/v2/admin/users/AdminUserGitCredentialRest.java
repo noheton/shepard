@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -223,6 +224,7 @@ public class AdminUserGitCredentialRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of credentials (may be empty).",
+    headers = @Header(name = "X-Total-Count", description = "Total credential count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -251,6 +253,7 @@ public class AdminUserGitCredentialRest {
         ? List.of()
         : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
     return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
+        .header("X-Total-Count", items.size())
         .build();
   }
 

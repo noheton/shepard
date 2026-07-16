@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -153,6 +154,7 @@ public class CollectionV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
+    headers = @Header(name = "X-Total-Count", description = "Total collection count before paging.", schema = @Schema(implementation = Long.class)),
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
   )
   @APIResponse(responseCode = "400",
@@ -177,6 +179,7 @@ public class CollectionV2Rest {
         .toList();
 
     return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+      .header("X-Total-Count", total)
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();
   }
