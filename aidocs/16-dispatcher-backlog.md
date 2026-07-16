@@ -5755,14 +5755,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticTermSearchRest.java:246`; apisimp-sweep-2026-07-16-fire631.md §Finding F3.
 
 ## APISIMP-URDF-INMEM-PAGING — AccessibleUrdfService loads up to 5 000 URDF candidates then subList-slices in memory (size: S, sweep: fire-631)
-- **Status:** 🔧 in-PR (fire-632, branch APISIMP-URDF-INMEM-PAGING)
+- **Status:** ✅ merged (fire-632/633, PR #2601, sha 91f493d)
 - **Why:** `GET /v2/references/urdf` (URDF picker autocomplete) calls `singletonFileReferenceDAO.findAllUrdfCandidates()` with no `q` filter or LIMIT, fetching up to `MAX_CANDIDATES = 5_000` rows. After a permission filter (in-memory) and an optional Java substring filter, `visible.subList(from, to)` is called. Every autocomplete keystroke pays the full 5 000-row fetch cost even when `q` matches only a handful of files.
 - **Fix:** Push `q` filter and `LIMIT` into `findAllUrdfCandidates(q, limit)` as Cypher `WHERE name CONTAINS $q … LIMIT`. Permission filtering stays in Java but operates on a smaller set.
 - **AC:** With > 200 URDF FileReferences in DB, `GET /v2/references/urdf?q=kr210&pageSize=10` must show a bounded query in the Neo4j log.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/services/AccessibleUrdfService.java:71`; apisimp-sweep-2026-07-16-fire631.md §Finding F2.
 
 ## APISIMP-REFS-INMEM-PAGING — ReferenceKindHandler SPI default paging loads all references then subList-slices (size: M, sweep: fire-631)
-- **Status:** 🔧 in-PR (fire-634, 2026-07-16)
+- **Status:** ✅ merged (fire-634, PR #2603, sha 500284b)
 - **Why:** `ReferencesV2Rest.list()` delegates to `handler.listByDataObject(…, skip, limit)` and `handler.countByDataObject(…)`. Both are default methods on `ReferenceKindHandler` that call the unparameterised `listByDataObject(collectionAppId, dataObjectAppId)` (loading ALL references) and then slice in Java. All 7 concrete handlers use only these defaults. Every paginated `GET /v2/references?...&page=X&pageSize=Y` request triggers a full load. A comment at line 146 already flags this as `APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING`. The container SPI already solved this pattern — mirror it.
 - **Fix:** Each handler overrides `countByDataObject` and `listByDataObject(…, int skip, int limit)` with a Cypher SKIP/LIMIT DAO method. Start with `FileReferenceKindHandler` (kind=file) and `UriReferenceKindHandler` (kind=uri).
 - **AC:** `GET /v2/references?kind=uri&dataObjectAppId=<id-with-50-refs>&page=0&pageSize=1` returns `total=50`, not `total=1`. Neo4j PROFILE shows SKIP/LIMIT Cypher.
@@ -5777,3 +5777,10 @@ picks these up. Terse by design.
 - **Fix:** Add `countDistinctTags(kind)` + `listDistinctTagsPaged(kind, skip, limit)` to `ShepardTemplateDAO`, add `SKIP $skip LIMIT $limit` to the Cypher, and remove the in-memory slice from the REST handler.
 - **AC:** `tags()` issues at most two DAO queries per page regardless of tag count. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/template/resources/ShepardTemplateRest.java:318`; apisimp-sweep-2026-07-16-fire627.md §Finding F3.
+
+## APISIMP-CONT-LIST-INMEM-PAGING — ContainerKindHandler SPI default count+list loads all containers twice per paginated request (size: M, sweep: fire-635)
+- **Status:** 🔧 in-PR (fire-635, branch APISIMP-CONT-LIST-INMEM-PAGING)
+- **Why:** `ContainersV2Rest.list()` calls `containersService.count(kind, q)` then `containersService.list(kind, q, skip, pageSize)`. Both paths fall through to `ContainerKindHandler` default methods: `count()` calls `list(nameFilter).size()` and `list(skip,limit)` calls `list(nameFilter)` then `subList()`. Each handler's `list(nameFilter)` calls `service.getAllContainers(params)` → DAO without any SKIP/LIMIT. Result: every paged `GET /v2/containers?kind=...&page=N` performs **two full table scans**. All three in-tree container handlers (`file`, `timeseries`, `structured-data`) had this problem. All three target DAOs already had SKIP/LIMIT support via `QueryParamHelper.hasPagination()` — it just wasn't wired through.
+- **Fix:** Override `count(nameFilter)` in each handler to call a new Cypher COUNT query in the DAO. Override `list(nameFilter, skip, limit)` to pass `params.withPageAndSize(skip/limit, limit)` so the DAO appends `SKIP $offset LIMIT $size`. Changes: 3 DAOs + 3 handlers.
+- **AC:** `GET /v2/containers?kind=timeseries&pageSize=10&page=0` Neo4j log shows `SKIP 0 LIMIT 10` and a separate `count(c)` query (no full scan). `mvn compile -DnoPlugins` clean.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/spi/ContainerKindHandler.java:155`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:474`.

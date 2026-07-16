@@ -140,6 +140,27 @@ public class FileContainerKindHandler implements ContainerKindHandler {
     return service.getAllContainers(params).stream().map(this::toIO).toList();
   }
 
+  // ── APISIMP-CONT-LIST-INMEM-PAGING ──────────────────────────────────────
+  // Push COUNT + SKIP/LIMIT to Cypher; the SPI default loaded ALL rows twice
+  // (once for count, once for the subList slice).
+
+  @Override
+  public int count(String nameFilter) {
+    User user = userService.getCurrentUser();
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    return dao.countFileContainers(params, user.getUsername());
+  }
+
+  @Override
+  public List<ContainerV2IO> list(String nameFilter, int skip, int limit) {
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    // skip is always page*limit from ContainersV2Rest; integer division recovers page exactly.
+    params = params.withPageAndSize(limit > 0 ? skip / limit : 0, limit);
+    return service.getAllContainers(params).stream().map(this::toIO).toList();
+  }
+
   @Override
   public Optional<List<PayloadVersionIO>> listVersions(String appId, String fileName) {
     return Optional.of(

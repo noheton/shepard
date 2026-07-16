@@ -184,6 +184,24 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     return service.getAllContainers(params).stream().map(c -> (ContainerV2IO) toIO(c)).toList();
   }
 
+  // ── APISIMP-CONT-LIST-INMEM-PAGING ──────────────────────────────────────
+
+  @Override
+  public int count(String nameFilter) {
+    User user = userService.getCurrentUser();
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    return dao.countTimeseriesContainers(params, user.getUsername());
+  }
+
+  @Override
+  public List<ContainerV2IO> list(String nameFilter, int skip, int limit) {
+    var params = new QueryParamHelper();
+    if (nameFilter != null && !nameFilter.isBlank()) params = params.withName(nameFilter);
+    params = params.withPageAndSize(limit > 0 ? skip / limit : 0, limit);
+    return service.getAllContainers(params).stream().map(c -> (ContainerV2IO) toIO(c)).toList();
+  }
+
   @Override
   public Optional<ContainerStatsIO> getStats(String appId) {
     var container = service.getContainerByAppId(appId);
