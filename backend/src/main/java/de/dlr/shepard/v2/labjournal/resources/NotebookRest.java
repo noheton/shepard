@@ -1,17 +1,12 @@
 package de.dlr.shepard.v2.labjournal.resources;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.services.DisplayNameResolver;
-import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
-import de.dlr.shepard.context.references.file.entities.FileBundleReference;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
-import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
+import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO.NotebookProjection;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
-import java.time.Instant;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.enterprise.context.RequestScoped;
@@ -45,9 +40,9 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * J1b — {@code GET /v2/lab-journal/{appId}/notebooks}.
  *
  * <p>Returns the list of {@code .ipynb} file references attached to a
- * DataObject — both FR1b singletons ({@link FileReference}) and files
- * inside FR1a bundles ({@link FileBundleReference}). The frontend uses this
- * list to decide which notebook tabs to render inline via nbviewer-js.
+ * DataObject — both FR1b singletons and files inside FR1a bundles.
+ * The frontend uses this list to decide which notebook tabs to render
+ * inline via nbviewer-js.
  *
  * <p>Permission: Read on the DataObject — same gate as other
  * DataObject-scoped {@code /v2/} endpoints.
@@ -86,7 +81,7 @@ public class NotebookRest {
   PermissionsService permissionsService;
 
   @Inject
-  SingletonFileReferenceService singletonService;
+  SingletonFileReferenceDAO singletonFileReferenceDAO;
 
   @Inject
   FileBundleReferenceDAO fileBundleReferenceDAO;
@@ -138,10 +133,9 @@ public class NotebookRest {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, "No authenticated principal.");
 
-    // Resolve DataObject OGM id — 404 if not found
-    long ogmId;
+    // Existence check — 404 if no DataObject with that appId
     try {
-      ogmId = entityIdResolver.resolveLong(appId);
+      entityIdResolver.resolveLong(appId);
     } catch (NotFoundException nfe) {
       return problem(PT_NOT_FOUND, "Not found", Response.Status.NOT_FOUND, "No DataObject with appId: " + appId);
     }
@@ -153,76 +147,46 @@ public class NotebookRest {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the DataObject.");
     }
 
-    List<NotebookReferenceIO> result = new ArrayList<>();
+    // Cross-source pagination: singletons first, then bundle files.
+    // Each count + page query is pushed to the DAO layer so we never
+    // materialise all notebooks in memory.
+    long singletonCount = singletonFileReferenceDAO.countNotebooks(appId);
+    long bundleCount = fileBundleReferenceDAO.countNotebooks(appId);
+    long total = singletonCount + bundleCount;
+    long skip = (long) page * pageSize;
+
+    List<NotebookReferenceIO> pageItems = new ArrayList<>();
 
     // ─── FR1b singletons ─────────────────────────────────────────────────────
-    List<FileReference> singletons = singletonService.listByDataObject(appId);
-    for (FileReference singleton : singletons) {
-      if (singleton.isDeleted()) continue;
-      ShepardFile file = singleton.getFile();
-      if (file == null) continue;
-      String filename = file.getFilename();
-      if (!isIpynb(filename)) continue;
-
-      result.add(
-        new NotebookReferenceIO(
-          singleton.getAppId(),
-          filename,
-          file.getFileSize(),
-          IPYNB_MIME_TYPE,
-          singleton.getCreatedAt() != null ? Instant.ofEpochMilli(singleton.getCreatedAt().getTime()).toString() : null,
-          singleton.getCreatedBy() != null ? DisplayNameResolver.effectiveDisplayName(singleton.getCreatedBy()) : null,
-          ReferenceKind.SINGLETON
-        )
-      );
-    }
-
-    // ─── FR1a bundles ─────────────────────────────────────────────────────────
-    List<FileBundleReference> bundles = fileBundleReferenceDAO.findByDataObjectNeo4jId(ogmId);
-    for (FileBundleReference bundle : bundles) {
-      if (bundle.isDeleted()) continue;
-      // Walk the bundle's direct HAS_PAYLOAD files (compatibility shadow kept
-      // up to date by FileBundleReferenceService; deduplication is unnecessary
-      // because each ShepardFile appears at most once in the shadow list).
-      List<ShepardFile> files = bundle.getFiles();
-      if (files == null) continue;
-      for (ShepardFile file : files) {
-        if (file == null) continue;
-        String filename = file.getFilename();
-        if (!isIpynb(filename)) continue;
-
-        result.add(
-          new NotebookReferenceIO(
-            bundle.getAppId(),
-            filename,
-            file.getFileSize(),
-            IPYNB_MIME_TYPE,
-            bundle.getCreatedAt() != null ? Instant.ofEpochMilli(bundle.getCreatedAt().getTime()).toString() : null,
-            bundle.getCreatedBy() != null
-              ? DisplayNameResolver.effectiveDisplayName(bundle.getCreatedBy())
-              : null,
-            ReferenceKind.BUNDLE_FILE
-          )
-        );
+    long singletonSkip = Math.min(skip, singletonCount);
+    int singletonLimit = (int) Math.min(pageSize, Math.max(0L, singletonCount - singletonSkip));
+    if (singletonLimit > 0) {
+      for (NotebookProjection p : singletonFileReferenceDAO.listNotebooks(appId, singletonSkip, singletonLimit)) {
+        pageItems.add(toIO(p, ReferenceKind.SINGLETON));
       }
     }
 
-    long total = result.size();
-    long skip = (long) page * pageSize;
-    List<NotebookReferenceIO> pageItems = skip >= total
-      ? List.of()
-      : result.subList((int) skip, (int) Math.min(skip + pageSize, total));
+    // ─── FR1a bundles ─────────────────────────────────────────────────────────
+    int bundleSpace = pageSize - pageItems.size();
+    if (bundleSpace > 0 && bundleCount > 0) {
+      long bundleSkip = Math.max(0L, skip - singletonCount);
+      if (bundleSkip < bundleCount) {
+        for (NotebookProjection p : fileBundleReferenceDAO.listNotebooks(appId, bundleSkip, bundleSpace)) {
+          pageItems.add(toIO(p, ReferenceKind.BUNDLE_FILE));
+        }
+      }
+    }
+
     return Response.ok(new PagedResponseIO<>(pageItems, total, page, pageSize))
         .header("X-Total-Count", total)
         .build();
   }
 
-  /**
-   * Returns {@code true} when the given filename ends with {@code .ipynb},
-   * case-insensitively. Null / blank filenames never match.
-   */
-  static boolean isIpynb(String filename) {
-    return filename != null && filename.toLowerCase().endsWith(".ipynb");
+  private static NotebookReferenceIO toIO(NotebookProjection p, ReferenceKind kind) {
+    return new NotebookReferenceIO(
+      p.appId(), p.filename(), p.fileSize(), IPYNB_MIME_TYPE,
+      p.createdAt(), p.createdBy(), kind
+    );
   }
 
 }

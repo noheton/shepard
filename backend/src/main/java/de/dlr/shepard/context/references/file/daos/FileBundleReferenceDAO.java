@@ -2,6 +2,7 @@ package de.dlr.shepard.context.references.file.daos;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
+import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO.NotebookProjection;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import jakarta.enterprise.context.RequestScoped;
@@ -88,6 +89,51 @@ public class FileBundleReferenceDAO extends VersionableEntityDAO<FileBundleRefer
     return StreamSupport.stream(queryResult.spliterator(), false)
       .filter(r -> r.getDataObject() != null)
       .toList();
+  }
+
+  // ─── notebook projection ─────────────────────────────────────────────────
+
+  /**
+   * Count of non-deleted {@code .ipynb} files inside bundles attached to
+   * the given DataObject.
+   */
+  public long countNotebooks(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:FileReference)" +
+      "-[:has_payload]->(f:ShepardFile) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND toLower(f.filename) ENDS WITH '.ipynb' " +
+      "RETURN count(f) AS cnt";
+    for (var row : session.query(query, Map.of("aid", dataObjectAppId))) {
+      Object cnt = row.get("cnt");
+      return cnt instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
+  /**
+   * Paginated list of non-deleted {@code .ipynb} files inside bundles
+   * attached to the given DataObject, ordered by bundle {@code createdAt ASC}
+   * then filename ASC.
+   */
+  public List<NotebookProjection> listNotebooks(String dataObjectAppId, long skip, int limit) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:FileReference)" +
+      "-[:has_payload]->(f:ShepardFile) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND toLower(f.filename) ENDS WITH '.ipynb' " +
+      "OPTIONAL MATCH (r)-[:created_by]->(u:User) " +
+      "RETURN r.appId AS appId, f.filename AS filename, f.fileSize AS fileSize, " +
+      "r.createdAt AS createdAt, " +
+      "u.username AS username, u.displayName AS displayName, " +
+      "u.firstName AS firstName, u.lastName AS lastName " +
+      "ORDER BY r.createdAt ASC, toLower(f.filename) ASC " +
+      "SKIP $skip LIMIT $limit";
+    var rows = session.query(
+      query,
+      Map.of("aid", dataObjectAppId, "skip", skip, "limit", (long) limit)
+    );
+    return SingletonFileReferenceDAO.mapNotebookProjections(rows);
   }
 
   @Override

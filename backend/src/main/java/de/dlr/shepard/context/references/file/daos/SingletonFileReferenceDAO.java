@@ -1,9 +1,12 @@
 package de.dlr.shepard.context.references.file.daos;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import jakarta.enterprise.context.RequestScoped;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -109,6 +112,99 @@ public class SingletonFileReferenceDAO extends GenericDAO<FileReference> {
       "ORDER BY toLower(r.name) ASC";
     return mapRows(session.query(query, Map.of()));
   }
+
+  // ─── notebook projection ─────────────────────────────────────────────────
+
+  /**
+   * Flat projection of a notebook-eligible singleton — appId, filename,
+   * fileSize, createdAt (ISO-8601), and resolved display name. Used by
+   * {@link de.dlr.shepard.v2.labjournal.resources.NotebookRest} to avoid
+   * materialising full OGM entities when only scalar fields are needed.
+   *
+   * <p>The same record type is reused by {@link FileBundleReferenceDAO}
+   * (via {@link #mapNotebookProjections}) so the REST layer handles both
+   * sources with a single type.
+   */
+  public record NotebookProjection(
+    String appId,
+    String filename,
+    Long fileSize,
+    String createdAt,
+    String createdBy
+  ) {}
+
+  /**
+   * Count of non-deleted {@code .ipynb} singletons attached to the given
+   * DataObject.
+   */
+  public long countNotebooks(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:SingletonFileReference)" +
+      "-[:has_payload]->(f:ShepardFile) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND toLower(f.filename) ENDS WITH '.ipynb' " +
+      "RETURN count(f) AS cnt";
+    for (var row : session.query(query, Map.of("aid", dataObjectAppId))) {
+      Object cnt = row.get("cnt");
+      return cnt instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
+  /**
+   * Paginated list of non-deleted {@code .ipynb} singletons attached to the
+   * given DataObject, ordered by {@code createdAt ASC}.
+   */
+  public List<NotebookProjection> listNotebooks(String dataObjectAppId, long skip, int limit) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:SingletonFileReference)" +
+      "-[:has_payload]->(f:ShepardFile) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "AND toLower(f.filename) ENDS WITH '.ipynb' " +
+      "OPTIONAL MATCH (r)-[:created_by]->(u:User) " +
+      "RETURN r.appId AS appId, f.filename AS filename, f.fileSize AS fileSize, " +
+      "r.createdAt AS createdAt, " +
+      "u.username AS username, u.displayName AS displayName, " +
+      "u.firstName AS firstName, u.lastName AS lastName " +
+      "ORDER BY r.createdAt ASC " +
+      "SKIP $skip LIMIT $limit";
+    var rows = session.query(
+      query,
+      Map.of("aid", dataObjectAppId, "skip", skip, "limit", (long) limit)
+    );
+    return mapNotebookProjections(rows);
+  }
+
+  /**
+   * Pure row-to-{@link NotebookProjection} mapping. Static + side-effect-free
+   * so it is unit-testable; also called by {@link FileBundleReferenceDAO}.
+   * Drops rows with no {@code appId}.
+   */
+  static List<NotebookProjection> mapNotebookProjections(Iterable<Map<String, Object>> rows) {
+    List<NotebookProjection> result = new ArrayList<>();
+    for (var row : rows) {
+      String appId = row.get("appId") instanceof String s ? s : null;
+      if (appId == null || appId.isBlank()) continue;
+      String filename = row.get("filename") instanceof String s ? s : null;
+      Object fs = row.get("fileSize");
+      Long fileSize = fs instanceof Number n ? n.longValue() : null;
+      Object ca = row.get("createdAt");
+      String createdAt = ca instanceof Number n
+        ? Instant.ofEpochMilli(n.longValue()).toString() : null;
+      var u = new User();
+      u.setUsername(row.get("username") instanceof String s ? s : null);
+      u.setDisplayName(row.get("displayName") instanceof String s ? s : null);
+      u.setFirstName(row.get("firstName") instanceof String s ? s : null);
+      u.setLastName(row.get("lastName") instanceof String s ? s : null);
+      result.add(new NotebookProjection(
+        appId, filename, fileSize, createdAt,
+        DisplayNameResolver.effectiveDisplayName(u)
+      ));
+    }
+    return result;
+  }
+
+  // ─── URDF projection ─────────────────────────────────────────────────────
 
   /**
    * Pure row → {@link UrdfCandidate} projection. Static + no I/O so it is

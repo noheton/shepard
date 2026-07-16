@@ -5717,7 +5717,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferenceAnnotationRest.java:188,213,241`; apisimp-sweep-2026-07-16-fire623.md §Finding F3.
 
 ## APISIMP-NOTEBOOK-INMEM-PAGE — NotebookRest.listNotebooks() O(N) in-memory pagination anti-pattern (size: M, sweep: fire-623)
-- **Status:** 🔲 queued
+- **Status:** 🔁 in-PR (fire-627 branch APISIMP-NOTEBOOK-INMEM-PAGE)
 - **Why:** `NotebookRest.java` `listNotebooks()` (lines 156–215) fetches ALL singleton `FileReference` nodes then ALL `FileBundleReference` nodes for the container, materialises the full combined list in memory, then subList-slices. This is identical to the `PersonalVocabularyRest` O(N) debt (APISIMP-PERSONAL-VOC-INMEM). A container with 5,000 notebooks loads all 5,000 per page request regardless of `pageSize`. The method already chains `.header("X-Total-Count", total)` correctly; only the DAO query strategy needs changing.
 - **Fix:** Push SKIP/LIMIT to DAO layer: add `countSingletonNotebooks(containerId)` + `listSingletonNotebooks(containerId, skip, limit)` and `countBundleNotebooks(containerId)` + `listBundleNotebooks(containerId, skip, limit)` DAO methods; compute cross-source offset in the REST layer (singleton count determines which source supplies the page boundary).
 - **AC:** `listNotebooks()` issues at most two DAO queries per page regardless of total count. No full list materialised. `mvn verify -pl backend` green.
