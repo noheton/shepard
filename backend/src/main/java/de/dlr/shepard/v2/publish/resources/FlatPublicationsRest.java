@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -80,7 +81,8 @@ public class FlatPublicationsRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Missing or blank entityAppId parameter (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -135,6 +137,7 @@ public class FlatPublicationsRest {
       .toList();
 
     return Response.ok(new PagedResponseIO<>(page_, total, page, pageSize))
+      .header("X-Total-Count", total)
       .build();
   }
 

@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -80,7 +81,8 @@ public class CollectionDQRRest {
   @APIResponse(
     responseCode = "200",
     description = "Paged envelope: items + total + page + pageSize. Response body `total` carries the count.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the Collection.")
@@ -98,6 +100,7 @@ public class CollectionDQRRest {
     long skip = (long) page * pageSize;
     PagedResponseIO<DQRIO> result = service.list(collectionAppId, caller, skip, pageSize);
     return Response.ok(result)
+        .header("X-Total-Count", result.total())
         .build();
   }
 
