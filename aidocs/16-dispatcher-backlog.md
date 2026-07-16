@@ -5731,14 +5731,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/context/semantic/daos/VocabularyDAO.java:196`; `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:230`.
 
 ## APISIMP-CONTAINERS-XCOUNT-GAPS — ContainersV2Rest: getBulkChannelData missing runtime X-Total-Count + listChannelAnnotations/listTemporalAnnotations missing @Header in @APIResponse (size: XS, sweep: fire-627)
-- **Status:** 🔧 in-PR (fire-627, branch APISIMP-CONTAINERS-XCOUNT-GAPS)
+- **Status:** ✅ merged (fire-628, #2597)
 - **Why:** Three endpoints in `ContainersV2Rest` have incomplete X-Total-Count coverage: (a) `POST /v2/containers/{appId}/channels/data/bulk` (`getBulkChannelData`) wraps its result in `PagedResponseIO` but never chains `.header("X-Total-Count", ...)` at runtime; (b) `GET /v2/containers/{appId}/channels/{channelAppId}/annotations` (`listChannelAnnotations`) and (c) `GET /v2/containers/{appId}/temporal-annotations` (`listTemporalAnnotations`) both declare `@Content(schema = @Schema(implementation = PagedResponseIO.class))` in their `@APIResponse(responseCode="200")` but omit the `headers = @Header(name = "X-Total-Count", ...)` declaration. The handler layer emits the header at runtime for (b) and (c), so there is no runtime regression there — only the generated OpenAPI spec is incomplete. (a) is a true runtime gap.
 - **Fix:** (a) Add `.header("X-Total-Count", (long) out.size())` before `.build()` in `getBulkChannelData`, and add `headers = @Header(...)` to its `@APIResponse(responseCode="200")` block. (b)+(c) Add `headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))` to both `@APIResponse` blocks.
 - **AC:** `getBulkChannelData` emits `X-Total-Count` at runtime. All three `@APIResponse(200)` blocks formally declare the header. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:791,829` (bulk); `:1040` (channel-annotations); `:1162` (temporal-annotations); apisimp-sweep-2026-07-16-fire627.md §Finding F1.
 
 ## APISIMP-NOTIF-TRANSPORT-INMEM — NotificationTransportRest.list() loads all transports then subList-slices in memory (size: S, sweep: fire-627)
-- **Status:** ⏳ queued
+- **Status:** 🔧 in-PR (fire-628, branch APISIMP-NOTIF-TRANSPORT-INMEM)
 - **Why:** `GET /v2/admin/notifications/transports` (`NotificationTransportRest.java:98`) calls `service.listAll()` which delegates to `dao.findAll()` with no SKIP/LIMIT, materialises the full list of notification transports, then slices with `.subList(...)`. Same load-all + subList pattern as NOTEBOOK-INMEM-PAGE / VOCAB-USED-BY-INMEM. The collection is naturally bounded per deployment (few transports), so severity is low — but the technical debt shape is identical.
 - **Fix:** Add `countAll()` + `listPaged(skip, limit)` to `NotificationTransportDAO` (Cypher SKIP/LIMIT), expose them via `NotificationTransportService`, and replace the `listAll + subList` block in the REST handler with the two-query pattern.
 - **AC:** `list()` issues at most two DAO queries per page regardless of transport count. No full list materialised. `mvn verify -pl backend` green.

@@ -29,7 +29,12 @@ public class NotificationTransportService {
   /**
    * Return all configured transports, ordered name-ascending so the
    * admin pane renders a stable list.
+   *
+   * @deprecated Use {@link #count()} + {@link #listPaged(int, int)} instead.
+   *   Kept for existing callers; not used by the REST list endpoint since
+   *   APISIMP-NOTIF-TRANSPORT-INMEM.
    */
+  @Deprecated(forRemoval = false)
   public List<NotificationTransport> listAll() {
     var all = dao.findAll();
     if (all == null || all.isEmpty()) {
@@ -40,6 +45,23 @@ public class NotificationTransportService {
         NotificationTransport::getName,
         Comparator.nullsLast(Comparator.naturalOrder())));
     return sorted;
+  }
+
+  /** Total count of :NotificationTransport nodes. Pushed to the DB. */
+  public long count() {
+    return dao.countAll();
+  }
+
+  /**
+   * Returns a bounded, name-ASC page of transports. Two DB queries
+   * (count + list) replace the prior load-all + subList approach.
+   *
+   * @param page     zero-based page index
+   * @param pageSize number of items per page
+   */
+  public List<NotificationTransport> listPaged(int page, int pageSize) {
+    long skip = (long) page * pageSize;
+    return dao.listPaged(skip, pageSize);
   }
 
   /** Lookup by appId. {@link Optional#empty()} when none matches. */
