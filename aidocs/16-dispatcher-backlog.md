@@ -5738,14 +5738,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:791,829` (bulk); `:1040` (channel-annotations); `:1162` (temporal-annotations); apisimp-sweep-2026-07-16-fire627.md §Finding F1.
 
 ## APISIMP-NOTIF-TRANSPORT-INMEM — NotificationTransportRest.list() loads all transports then subList-slices in memory (size: S, sweep: fire-627)
-- **Status:** 🔧 in-PR (fire-628, branch APISIMP-NOTIF-TRANSPORT-INMEM)
+- **Status:** ✅ done (fire-628, merged PR #2598, squash SHA b44c2911)
 - **Why:** `GET /v2/admin/notifications/transports` (`NotificationTransportRest.java:98`) calls `service.listAll()` which delegates to `dao.findAll()` with no SKIP/LIMIT, materialises the full list of notification transports, then slices with `.subList(...)`. Same load-all + subList pattern as NOTEBOOK-INMEM-PAGE / VOCAB-USED-BY-INMEM. The collection is naturally bounded per deployment (few transports), so severity is low — but the technical debt shape is identical.
 - **Fix:** Add `countAll()` + `listPaged(skip, limit)` to `NotificationTransportDAO` (Cypher SKIP/LIMIT), expose them via `NotificationTransportService`, and replace the `listAll + subList` block in the REST handler with the two-query pattern.
 - **AC:** `list()` issues at most two DAO queries per page regardless of transport count. No full list materialised. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/resources/NotificationTransportRest.java:98`; `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/services/NotificationTransportService.java:33`; apisimp-sweep-2026-07-16-fire627.md §Finding F2.
 
 ## APISIMP-TEMPLATE-TAGS-INMEM — ShepardTemplateRest.tags() loads all distinct tags then subList-slices in memory (size: S, sweep: fire-627)
-- **Status:** ⏳ queued
+- **Status:** 🔧 in-PR (fire-629, branch APISIMP-TEMPLATE-TAGS-INMEM)
 - **Why:** `GET /v2/templates/tags` (`ShepardTemplateRest.java:318`) calls `dao.listDistinctTags(kind)` (Cypher DISTINCT, no LIMIT) to load all distinct tag strings, then slices with `all.subList(skip, end)`. On deployments with many templates and diverse tagging, this loads O(N) tag strings on every tag-autocomplete keystroke.
 - **Fix:** Add `countDistinctTags(kind)` + `listDistinctTagsPaged(kind, skip, limit)` to `ShepardTemplateDAO`, add `SKIP $skip LIMIT $limit` to the Cypher, and remove the in-memory slice from the REST handler.
 - **AC:** `tags()` issues at most two DAO queries per page regardless of tag count. `mvn verify -pl backend` green.
