@@ -87,18 +87,18 @@ public class MeCredentialsRest {
     String caller = callerOrNull(securityContext);
     if (caller == null) return problem(Response.Status.UNAUTHORIZED, "Authentication required");
 
-    List<GitCredential> stored = gitCredentialDAO.findAllByUser(caller);
+    long total = gitCredentialDAO.countByUser(caller);
+    long skip = (long) page * pageSize;
+    List<GitCredential> stored = gitCredentialDAO.findByUser(caller, skip, pageSize);
     List<GitCredentialIO> items = new ArrayList<>(stored == null ? 0 : stored.size());
     if (stored != null) {
       for (GitCredential c : stored) {
         items.add(new GitCredentialIO(c));
       }
     }
-    long from = (long) page * pageSize;
-    List<GitCredentialIO> slice = from >= items.size()
-        ? List.of()
-        : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
-    return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize)).build();
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
+        .build();
   }
 
   @POST
