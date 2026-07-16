@@ -3,6 +3,9 @@ package de.dlr.shepard.v2.notifications.transport.daos;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import jakarta.enterprise.context.RequestScoped;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
@@ -52,6 +55,45 @@ public class NotificationTransportDAO extends GenericDAO<NotificationTransport> 
     }
     session.delete(existing.get());
     return true;
+  }
+
+  // ─── APISIMP-NOTIF-TRANSPORT-INMEM: DB-side pagination ─────────────────
+
+  static final String COUNT_ALL_CYPHER =
+    "MATCH (t:NotificationTransport) RETURN count(t) AS c";
+
+  static final String LIST_PAGED_CYPHER =
+    "MATCH (t:NotificationTransport) " +
+    "RETURN t ORDER BY toLower(coalesce(t.name, '')) ASC " +
+    "SKIP $skip LIMIT $limit";
+
+  /**
+   * Total count of :NotificationTransport nodes, pushed to the DB.
+   * Used to populate X-Total-Count without loading all nodes.
+   */
+  public long countAll() {
+    var result = session.query(COUNT_ALL_CYPHER, Map.of());
+    for (var row : result) {
+      Object c = row.get("c");
+      return c instanceof Number n ? n.longValue() : 0L;
+    }
+    return 0L;
+  }
+
+  /**
+   * Returns a bounded, name-ASC page of :NotificationTransport nodes.
+   * SKIP/LIMIT are pushed to the DB — no full list materialised.
+   *
+   * @param skip  rows to skip (0-based)
+   * @param limit maximum rows to return
+   */
+  public List<NotificationTransport> listPaged(long skip, int limit) {
+    List<NotificationTransport> out = new ArrayList<>();
+    for (NotificationTransport t : findByQuery(LIST_PAGED_CYPHER,
+        Map.of("skip", skip, "limit", limit))) {
+      out.add(t);
+    }
+    return out;
   }
 
   @Override

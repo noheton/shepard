@@ -63,7 +63,8 @@ class NotificationTransportRestListTest {
 
   @Test
   void list_emptyServiceReturnsPagedEnvelopeWithEmptyItems() {
-    when(service.listAll()).thenReturn(List.of());
+    when(service.count()).thenReturn(0L);
+    when(service.listPaged(0, 50)).thenReturn(List.of());
 
     Response r = rest.list(0, 50);
 
@@ -96,7 +97,8 @@ class NotificationTransportRestListTest {
     matrix.setMatrixHomeserver("https://m.test");
     matrix.setMatrixAccessToken("syt_leak-me-too");
 
-    when(service.listAll()).thenReturn(List.of(smtp, matrix));
+    when(service.count()).thenReturn(2L);
+    when(service.listPaged(0, 50)).thenReturn(List.of(smtp, matrix));
 
     Response r = rest.list(0, 50);
 
@@ -108,6 +110,41 @@ class NotificationTransportRestListTest {
     assertEquals(2, out.total());
     assertEquals("app-smtp", out.items().get(0).appId());
     assertEquals("app-matrix", out.items().get(1).appId());
+  }
+
+  @Test
+  void list_xTotalCountHeaderMatchesTotal() {
+    when(service.count()).thenReturn(3L);
+    when(service.listPaged(0, 50)).thenReturn(List.of());
+
+    Response r = rest.list(0, 50);
+
+    assertEquals(200, r.getStatus());
+    Object header = r.getHeaders().getFirst("X-Total-Count");
+    assertNotNull(header, "X-Total-Count header must be present");
+    assertEquals(3L, header);
+  }
+
+  @Test
+  void list_page1_usesCorrectPageParameters() {
+    NotificationTransport t = new NotificationTransport();
+    t.setAppId("app-1");
+    t.setKind(TransportKind.SMTP.name());
+    t.setName("T1");
+
+    when(service.count()).thenReturn(5L);
+    when(service.listPaged(1, 2)).thenReturn(List.of(t));
+
+    Response r = rest.list(1, 2);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<NotificationTransportReadIO> out =
+        (PagedResponseIO<NotificationTransportReadIO>) r.getEntity();
+    assertEquals(5, out.total());
+    assertEquals(1, out.page());
+    assertEquals(2, out.pageSize());
+    assertEquals(1, out.items().size());
   }
 
   @Test
@@ -126,7 +163,8 @@ class NotificationTransportRestListTest {
     matrix.setMatrixHomeserver("https://m.test");
     matrix.setMatrixAccessToken("syt_access-token-do-not-leak");
 
-    when(service.listAll()).thenReturn(List.of(smtp, matrix));
+    when(service.count()).thenReturn(2L);
+    when(service.listPaged(0, 50)).thenReturn(List.of(smtp, matrix));
 
     Response r = rest.list(0, 50);
     // Serialize the PagedResponseIO envelope — credential values must not appear anywhere.

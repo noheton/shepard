@@ -95,16 +95,13 @@ public class NotificationTransportRest {
     @Parameter(description = "Page size 1–200 (default 50).")
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    List<NotificationTransportReadIO> items = service.listAll()
+    long total = service.count();
+    List<NotificationTransportReadIO> slice = service.listPaged(page, pageSize)
         .stream()
         .map(NotificationTransportReadIO::from)
         .toList();
-    long from = (long) page * pageSize;
-    List<NotificationTransportReadIO> slice = from >= items.size()
-        ? List.of()
-        : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
-    return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
-        .header("X-Total-Count", (long) items.size())
+    return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -15,10 +16,13 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.v2.notifications.transport.entities.NotificationTransport;
 import java.lang.reflect.Field;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.neo4j.ogm.cypher.Filter;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -103,5 +107,54 @@ class NotificationTransportDAOTest {
 
     assertTrue(dao.deleteByAppId("app-1"));
     verify(session, times(1)).delete(hit);
+  }
+
+  // ─── APISIMP-NOTIF-TRANSPORT-INMEM: countAll + listPaged ──────────────
+
+  @Test
+  void countAll_returnsZeroWhenNoRows() {
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
+    when(session.query(eq(NotificationTransportDAO.COUNT_ALL_CYPHER), anyMap()))
+        .thenReturn(r);
+
+    assertEquals(0L, dao.countAll());
+  }
+
+  @Test
+  void countAll_returnsCountFromCypherRow() {
+    Result r = mock(Result.class);
+    Iterator<Map<String, Object>> iter =
+        List.<Map<String, Object>>of(Map.<String, Object>of("c", 7L)).iterator();
+    when(r.iterator()).thenReturn(iter);
+    when(session.query(eq(NotificationTransportDAO.COUNT_ALL_CYPHER), anyMap()))
+        .thenReturn(r);
+
+    assertEquals(7L, dao.countAll());
+  }
+
+  @Test
+  void listPaged_delegatesToFindByQuery() {
+    NotificationTransport t = new NotificationTransport();
+    t.setAppId("app-1");
+    when(session.query(eq(NotificationTransport.class),
+            eq(NotificationTransportDAO.LIST_PAGED_CYPHER),
+            eq(Map.of("skip", 0L, "limit", 10))))
+        .thenReturn(List.of(t));
+
+    List<NotificationTransport> result = dao.listPaged(0L, 10);
+
+    assertEquals(1, result.size());
+    assertEquals("app-1", result.get(0).getAppId());
+  }
+
+  @Test
+  void listPaged_returnsEmptyWhenNoRows() {
+    when(session.query(eq(NotificationTransport.class),
+            eq(NotificationTransportDAO.LIST_PAGED_CYPHER),
+            anyMap()))
+        .thenReturn(List.of());
+
+    assertTrue(dao.listPaged(0L, 50).isEmpty());
   }
 }
