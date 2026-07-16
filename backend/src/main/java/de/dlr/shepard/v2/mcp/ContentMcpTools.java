@@ -208,11 +208,9 @@ public class ContentMcpTools {
       int safePage = page != null ? Math.max(page, 0) : 0;
       int safeSize = pageSize != null ? Math.min(Math.max(pageSize, 1), 200) : 50;
 
-      List<SemanticAnnotation> annotations = semanticAnnotationService.getAllAnnotationsByShepardId(ogmId);
-      int total = annotations.size();
-      int from = Math.min(safePage * safeSize, total);
-      int to = Math.min(from + safeSize, total);
-      List<SemanticAnnotation> page1 = annotations.subList(from, to);
+      long total = semanticAnnotationService.countAnnotationsByShepardId(ogmId);
+      int skip = safePage * safeSize;
+      List<SemanticAnnotation> page1 = semanticAnnotationService.getAllAnnotationsByShepardId(ogmId, skip, safeSize);
 
       List<Map<String, Object>> result = new ArrayList<>(page1.size());
       for (SemanticAnnotation a : page1) {

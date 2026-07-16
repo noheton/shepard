@@ -5789,8 +5789,8 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/spi/ReferenceKindHandler.java:141`; `backend/src/main/java/de/dlr/shepard/v2/references/handlers/TimeseriesReferenceKindHandler.java:223`; `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:550`; apisimp-sweep-2026-07-16-fire634.md §Finding F1.
 
 ## APISIMP-MCP-ANNOT-INMEM — list_annotations MCP tool loads all SemanticAnnotations in memory before paging (size: XS, sweep: fire-634)
-- **Status:** queued.
+- **Status:** done (fire-635, PR pending).
 - **Why:** `ContentMcpTools.list_annotations` calls `semanticAnnotationService.getAllAnnotationsByShepardId(ogmId)` (unbounded Cypher, loads ALL SemanticAnnotations) then paginates in Java with `subList`. Low practical impact (annotations bounded per DO), but inconsistent with the APISIMP mandate and a latency risk on AI-bulk-annotated DataObjects with 200+ annotations.
-- **Fix:** Add `getAllAnnotationsByShepardId(ogmId, skip, limit)` overload to `SemanticAnnotationService` + matching Cypher (`SKIP $skip LIMIT $limit`) in the DAO. Wire it through `ContentMcpTools` replacing the current load-all pattern. Return total from a separate `countAnnotationsByShepardId(ogmId)` DAO query.
-- **AC:** `list_annotations` with `page=1, pageSize=10` issues at most two DAO queries; no `getAllAnnotationsByShepardId` call. `mvn verify -pl backend` green.
+- **Fix:** Added `countAnnotationsByShepardId(shepardId)` and `findAnnotationsByShepardId(shepardId, skip, limit)` to `SemanticAnnotationDAO` using parameterized `SKIP $skip LIMIT $lim` Cypher. Added paged service overloads. Wired through `ContentMcpTools.listAnnotations()` replacing the load-all+subList pattern. Two tests added to `SemanticAnnotationServiceTest`; `ContentMcpToolsTest` updated to stub paged overloads.
+- **AC:** `list_annotations` with `page=1, pageSize=10` issues at most two DAO queries; no `getAllAnnotationsByShepardId` (unbounded) call.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/mcp/ContentMcpTools.java:211`; apisimp-sweep-2026-07-16-fire634.md §Finding F2.

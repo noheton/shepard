@@ -78,6 +78,15 @@ public class SemanticAnnotationService {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(shepardId);
   }
 
+  // APISIMP-MCP-ANNOT-INMEM — paged overloads; use these instead of load-all+subList
+  public long countAnnotationsByShepardId(long shepardId) {
+    return semanticAnnotationDAO.countAnnotationsByShepardId(shepardId);
+  }
+
+  public List<SemanticAnnotation> getAllAnnotationsByShepardId(long shepardId, int skip, int limit) {
+    return semanticAnnotationDAO.findAnnotationsByShepardId(shepardId, skip, limit);
+  }
+
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
     if (annotation == null) {

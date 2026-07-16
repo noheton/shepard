@@ -102,6 +102,20 @@ public class SemanticAnnotationServiceTest {
   }
 
   @Test
+  public void countAnnotationsByShepardIdTest() {
+    when(semanticAnnotationDAO.countAnnotationsByShepardId(7L)).thenReturn(42L);
+    assertEquals(42L, service.countAnnotationsByShepardId(7L));
+  }
+
+  @Test
+  public void getAllAnnotationsByShepardId_PagedTest() {
+    var expected = List.of(new SemanticAnnotation(1L));
+    when(semanticAnnotationDAO.findAnnotationsByShepardId(7L, 10, 5)).thenReturn(expected);
+    var actual = service.getAllAnnotationsByShepardId(7L, 10, 5);
+    assertEquals(expected, actual);
+  }
+
+  @Test
   public void getAnnotationTest() {
     var expected = new SemanticAnnotation(1L);
     when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(expected);
