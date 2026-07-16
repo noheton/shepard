@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -244,12 +245,14 @@ class ShepardTemplateRestTest {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     Response r = resource.tags(null, 0, 50, securityContext);
     assertEquals(401, r.getStatus());
-    verify(dao, never()).listDistinctTags(any());
+    verify(dao, never()).countDistinctTags(any());
+    verify(dao, never()).listDistinctTagsPaged(any(), anyInt(), anyInt());
   }
 
   @Test
   void tagsReturnsDistinctList() {
-    when(dao.listDistinctTags(null)).thenReturn(List.of("calibration", "hot-fire", "lumen"));
+    when(dao.countDistinctTags(null)).thenReturn(3L);
+    when(dao.listDistinctTagsPaged(null, 0, 50)).thenReturn(List.of("calibration", "hot-fire", "lumen"));
     Response r = resource.tags(null, 0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -262,15 +265,18 @@ class ShepardTemplateRestTest {
 
   @Test
   void tagsHonoursKindFilter() {
-    when(dao.listDistinctTags("EXPERIMENT_RECIPE")).thenReturn(List.of("hot-fire"));
+    when(dao.countDistinctTags("EXPERIMENT_RECIPE")).thenReturn(1L);
+    when(dao.listDistinctTagsPaged("EXPERIMENT_RECIPE", 0, 50)).thenReturn(List.of("hot-fire"));
     Response r = resource.tags("EXPERIMENT_RECIPE", 0, 50, securityContext);
     assertEquals(200, r.getStatus());
-    verify(dao).listDistinctTags("EXPERIMENT_RECIPE");
+    verify(dao).countDistinctTags("EXPERIMENT_RECIPE");
+    verify(dao).listDistinctTagsPaged("EXPERIMENT_RECIPE", 0, 50);
   }
 
   @Test
-  void tagsPaginatesInMemory() {
-    when(dao.listDistinctTags(null)).thenReturn(List.of("a", "b", "c"));
+  void tagsPaginatesViaDb() {
+    when(dao.countDistinctTags(null)).thenReturn(3L);
+    when(dao.listDistinctTagsPaged(null, 0, 2)).thenReturn(List.of("a", "b"));
     Response page0 = resource.tags(null, 0, 2, securityContext);
     assertEquals(200, page0.getStatus());
     @SuppressWarnings("unchecked")
@@ -279,14 +285,32 @@ class ShepardTemplateRestTest {
     assertEquals(3L, p0.total());
     assertEquals(2, p0.items().size());
     assertEquals("a", p0.items().get(0));
+    verify(dao).countDistinctTags(null);
+    verify(dao).listDistinctTagsPaged(null, 0, 2);
+  }
 
-    when(dao.listDistinctTags(null)).thenReturn(List.of("a", "b", "c"));
+  @Test
+  void tags_page1_usesCorrectDbParams() {
+    when(dao.countDistinctTags(null)).thenReturn(3L);
+    when(dao.listDistinctTagsPaged(null, 1, 2)).thenReturn(List.of("c"));
     Response page1 = resource.tags(null, 1, 2, securityContext);
+    assertEquals(200, page1.getStatus());
     @SuppressWarnings("unchecked")
     de.dlr.shepard.v2.common.io.PagedResponseIO<String> p1 =
         (de.dlr.shepard.v2.common.io.PagedResponseIO<String>) page1.getEntity();
+    assertEquals(3L, p1.total());
     assertEquals(1, p1.items().size());
     assertEquals("c", p1.items().get(0));
+    verify(dao).listDistinctTagsPaged(null, 1, 2);
+  }
+
+  @Test
+  void tags_xTotalCountHeaderMatchesTotal() {
+    when(dao.countDistinctTags(null)).thenReturn(42L);
+    when(dao.listDistinctTagsPaged(null, 0, 50)).thenReturn(List.of());
+    Response r = resource.tags(null, 0, 50, securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("42", r.getHeaders().getFirst("X-Total-Count").toString());
   }
 
   @Test

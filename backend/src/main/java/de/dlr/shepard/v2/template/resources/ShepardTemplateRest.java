@@ -312,10 +312,8 @@ public class ShepardTemplateRest {
     @Context SecurityContext securityContext
   ) {
     if (securityContext.getUserPrincipal() == null) return problem(PT_UNAUTHORIZED, "Authentication required", Response.Status.UNAUTHORIZED, null);
-    List<String> all = dao.listDistinctTags(kind);
-    long total = all.size();
-    int skip = (int) Math.min((long) page * pageSize, total);
-    List<String> slice = all.subList(skip, (int) Math.min((long) skip + pageSize, total));
+    long total = dao.countDistinctTags(kind);
+    List<String> slice = dao.listDistinctTagsPaged(kind, page, pageSize);
     return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
         .header("X-Total-Count", total)
         .build();

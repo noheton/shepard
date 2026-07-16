@@ -12,9 +12,6 @@ import org.junit.jupiter.api.Test;
  * canonical edit shape per aidocs/54 §7; without an explicit
  * pass-through, an admin editing a description would silently strip
  * the icon — the failure mode aidocs/integrations/122 §5.1 calls out.
- *
- * Also covers APISIMP-TEMPLATE-TAGS-CAP: verifies the TAGS_MAX constant
- * is 500 (the value baked into the LIMIT clause of listDistinctTags).
  */
 class ShepardTemplateDAOIconKeyTest {
 
@@ -45,9 +42,18 @@ class ShepardTemplateDAOIconKeyTest {
   }
 
   @Test
-  void tagsCapConstantIs500() {
-    // APISIMP-TEMPLATE-TAGS-CAP: the constant must stay 500.
-    // Changing it without updating this test is intentional — bump the test.
-    assertEquals(500, ShepardTemplateDAO.TAGS_MAX);
+  void deprecatedListDistinctTagsDelegatesTo500Limit() {
+    // The deprecated listDistinctTags(kind) must delegate to listDistinctTagsPaged(kind, 0, 500).
+    // Guard that the fallback cap has not silently changed.
+    int[] capturedPageSize = {-1};
+    ShepardTemplateDAO dao = new ShepardTemplateDAO() {
+      @Override
+      public java.util.List<String> listDistinctTagsPaged(String templateKind, int page, int pageSize) {
+        capturedPageSize[0] = pageSize;
+        return java.util.Collections.emptyList();
+      }
+    };
+    dao.listDistinctTags(null);
+    assertEquals(500, capturedPageSize[0]);
   }
 }
