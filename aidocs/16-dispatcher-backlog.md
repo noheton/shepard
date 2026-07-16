@@ -5695,7 +5695,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:475,621,666`; `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:684,793,838,880,922`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotListRest.java:176`; `backend/src/main/java/de/dlr/shepard/v2/annotations/resources/SemanticAnnotationV2Rest.java:205,262`; apisimp-sweep-2026-07-16.md §Finding F1.
 
 ## APISIMP-XCOUNT-WAVE5 — add X-Total-Count response header to 6 remaining paged list endpoints (size: S, sweep: fire-623)
-- **Status:** 🔧 in-PR (fire-624)
+- **Status:** ✅ merged (fire-624, PR #2592, sha 37126a6)
 - **Why:** WAVE1–WAVE4 closed the X-Total-Count gap on 37+11+10+34 endpoints. Six remain, all returning `PagedResponseIO` without the header. Three have stale "✅ merged" backlog entries (APISIMP-TERMSEARCH-NO-XCOUNT, APISIMP-FLAT-PUBS-NO-PAGINATION, APISIMP-PAGINATION-LIST-DQR) contradicted by the live code on `origin/main`; the claimed commits do not exist in git history.
 - **Endpoints:** `GET /v2/collections/{appId}/dqr` (`CollectionDQRRest.java:101`); `GET /v2/publications` (`FlatPublicationsRest.java:137`); `GET /v2/semantic/vocabularies` (`VocabularyBrowseRest.java:114`); `GET /v2/semantic/vocabularies/{appId}/predicates` (`VocabularyBrowseRest.java:166`); `GET /v2/semantic/vocabularies/used-by/{appId}` (`VocabularyBrowseRest.java:220,228`); `GET /v2/semantic/terms/search` (`SemanticTermSearchRest.java:244`).
 - **Fix pattern (same as WAVE4):** (1) Add `import org.eclipse.microprofile.openapi.annotations.headers.Header;` if absent. (2) Add `headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))` to `@APIResponse(responseCode="200")`. (3) Chain `.header("X-Total-Count", total)` on the `Response` builder. Special case: `listVocabulariesUsedBy()` has an early-return path (line 220) that also needs the header.
@@ -5703,14 +5703,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java:88,101`; `backend/src/main/java/de/dlr/shepard/v2/publish/resources/FlatPublicationsRest.java:89,137`; `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/VocabularyBrowseRest.java:114,166,220,228`; `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticTermSearchRest.java:244`; apisimp-sweep-2026-07-16-fire623.md §Finding F1.
 
 ## APISIMP-CROSSDO-PAGED-MISUSE — CrossDoBulkDataRest wraps non-paged result in PagedResponseIO (size: XS, sweep: fire-623)
-- **Status:** 🔧 in-PR (fire-625)
+- **Status:** ✅ merged (fire-625, PR #2593, sha a810741)
 - **Why:** `POST /v2/data-objects/cross-bulk` (`CrossDoBulkDataRest.java:201`) returns `new PagedResponseIO<>(out, out.size(), 0, out.size())` — always `page=0, pageSize=N`. There are no `page`/`pageSize` query params, so callers see a paging envelope with no way to page. The `@APIResponse(200)` declares `@Schema(implementation = PagedResponseIO.class)` but the semantic is misleading: total == pageSize == items.size().
 - **Fix (Option A, preferred):** Add `@QueryParam("page") @DefaultValue("0") int page` and `@QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(100) int pageSize` to `getCrossDoBulkData()`; slice `out` accordingly; chain `.header("X-Total-Count", out.size())`. Option B: return plain `List<CrossDoSeriesIO>` + update `@APIResponse(200)` schema.
 - **AC:** `@APIResponse(200)` schema matches the actual JSON shape. No degenerate `{total=N, page=0, pageSize=N}` envelope when paging is not offered. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkDataRest.java:201`; apisimp-sweep-2026-07-16-fire623.md §Finding F2.
 
 ## APISIMP-REFANNOT-GET-PATCH-CREATE-SCHEMA — ReferenceAnnotationRest POST/GET/{id}/PATCH missing @Content schema declaration (size: S, sweep: fire-623)
-- **Status:** 🔧 in-PR (fire-626)
+- **Status:** ✅ merged (fire-626, PR #2594, sha 2c73f29)
 - **Why:** `ReferenceAnnotationRest.java` `create()` (line 188), `get()` (line 213), and `patch()` (line 241) all carry success `@APIResponse` annotations without a `content = @Content(schema = @Schema(...))` clause. The `list()` method at line 150 has the full annotation (added in WAVE3). The three other success responses document as `{}` in the generated OpenAPI spec. All return `Map<String, Object>`.
 - **Fix:** Option A: Introduce `ReferenceAnnotationIO` wrapping the map fields; declare `@Content(schema = @Schema(implementation = ReferenceAnnotationIO.class))` on all three. Option B (minimal): Add `@Content(mediaType = "application/json", schema = @Schema(type = SchemaType.OBJECT))` so the spec documents the media type.
 - **AC:** All three `@APIResponse` success blocks carry a `@Content` clause. Generated OpenAPI spec does not show blank response bodies for POST/GET/{id}/PATCH. `mvn verify -pl backend` green.
@@ -5782,7 +5782,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/spi/ContainerKindHandler.java:155`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:474`.
 
 ## APISIMP-REFS-HANDLER-PAGING-TAIL — 5 concrete ReferenceKindHandlers still use SPI in-memory paging defaults (size: S, sweep: fire-634)
-- **Status:** in-PR (fire-636).
+- **Status:** ✅ done (fire-636, merged sha 282a903).
 - **Why:** PR #2603 (fire-633/634) added DB-backed `countByDataObject` + `listByDataObject(skip, limit)` overrides to `FileReferenceKindHandler` and `UriReferenceKindHandler` only. The five remaining in-tree handlers (`TimeseriesReferenceKindHandler`, `FileBundleReferenceKindHandler`, `StructuredDataReferenceKindHandler`, `CollectionReferenceKindHandler`, `DataObjectReferenceKindHandler`) fall through to the SPI defaults: `count` calls `listByDataObject(all).size()` (unbounded Cypher load → `.size()` in Java); `list(skip,limit)` calls `listByDataObject(all)` then `.subList()`. For a DataObject with 100 TimeSeries references, every paged `GET /v2/references?kind=timeseries` request performs two full O(N) Neo4j scans.
 - **Fix:** Add `countByDataObject(appId, subKind)` and `listByDataObject(appId, subKind, skip, limit)` overrides to each of the 5 handlers, delegating to the underlying service (e.g. `timeseriesReferenceService.countByDataObjectAppId(appId)` / `timeseriesReferenceService.listByDataObjectAppId(appId, skip, limit)`). The service methods may need `skip+limit` overloads if they don't already exist.
 - **AC:** `GET /v2/references?kind=timeseries&dataObjectAppId=...&pageSize=10&page=1` Neo4j log shows `SKIP 10 LIMIT 10` and a separate `count(r)` query. `mvn verify -pl backend` green.
