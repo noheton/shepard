@@ -98,19 +98,22 @@ class MeCredentialsRestTest {
 
   @Test
   void listReturnsEmptyPageWhenNoneExist() {
-    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of());
+    when(gitCredentialDAO.countByUser(CALLER)).thenReturn(0L);
+    when(gitCredentialDAO.findByUser(CALLER, 0L, 50L)).thenReturn(List.of());
     var r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<GitCredentialIO> page = (PagedResponseIO<GitCredentialIO>) r.getEntity();
     assertEquals(0, page.total());
     assertTrue(page.items().isEmpty());
+    assertEquals("0", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
   void listReturnsPagedIoWhenCredentialsExist() {
     GitCredential cred = buildCred("id-1", "gitlab.com", "DLR", "alice");
-    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(cred));
+    when(gitCredentialDAO.countByUser(CALLER)).thenReturn(1L);
+    when(gitCredentialDAO.findByUser(CALLER, 0L, 50L)).thenReturn(List.of(cred));
 
     var r = resource.list(0, 50, securityContext);
     assertEquals(200, r.getStatus());
@@ -120,12 +123,13 @@ class MeCredentialsRestTest {
     assertEquals(1, page.items().size());
     assertEquals("gitlab.com", page.items().get(0).getHost());
     assertEquals("id-1", page.items().get(0).getAppId());
+    assertEquals("1", r.getHeaderString("X-Total-Count"));
   }
 
   @Test
   void listReturnsEmptySliceWhenPageBeyondTotal() {
-    GitCredential cred = buildCred("id-1", "gitlab.com", "DLR", "alice");
-    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(cred));
+    when(gitCredentialDAO.countByUser(CALLER)).thenReturn(1L);
+    when(gitCredentialDAO.findByUser(CALLER, 50L, 50L)).thenReturn(List.of());
 
     var r = resource.list(1, 50, securityContext);
     assertEquals(200, r.getStatus());
@@ -139,7 +143,9 @@ class MeCredentialsRestTest {
   void listSlicesCorrectlyWithPageSize1() {
     GitCredential c1 = buildCred("id-1", "gitlab.com", "DLR", "alice");
     GitCredential c2 = buildCred("id-2", "github.com", "GH", "alice");
-    when(gitCredentialDAO.findAllByUser(CALLER)).thenReturn(List.of(c1, c2));
+    when(gitCredentialDAO.countByUser(CALLER)).thenReturn(2L);
+    when(gitCredentialDAO.findByUser(CALLER, 0L, 1L)).thenReturn(List.of(c1));
+    when(gitCredentialDAO.findByUser(CALLER, 1L, 1L)).thenReturn(List.of(c2));
 
     var r0 = resource.list(0, 1, securityContext);
     @SuppressWarnings("unchecked")
