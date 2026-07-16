@@ -136,7 +136,8 @@ class UserGroupV2RestTest {
 
   @Test
   void listUserGroups_withQ_returnsPagedEnvelope() {
-    when(searchService.searchByText("lumen")).thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
+    when(searchService.countByText("lumen")).thenReturn(1L);
+    when(searchService.searchByTextPaged("lumen", 0, 50)).thenReturn(List.of(stubGroup(APP_ID, GROUP_NAME)));
     Response r = resource.listUserGroups("lumen", 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -144,13 +145,14 @@ class UserGroupV2RestTest {
     assertEquals(1, body.items().size());
     assertEquals(1L, body.total());
     assertEquals(0, body.page());
-    assertEquals(1, body.pageSize());
+    assertEquals(50, body.pageSize());
     assertEquals(GROUP_NAME, body.items().get(0).getName());
   }
 
   @Test
   void listUserGroups_withQ_noMatches_returnsEmptyPagedEnvelope() {
-    when(searchService.searchByText("nomatch")).thenReturn(List.of());
+    when(searchService.countByText("nomatch")).thenReturn(0L);
+    when(searchService.searchByTextPaged("nomatch", 0, 50)).thenReturn(List.of());
     Response r = resource.listUserGroups("nomatch", 0, 50, null, null);
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
