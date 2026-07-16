@@ -87,12 +87,12 @@ public class UserGroupV2Rest {
   @APIResponse(
     responseCode = "200",
     description = "Paged list of user groups (`PagedResponseIO<UserGroupV2IO>`). " +
-      "When `q` is set, `total=items.size(), page=0, pageSize=items.size()`.",
+      "Pagination applies regardless of whether `q` is set.",
     content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
     headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @Parameter(name = "q", description = "Optional name filter. When set, returns a PagedResponseIO with all matching groups; ordering and pagination are ignored.")
+  @Parameter(name = "q", description = "Optional name filter. When set, filters by name (case-insensitive contains) with DB-backed pagination.")
   @Parameter(name = Constants.QP_PAGE, description = "Zero-based page index (default 0).")
   @Parameter(name = "pageSize", description = "Page size, 1–200 (default 50).")
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Sort field. Accepted values: NAME, CREATED_AT, UPDATED_AT. Ascending by default.")
@@ -105,11 +105,12 @@ public class UserGroupV2Rest {
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
     if (q != null && !q.isBlank()) {
-      List<UserGroupV2IO> items = searchService.searchByText(q).stream()
+      long total = searchService.countByText(q);
+      List<UserGroupV2IO> items = searchService.searchByTextPaged(q, page, pageSize).stream()
         .map(UserGroupV2IO::new)
         .toList();
-      return Response.ok(new PagedResponseIO<>(items, (long) items.size(), 0, items.size()))
-          .header("X-Total-Count", (long) items.size())
+      return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+          .header("X-Total-Count", total)
           .build();
     }
     var params = new QueryParamHelper().withPageAndSize(page, pageSize);

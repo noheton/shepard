@@ -5788,6 +5788,13 @@ picks these up. Terse by design.
 - **AC:** `GET /v2/references?kind=timeseries&dataObjectAppId=...&pageSize=10&page=1` Neo4j log shows `SKIP 10 LIMIT 10` and a separate `count(r)` query. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/spi/ReferenceKindHandler.java:141`; `backend/src/main/java/de/dlr/shepard/v2/references/handlers/TimeseriesReferenceKindHandler.java:223`; `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:550`; apisimp-sweep-2026-07-16-fire634.md §Finding F1.
 
+## APISIMP-USERGROUP-SEARCH-PAGING — UserGroupV2Rest search path uses fake total and ignores page/pageSize (size: XS, sweep: fire-637)
+- **Status:** done (fire-637, PR pending).
+- **Why:** `GET /v2/user-groups?q=foo&page=1&pageSize=10` ignores `page` and `pageSize`: the handler calls the unbounded `searchService.searchByText(q)`, loads all matching groups in memory, then constructs a response with `total=items.size(), page=0, pageSize=items.size()` — faking a single page containing everything. A deployment with 10 000 user groups where 200 match the search term would load all 200 into memory and return them all in one response regardless of the caller's requested page.
+- **Fix:** Added `countUserGroups(selectionQuery, var)` and `findUserGroupsPaged(selectionQuery, var, pagination)` to `SearchDAO`; added `countByText(text)` and `searchByTextPaged(text, page, pageSize)` to `UserGroupSearchService`; wired through `UserGroupV2Rest` to honour `page`/`pageSize` in the search path. Response now always carries the true DB count as `total` and applies `ORDER BY name ASC SKIP offset LIMIT pageSize` at Cypher level.
+- **AC:** `GET /v2/user-groups?q=foo&page=1&pageSize=5` returns exactly 5 items (or fewer on the last page), `total` reflects the DB count (not `items.size()`), and `X-Total-Count` header matches. `mvn test-compile -DnoPlugins` clean.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/common/search/daos/SearchDAO.java:127`; `backend/src/main/java/de/dlr/shepard/common/search/services/UserGroupSearchService.java:50`; `backend/src/main/java/de/dlr/shepard/v2/users/resources/UserGroupV2Rest.java:107`.
+
 ## APISIMP-MCP-ANNOT-INMEM — list_annotations MCP tool loads all SemanticAnnotations in memory before paging (size: XS, sweep: fire-634)
 - **Status:** done (fire-635, PR pending).
 - **Why:** `ContentMcpTools.list_annotations` calls `semanticAnnotationService.getAllAnnotationsByShepardId(ogmId)` (unbounded Cypher, loads ALL SemanticAnnotations) then paginates in Java with `subList`. Low practical impact (annotations bounded per DO), but inconsistent with the APISIMP mandate and a latency risk on AI-bulk-annotated DataObjects with 200+ annotations.
