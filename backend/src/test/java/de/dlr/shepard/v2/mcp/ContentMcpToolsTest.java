@@ -201,7 +201,8 @@ class ContentMcpToolsTest {
     repo.setName("internal");
     ann.setPropertyRepository(repo);
 
-    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(List.of(ann));
+    when(semanticAnnotationService.countAnnotationsByShepardId(DO_OGM_ID)).thenReturn(1L);
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID, 0, 50)).thenReturn(List.of(ann));
 
     String json = tools.listAnnotations(DO_APP_ID, null, null);
     var root = new ObjectMapper().readTree(json);
@@ -222,7 +223,8 @@ class ContentMcpToolsTest {
     ann.setNumericValue(25.0);
     ann.setUnitIRI("http://qudt.org/vocab/unit/KN");
 
-    when(semanticAnnotationService.getAllAnnotationsByShepardId(anyLong())).thenReturn(List.of(ann));
+    when(semanticAnnotationService.countAnnotationsByShepardId(anyLong())).thenReturn(1L);
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(anyLong(), eq(0), eq(50))).thenReturn(List.of(ann));
 
     String json = tools.listAnnotations(DO_APP_ID, null, null);
     var root = new ObjectMapper().readTree(json);
@@ -242,11 +244,10 @@ class ContentMcpToolsTest {
 
   @Test
   void listAnnotationsPaginates_page1of2() throws Exception {
-    // Build 3 annotations; request page=1, pageSize=2 → returns only the 3rd
-    SemanticAnnotation a1 = ann("ann-a1", "prop1");
-    SemanticAnnotation a2 = ann("ann-a2", "prop2");
+    // 3 total; request page=1, pageSize=2 → DAO called with skip=2, limit=2, returns 1 row
     SemanticAnnotation a3 = ann("ann-a3", "prop3");
-    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(List.of(a1, a2, a3));
+    when(semanticAnnotationService.countAnnotationsByShepardId(DO_OGM_ID)).thenReturn(3L);
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID, 2, 2)).thenReturn(List.of(a3));
 
     String json = tools.listAnnotations(DO_APP_ID, 1, 2);
     var root = new ObjectMapper().readTree(json);
@@ -257,10 +258,11 @@ class ContentMcpToolsTest {
 
   @Test
   void listAnnotationsCapsPagesizeAt200() throws Exception {
-    // 5 annotations, pageSize=999 → clamped to 200, all 5 returned on page 0
+    // pageSize=999 clamped to 200; DAO called with skip=0, limit=200; returns 5 rows
     List<SemanticAnnotation> anns = new java.util.ArrayList<>();
     for (int i = 0; i < 5; i++) anns.add(ann("ann-" + i, "p" + i));
-    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(anns);
+    when(semanticAnnotationService.countAnnotationsByShepardId(DO_OGM_ID)).thenReturn(5L);
+    when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID, 0, 200)).thenReturn(anns);
 
     String json = tools.listAnnotations(DO_APP_ID, 0, 999);
     var root = new ObjectMapper().readTree(json);

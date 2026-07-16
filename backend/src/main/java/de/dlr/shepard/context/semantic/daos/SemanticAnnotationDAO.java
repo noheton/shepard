@@ -296,6 +296,36 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
     return out;
   }
 
+  // APISIMP-MCP-ANNOT-INMEM — count annotations for a given shepardId
+  public long countAnnotationsByShepardId(long shepardId) {
+    String query =
+      "MATCH (e)-[:has_annotation]->(a:SemanticAnnotation) WHERE e." + Constants.SHEPARD_ID + "=$sid " +
+      "RETURN count(a) AS cnt";
+    org.neo4j.ogm.model.Result result = session.query(query, Map.of("sid", shepardId));
+    for (Map<String, Object> row : result.queryResults()) {
+      Object cnt = row.get("cnt");
+      if (cnt instanceof Number n) return n.longValue();
+    }
+    return 0L;
+  }
+
+  // APISIMP-MCP-ANNOT-INMEM — paged annotations for a given shepardId
+  public List<SemanticAnnotation> findAnnotationsByShepardId(long shepardId, int skip, int limit) {
+    String query = String.format(
+      "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE e." + Constants.SHEPARD_ID + "=%d WITH a %s SKIP $skip LIMIT $lim",
+      shepardId,
+      CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
+    );
+    Map<String, Object> params = new java.util.HashMap<>();
+    params.put("skip", (long) skip);
+    params.put("lim", (long) limit);
+    List<SemanticAnnotation> out = new ArrayList<>();
+    for (SemanticAnnotation a : findByQuery(query, params)) {
+      out.add(a);
+    }
+    return out;
+  }
+
   // N1l — paginated load for the snapshot-refresh job
   public List<SemanticAnnotation> findPaginated(int skip, int limit) {
     String query =
