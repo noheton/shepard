@@ -273,6 +273,27 @@ public class StructuredDataReferenceKindHandler implements ReferenceKindHandler 
     return out;
   }
 
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    return structuredDataReferenceDAO.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<StructuredDataReference> refs = structuredDataReferenceDAO.findByDataObjectAppId(dataObjectAppId, skip, limit);
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (StructuredDataReference ref : refs) {
+      if (ref != null) out.add(toIO(ref));
+    }
+    return out;
+  }
+
   private DataObject resolveParent(String dataObjectAppId) {
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
       throw new BadRequestException("dataObjectAppId is required");

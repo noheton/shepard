@@ -169,6 +169,27 @@ public class FileBundleReferenceKindHandler implements ReferenceKindHandler {
     return out;
   }
 
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    return fileBundleReferenceDAO.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<FileBundleReference> refs = fileBundleReferenceDAO.findByDataObjectAppId(dataObjectAppId, skip, limit);
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (FileBundleReference ref : refs) {
+      if (ref != null) out.add(toIO(ref));
+    }
+    return out;
+  }
+
   private DataObject resolveParent(String dataObjectAppId) {
     if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
       throw new BadRequestException("dataObjectAppId is required");

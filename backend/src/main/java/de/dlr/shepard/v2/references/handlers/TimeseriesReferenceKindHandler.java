@@ -235,6 +235,27 @@ public class TimeseriesReferenceKindHandler implements ReferenceKindHandler {
     return out;
   }
 
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    return timeseriesReferenceDAO.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<TimeseriesReference> refs = timeseriesReferenceDAO.findByDataObjectAppId(dataObjectAppId, skip, limit);
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (TimeseriesReference ref : refs) {
+      if (ref != null) out.add(toIO(ref));
+    }
+    return out;
+  }
+
   // ─── annotation sub-resource (APISIMP-ANNOTATION-SUBRESOURCE-COLLISION) ──
 
   @Override
