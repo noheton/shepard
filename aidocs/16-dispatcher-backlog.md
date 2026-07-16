@@ -5745,7 +5745,34 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/resources/NotificationTransportRest.java:98`; `backend/src/main/java/de/dlr/shepard/v2/notifications/transport/services/NotificationTransportService.java:33`; apisimp-sweep-2026-07-16-fire627.md §Finding F2.
 
 ## APISIMP-TEMPLATE-TAGS-INMEM — ShepardTemplateRest.tags() loads all distinct tags then subList-slices in memory (size: S, sweep: fire-627)
-- **Status:** 🔧 in-PR (fire-629, branch APISIMP-TEMPLATE-TAGS-INMEM)
+- **Status:** ✅ merged (fire-631, PR #2599, SHA 95b591969)
+
+## APISIMP-TERM-SEARCH-FAKE-TOTAL — SemanticTermSearchRest.search() sets total = results.size() which is always ≤ pageSize (size: XS, sweep: fire-631)
+- **Status:** 🔧 in-PR (fire-631, branch APISIMP-TERM-SEARCH-FAKE-TOTAL)
+- **Why:** `GET /v2/semantic/terms/search?q=…&page=0&pageSize=50` runs a properly SKIP/LIMIT-bounded Cypher but then sets `total = results.size()` at line 246 — always ≤ 50. A client requesting page 0 of a 500-term ontology gets `{total: 50}` and cannot distinguish "exactly 50 results" from "50+ results with more pages". `X-Total-Count` header is also wrong for the same reason.
+- **Fix:** Add `FULLTEXT_COUNT_CYPHER` + `CONTAINS_COUNT_CYPHER` constants and a `runCount(q)` method (mirrors `runSearch` with fallback); execute before the paged query; use result as `total` in the `PagedResponseIO` envelope and `X-Total-Count` header.
+- **AC:** Seed 60 ontology terms matching `"mat"`. `GET /v2/semantic/terms/search?q=mat&page=0&pageSize=50` must return `total >= 60` (not `total == 50`). `mvn verify -pl backend` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/semantic/resources/SemanticTermSearchRest.java:246`; apisimp-sweep-2026-07-16-fire631.md §Finding F3.
+
+## APISIMP-URDF-INMEM-PAGING — AccessibleUrdfService loads up to 5 000 URDF candidates then subList-slices in memory (size: S, sweep: fire-631)
+- **Status:** queued
+- **Why:** `GET /v2/references/urdf` (URDF picker autocomplete) calls `singletonFileReferenceDAO.findAllUrdfCandidates()` with no `q` filter or LIMIT, fetching up to `MAX_CANDIDATES = 5_000` rows. After a permission filter (in-memory) and an optional Java substring filter, `visible.subList(from, to)` is called. Every autocomplete keystroke pays the full 5 000-row fetch cost even when `q` matches only a handful of files.
+- **Fix:** Push `q` filter and `LIMIT` into `findAllUrdfCandidates(q, limit)` as Cypher `WHERE name CONTAINS $q … LIMIT`. Permission filtering stays in Java but operates on a smaller set.
+- **AC:** With > 200 URDF FileReferences in DB, `GET /v2/references/urdf?q=kr210&pageSize=10` must show a bounded query in the Neo4j log.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/services/AccessibleUrdfService.java:71`; apisimp-sweep-2026-07-16-fire631.md §Finding F2.
+
+## APISIMP-REFS-INMEM-PAGING — ReferenceKindHandler SPI default paging loads all references then subList-slices (size: M, sweep: fire-631)
+- **Status:** queued
+- **Why:** `ReferencesV2Rest.list()` delegates to `handler.listByDataObject(…, skip, limit)` and `handler.countByDataObject(…)`. Both are default methods on `ReferenceKindHandler` that call the unparameterised `listByDataObject(collectionAppId, dataObjectAppId)` (loading ALL references) and then slice in Java. All 7 concrete handlers use only these defaults. Every paginated `GET /v2/references?...&page=X&pageSize=Y` request triggers a full load. A comment at line 146 already flags this as `APISIMP-REFERENCES-LIST-IN-MEMORY-PAGING`. The container SPI already solved this pattern — mirror it.
+- **Fix:** Each handler overrides `countByDataObject` and `listByDataObject(…, int skip, int limit)` with a Cypher SKIP/LIMIT DAO method. Start with `FileReferenceKindHandler` (kind=file) and `UriReferenceKindHandler` (kind=uri).
+- **AC:** `GET /v2/references?kind=uri&dataObjectAppId=<id-with-50-refs>&page=0&pageSize=1` returns `total=50`, not `total=1`. Neo4j PROFILE shows SKIP/LIMIT Cypher.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/spi/ReferenceKindHandler.java:141`; apisimp-sweep-2026-07-16-fire631.md §Finding F1.
+
+## APISIMP-ADMIN-INMEM-PAGING — AdminUserGitCredentialRest + InstanceAdminRest slice in memory (size: XS, low priority, sweep: fire-631)
+- **Status:** queued
+- **Why:** Both admin list endpoints load the full record set, compute `.size()` as total, then call `.subList()`. Both datasets are bounded in practice (< 20 git credentials per user, < 100 instance-admin grants) so performance impact is negligible, but the shape is inconsistent with the rest of the v2 admin surface.
+- **Fix:** Push `SKIP $skip LIMIT $limit` to the underlying Neo4j DAOs.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/users/AdminUserGitCredentialRest.java:245`; `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:127`; apisimp-sweep-2026-07-16-fire631.md §Finding F4.
 - **Why:** `GET /v2/templates/tags` (`ShepardTemplateRest.java:318`) calls `dao.listDistinctTags(kind)` (Cypher DISTINCT, no LIMIT) to load all distinct tag strings, then slices with `all.subList(skip, end)`. On deployments with many templates and diverse tagging, this loads O(N) tag strings on every tag-autocomplete keystroke.
 - **Fix:** Add `countDistinctTags(kind)` + `listDistinctTagsPaged(kind, skip, limit)` to `ShepardTemplateDAO`, add `SKIP $skip LIMIT $limit` to the Cypher, and remove the in-memory slice from the REST handler.
 - **AC:** `tags()` issues at most two DAO queries per page regardless of tag count. `mvn verify -pl backend` green.
