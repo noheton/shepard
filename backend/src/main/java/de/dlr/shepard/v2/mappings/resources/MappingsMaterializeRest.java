@@ -32,7 +32,10 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -106,7 +109,16 @@ public class MappingsMaterializeRest {
     "404 when the template/executor is absent; 422 when templateKind != MAPPING_RECIPE or the body " +
     "declares no mappingRecipeShape."
   )
-  @APIResponse(responseCode = "200", description = "Materialization succeeded.")
+  @APIResponse(
+    responseCode = "200",
+    description = "Materialization succeeded.",
+    content = @Content(schema = @Schema(implementation = MaterializeResponseIO.class))
+  )
+  @APIResponse(
+    responseCode = "400",
+    description = "appId path parameter is blank.",
+    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
+  )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(
     responseCode = "404",
