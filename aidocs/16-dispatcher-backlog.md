@@ -5710,7 +5710,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/timeseries/resources/CrossDoBulkDataRest.java:201`; apisimp-sweep-2026-07-16-fire623.md §Finding F2.
 
 ## APISIMP-REFANNOT-GET-PATCH-CREATE-SCHEMA — ReferenceAnnotationRest POST/GET/{id}/PATCH missing @Content schema declaration (size: S, sweep: fire-623)
-- **Status:** 🔲 queued
+- **Status:** 🔧 in-PR (fire-626)
 - **Why:** `ReferenceAnnotationRest.java` `create()` (line 188), `get()` (line 213), and `patch()` (line 241) all carry success `@APIResponse` annotations without a `content = @Content(schema = @Schema(...))` clause. The `list()` method at line 150 has the full annotation (added in WAVE3). The three other success responses document as `{}` in the generated OpenAPI spec. All return `Map<String, Object>`.
 - **Fix:** Option A: Introduce `ReferenceAnnotationIO` wrapping the map fields; declare `@Content(schema = @Schema(implementation = ReferenceAnnotationIO.class))` on all three. Option B (minimal): Add `@Content(mediaType = "application/json", schema = @Schema(type = SchemaType.OBJECT))` so the spec documents the media type.
 - **AC:** All three `@APIResponse` success blocks carry a `@Content` clause. Generated OpenAPI spec does not show blank response bodies for POST/GET/{id}/PATCH. `mvn verify -pl backend` green.

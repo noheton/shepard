@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -185,7 +186,8 @@ public class ReferenceAnnotationRest {
       "`label` (string, required, non-blank), `description` (optional), `aiGenerated`, `confidence`.\n\n" +
       "Auth: Write permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "201", description = "Annotation created; body is the new annotation map.")
+  @APIResponse(responseCode = "201", description = "Annotation created; body is the new annotation map.",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.OBJECT)))
   @APIResponse(responseCode = "400", description = "Required fields missing or invalid.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
@@ -210,7 +212,8 @@ public class ReferenceAnnotationRest {
       "Returns the annotation identified by `annotationAppId` within the reference `appId`. " +
       "Auth: Read permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "200", description = "Annotation map.")
+  @APIResponse(responseCode = "200", description = "Annotation map.",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.OBJECT)))
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No reference or annotation with those appIds.")
@@ -238,7 +241,8 @@ public class ReferenceAnnotationRest {
       "absent keys leave the stored values unchanged. `aiGenerated` cannot be patched — it is " +
       "set at creation time only. Auth: Write permission on the parent DataObject."
   )
-  @APIResponse(responseCode = "200", description = "Post-patch annotation map.")
+  @APIResponse(responseCode = "200", description = "Post-patch annotation map.",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(type = SchemaType.OBJECT)))
   @APIResponse(responseCode = "400", description = "Invalid field value (e.g. blank label).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
