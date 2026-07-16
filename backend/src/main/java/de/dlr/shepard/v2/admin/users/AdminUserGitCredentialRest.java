@@ -241,19 +241,17 @@ public class AdminUserGitCredentialRest {
       return problem(PROBLEM_TYPE_NOT_FOUND, "User not found",
           Response.Status.NOT_FOUND, "No user with username '" + targetUsername + "'.");
     }
-    List<GitCredential> stored = gitCredentialDAO.findAllByUser(targetUsername);
+    long total = gitCredentialDAO.countByUser(targetUsername);
+    long skip = (long) page * pageSize;
+    List<GitCredential> stored = gitCredentialDAO.findByUser(targetUsername, skip, pageSize);
     List<AdminGitCredentialListItemIO> items = new ArrayList<>(stored == null ? 0 : stored.size());
     if (stored != null) {
       for (GitCredential c : stored) {
         items.add(AdminGitCredentialListItemIO.from(c));
       }
     }
-    long from = (long) page * pageSize;
-    List<AdminGitCredentialListItemIO> slice = from >= items.size()
-        ? List.of()
-        : items.subList((int) from, (int) Math.min(from + pageSize, items.size()));
-    return Response.ok(new PagedResponseIO<>(slice, items.size(), page, pageSize))
-        .header("X-Total-Count", items.size())
+    return Response.ok(new PagedResponseIO<>(items, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 

@@ -46,6 +46,37 @@ public class GitCredentialDAO extends GenericDAO<GitCredential> {
   }
 
   /**
+   * Returns the total number of credentials owned by the user; used for
+   * {@code X-Total-Count} without a full load.
+   */
+  public long countByUser(String username) {
+    String cypher =
+      "MATCH (:User {username: $username})-[:OWNS_CREDENTIAL]->(c:GitCredential) RETURN count(c) AS cnt";
+    var result = session.query(cypher, Map.of("username", username));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object cnt = it.next().get("cnt");
+    return cnt instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * Returns a page of credentials owned by the user, ordered by creation
+   * date ascending. Pushes {@code SKIP}/{@code LIMIT} into Cypher so
+   * the full credential set is never loaded.
+   *
+   * @param username the owning user's username.
+   * @param skip     number of rows to skip (page × pageSize).
+   * @param limit    maximum number of rows to return.
+   */
+  public List<GitCredential> findByUser(String username, long skip, long limit) {
+    String query =
+      "MATCH (u:User {username: $username})-[:OWNS_CREDENTIAL]->(c:GitCredential) " +
+      "RETURN c ORDER BY c.createdAt ASC SKIP $skip LIMIT $limit";
+    var iter = findByQuery(query, Map.of("username", username, "skip", skip, "limit", limit));
+    return StreamSupport.stream(iter.spliterator(), false).toList();
+  }
+
+  /**
    * Creates the {@code GitCredential} node and wires the
    * {@code OWNS_CREDENTIAL} relationship from the owning user in a single
    * Cypher statement. Mints {@code appId} (UUID v7) and sets

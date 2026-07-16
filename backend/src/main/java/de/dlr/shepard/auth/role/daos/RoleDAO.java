@@ -116,6 +116,33 @@ public class RoleDAO extends GenericDAO<Role> {
   }
 
   /**
+   * Paginated variant — pushes {@code SKIP}/{@code LIMIT} into Cypher so
+   * the full grant list is never loaded into memory.
+   *
+   * @param roleName role identifier (e.g. {@code "instance-admin"}).
+   * @param skip     rows to skip (page × pageSize).
+   * @param limit    maximum rows to return.
+   */
+  public List<RoleGrant> listGrants(String roleName, long skip, long limit) {
+    String cypher =
+      "MATCH (u:User)-[h:HAS_ROLE]->(:Role {name: $n}) " +
+      "RETURN u.username AS username, h.grantedBy AS grantedBy, h.grantedAt AS grantedAt " +
+      "ORDER BY u.username SKIP $skip LIMIT $limit";
+    var result = session.query(cypher, Map.of("n", roleName, "skip", skip, "limit", limit));
+    List<RoleGrant> out = new ArrayList<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      out.add(
+        new RoleGrant(
+          Objects.toString(row.get("username"), null),
+          Objects.toString(row.get("grantedBy"), null),
+          row.get("grantedAt") instanceof Number n ? n.longValue() : null
+        )
+      );
+    }
+    return out;
+  }
+
+  /**
    * Returns the count of users who hold the given role via a
    * {@code :HAS_ROLE} edge (Neo4j-internal source only — does NOT
    * include IdP-claim grants).

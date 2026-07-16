@@ -5769,7 +5769,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/spi/ReferenceKindHandler.java:141`; apisimp-sweep-2026-07-16-fire631.md §Finding F1.
 
 ## APISIMP-ADMIN-INMEM-PAGING — AdminUserGitCredentialRest + InstanceAdminRest slice in memory (size: XS, low priority, sweep: fire-631)
-- **Status:** queued
+- **Status:** done (fire-633, 2026-07-16)
 - **Why:** Both admin list endpoints load the full record set, compute `.size()` as total, then call `.subList()`. Both datasets are bounded in practice (< 20 git credentials per user, < 100 instance-admin grants) so performance impact is negligible, but the shape is inconsistent with the rest of the v2 admin surface.
 - **Fix:** Push `SKIP $skip LIMIT $limit` to the underlying Neo4j DAOs.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/users/AdminUserGitCredentialRest.java:245`; `backend/src/main/java/de/dlr/shepard/v2/admin/resources/InstanceAdminRest.java:127`; apisimp-sweep-2026-07-16-fire631.md §Finding F4.

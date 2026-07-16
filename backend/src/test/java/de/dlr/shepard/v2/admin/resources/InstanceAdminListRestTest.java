@@ -52,14 +52,15 @@ class InstanceAdminListRestTest {
 
   @Test
   void listInstanceAdmins_returnsPagedEnvelope() {
-    when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of());
+    when(instanceAdminService.countInstanceAdmins()).thenReturn(0L);
+    when(instanceAdminService.listInstanceAdmins(0L, 50)).thenReturn(List.of());
 
     Response r = resource.listInstanceAdmins(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
     Object entity = r.getEntity();
     assertInstanceOf(PagedResponseIO.class, entity,
-        "listInstanceAdmins must return PagedResponseIO (APISIMP-INSTANCE-ADMINS-BARE-LIST)");
+        "listInstanceAdmins must return PagedResponseIO (APISIMP-ADMIN-INMEM-PAGING)");
   }
 
   @Test
@@ -93,14 +94,31 @@ class InstanceAdminListRestTest {
   @Test
   void listInstanceAdmins_returnsAllItemsInEnvelope() {
     InstanceAdminGrantIO grant = new InstanceAdminGrantIO("alice", "Neo4j", "bob", null);
-    when(instanceAdminService.listInstanceAdmins()).thenReturn(List.of(grant));
+    when(instanceAdminService.countInstanceAdmins()).thenReturn(1L);
+    when(instanceAdminService.listInstanceAdmins(0L, 50)).thenReturn(List.of(grant));
 
     Response r = resource.listInstanceAdmins(securityContext, 0, 50);
 
     @SuppressWarnings("unchecked")
     PagedResponseIO<InstanceAdminGrantIO> body = (PagedResponseIO<InstanceAdminGrantIO>) r.getEntity();
     assertEquals(1, body.items().size());
-    assertEquals(1, body.total());
+    assertEquals(1L, body.total());
     assertEquals("alice", body.items().get(0).getUsername());
+  }
+
+  @Test
+  void listInstanceAdmins_paginationParamsForwardedToService() {
+    InstanceAdminGrantIO grant = new InstanceAdminGrantIO("charlie", "Neo4j", "admin", null);
+    when(instanceAdminService.countInstanceAdmins()).thenReturn(75L);
+    when(instanceAdminService.listInstanceAdmins(50L, 50)).thenReturn(List.of(grant));
+
+    Response r = resource.listInstanceAdmins(securityContext, 1, 50);
+
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<InstanceAdminGrantIO> body = (PagedResponseIO<InstanceAdminGrantIO>) r.getEntity();
+    assertEquals(75L, body.total());
+    assertEquals(1, body.items().size());
+    assertEquals("charlie", body.items().get(0).getUsername());
+    assertEquals(75L, Long.parseLong(r.getHeaderString("X-Total-Count")));
   }
 }
