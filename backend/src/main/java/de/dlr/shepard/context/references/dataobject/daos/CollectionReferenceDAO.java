@@ -74,6 +74,49 @@ public class CollectionReferenceDAO extends VersionableEntityDAO<CollectionRefer
     return it.hasNext() ? it.next() : null;
   }
 
+  /**
+   * APISIMP-REFS-HANDLER-PAGING-TAIL — count of non-deleted CollectionReferences under a
+   * DataObject (resolved by appId). Pushes the predicate to Neo4j so the caller never loads all
+   * rows just to count them.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @return total count of matching, non-deleted CollectionReferences.
+   */
+  public int countByDataObjectAppId(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[:has_reference]->(r:CollectionReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN count(r) AS cnt";
+    for (var row : session.query(query, Map.of("aid", dataObjectAppId))) {
+      Object cnt = row.get("cnt");
+      return cnt instanceof Number n ? n.intValue() : 0;
+    }
+    return 0;
+  }
+
+  /**
+   * APISIMP-REFS-HANDLER-PAGING-TAIL — paginated list of non-deleted CollectionReferences under a
+   * DataObject (resolved by appId). Pushes SKIP/LIMIT to Neo4j.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @param skip 0-based offset.
+   * @param limit maximum rows (must be &gt; 0).
+   * @return the CollectionReferences for the requested page; never null.
+   */
+  public List<CollectionReference> findByDataObjectAppId(String dataObjectAppId, int skip, int limit) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:CollectionReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN r, d, hr " +
+      "ORDER BY r.createdAt ASC " +
+      "SKIP $skip LIMIT $limit";
+    var queryResult = findByQuery(
+      query,
+      Map.of("aid", dataObjectAppId, "skip", (long) skip, "limit", (long) limit)
+    );
+    return StreamSupport.stream(queryResult.spliterator(), false).toList();
+  }
+
   @Override
   public Class<CollectionReference> getEntityType() {
     return CollectionReference.class;

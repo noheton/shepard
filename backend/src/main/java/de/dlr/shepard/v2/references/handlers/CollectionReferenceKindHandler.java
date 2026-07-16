@@ -5,6 +5,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.dataobject.daos.CollectionReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
@@ -33,6 +34,9 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
   CollectionReferenceService collectionReferenceService;
+
+  @Inject
+  CollectionReferenceDAO collectionReferenceDAO;
 
   @Inject
   DataObjectDAO dataObjectDAO;
@@ -124,6 +128,27 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
       parent.getShepardId(),
       null
     );
+    List<ReferenceV2IO> out = new ArrayList<>(refs.size());
+    for (CollectionReference ref : refs) {
+      if (ref != null && !ref.isDeleted()) out.add(toIO(ref));
+    }
+    return out;
+  }
+
+  @Override
+  public int countByDataObject(String dataObjectAppId, String subKind) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    return collectionReferenceDAO.countByDataObjectAppId(dataObjectAppId);
+  }
+
+  @Override
+  public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind, int skip, int limit) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<CollectionReference> refs = collectionReferenceDAO.findByDataObjectAppId(dataObjectAppId, skip, limit);
     List<ReferenceV2IO> out = new ArrayList<>(refs.size());
     for (CollectionReference ref : refs) {
       if (ref != null && !ref.isDeleted()) out.add(toIO(ref));

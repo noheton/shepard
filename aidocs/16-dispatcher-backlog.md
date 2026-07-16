@@ -5782,14 +5782,14 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/spi/ContainerKindHandler.java:155`; `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:474`.
 
 ## APISIMP-REFS-HANDLER-PAGING-TAIL — 5 concrete ReferenceKindHandlers still use SPI in-memory paging defaults (size: S, sweep: fire-634)
-- **Status:** queued.
+- **Status:** in-PR (fire-636).
 - **Why:** PR #2603 (fire-633/634) added DB-backed `countByDataObject` + `listByDataObject(skip, limit)` overrides to `FileReferenceKindHandler` and `UriReferenceKindHandler` only. The five remaining in-tree handlers (`TimeseriesReferenceKindHandler`, `FileBundleReferenceKindHandler`, `StructuredDataReferenceKindHandler`, `CollectionReferenceKindHandler`, `DataObjectReferenceKindHandler`) fall through to the SPI defaults: `count` calls `listByDataObject(all).size()` (unbounded Cypher load → `.size()` in Java); `list(skip,limit)` calls `listByDataObject(all)` then `.subList()`. For a DataObject with 100 TimeSeries references, every paged `GET /v2/references?kind=timeseries` request performs two full O(N) Neo4j scans.
 - **Fix:** Add `countByDataObject(appId, subKind)` and `listByDataObject(appId, subKind, skip, limit)` overrides to each of the 5 handlers, delegating to the underlying service (e.g. `timeseriesReferenceService.countByDataObjectAppId(appId)` / `timeseriesReferenceService.listByDataObjectAppId(appId, skip, limit)`). The service methods may need `skip+limit` overloads if they don't already exist.
 - **AC:** `GET /v2/references?kind=timeseries&dataObjectAppId=...&pageSize=10&page=1` Neo4j log shows `SKIP 10 LIMIT 10` and a separate `count(r)` query. `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/spi/ReferenceKindHandler.java:141`; `backend/src/main/java/de/dlr/shepard/v2/references/handlers/TimeseriesReferenceKindHandler.java:223`; `backend/src/main/java/de/dlr/shepard/v2/references/resources/ReferencesV2Rest.java:550`; apisimp-sweep-2026-07-16-fire634.md §Finding F1.
 
 ## APISIMP-MCP-ANNOT-INMEM — list_annotations MCP tool loads all SemanticAnnotations in memory before paging (size: XS, sweep: fire-634)
-- **Status:** done (fire-635, PR pending).
+- **Status:** done (fire-636, PR #2605 merged sha aa799de).
 - **Why:** `ContentMcpTools.list_annotations` calls `semanticAnnotationService.getAllAnnotationsByShepardId(ogmId)` (unbounded Cypher, loads ALL SemanticAnnotations) then paginates in Java with `subList`. Low practical impact (annotations bounded per DO), but inconsistent with the APISIMP mandate and a latency risk on AI-bulk-annotated DataObjects with 200+ annotations.
 - **Fix:** Added `countAnnotationsByShepardId(shepardId)` and `findAnnotationsByShepardId(shepardId, skip, limit)` to `SemanticAnnotationDAO` using parameterized `SKIP $skip LIMIT $lim` Cypher. Added paged service overloads. Wired through `ContentMcpTools.listAnnotations()` replacing the load-all+subList pattern. Two tests added to `SemanticAnnotationServiceTest`; `ContentMcpToolsTest` updated to stub paged overloads.
 - **AC:** `list_annotations` with `page=1, pageSize=10` issues at most two DAO queries; no `getAllAnnotationsByShepardId` (unbounded) call.
