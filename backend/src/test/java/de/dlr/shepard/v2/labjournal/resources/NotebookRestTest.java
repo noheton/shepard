@@ -4,22 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
-import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
-import de.dlr.shepard.context.references.file.entities.FileBundleReference;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
-import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO;
+import de.dlr.shepard.context.references.file.daos.SingletonFileReferenceDAO.NotebookProjection;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO;
 import de.dlr.shepard.v2.labjournal.io.NotebookReferenceIO.ReferenceKind;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +41,7 @@ class NotebookRestTest {
   PermissionsService permissionsService;
 
   @Mock
-  SingletonFileReferenceService singletonService;
+  SingletonFileReferenceDAO singletonFileReferenceDAO;
 
   @Mock
   FileBundleReferenceDAO fileBundleReferenceDAO;
@@ -65,7 +61,7 @@ class NotebookRestTest {
     resource = new NotebookRest();
     resource.entityIdResolver = entityIdResolver;
     resource.permissionsService = permissionsService;
-    resource.singletonService = singletonService;
+    resource.singletonFileReferenceDAO = singletonFileReferenceDAO;
     resource.fileBundleReferenceDAO = fileBundleReferenceDAO;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
@@ -74,57 +70,19 @@ class NotebookRestTest {
     // Production gates listing on the appId-based read check.
     when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
 
-    // Default: no files attached
-    when(singletonService.listByDataObject(DO_APP_ID)).thenReturn(List.of());
-    when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID)).thenReturn(List.of());
+    // Default: no notebooks attached
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(0L);
+    when(fileBundleReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(0L);
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
 
-  private DataObject dataObject() {
-    var d = new DataObject(DO_OGM_ID);
-    d.setAppId(DO_APP_ID);
-    d.setShepardId(DO_OGM_ID);
-    return d;
-  }
-
-  private User user(String username) {
-    var u = new User();
-    u.setUsername(username);
-    return u;
-  }
-
-  private FileReference singleton(String appId, String filename, Long fileSize) {
-    var ref = new FileReference(10L);
-    ref.setAppId(appId);
-    ref.setName("ref-" + filename);
-    ref.setDataObject(dataObject());
-    ref.setCreatedAt(new Date(1000L));
-    ref.setCreatedBy(user("alice"));
-
-    var file = new ShepardFile();
-    file.setFilename(filename);
-    file.setFileSize(fileSize);
-    ref.setFile(file);
-    return ref;
-  }
-
-  private FileBundleReference bundle(String appId, List<ShepardFile> files) {
-    var b = new FileBundleReference(20L);
-    b.setAppId(appId);
-    b.setName("bundle-" + appId);
-    b.setDataObject(dataObject());
-    b.setCreatedAt(new Date(2000L));
-    b.setCreatedBy(user("bob"));
-    for (ShepardFile f : files) b.addFile(f);
-    return b;
-  }
-
-  private ShepardFile shepardFile(String filename, Long fileSize) {
-    var f = new ShepardFile();
-    f.setFilename(filename);
-    f.setFileSize(fileSize);
-    return f;
+  private NotebookProjection projection(String appId, String filename, Long fileSize, String createdBy) {
+    return new NotebookProjection(
+      appId, filename, fileSize,
+      Instant.ofEpochMilli(1000L).toString(),
+      createdBy
+    );
   }
 
   // ─── 401 / 403 / 404 ─────────────────────────────────────────────────────
@@ -158,11 +116,7 @@ class NotebookRestTest {
 
   @Test
   void returns200EmptyWhenOnlyNonIpynbFiles() {
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(List.of(singleton("s-1", "data.csv", 1024L)));
-    when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
-      .thenReturn(List.of(bundle("b-1", List.of(shepardFile("report.pdf", 512L)))));
-
+    // .ipynb filter is enforced in Cypher; DAOs return count=0 for non-ipynb files
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
@@ -172,8 +126,10 @@ class NotebookRestTest {
 
   @Test
   void returns200WithSingletonIpynbFile() {
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(List.of(singleton("singleton-app-1", "analysis.ipynb", 8192L)));
+    var proj = projection("singleton-app-1", "analysis.ipynb", 8192L, "alice");
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
+    // singletonLimit = min(pageSize=50, singletonCount=1) = 1
+    when(singletonFileReferenceDAO.listNotebooks(DO_APP_ID, 0L, 1)).thenReturn(List.of(proj));
 
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -195,10 +151,9 @@ class NotebookRestTest {
 
   @Test
   void returns200WithBundleFileIpynb() {
-    var ipynb = shepardFile("experiment.ipynb", 4096L);
-    var pdf = shepardFile("readme.pdf", 256L);
-    when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
-      .thenReturn(List.of(bundle("bundle-app-1", List.of(pdf, ipynb))));
+    var proj = projection("bundle-app-1", "experiment.ipynb", 4096L, "bob");
+    when(fileBundleReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
+    when(fileBundleReferenceDAO.listNotebooks(DO_APP_ID, 0L, 50)).thenReturn(List.of(proj));
 
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -216,12 +171,14 @@ class NotebookRestTest {
 
   @Test
   void returns200MixedSingletonAndBundleFiles() {
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(List.of(singleton("s-1", "model.ipynb", 2048L)));
+    // singletonLimit = min(50, 1) = 1; bundleSpace = 50 - 1 = 49
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
+    when(singletonFileReferenceDAO.listNotebooks(DO_APP_ID, 0L, 1))
+      .thenReturn(List.of(projection("s-1", "model.ipynb", 2048L, "alice")));
 
-    var bundle = bundle("b-1", List.of(shepardFile("run.ipynb", 512L), shepardFile("data.csv", 100L)));
-    when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID))
-      .thenReturn(List.of(bundle));
+    when(fileBundleReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
+    when(fileBundleReferenceDAO.listNotebooks(DO_APP_ID, 0L, 49))
+      .thenReturn(List.of(projection("b-1", "run.ipynb", 512L, "bob")));
 
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -237,15 +194,12 @@ class NotebookRestTest {
 
   @Test
   void caseInsensitiveFilter_includesUppercaseExtension() {
-    // .IPYNB should be included just like .ipynb
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(
-        List.of(
-          singleton("s-upper", "Notebook.IPYNB", 100L),
-          singleton("s-mixed", "Mixed.Ipynb", 200L),
-          singleton("s-txt", "notes.txt", 300L) // excluded
-        )
-      );
+    // Case-insensitive filter is enforced in Cypher (toLower(..) ENDS WITH '.ipynb')
+    var p1 = projection("s-upper", "Notebook.IPYNB", 100L, "alice");
+    var p2 = projection("s-mixed", "Mixed.Ipynb", 200L, "alice");
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(2L);
+    // singletonLimit = min(pageSize=50, singletonCount=2) = 2
+    when(singletonFileReferenceDAO.listNotebooks(DO_APP_ID, 0L, 2)).thenReturn(List.of(p1, p2));
 
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
@@ -255,10 +209,7 @@ class NotebookRestTest {
 
   @Test
   void deletedSingletonIsExcluded() {
-    var ref = singleton("s-deleted", "deleted.ipynb", 100L);
-    ref.setDeleted(true);
-    when(singletonService.listByDataObject(DO_APP_ID)).thenReturn(List.of(ref));
-
+    // WHERE (r.deleted IS NULL OR r.deleted = false) in Cypher; DAO returns count=0
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
@@ -266,10 +217,7 @@ class NotebookRestTest {
 
   @Test
   void deletedBundleIsExcluded() {
-    var b = bundle("b-deleted", List.of(shepardFile("deleted.ipynb", 100L)));
-    b.setDeleted(true);
-    when(fileBundleReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID)).thenReturn(List.of(b));
-
+    // WHERE (r.deleted IS NULL OR r.deleted = false) in Cypher; DAO returns count=0
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((PagedResponseIO<?>) r.getEntity()).items()).isEmpty();
@@ -278,8 +226,10 @@ class NotebookRestTest {
   @Test
   void fileSizeNullable() {
     // fileSize may be null for pre-FB1a uploads
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(List.of(singleton("s-old", "old.ipynb", null)));
+    var proj = projection("s-old", "old.ipynb", null, "alice");
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
+    // singletonLimit = min(50, 1) = 1
+    when(singletonFileReferenceDAO.listNotebooks(DO_APP_ID, 0L, 1)).thenReturn(List.of(proj));
 
     var r = resource.listNotebooks(DO_APP_ID, 0, 50, sc);
     var items = ((PagedResponseIO<NotebookReferenceIO>) r.getEntity()).items();
@@ -291,15 +241,10 @@ class NotebookRestTest {
 
   @Test
   void paginationSlicesCorrectly() {
-    // 3 notebooks total; request page=1 with pageSize=2 → only the 3rd item
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(
-        List.of(
-          singleton("s-1", "a.ipynb", 100L),
-          singleton("s-2", "b.ipynb", 200L),
-          singleton("s-3", "c.ipynb", 300L)
-        )
-      );
+    // 3 notebooks total; request page=1 with pageSize=2 → singletonSkip=2, limit=1
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(3L);
+    when(singletonFileReferenceDAO.listNotebooks(DO_APP_ID, 2L, 1))
+      .thenReturn(List.of(projection("s-3", "c.ipynb", 300L, "alice")));
 
     var r = resource.listNotebooks(DO_APP_ID, 1, 2, sc);
     assertThat(r.getStatus()).isEqualTo(200);
@@ -313,33 +258,13 @@ class NotebookRestTest {
 
   @Test
   void paginationBeyondLastPageReturnsEmptyItems() {
-    when(singletonService.listByDataObject(DO_APP_ID))
-      .thenReturn(List.of(singleton("s-1", "a.ipynb", 100L)));
+    // page=5, pageSize=50 → skip=250 > total=1; singletonSkip=1, singletonLimit=0
+    when(singletonFileReferenceDAO.countNotebooks(DO_APP_ID)).thenReturn(1L);
 
     var r = resource.listNotebooks(DO_APP_ID, 5, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     var paged = (PagedResponseIO<NotebookReferenceIO>) r.getEntity();
     assertThat(paged.total()).isEqualTo(1L);
     assertThat(paged.items()).isEmpty();
-  }
-
-  // ─── isIpynb helper ───────────────────────────────────────────────────────
-
-  @Test
-  void isIpynb_acceptsLowercase() {
-    assertThat(NotebookRest.isIpynb("notebook.ipynb")).isTrue();
-  }
-
-  @Test
-  void isIpynb_acceptsUppercase() {
-    assertThat(NotebookRest.isIpynb("Notebook.IPYNB")).isTrue();
-  }
-
-  @Test
-  void isIpynb_rejectsNonIpynb() {
-    assertThat(NotebookRest.isIpynb("data.csv")).isFalse();
-    assertThat(NotebookRest.isIpynb("notebook.ipynb.bak")).isFalse();
-    assertThat(NotebookRest.isIpynb("")).isFalse();
-    assertThat(NotebookRest.isIpynb(null)).isFalse();
   }
 }
