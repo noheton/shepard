@@ -40,7 +40,7 @@ const ANNO: { id: number; appId: string; propertyIRI: string; valueIRI: string }
 };
 
 describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", () => {
-  it("fetchAnnotations delegates to listChannelAnnotations with containerAppId + channelShepardId", async () => {
+  it("fetchAnnotations delegates to listChannelAnnotations with containerAppId + channelAppId", async () => {
     mockList.mockResolvedValue([ANNO]);
     const { AnnotatedChannel } = await import("~/composables/annotated");
 
@@ -48,7 +48,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
 
     expect(mockList).toHaveBeenCalledWith({
       appId: CONTAINER,
-      channelShepardId: CHANNEL,
+      channelAppId: CHANNEL,
     });
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ id: 5, propertyIRI: "http://example.org/prop" });
@@ -83,7 +83,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
 
     expect(mockDelete).toHaveBeenCalledWith({
       appId: CONTAINER,
-      channelShepardId: CHANNEL,
+      channelAppId: CHANNEL,
       annotationAppId: ANNO_APP_ID,
     });
   });
@@ -106,7 +106,7 @@ describe("AnnotatedChannel — typed TimeseriesChannelAnnotationsApi wrapper", (
 
     expect(mockCreate).toHaveBeenCalledWith({
       appId: CONTAINER,
-      channelShepardId: CHANNEL,
+      channelAppId: CHANNEL,
       // compat shim fills deprecated numeric IDs until next client regen
       semanticAnnotation: { ...body, propertyRepositoryId: 0, valueRepositoryId: 0 },
     });

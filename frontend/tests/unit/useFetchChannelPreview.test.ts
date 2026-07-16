@@ -253,14 +253,14 @@ describe("TS-LTTB-VIS-TOGGLE-01 — Raw / LTTB toggle: correct downsample param"
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Test 4 — TS-IDc: channelShepardId path
+// Test 4 — TS-IDc: channelAppId path
 //
-// When the caller supplies a {@code channelShepardId}, the composable must
+// When the caller supplies a {@code channelAppId}, the composable must
 // hit the v2 path-param endpoint
-//   /v2/containers/{containerId}/channels/{shepardId}/data
+//   /v2/containers/{containerId}/channels/{channelAppId}/data
 // instead of the legacy 5-tuple {@code getTimeseries} client call.
 // ─────────────────────────────────────────────────────────────────────────────
-describe("TS-IDc — channelShepardId path", () => {
+describe("TS-IDc — channelAppId path", () => {
   const SHEPARD_ID = "a2c0f1dd-4dce-4400-92e4-445cd18826e6";
 
   beforeEach(() => {
@@ -278,9 +278,9 @@ describe("TS-IDc — channelShepardId path", () => {
     vi.unstubAllGlobals();
   });
 
-  it("hits the v2 shepardId endpoint when channelShepardId is supplied", async () => {
+  it("hits the v2 channelAppId endpoint when channelAppId is supplied", async () => {
     const { data } = useFetchChannelPreview("1772", ch, {
-      channelShepardId: SHEPARD_ID,
+      channelAppId: SHEPARD_ID,
       downsample: true,
       maxPoints: 60,
     });
@@ -299,7 +299,7 @@ describe("TS-IDc — channelShepardId path", () => {
     expect(data.value).toEqual([[1500, 7]]);
   });
 
-  it("falls through to the legacy 5-tuple path when channelShepardId is absent", async () => {
+  it("falls through to the legacy 5-tuple path when channelAppId is absent", async () => {
     useFetchChannelPreview("42", ch);
     await flush();
 
@@ -307,13 +307,13 @@ describe("TS-IDc — channelShepardId path", () => {
     expect(mockGetTimeseries).toHaveBeenCalledTimes(1);
   });
 
-  it("dedup key collapses two callers passing the same shepardId to one fetch", async () => {
-    useFetchChannelPreview("1772", ch, { channelShepardId: SHEPARD_ID });
-    useFetchChannelPreview("1772", ch, { channelShepardId: SHEPARD_ID });
+  it("dedup key collapses two callers passing the same channelAppId to one fetch", async () => {
+    useFetchChannelPreview("1772", ch, { channelAppId: SHEPARD_ID });
+    useFetchChannelPreview("1772", ch, { channelAppId: SHEPARD_ID });
     await flush();
 
     // One HTTP call, two consumers — the in-flight map merges identical
-    // shepardId-keyed requests.
+    // channelAppId-keyed requests.
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

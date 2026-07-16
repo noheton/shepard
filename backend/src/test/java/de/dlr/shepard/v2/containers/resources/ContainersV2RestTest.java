@@ -1076,14 +1076,14 @@ class ContainersV2RestTest {
   }
 
   @Test
-  void getLiveWindow_shepardIdParamHasParameterAnnotation() throws NoSuchMethodException {
+  void getLiveWindow_channelAppIdParamHasParameterAnnotation() throws NoSuchMethodException {
     Method method = ContainersV2Rest.class.getMethod(
         "getLiveWindow", String.class, UUID.class,
         String.class, String.class, String.class, String.class, String.class,
         int.class, boolean.class, jakarta.ws.rs.core.SecurityContext.class);
     String desc = Arrays.stream(method.getParameters())
         .filter(p -> p.getAnnotation(QueryParam.class) != null
-            && "shepardId".equals(p.getAnnotation(QueryParam.class).value()))
+            && "channelAppId".equals(p.getAnnotation(QueryParam.class).value()))
         .map(p -> {
           var ann = p.getAnnotation(org.eclipse.microprofile.openapi.annotations.parameters.Parameter.class);
           return ann != null ? ann.description() : "";
@@ -1091,7 +1091,7 @@ class ContainersV2RestTest {
         .findFirst().orElse("");
     org.junit.jupiter.api.Assertions.assertFalse(
         desc.isBlank(),
-        "getLiveWindow shepardId @Parameter description must be present — got: '" + desc + "'");
+        "getLiveWindow channelAppId @Parameter description must be present — got: '" + desc + "'");
   }
 
   @Test

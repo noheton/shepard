@@ -238,8 +238,8 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     surface: "route",
     title: "Channel Annotations",
     subtitle:
-      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/containers/{containerAppId}/channels/{channelShepardId}/annotations.",
-    endpoint: "/v2/containers/{containerAppId}/channels/{channelShepardId}/annotations",
+      "Semantic annotations on individual timeseries channels. Channels receive identity annotations automatically via the TS-SEMANTIC-01 dual-write. Additional annotations can be added via POST /v2/containers/{containerAppId}/channels/{channelAppId}/annotations.",
+    endpoint: "/v2/containers/{containerAppId}/channels/{channelAppId}/annotations",
     backlogRow: "TS-SEMANTIC-REST",
     designDoc: "aidocs/16-dispatcher-backlog.md",
     backend: "shipped",

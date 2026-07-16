@@ -539,12 +539,12 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> listChannelAnnotations(
-      String appId, String channelShepardId, int page, int pageSize) {
+      String appId, String channelAppId, int page, int pageSize) {
     long containerId = service.getContainerByAppId(appId).getId();
     long skip = (long) page * pageSize;
-    long total = annotatableTimeseriesService.countAnnotationsByChannelShepardId(containerId, channelShepardId);
+    long total = annotatableTimeseriesService.countAnnotationsByChannelShepardId(containerId, channelAppId);
     List<SemanticAnnotationIO> slice = annotatableTimeseriesService
-        .getAnnotationsByChannelShepardId(containerId, channelShepardId, skip, pageSize)
+        .getAnnotationsByChannelShepardId(containerId, channelAppId, skip, pageSize)
         .stream()
         .map(SemanticAnnotationIO::new)
         .collect(Collectors.toList());
@@ -554,10 +554,10 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> createChannelAnnotation(
-      String appId, String channelShepardId, SemanticAnnotationIO body) {
+      String appId, String channelAppId, SemanticAnnotationIO body) {
     long containerId = service.getContainerByAppId(appId).getId();
     SemanticAnnotation created =
-        annotatableTimeseriesService.createAnnotationForChannel(containerId, channelShepardId, body);
+        annotatableTimeseriesService.createAnnotationForChannel(containerId, channelAppId, body);
     return Optional.of(Response.status(Response.Status.CREATED)
         .entity(new SemanticAnnotationIO(created))
         .build());
@@ -565,10 +565,10 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> deleteChannelAnnotation(
-      String appId, String channelShepardId, String annotationAppId) {
+      String appId, String channelAppId, String annotationAppId) {
     long containerId = service.getContainerByAppId(appId).getId();
     annotatableTimeseriesService.deleteAnnotationForChannel(
-        containerId, channelShepardId, annotationAppId);
+        containerId, channelAppId, annotationAppId);
     return Optional.of(Response.noContent().build());
   }
 

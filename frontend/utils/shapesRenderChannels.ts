@@ -53,7 +53,7 @@ export interface ChannelListingClient {
   // APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO: start/end are ISO 8601 strings.
   getContainerBulkChannelData(req: {
     appId: string;
-    bulkChannelDataRequest: { shepardIds: string[]; start: string; end: string };
+    bulkChannelDataRequest: { channelAppIds: string[]; start: string; end: string };
   }): Promise<Array<TimeseriesWithDataPoints>>;
 }
 
@@ -131,8 +131,8 @@ export async function fetchBulkTraceByAppId(
       );
     }
 
-    const shepardIdToRole = new Map<string, string>();
-    const shepardIds: string[] = [];
+    const channelAppIdToRole = new Map<string, string>();
+    const channelAppIds: string[] = [];
     for (const { role, parsed } of channels) {
       const key = tupleKey(
         parsed.measurement,
@@ -141,17 +141,17 @@ export async function fetchBulkTraceByAppId(
         parsed.symbolicName,
         parsed.field,
       );
-      const shepardId = tupleToShepardId.get(key);
-      if (shepardId) {
-        shepardIds.push(shepardId);
-        shepardIdToRole.set(shepardId, role);
+      const channelAppId = tupleToShepardId.get(key);
+      if (channelAppId) {
+        channelAppIds.push(channelAppId);
+        channelAppIdToRole.set(channelAppId, role);
       }
     }
-    if (shepardIds.length === 0) return { byRole, channelList };
+    if (channelAppIds.length === 0) return { byRole, channelList };
 
     const body = await api.getContainerBulkChannelData({
       appId,
-      bulkChannelDataRequest: { shepardIds, start: nsToIso(startNs), end: nsToIso(endNs) },
+      bulkChannelDataRequest: { channelAppIds, start: nsToIso(startNs), end: nsToIso(endNs) },
     });
 
     for (const entry of body) {
@@ -163,8 +163,8 @@ export async function fetchBulkTraceByAppId(
         ts.symbolicName,
         ts.field,
       );
-      const shepardId = tupleToShepardId.get(key);
-      const role = shepardId ? shepardIdToRole.get(shepardId) : undefined;
+      const channelAppId = tupleToShepardId.get(key);
+      const role = channelAppId ? channelAppIdToRole.get(channelAppId) : undefined;
       if (role) {
         byRole.set(
           role,

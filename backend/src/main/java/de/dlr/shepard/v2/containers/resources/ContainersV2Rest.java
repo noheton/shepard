@@ -706,12 +706,12 @@ public class ContainersV2Rest {
   }
 
   @GET
-  @Path("/{appId}/channels/{channelShepardId}/data")
+  @Path("/{appId}/channels/{channelAppId}/data")
   @Operation(
     operationId = "getContainerChannelData",
-    summary = "Fetch data points for a channel by channelShepardId.",
+    summary = "Fetch data points for a channel by channelAppId.",
     description =
-      "Resolves the single-field channelShepardId to the legacy 5-tuple internally and returns data " +
+      "Resolves the single-field channelAppId to the legacy 5-tuple internally and returns data " +
       "points for the requested time window. `start` and `end` are ISO 8601 UTC strings with " +
       "optional nanosecond precision (e.g. '2024-06-01T08:00:00Z' or " +
       "'2024-06-01T08:00:00.123456789Z'). Accepts optional LTTB downsampling via " +
@@ -730,7 +730,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
   public Response getChannelData(
     @PathParam("appId") String appId,
-    @PathParam("channelShepardId") UUID channelShepardId,
+    @PathParam("channelAppId") UUID channelAppId,
     @Parameter(description = "Window start as ISO 8601 UTC (e.g. '2024-06-01T08:00:00Z'). Nanosecond precision supported.", required = true)
     @QueryParam("start") @NotNull String start,
     @Parameter(description = "Window end as ISO 8601 UTC. Must be after start.", required = true)
@@ -759,7 +759,7 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
 
     try {
-      var result = resolved.get().handler().getChannelData(appId, channelShepardId, startNs, endNs, downsample, maxPoints);
+      var result = resolved.get().handler().getChannelData(appId, channelAppId, startNs, endNs, downsample, maxPoints);
       if (result.isEmpty()) {
         return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -778,7 +778,7 @@ public class ContainersV2Rest {
     operationId = "getContainerBulkChannelData",
     summary = "Fetch raw data for multiple channels in one call.",
     description =
-      "Accepts a list of shepardIds (max 200) plus a shared time window and returns raw data " +
+      "Accepts a list of channelAppIds (max 200) plus a shared time window and returns raw data " +
       "points — one TimeseriesWithDataPoints entry per resolved channel. Unknown IDs are " +
       "silently skipped. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Read on the container."
@@ -814,7 +814,7 @@ public class ContainersV2Rest {
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
 
-    var result = resolved.get().handler().getBulkChannelData(appId, body.shepardIds(), startNs, endNs);
+    var result = resolved.get().handler().getBulkChannelData(appId, body.channelAppIds(), startNs, endNs);
     if (result.isEmpty()) {
       return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
           Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -826,13 +826,13 @@ public class ContainersV2Rest {
   }
 
   @POST
-  @Path("/{appId}/channels/{channelShepardId}/data/ingest")
+  @Path("/{appId}/channels/{channelAppId}/data/ingest")
   @Operation(
     operationId = "ingestContainerChannelData",
     summary = "High-throughput COPY ingest for a single channel.",
     description =
       "Uses the PostgreSQL COPY protocol for bulk historical loads. The channel (identified by " +
-      "channelShepardId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
+      "channelAppId) must already exist. No ON CONFLICT handling is applied: timestamps must be " +
       "unique within the batch. Non-timeseries container kinds answer 415.\n\n" +
       "Auth: Write on the container."
   )
@@ -844,7 +844,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel concept.")
   public Response ingestChannelData(
     @PathParam("appId") String appId,
-    @PathParam("channelShepardId") UUID channelShepardId,
+    @PathParam("channelAppId") UUID channelAppId,
     @NotNull @Valid CopyIngestRequestIO body,
     @Context SecurityContext sc
   ) {
@@ -856,7 +856,7 @@ public class ContainersV2Rest {
     if (gate != null) return gate;
 
     try {
-      boolean handled = resolved.get().handler().ingestChannelData(appId, channelShepardId, body);
+      boolean handled = resolved.get().handler().ingestChannelData(appId, channelAppId, body);
       if (!handled) {
         return problem(PROBLEM_TYPE_UNSUPPORTED, "No channel concept",
             Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -965,7 +965,7 @@ public class ContainersV2Rest {
     summary = "Fetch the most recent N seconds of a timeseries channel.",
     description =
       "Returns the last `windowSeconds` of data for a single channel. " +
-      "Channel lookup: `shepardId` (preferred) or 5-tuple filter. " +
+      "Channel lookup: `channelAppId` (preferred) or 5-tuple filter. " +
       "Non-timeseries kinds answer 415.\n\nAuth: Read on the container."
   )
   @APIResponse(responseCode = "200", description = "Window data for the channel.",
@@ -978,19 +978,19 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no live-window concept.")
   public Response getLiveWindow(
       @PathParam("appId") String appId,
-      @Parameter(description = "Preferred channel selector: the UUID v7 shepardId of the channel. " +
+      @Parameter(description = "Preferred channel selector: the UUID v7 channelAppId of the channel. " +
         "Takes precedence over the 5-tuple (measurement/device/location/symbolicName/field). " +
-        "Exactly one of shepardId or a complete 5-tuple must be supplied.")
-      @QueryParam("shepardId") UUID shepardId,
-      @Parameter(description = "5-tuple selector — measurement component. Required when shepardId is absent.")
+        "Exactly one of channelAppId or a complete 5-tuple must be supplied.")
+      @QueryParam("channelAppId") UUID channelAppId,
+      @Parameter(description = "5-tuple selector — measurement component. Required when channelAppId is absent.")
       @QueryParam("measurement") String measurement,
-      @Parameter(description = "5-tuple selector — device component. Required when shepardId is absent.")
+      @Parameter(description = "5-tuple selector — device component. Required when channelAppId is absent.")
       @QueryParam("device") String device,
-      @Parameter(description = "5-tuple selector — location component. Required when shepardId is absent.")
+      @Parameter(description = "5-tuple selector — location component. Required when channelAppId is absent.")
       @QueryParam("location") String location,
-      @Parameter(description = "5-tuple selector — symbolicName component. Required when shepardId is absent.")
+      @Parameter(description = "5-tuple selector — symbolicName component. Required when channelAppId is absent.")
       @QueryParam("symbolicName") String symbolicName,
-      @Parameter(description = "5-tuple selector — field component. Required when shepardId is absent.")
+      @Parameter(description = "5-tuple selector — field component. Required when channelAppId is absent.")
       @QueryParam("field") String field,
       @Parameter(description = "Window size in seconds. Default `300`. Min `1`, max `3600`.")
       @QueryParam("windowSeconds") @DefaultValue("300") @Min(1) @Max(3600) int windowSeconds,
@@ -1008,7 +1008,7 @@ public class ContainersV2Rest {
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
     var result = resolved.get().handler().getLiveWindow(
-        appId, shepardId, measurement, device, location, symbolicName, field,
+        appId, channelAppId, measurement, device, location, symbolicName, field,
         windowSeconds, withBoundaryPoints);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED, "No live-window concept",
         Response.Status.UNSUPPORTED_MEDIA_TYPE,
@@ -1019,7 +1019,7 @@ public class ContainersV2Rest {
   // ── APISIMP-CONT-NS-COLLAPSE-4: channel annotations ────────────────────────
 
   @GET
-  @Path("/{appId}/channels/{channelShepardId}/annotations")
+  @Path("/{appId}/channels/{channelAppId}/annotations")
   @Operation(
     operationId = "listChannelAnnotations",
     summary = "List semantic annotations on a timeseries channel.",
@@ -1036,7 +1036,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
   public Response listChannelAnnotations(
       @PathParam("appId") String appId,
-      @PathParam("channelShepardId") String channelShepardId,
+      @PathParam("channelAppId") String channelAppId,
       @Parameter(description = "Zero-based page index (default 0).",
         schema = @Schema(minimum = "0", defaultValue = "0"))
         @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
@@ -1053,7 +1053,7 @@ public class ContainersV2Rest {
         Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Read, caller);
     if (gate != null) return gate;
-    var result = resolved.get().handler().listChannelAnnotations(appId, channelShepardId, page, pageSize);
+    var result = resolved.get().handler().listChannelAnnotations(appId, channelAppId, page, pageSize);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
@@ -1061,7 +1061,7 @@ public class ContainersV2Rest {
   }
 
   @POST
-  @Path("/{appId}/channels/{channelShepardId}/annotations")
+  @Path("/{appId}/channels/{channelAppId}/annotations")
   @Operation(
     operationId = "createChannelAnnotation",
     summary = "Attach a semantic annotation to a timeseries channel.",
@@ -1077,7 +1077,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
   public Response createChannelAnnotation(
       @PathParam("appId") String appId,
-      @PathParam("channelShepardId") String channelShepardId,
+      @PathParam("channelAppId") String channelAppId,
       @RequestBody(required = true,
         content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
       @Valid SemanticAnnotationIO body,
@@ -1091,7 +1091,7 @@ public class ContainersV2Rest {
         Response.Status.NOT_FOUND, "No container found for appId");
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
-    var result = resolved.get().handler().createChannelAnnotation(appId, channelShepardId, body);
+    var result = resolved.get().handler().createChannelAnnotation(appId, channelAppId, body);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");
@@ -1099,7 +1099,7 @@ public class ContainersV2Rest {
   }
 
   @DELETE
-  @Path("/{appId}/channels/{channelShepardId}/annotations/{annotationAppId}")
+  @Path("/{appId}/channels/{channelAppId}/annotations/{annotationAppId}")
   @Operation(
     operationId = "deleteChannelAnnotation",
     summary = "Remove a semantic annotation from a timeseries channel.",
@@ -1113,7 +1113,7 @@ public class ContainersV2Rest {
   @APIResponse(responseCode = "415", description = "This container kind has no channel-annotation concept.")
   public Response deleteChannelAnnotation(
       @PathParam("appId") String appId,
-      @PathParam("channelShepardId") String channelShepardId,
+      @PathParam("channelAppId") String channelAppId,
       @PathParam("annotationAppId") @NotNull String annotationAppId,
       @Context SecurityContext sc
   ) {
@@ -1126,7 +1126,7 @@ public class ContainersV2Rest {
     Response gate = gate(resolved.get().container(), AccessType.Write, caller);
     if (gate != null) return gate;
     var result = resolved.get().handler().deleteChannelAnnotation(
-        appId, channelShepardId, annotationAppId);
+        appId, channelAppId, annotationAppId);
     if (result.isEmpty()) return problem(PROBLEM_TYPE_UNSUPPORTED,
         "No channel-annotation concept", Response.Status.UNSUPPORTED_MEDIA_TYPE,
         "Container kind '" + resolved.get().handler().kind() + "' has no channel-annotation concept");

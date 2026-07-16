@@ -15,7 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>Returns raw data points (no downsampling). Callers that need LTTB
  * should use the single-channel endpoint with {@code ?downsample=lttb}.
  *
- * <p>Unknown shepardIds are silently skipped so a caller can pass a
+ * <p>Unknown channelAppIds are silently skipped so a caller can pass a
  * stale channel list without getting a 404. Max 200 channels per call.
  *
  * <p>APISIMP-BULK-CHANNEL-REQ-NANOS-TO-ISO — {@code start} and {@code end}
@@ -33,11 +33,11 @@ public record BulkChannelDataRequestIO(
   @NotEmpty
   @Size(max = 200)
   @Schema(
-    description = "Channel shepardIds to fetch. Unknown IDs are silently skipped. Max 200 per call.",
+    description = "Channel channelAppIds to fetch. Unknown IDs are silently skipped. Max 200 per call.",
     required = true,
     example = "[\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e5f\",\"01930a2b-fe4c-7e3c-9f1d-8a5b2c3d4e60\"]"
   )
-  List<@NotNull UUID> shepardIds,
+  List<@NotNull UUID> channelAppIds,
 
   @NotNull
   @Schema(

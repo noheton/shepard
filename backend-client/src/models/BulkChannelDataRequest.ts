@@ -20,11 +20,11 @@ import { mapValues } from '../runtime';
  */
 export interface BulkChannelDataRequest {
     /**
-     * Channel shepardIds to fetch. Unknown IDs are silently skipped. Max 200 per call.
+     * Channel channelAppIds to fetch. Unknown IDs are silently skipped. Max 200 per call.
      * @type {Array<string>}
      * @memberof BulkChannelDataRequest
      */
-    shepardIds: Array<string>;
+    channelAppIds: Array<string>;
     /**
      * Window start as ISO 8601 UTC, nanosecond precision supported. E.g. '2024-06-01T08:00:00Z'.
      * @type {string}
@@ -43,7 +43,7 @@ export interface BulkChannelDataRequest {
  * Check if a given object implements the BulkChannelDataRequest interface.
  */
 export function instanceOfBulkChannelDataRequest(value: object): value is BulkChannelDataRequest {
-    if (!('shepardIds' in value) || value['shepardIds'] === undefined) return false;
+    if (!('channelAppIds' in value) || value['channelAppIds'] === undefined) return false;
     if (!('start' in value) || value['start'] === undefined) return false;
     if (!('end' in value) || value['end'] === undefined) return false;
     return true;
@@ -59,7 +59,7 @@ export function BulkChannelDataRequestFromJSONTyped(json: any, ignoreDiscriminat
     }
     return {
         
-        'shepardIds': json['shepardIds'],
+        'channelAppIds': json['channelAppIds'],
         'start': json['start'],
         'end': json['end'],
     };
@@ -71,7 +71,7 @@ export function BulkChannelDataRequestToJSON(value?: BulkChannelDataRequest | nu
     }
     return {
         
-        'shepardIds': value['shepardIds'],
+        'channelAppIds': value['channelAppIds'],
         'start': value['start'],
         'end': value['end'],
     };

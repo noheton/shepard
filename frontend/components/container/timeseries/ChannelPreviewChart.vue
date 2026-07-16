@@ -10,9 +10,9 @@ const props = defineProps<{
    * TS-IDc — when supplied, the lazy fetch resolves the channel via the
    * single-field v2 path-param endpoint instead of the legacy 5-tuple
    * lookup. Passed down from {@link TimeseriesMeasurementsTable} which
-   * holds the {@code useFetchV2Channels} 5-tuple → shepardId map.
+   * holds the {@code useFetchV2Channels} 5-tuple → channelAppId map.
    */
-  channelShepardId?: string | null;
+  channelAppId?: string | null;
 }>();
 
 // PERF7 — lazy-load: the fetch fires only when this element enters the viewport.
@@ -29,7 +29,7 @@ const { data, loading, downsampled, refetch } = useChannelPreviewLazy(
   props.containerAppId,
   props.channel,
   rootEl,
-  { channelShepardId: props.channelShepardId },
+  { channelAppId: props.channelAppId },
 );
 
 watch(useDownsample, v => refetch(v));
