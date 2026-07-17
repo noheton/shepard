@@ -49,6 +49,25 @@ public class ShepardFileDAO extends GenericDAO<ShepardFile> {
   }
 
   /**
+   * APISIMP-BUNDLE-KIND-TOIO-OGM — count {@link ShepardFile} nodes directly attached to the
+   * given {@link de.dlr.shepard.context.references.file.entities.FileBundleReference} via
+   * {@code [:has_payload]} using a single Cypher COUNT query. Replaces the OGM lazy-load
+   * in {@code FileBundleReferenceKindHandler.toIO()}.
+   *
+   * @param bundleAppId the bundle's appId
+   * @return total number of files directly on that bundle (not via FileGroup)
+   */
+  public long countByBundleReferenceAppId(String bundleAppId) {
+    String query = "MATCH (:FileBundleReference {appId: $bid})-[:has_payload]->(f:ShepardFile) " +
+        "RETURN count(f) AS total";
+    var result = session.query(query, Map.of("bid", bundleAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object v = iter.next().get("total");
+    return v instanceof Number ? ((Number) v).longValue() : 0L;
+  }
+
+  /**
    * Count all {@link ShepardFile} nodes attached to the given {@link de.dlr.shepard.context.references.file.entities.FileGroup}.
    * Pushes counting to Cypher — no OGM entity hydration.
    *

@@ -6,9 +6,11 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
+import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
@@ -55,6 +57,12 @@ public class FileBundleReferenceKindHandler implements ReferenceKindHandler {
   @Inject
   UserService userService;
 
+  @Inject
+  ShepardFileDAO shepardFileDAO;
+
+  @Inject
+  FileGroupDAO fileGroupDAO;
+
   @Override
   public String kind() {
     return "bundle";
@@ -77,8 +85,10 @@ public class FileBundleReferenceKindHandler implements ReferenceKindHandler {
     io.setReferenceShape("bundle");
     io.put("containerMongoId", ref.getFileContainer() != null ? ref.getFileContainer().getMongoId() : null);
     io.put("containerAppId", ref.getFileContainer() != null ? ref.getFileContainer().getAppId() : null);
-    io.put("groupCount", ref.getGroups() != null ? ref.getGroups().size() : 0);
-    io.put("fileCount", ref.getFiles() != null ? ref.getFiles().size() : 0);
+    // APISIMP-BUNDLE-KIND-TOIO-OGM: count via Cypher, not OGM lazy-load.
+    String bid = ref.getAppId();
+    io.put("groupCount", bid != null ? (int) fileGroupDAO.countByBundleAppId(bid) : 0);
+    io.put("fileCount", bid != null ? (int) shepardFileDAO.countByBundleReferenceAppId(bid) : 0);
     return io;
   }
 
