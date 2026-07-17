@@ -82,7 +82,7 @@ public class MeRest {
     }
     User current = userService.getCurrentUser();
     UserIO userIO = new UserIO(current);
-    int watchedCount = collectionWatcherDAO.findByUsername(current.getUsername()).size();
+    int watchedCount = (int) collectionWatcherDAO.countByUsername(current.getUsername());
     return Response.ok(MeIO.from(userIO, watchedCount)).build();
   }
 
