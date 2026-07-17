@@ -34,10 +34,10 @@ import org.neo4j.ogm.session.Session;
  * four (the existing legacy {@code /shepard/api/search} only takes a
  * single kind per call).
  *
- * <p>Implementation: one Cypher query per requested kind, run against
- * the live OGM session. Each kind contributes its rows to a unified
- * envelope {@code {items: [{appId, kind, name, snippet}], total}}
- * ordered by kind then by match position. Substring match is
+ * <p>Implementation: one UNION ALL Cypher across all requested labels,
+ * run against the live OGM session. Each label arm contributes its rows
+ * to a unified envelope {@code {items: [{appId, kind, name, snippet}],
+ * total}} ordered by kind then by name. Substring match is
  * case-insensitive across {@code name} and {@code description}; the
  * {@code snippet} is the {@code description} truncated to the first
  * configured window when present, otherwise the {@code name}.
@@ -106,9 +106,31 @@ public class SearchMcpTools {
   /** Default snippet length (characters) of the {@code description} excerpt. */
   static final int SNIPPET_MAX_LENGTH = 160;
 
+  /** Hard ceiling on rows returned from the UNION ALL query before the permission pass. */
+  static final int SEARCH_UNION_LIMIT = 2_000;
+
   /** All four supported coarse kind buckets, in canonical render order. */
   static final List<String> ALL_KINDS = List.of(
     "Collection", "DataObject", "Container", "Reference"
+  );
+
+  /**
+   * Canonical render ordinal per Neo4j label — embedded as a literal in each
+   * UNION ALL arm so the combined result arrives ordered without a second sort.
+   */
+  private static final Map<String, Integer> KIND_ORDINAL = Map.ofEntries(
+    Map.entry("Collection",              0),
+    Map.entry("DataObject",              1),
+    Map.entry("TimeseriesContainer",     2),
+    Map.entry("FileContainer",           3),
+    Map.entry("StructuredDataContainer", 4),
+    Map.entry("TimeseriesReference",     5),
+    Map.entry("SingletonFileReference",  6),
+    Map.entry("FileReference",           7),
+    Map.entry("URIReference",            8),
+    Map.entry("StructuredDataReference", 9),
+    Map.entry("DataObjectReference",     10),
+    Map.entry("CollectionReference",     11)
   );
 
   /** Neo4j labels covered by each coarse bucket. */
@@ -195,16 +217,14 @@ public class SearchMcpTools {
       List<String> kinds = resolveKinds(kind);
 
       // Collect every matching row first so `total` reflects the true match
-      // count before pagination. This is bounded by the labels we walk
-      // (Collection / DataObject / TS or FileC or SDC / 7 reference subtypes)
-      // and by Neo4j's name + description sizes — for the LUMEN + MFFD scale
-      // (~thousands of nodes per substrate) it stays comfortable in memory.
-      List<Map<String, Object>> matches = new ArrayList<>();
-      for (String coarseKind : kinds) {
-        for (String label : LABELS_BY_KIND.get(coarseKind)) {
-          matches.addAll(searchLabel(label, query));
-        }
-      }
+      // count before pagination. One UNION ALL Cypher across all requested
+      // labels replaces the former N per-label round-trips; SEARCH_UNION_LIMIT
+      // caps the candidate set to a memory-safe ceiling before the permission
+      // pass (for the LUMEN + MFFD scale it stays well inside the ceiling).
+      List<String> labels = kinds.stream()
+        .flatMap(k -> LABELS_BY_KIND.get(k).stream())
+        .toList();
+      List<Map<String, Object>> matches = searchUnion(labels, query);
 
       // Dedupe by (label, appId) — :SingletonFileReference also carries the
       // :FileReference label in some legacy rows; the two-label hit would
@@ -268,47 +288,54 @@ public class SearchMcpTools {
   }
 
   /**
-   * Run the search Cypher for one Neo4j label. Matches case-insensitively
-   * against {@code name} and {@code description}; returns rows ordered by
-   * {@code name ASC, appId ASC} so the response is deterministic.
+   * Run the search as a single UNION ALL Cypher across all requested labels,
+   * reducing up to 12 per-label round-trips to one. Each arm embeds a literal
+   * {@code kindOrd} integer (from {@link #KIND_ORDINAL}) so the combined
+   * result is ordered by kind then by name in one pass.
    *
-   * <p>Parameterised query — the search term is passed as a bound parameter
-   * so this is safe against Cypher injection; no string interpolation of
-   * untrusted input.
+   * <p>Label names come from the closed, curated {@link #LABELS_BY_KIND} map
+   * — concatenation is safe; no user-supplied label strings reach this method.
+   * The search term is passed as the bound parameter {@code $needle} — no
+   * user input is concatenated into the Cypher string.
    */
-  List<Map<String, Object>> searchLabel(String label, String query) {
+  List<Map<String, Object>> searchUnion(List<String> labels, String query) {
+    if (labels.isEmpty()) return List.of();
     Session live = NeoConnector.getInstance().getNeo4jSession();
     if (live == null) return List.of();
 
     String needle = query.toLowerCase(Locale.ROOT);
-    // OGM 4 doesn't let us pass a label as a parameter; the label set is
-    // closed and curated in LABELS_BY_KIND so concatenation is safe here.
-    String cypher =
-      "MATCH (n:`" + label + "`) " +
-      "WHERE toLower(coalesce(n.name, '')) CONTAINS $needle " +
-      "   OR toLower(coalesce(n.description, '')) CONTAINS $needle " +
-      "RETURN n.appId AS appId, n.name AS name, n.description AS description " +
-      "ORDER BY toLower(coalesce(n.name, '')) ASC, n.appId ASC " +
-      "LIMIT 500";
+    // Build one UNION ALL arm per label. OGM 4 doesn't allow label params;
+    // labels come from the closed LABELS_BY_KIND map so concatenation is safe.
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < labels.size(); i++) {
+      String label = labels.get(i);
+      int ord = KIND_ORDINAL.getOrDefault(label, 99);
+      if (i > 0) sb.append("\nUNION ALL\n");
+      sb.append("MATCH (n:`").append(label).append("`) ")
+        .append("WHERE toLower(coalesce(n.name, '')) CONTAINS $needle ")
+        .append("   OR toLower(coalesce(n.description, '')) CONTAINS $needle ")
+        .append("RETURN n.appId AS appId, n.name AS name, n.description AS description, ")
+        .append(ord).append(" AS kindOrd, '").append(label).append("' AS label");
+    }
+    sb.append("\nORDER BY kindOrd ASC, name ASC, appId ASC")
+      .append("\nLIMIT ").append(SEARCH_UNION_LIMIT);
 
     List<Map<String, Object>> out = new ArrayList<>();
     try {
-      Result result = live.query(cypher, Map.of("needle", needle));
+      Result result = live.query(sb.toString(), Map.of("needle", needle));
       if (result == null) return out;
       for (Map<String, Object> row : result.queryResults()) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("appId", asString(row.get("appId")));
-        item.put("kind", label);
+        String labelVal = asString(row.get("label"));
+        item.put("kind", labelVal);
         String name = asString(row.get("name"));
         item.put("name", name);
         item.put("snippet", makeSnippet(name, asString(row.get("description"))));
         out.add(item);
       }
     } catch (RuntimeException e) {
-      // Per the fail-soft registry rule: a single label's read failing
-      // shouldn't poison the entire fan-out. Log and skip — the envelope
-      // still carries every label that did succeed.
-      Log.warnf(e, "search: label query failed for label=%s", label);
+      Log.warnf(e, "search: UNION ALL query failed for labels=%s", labels);
     }
     return out;
   }
