@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +17,8 @@ import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.dataobject.daos.CollectionReferenceDAO;
+import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
@@ -24,6 +28,7 @@ import de.dlr.shepard.context.references.file.services.SingletonFileReferenceSer
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.context.references.uri.daos.URIReferenceDAO;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import jakarta.ws.rs.BadRequestException;
@@ -48,6 +53,9 @@ class ReferenceKindHandlersTest {
   URIReferenceService uriReferenceService;
 
   @Mock
+  URIReferenceDAO uriReferenceDAO;
+
+  @Mock
   SingletonFileReferenceService singletonService;
 
   @Mock
@@ -66,7 +74,13 @@ class ReferenceKindHandlersTest {
   CollectionReferenceService collectionReferenceService;
 
   @Mock
+  CollectionReferenceDAO collectionReferenceDAO;
+
+  @Mock
   DataObjectReferenceService dataObjectReferenceService;
+
+  @Mock
+  DataObjectReferenceDAO dataObjectReferenceDAO;
 
   UriReferenceKindHandler uriHandler;
   FileReferenceKindHandler fileHandler;
@@ -81,6 +95,7 @@ class ReferenceKindHandlersTest {
     MockitoAnnotations.openMocks(this);
     uriHandler = new UriReferenceKindHandler();
     uriHandler.uriReferenceService = uriReferenceService;
+    uriHandler.uriReferenceDAO = uriReferenceDAO;
     uriHandler.dataObjectDAO = dataObjectDAO;
     fileHandler = new FileReferenceKindHandler();
     fileHandler.singletonService = singletonService;
@@ -91,10 +106,12 @@ class ReferenceKindHandlersTest {
     tsHandler.objectMapper = new ObjectMapper();
     collectionHandler = new CollectionReferenceKindHandler();
     collectionHandler.collectionReferenceService = collectionReferenceService;
+    collectionHandler.collectionReferenceDAO = collectionReferenceDAO;
     collectionHandler.dataObjectDAO = dataObjectDAO;
     collectionHandler.collectionDAO = collectionDAO;
     dataObjectRefHandler = new DataObjectReferenceKindHandler();
     dataObjectRefHandler.dataObjectReferenceService = dataObjectReferenceService;
+    dataObjectRefHandler.dataObjectReferenceDAO = dataObjectReferenceDAO;
     dataObjectRefHandler.dataObjectDAO = dataObjectDAO;
 
     var coll = new Collection(1L);
@@ -180,12 +197,19 @@ class ReferenceKindHandlersTest {
 
   @Test
   void uri_list_delegates() {
-    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
-    when(uriReferenceService.getAllReferencesByDataObjectId(eq(1L), eq(101L), any()))
-      .thenReturn(List.of(uriRef()));
+    // APISIMP-URI-COLL-DOREF-NONPAGED-APPID: non-paged list uses DAO appId path, no OGM round-trip.
+    when(uriReferenceDAO.findByDataObjectAppId(DO_APP_ID)).thenReturn(List.of(uriRef()));
     var out = uriHandler.listByDataObject(DO_APP_ID, null);
     assertEquals(1, out.size());
     assertEquals("uri", out.get(0).getKind());
+    verify(dataObjectDAO, never()).findByAppId(any());
+    verify(uriReferenceService, never()).getAllReferencesByDataObjectId(anyLong(), anyLong(), any());
+  }
+
+  @Test
+  void uri_listNonPaged_blankAppId_throws400() {
+    assertThrows(BadRequestException.class, () -> uriHandler.listByDataObject("", null));
+    assertThrows(BadRequestException.class, () -> uriHandler.listByDataObject(null, null));
   }
 
   // ─── file handler ──────────────────────────────────────────────────────────
@@ -415,12 +439,19 @@ class ReferenceKindHandlersTest {
 
   @Test
   void collection_list_delegates() {
-    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
-    when(collectionReferenceService.getAllReferencesByDataObjectId(eq(1L), eq(101L), any()))
-      .thenReturn(List.of(collRef()));
+    // APISIMP-URI-COLL-DOREF-NONPAGED-APPID: non-paged list uses DAO appId path, no OGM round-trip.
+    when(collectionReferenceDAO.findByDataObjectAppId(DO_APP_ID)).thenReturn(List.of(collRef()));
     var out = collectionHandler.listByDataObject(DO_APP_ID, null);
     assertEquals(1, out.size());
     assertEquals("collection", out.get(0).getKind());
+    verify(dataObjectDAO, never()).findByAppId(any());
+    verify(collectionReferenceService, never()).getAllReferencesByDataObjectId(anyLong(), anyLong(), any());
+  }
+
+  @Test
+  void collection_listNonPaged_blankAppId_throws400() {
+    assertThrows(BadRequestException.class, () -> collectionHandler.listByDataObject("", null));
+    assertThrows(BadRequestException.class, () -> collectionHandler.listByDataObject(null, null));
   }
 
   @Test
@@ -517,12 +548,19 @@ class ReferenceKindHandlersTest {
 
   @Test
   void dataobject_list_delegates() {
-    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
-    when(dataObjectReferenceService.getAllReferencesByDataObjectId(eq(1L), eq(101L), any()))
-      .thenReturn(List.of(doRef()));
+    // APISIMP-URI-COLL-DOREF-NONPAGED-APPID: non-paged list uses DAO appId path, no OGM round-trip.
+    when(dataObjectReferenceDAO.findByDataObjectAppId(DO_APP_ID)).thenReturn(List.of(doRef()));
     var out = dataObjectRefHandler.listByDataObject(DO_APP_ID, null);
     assertEquals(1, out.size());
     assertEquals("dataobject", out.get(0).getKind());
+    verify(dataObjectDAO, never()).findByAppId(DO_APP_ID);
+    verify(dataObjectReferenceService, never()).getAllReferencesByDataObjectId(anyLong(), anyLong(), any());
+  }
+
+  @Test
+  void dataobject_listNonPaged_blankAppId_throws400() {
+    assertThrows(BadRequestException.class, () -> dataObjectRefHandler.listByDataObject("", null));
+    assertThrows(BadRequestException.class, () -> dataObjectRefHandler.listByDataObject(null, null));
   }
 
   @Test

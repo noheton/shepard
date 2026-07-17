@@ -102,6 +102,25 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
   }
 
   /**
+   * APISIMP-URI-COLL-DOREF-NONPAGED-APPID — unbounded list of non-deleted DataObjectReferences
+   * under a DataObject, resolved purely by appId. Used by the non-paged SPI overload in
+   * {@code DataObjectReferenceKindHandler}. Avoids loading the DataObject numeric Neo4j id.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @return all non-deleted DataObjectReferences; never null.
+   */
+  public List<DataObjectReference> findByDataObjectAppId(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:DataObjectReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN r, d, hr " +
+      "ORDER BY r.createdAt ASC";
+    return StreamSupport.stream(
+      findByQuery(query, Map.of("aid", dataObjectAppId)).spliterator(), false
+    ).toList();
+  }
+
+  /**
    * APISIMP-REFS-HANDLER-PAGING-TAIL — paginated list of non-deleted DataObjectReferences under a
    * DataObject (resolved by appId). Pushes SKIP/LIMIT to Neo4j.
    *
