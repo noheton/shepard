@@ -132,16 +132,17 @@ class CollectionDQRRestTest {
     when(securityContext.getUserPrincipal()).thenReturn(null);
     Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
     assertEquals(401, r.getStatus());
-    verify(service, never()).evaluate(anyString(), anyString());
+    verify(service, never()).evaluate(anyString(), anyString(), anyInt());
   }
 
   @Test
   void evaluate_returns200_notTruncated_whenResultsWithinLimit() {
+    // Service returns 2 items (< maxItems=5000) → not truncated, total exact.
     List<DQRResultIO> results = List.of(
       DQRResultIO.pass("dqr-1", "do-1"),
       DQRResultIO.fail("dqr-1", "do-2", "missing label")
     );
-    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(results);
+    when(service.evaluate(COLL_APP_ID, ALICE, 5000)).thenReturn(results);
 
     Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
 
@@ -154,11 +155,13 @@ class CollectionDQRRestTest {
 
   @Test
   void evaluate_truncates_whenResultsExceedLimit() {
+    // With maxItems=3 the service stops at 4 items (maxItems+1) to signal truncation.
+    // total=4 is the approximate count reported when truncated.
     List<DQRResultIO> results = new ArrayList<>();
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 4; i++) {
       results.add(DQRResultIO.pass("dqr-1", "do-" + i));
     }
-    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(results);
+    when(service.evaluate(COLL_APP_ID, ALICE, 3)).thenReturn(results);
 
     Response r = resource.evaluate(COLL_APP_ID, 3, securityContext);
 
@@ -166,12 +169,13 @@ class CollectionDQRRestTest {
     DQRResultsIO body = (DQRResultsIO) r.getEntity();
     assertEquals(3, body.results().size());
     assertEquals(true, body.truncated());
-    assertEquals(10L, body.total());
+    // total is maxItems+1 (approximate; signals "at least 4 results exist")
+    assertEquals(4L, body.total());
   }
 
   @Test
   void evaluate_returns200_emptyEnvelope_whenNoDQRsEnabled() {
-    when(service.evaluate(COLL_APP_ID, ALICE)).thenReturn(List.of());
+    when(service.evaluate(COLL_APP_ID, ALICE, 5000)).thenReturn(List.of());
 
     Response r = resource.evaluate(COLL_APP_ID, 5000, securityContext);
 

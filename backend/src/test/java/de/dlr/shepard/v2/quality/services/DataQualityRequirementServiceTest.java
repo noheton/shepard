@@ -233,7 +233,7 @@ class DataQualityRequirementServiceTest {
     when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status"))
       .thenReturn(Set.of(DO_APP_ID_1, DO_APP_ID_2));
 
-    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE);
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 5000);
 
     assertEquals(2, results.size());
     assertTrue(results.stream().allMatch(DQRResultIO::passed));
@@ -250,7 +250,7 @@ class DataQualityRequirementServiceTest {
     when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status"))
       .thenReturn(Set.of(DO_APP_ID_1));
 
-    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE);
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 5000);
 
     assertEquals(2, results.size());
     DQRResultIO pass = results.stream().filter(r -> r.dataObjectAppId().equals(DO_APP_ID_1)).findFirst().orElseThrow();
@@ -272,7 +272,7 @@ class DataQualityRequirementServiceTest {
     when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status"))
       .thenReturn(Set.of(DO_APP_ID_1));
 
-    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE);
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 5000);
 
     // Only one DQR evaluated — the disabled one is skipped.
     assertEquals(1, results.size());
@@ -283,7 +283,7 @@ class DataQualityRequirementServiceTest {
   void evaluateReturnsEmptyWhenNoDQRsAssigned() {
     when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of());
 
-    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE);
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 5000);
 
     assertTrue(results.isEmpty());
     // No DataObject fetch needed when no DQRs.
@@ -295,7 +295,56 @@ class DataQualityRequirementServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLLECTION_OGM_ID), eq(AccessType.Read), eq(ALICE), anyLong()))
       .thenReturn(false);
 
-    assertThrows(ForbiddenException.class, () -> service.evaluate(COLLECTION_APP_ID, ALICE));
+    assertThrows(ForbiddenException.class, () -> service.evaluate(COLLECTION_APP_ID, ALICE, 5000));
+  }
+
+  // ─── evaluate() — early-exit (APISIMP-DQR-EVAL-INMEM) ────────────────────
+
+  @Test
+  void evaluateStopsAfterMaxItemsPlusOneResults() {
+    // 3 DataObjects, maxItems=1 → service stops after 2 results (1+1)
+    String do3 = "019e3c96-0000-7000-c000-000000000003";
+    DataQualityRequirement dqr = makeDQR(DQR_APP_ID, "check", "ANNOTATION_REQUIRED", "status");
+    dqr.setEnabled(true);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of(dqr));
+    when(dao.findDataObjectAppIds(COLLECTION_APP_ID)).thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2, do3));
+    when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status")).thenReturn(Set.of());
+
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 1);
+
+    // Must be exactly maxItems+1 = 2; the 3rd DataObject was never visited.
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void evaluateExactlyMaxItemsResultsAreNotTruncated() {
+    // 2 DataObjects, maxItems=2 → service returns exactly 2 (no truncation signal)
+    DataQualityRequirement dqr = makeDQR(DQR_APP_ID, "check", "ANNOTATION_REQUIRED", "status");
+    dqr.setEnabled(true);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of(dqr));
+    when(dao.findDataObjectAppIds(COLLECTION_APP_ID)).thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
+    when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status")).thenReturn(Set.of());
+
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, 2);
+
+    // Exactly 2 results — no overflow, caller sees truncated=false.
+    assertEquals(2, results.size());
+  }
+
+  @Test
+  void evaluateClampsMaxItemsSoIntegerMaxValueDoesNotOverflow() {
+    // maxItems = Integer.MAX_VALUE must not overflow maxItems + 1 to a negative
+    // limit (which would return an empty list). Clamped to MAX_EVAL_ITEMS; all
+    // 2 results still come back.
+    DataQualityRequirement dqr = makeDQR(DQR_APP_ID, "check", "ANNOTATION_REQUIRED", "status");
+    dqr.setEnabled(true);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of(dqr));
+    when(dao.findDataObjectAppIds(COLLECTION_APP_ID)).thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
+    when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status")).thenReturn(Set.of());
+
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, Integer.MAX_VALUE);
+
+    assertEquals(2, results.size());
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

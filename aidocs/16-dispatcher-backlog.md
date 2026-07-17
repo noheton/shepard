@@ -5886,21 +5886,21 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalEntryV2IO.java`; `backend/src/test/java/de/dlr/shepard/v2/labjournal/io/LabJournalEntryV2IOTest.java`.
 
 ## APISIMP-ADMINCONFIG-INMEM-PAGE — AdminConfigRest.listFeatures() subLists full registry on every page request (size: S, sweep: fire-647)
-- **Status:** 🚧 PR open (fire-648, branch `APISIMP-ADMINCONFIG-INMEM-PAGE`).
+- **Status:** ✅ shipped (fire-648, PR #2620 merged 2026-07-17T11:10Z).
 - **Why:** `AdminConfigRest.listFeatures()` at `AdminConfigRest.java:96` calls `registry.all()` to materialise every `ConfigDescriptor` in the JVM-resident SPI registry, converts them all to `ConfigFeatureIO` rows, takes `rows.size()` as total, then slices with `rows.subList((int)from, ...)`. The full list is allocated on every request even when the caller asks for a single page. Harmless at current registry size but will regress as the plugin ecosystem grows.
 - **Fix:** Add `ConfigFeatureRegistry.count()` and `ConfigFeatureRegistry.list(long skip, int limit)` that slice the backing list internally. In `listFeatures()`, call `count()` for total and `list(page * pageSize, pageSize)` for the slice — no `subList` on the outer list.
 - **AC:** `GET /v2/admin/config/features?page=1&pageSize=1` returns exactly 1 item and `X-Total-Count` equals the full registry size; a registry with 200 features does not allocate a 200-element list on a page-1 request; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:96`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding1`.
 
 ## APISIMP-SEMADMIN-ONTOL-INMEM-PAGE — SemanticAdminRest.listOntologies() materialises full merged bundle list before subList slice (size: S, sweep: fire-647)
-- **Status:** 🚧 PR open (fire-649, branch `APISIMP-SEMADMIN-ONTOL-INMEM-PAGE`).
+- **Status:** ✅ shipped (fire-649, PR #2621 merged 2026-07-17T12:10Z).
 - **Why:** `SemanticAdminRest.listOntologies()` at `SemanticAdminRest.java:289` calls `configService.listMerged(manifest)` which returns every built-in plus every user-uploaded `OntologyBundle` into a single `ArrayList`, converts all of them to `OntologyBundleIO`, then `subList`s to the requested page. The full merge is materialised on every paged request.
 - **Fix:** Add `OntologyBundleConfigService.countMerged(manifest)` and `.listMerged(manifest, skip, limit)` overloads. The built-in slice and the DAO slice can each be fetched with `skip`/`limit`; delegate to the DAO's existing SKIP/LIMIT support for the user-bundle portion.
 - **AC:** `GET /v2/admin/semantic/ontologies?page=0&pageSize=5` materialises at most 5 `OntologyBundleIO` objects; `X-Total-Count` reflects the total count without allocating a list of that size; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/semantic/SemanticAdminRest.java:289`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding2`.
 
 ## APISIMP-PLUGINS-INMEM-PAGE — PluginsAdminRest.list() calls isEnabled() on all plugins before subList page slice (size: S, sweep: fire-647)
-- **Status:** 🚧 PR open (fire-648, branch `APISIMP-ADMINCONFIG-INMEM-PAGE`).
+- **Status:** ✅ shipped (fire-648, PR #2620 merged 2026-07-17T11:10Z — same branch as APISIMP-ADMINCONFIG-INMEM-PAGE).
 - **Why:** `PluginsAdminRest.list()` at `PluginsAdminRest.java:141` calls `registry.list()` to get all registered `PluginEntry` objects, maps them all to `PluginEntryIO` (including an `isEnabled()` call per entry), then computes `rows.size()` for total and slices with `rows.subList()`. All plugins are fully evaluated and mapped on every paginated request regardless of page size.
 - **Fix:** Add `PluginRegistry.count()` and `PluginRegistry.list(long skip, int limit)`. In `list()`, call `count()` for total, then call `list(page * pageSize, pageSize)` and map only the slice — avoids calling `isEnabled()` for all plugins when only a page is needed.
 - **AC:** `GET /v2/admin/plugins?page=0&pageSize=10` with 200 registered plugins only calls `isEnabled()` 10 times; `X-Total-Count` is 200; `mvn verify -pl backend` green.
@@ -5937,9 +5937,9 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotListRest.java`; `backend/src/main/java/de/dlr/shepard/v2/snapshot/io/SnapshotListPageIO.java`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding7`.
 
 ## APISIMP-DQR-EVAL-INMEM — CollectionDQRRest.evaluate() runs full DQR evaluation before applying maxItems cap (size: M, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** ✅ shipped — fire-654, PR #2626.
 - **Why:** `CollectionDQRRest.evaluate()` at `CollectionDQRRest.java:205` calls `service.evaluate(collectionAppId, caller)` which runs every enabled DQR against every DataObject in the Collection and returns all results as a `List<DQRResultIO>` in memory. Only after the full evaluation does the REST layer truncate with `all.subList(0, maxItems)`. A Collection with 50,000 DataObjects and 5 DQRs produces 250,000 result objects in the JVM before the response is capped at 5,000. `APISIMP-DQR-EVALUATE-BARE-LIST` (fire-371) added the response cap and `DQRResultsIO` envelope but left the full-evaluation-then-slice pattern intact.
-- **Fix:** Add an early-exit parameter to `DQRService.evaluate(collectionAppId, caller, maxItems)`: stop accumulating results after `maxItems+1` rows to detect truncation without full evaluation. The `total` field is then the actually-computed count capped at `maxItems+1`; document that `total` may be approximate (`>= maxItems`) when truncated.
+- **Fix:** Added `int maxItems` parameter to `DataQualityRequirementService.evaluate(collectionAppId, caller, maxItems)` and propagated a `limit = maxItems + 1` to `evaluateAnnotationRequired()` and `evaluateStub()` sub-evaluators. Each sub-evaluator stops iterating DataObjects after `limit` results. The outer DQR loop also breaks early once `results.size() >= limit`. The service clamps `maxItems` to `[1, MAX_EVAL_ITEMS=5000]` before the `+1` so a non-REST caller cannot overflow the arithmetic (CodeQL `java/tainted-arithmetic`, alert #253). REST layer unchanged; `total` in the response is now `maxItems+1` when truncated (approximate; documented in `@Operation` description).
 - **AC:** `evaluate()` on a Collection with 250,000 DQR result rows stops after materialising `maxItems+1=5001` rows; heap allocation is proportional to `maxItems`, not to the Collection's full DataObject count; `mvn verify -pl backend` green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/quality/resources/CollectionDQRRest.java:205`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding8`.
 
