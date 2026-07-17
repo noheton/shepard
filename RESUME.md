@@ -204,3 +204,14 @@ Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not 
 - Stale open PRs needing triage: #1774 (Playwright auth fixture), #1773 (PROV read-capture flip), #1762 (bulk semantic-annotation REST), #1701 (backlog flip docs) — all May-era; plus 7 dependabot bumps.
 - Stashes: dropped stash@{0} (stale screenshot churn) + stash@{1} (salvaged above). KEPT stash@{2} (svdx/thermography parser WIP, 530+ lines — verify against merged W6/W8a commits before dropping) + stash@{3} (pre-m4i on dead branch).
 - NEXT after reconcile: MFFD tapelaying TPS ingest per `593529286` scripted-ingest path (W2 pass A spatial rework family); then MFFD-GRAPH-PRUNE.
+
+## 2026-07-17 (later) — TPS tapelaying ingest LAUNCHED (v16.7); 3 blockers root-caused live
+- Operator approved launch. Discovery: a July-10 kickoff session (`mffd-tapelaying-20260710b`) had been retry-looping at the REVIEW GATE for a week. Adopted it (killed my duplicate), cleared the gate — via direct Cypher `attributes||import_ready` (BOTH v1 PATCH and v2 merge-patch silently drop attribute writes — the write-disabled attributes bag).
+- Blocker 1 — SD containers: v16.5 FATAL wants pre-created per-step SD containers. Created `mffd-tapelaying-sd`=2438451, `mffd-bridgewelding-sd`=2438454; ids in `.env.local`.
+- Blocker 2 — PERM-SEED-V1-CREATE (backlog row filed): v1 creates seed no :Permissions → v2 404s importer entities. Bridges: one-shot backfill (8,804 orphans, `legacyBackfill='pubread-ingest-2026-07-17'`) + tmux `perms-backfill` 5s loop. v16.6 made v2 uploads retry through the lag window.
+- Blocker 3 — THE real bug: script targeted dead `POST /v2/files` (tombstone-deleted; stale javadoc claimed alive — fixed). v16.7 rewrote upload to the canonical two-step: `POST /v2/references?kind=file&dataObjectAppId=` → `PUT /v2/references/{appId}/content?filename=`. Verified end-to-end; uploads flowing with md5-stamped payloads.
+- Note: flat `GET /v2/data-objects/{appId}` does NOT exist (DO reads are collection-scoped `/v2/collections/{c}/data-objects/{appId}`) — don't chase that 404 again.
+- Relic noise: self-updater/telemetry/runlog target deleted pre-reset containers 473932/593750/593753 (fire-and-forget 404s, filtered from monitor). Post-ingest: recreate + env-override.
+- Pre-import snapshot POST on 019f4bf2-… still in flight after ~25 min (huge collection); additive import so non-blocking.
+- WATCH: early pace ~4s/file → naive ETA ~292h over 258,670 files. Reassess at 30-min checkpoint; option = workers 8 + PgBouncer pool 50.
+- NO backend redeploy during ingest (deployed=Jul-10 image; main has a week of APISIMP wire renames the script's flow is now verified against deployed shapes). Redeploy (TIFF preview d5e1faf73, MP4, #2628) queued post-ingest.
