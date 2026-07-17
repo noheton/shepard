@@ -164,7 +164,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.5"
+IMPORT_SCRIPT_VERSION = "16.6"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -804,7 +804,10 @@ class ShepardClient:
             total = coll_r.headers.get("X-Total-Count", "?")
             print(f"  instance : {self._base}  (collections visible: {total})")
 
-        v2_r = self._get_raw(f"{self._base}/v2/admin/features")
+        # v16.6: probe /v2/users/me — /v2/admin/features was tombstoned then
+        # deleted (APISIMP-ADMIN-FEATURES-TOMBSTONE-DELETE); users/me is the
+        # stable authenticated v2 liveness probe.
+        v2_r = self._get_raw(f"{self._base}/v2/users/me")
         if v2_r and v2_r.ok:
             print(f"  v2 API   : available")
         else:
@@ -1669,17 +1672,21 @@ class ShepardClient:
                     ) as bar:
                         wrapped = _TqdmReader(fh, bar)
                         r = self._s.post(url_v2, params=params, files={"file": (Path(display).name, wrapped)}, timeout=600)
-                if r.status_code not in (404, 405):
-                    if r.ok:
-                        return True
-                    if _attempt < _upload_max_attempts:
-                        print(f"  [http {r.status_code}] v2 upload {display} attempt {_attempt}/{_upload_max_attempts}: {r.text[:200]} — retrying in {_upload_backoff:.0f}s")
-                        time.sleep(_upload_backoff)
-                        _upload_backoff = min(_upload_backoff * 2, 60.0)
-                        continue
-                    print(f"  [http {r.status_code}] v2 upload {display}: {r.text[:300]}")
-                    break  # fall through to v1
-                break  # 404/405 → v2 not available, try v1
+                if r.ok:
+                    return True
+                # v16.6: 404/405 are RETRYABLE, not an instant v1 fallthrough.
+                # A 404 here is usually the parent DO not yet visible on the
+                # permission-gated v2 read path (importer-created v1 entities
+                # get their :Permissions seeded asynchronously — see
+                # PERM-SEED-V1-CREATE in aidocs/16). The old instant-break
+                # doomed every first upload per DO to the broken v1 fallback.
+                if _attempt < _upload_max_attempts:
+                    print(f"  [http {r.status_code}] v2 upload {display} attempt {_attempt}/{_upload_max_attempts}: {r.text[:200]} — retrying in {_upload_backoff:.0f}s")
+                    time.sleep(_upload_backoff)
+                    _upload_backoff = min(_upload_backoff * 2, 60.0)
+                    continue
+                print(f"  [http {r.status_code}] v2 upload {display}: {r.text[:300]}")
+                break  # all v2 attempts failed → try v1
             except Exception as exc:
                 if _attempt < _upload_max_attempts:
                     print(f"  [net] v2 upload {path.name} attempt {_attempt}/{_upload_max_attempts}: {exc} — retrying in {_upload_backoff:.0f}s")
