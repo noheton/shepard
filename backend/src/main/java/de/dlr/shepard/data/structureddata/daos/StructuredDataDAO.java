@@ -28,6 +28,26 @@ public class StructuredDataDAO extends GenericDAO<StructuredData> {
     return results.iterator().hasNext() ? results.iterator().next() : null;
   }
 
+  /**
+   * APISIMP-CONTAINER-STATS-OGM-COUNT — count all {@link StructuredData} nodes in the
+   * given {@link de.dlr.shepard.data.structureddata.entities.StructuredDataContainer}
+   * using a single Cypher COUNT query. Replaces the OGM lazy-load in
+   * {@code StructuredDataContainerKindHandler.getStats()}.
+   *
+   * @param containerAppId the container's appId
+   * @return total number of structured-data items in that container
+   */
+  public long countByContainerAppId(String containerAppId) {
+    String query =
+        "MATCH (:StructuredDataContainer {appId: $cid})-[:structureddata_in_container]->(s:StructuredData) " +
+        "RETURN count(s) AS total";
+    var result = session.query(query, Map.of("cid", containerAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object v = iter.next().get("total");
+    return v instanceof Number ? ((Number) v).longValue() : 0L;
+  }
+
   @Override
   public Class<StructuredData> getEntityType() {
     return StructuredData.class;

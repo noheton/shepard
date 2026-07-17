@@ -31,6 +31,24 @@ public class ShepardFileDAO extends GenericDAO<ShepardFile> {
   }
 
   /**
+   * APISIMP-CONTAINER-STATS-OGM-COUNT — count all {@link ShepardFile} nodes in the
+   * given {@link de.dlr.shepard.data.file.entities.FileContainer} using a single Cypher
+   * COUNT query. Replaces the OGM lazy-load in {@code FileContainerKindHandler.getStats()}.
+   *
+   * @param containerAppId the container's appId
+   * @return total number of files in that container
+   */
+  public long countByContainerAppId(String containerAppId) {
+    String query = "MATCH (:FileContainer {appId: $cid})-[:file_in_container]->(f:ShepardFile) " +
+        "RETURN count(f) AS total";
+    var result = session.query(query, Map.of("cid", containerAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0L;
+    Object v = iter.next().get("total");
+    return v instanceof Number ? ((Number) v).longValue() : 0L;
+  }
+
+  /**
    * Count all {@link ShepardFile} nodes attached to the given {@link de.dlr.shepard.context.references.file.entities.FileGroup}.
    * Pushes counting to Cypher — no OGM entity hydration.
    *

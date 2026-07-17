@@ -2,6 +2,7 @@ package de.dlr.shepard.data.file.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -10,12 +11,14 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 public class ShepardFileDAOTest extends BaseTestCase {
@@ -63,5 +66,32 @@ public class ShepardFileDAOTest extends BaseTestCase {
     when(session.query(ShepardFile.class, query, paramsMap)).thenReturn(Collections.emptyList());
     var actual = dao.find(123L, "oid");
     assertNull(actual);
+  }
+
+  // APISIMP-CONTAINER-STATS-OGM-COUNT
+
+  @Test
+  public void countByContainerAppId_returnsCountFromCypher() {
+    String query = "MATCH (:FileContainer {appId: $cid})-[:file_in_container]->(f:ShepardFile) " +
+        "RETURN count(f) AS total";
+    Map<String, Object> row = Map.of("total", 7L);
+    Result result = mock(Result.class);
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(row).iterator();
+    when(result.iterator()).thenReturn(iter);
+    when(session.query(query, Map.of("cid", "fc-app-1"))).thenReturn(result);
+
+    assertEquals(7L, dao.countByContainerAppId("fc-app-1"));
+    verify(session).query(query, Map.of("cid", "fc-app-1"));
+  }
+
+  @Test
+  public void countByContainerAppId_emptyResult_returnsZero() {
+    String query = "MATCH (:FileContainer {appId: $cid})-[:file_in_container]->(f:ShepardFile) " +
+        "RETURN count(f) AS total";
+    Result result = mock(Result.class);
+    when(result.iterator()).thenReturn(Collections.emptyIterator());
+    when(session.query(query, Map.of("cid", "fc-empty"))).thenReturn(result);
+
+    assertEquals(0L, dao.countByContainerAppId("fc-empty"));
   }
 }

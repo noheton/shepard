@@ -7,22 +7,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-FILE-CONTAINER-STATS-UNIFY — unit tests for
+ * APISIMP-CONTAINER-STATS-OGM-COUNT — unit tests for
  * {@link FileContainerKindHandler#getStats(String)}.
  *
- * <p>Verifies that the handler returns {@code fileCount} in the {@link ContainerStatsIO}
- * and that kind-specific timeseries fields are null (omitted from JSON via
- * {@code @JsonInclude(NON_NULL)}).
+ * <p>Verifies that the handler returns {@code fileCount} via the Cypher DAO (not OGM
+ * lazy-load) and that kind-specific timeseries fields are null.
  */
 class FileContainerKindHandlerGetStatsTest {
 
@@ -30,12 +28,15 @@ class FileContainerKindHandlerGetStatsTest {
 
   private FileContainerKindHandler handler;
   private FileContainerDAO daoMock;
+  private ShepardFileDAO shepardFileDAOMock;
 
   @BeforeEach
   void setUp() throws Exception {
     handler = new FileContainerKindHandler();
     daoMock = mock(FileContainerDAO.class);
+    shepardFileDAOMock = mock(ShepardFileDAO.class);
     inject(handler, "dao", daoMock);
+    inject(handler, "shepardFileDAO", shepardFileDAOMock);
   }
 
   @Test
@@ -62,9 +63,8 @@ class FileContainerKindHandlerGetStatsTest {
   void returnsFileCount() {
     FileContainer c = mock(FileContainer.class);
     when(c.isDeleted()).thenReturn(false);
-    when(c.getFiles()).thenReturn(List.of(
-        mock(ShepardFile.class), mock(ShepardFile.class), mock(ShepardFile.class)));
     when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(shepardFileDAOMock.countByContainerAppId(APP_ID)).thenReturn(3L);
 
     Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
 
@@ -78,24 +78,11 @@ class FileContainerKindHandlerGetStatsTest {
   }
 
   @Test
-  void returnsZeroWhenFilesListIsEmpty() {
+  void returnsZeroCount() {
     FileContainer c = mock(FileContainer.class);
     when(c.isDeleted()).thenReturn(false);
-    when(c.getFiles()).thenReturn(List.of());
     when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
-
-    Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
-
-    assertTrue(result.isPresent());
-    assertEquals(0L, result.get().fileCount());
-  }
-
-  @Test
-  void returnsZeroWhenFilesListIsNull() {
-    FileContainer c = mock(FileContainer.class);
-    when(c.isDeleted()).thenReturn(false);
-    when(c.getFiles()).thenReturn(null);
-    when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(shepardFileDAOMock.countByContainerAppId(APP_ID)).thenReturn(0L);
 
     Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
 

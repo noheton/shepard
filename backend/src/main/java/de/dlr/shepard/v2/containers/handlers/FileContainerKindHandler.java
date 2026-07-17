@@ -10,6 +10,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
@@ -70,6 +71,9 @@ public class FileContainerKindHandler implements ContainerKindHandler {
 
   @Inject
   PresignTtlValidator ttlValidator;
+
+  @Inject
+  ShepardFileDAO shepardFileDAO;
 
   @Override
   public String kind() {
@@ -321,9 +325,9 @@ public class FileContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<ContainerStatsIO> getStats(String appId) {
-    FileContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
-    if (c == null) return Optional.empty();
-    long count = c.getFiles() != null ? c.getFiles().size() : 0L;
+    // APISIMP-CONTAINER-STATS-OGM-COUNT: count via Cypher, not OGM lazy-load.
+    if (!dao.findByAppId(appId).filter(x -> !x.isDeleted()).isPresent()) return Optional.empty();
+    long count = shepardFileDAO.countByContainerAppId(appId);
     return Optional.of(new ContainerStatsIO(null, null, null, null, null, count, null));
   }
 
