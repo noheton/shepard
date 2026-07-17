@@ -188,7 +188,7 @@ services:
       DB_NAME: ${POSTGRES_DB}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: "200"
-      DEFAULT_POOL_SIZE: "20"
+      DEFAULT_POOL_SIZE: "30"
       # Postgres 16 (TimescaleDB 2.24.0-pg16) uses scram-sha-256 by default.
       AUTH_TYPE: scram-sha-256
       # auth_query via a SECURITY DEFINER function so PgBouncer can look up
