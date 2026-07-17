@@ -88,4 +88,17 @@ public class ConfigRegistry {
   public List<ConfigDescriptor<?>> all() {
     return Collections.unmodifiableList(List.copyOf(byFeature.values()));
   }
+
+  /** Count of registered features. O(1). */
+  public int count() {
+    return byFeature.size();
+  }
+
+  /**
+   * Slice of registered descriptors, in registration order.
+   * Allocates only the requested slice, not the full list.
+   */
+  public List<ConfigDescriptor<?>> list(long skip, int limit) {
+    return byFeature.values().stream().skip(skip).limit(limit).toList();
+  }
 }

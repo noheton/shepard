@@ -946,6 +946,19 @@ public class PluginRegistry {
     return List.copyOf(entries.values());
   }
 
+  /** Count of discovered plugins. O(1). */
+  public int count() {
+    return entries.size();
+  }
+
+  /**
+   * Slice of discovered plugin entries, in insertion order.
+   * Allocates only the requested slice — does NOT call {@link #isEnabled}.
+   */
+  public List<PluginEntry> list(long skip, int limit) {
+    return entries.values().stream().skip(skip).limit(limit).toList();
+  }
+
   /** Look up a plugin by its declared id. */
   public Optional<PluginEntry> get(String id) {
     return Optional.ofNullable(entries.get(id));

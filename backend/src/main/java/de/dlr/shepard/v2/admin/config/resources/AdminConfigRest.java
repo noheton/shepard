@@ -93,13 +93,11 @@ public class AdminConfigRest {
     @QueryParam("page") @DefaultValue("0") @Min(0) int page,
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    List<ConfigFeatureIO> rows = registry.all()
+    long total = registry.count();
+    List<ConfigFeatureIO> slice = registry.list((long) page * pageSize, pageSize)
       .stream()
       .map(d -> new ConfigFeatureIO(d.featureName(), d.description()))
       .toList();
-    long total = rows.size();
-    long from = Math.min((long) page * pageSize, total);
-    List<ConfigFeatureIO> slice = rows.subList((int) from, (int) Math.min(from + pageSize, total));
     return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
       .header("X-Total-Count", total)
       .build();

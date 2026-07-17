@@ -5886,7 +5886,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/labjournal/io/LabJournalEntryV2IO.java`; `backend/src/test/java/de/dlr/shepard/v2/labjournal/io/LabJournalEntryV2IOTest.java`.
 
 ## APISIMP-ADMINCONFIG-INMEM-PAGE — AdminConfigRest.listFeatures() subLists full registry on every page request (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** 🚧 PR open (fire-648, branch `APISIMP-ADMINCONFIG-INMEM-PAGE`).
 - **Why:** `AdminConfigRest.listFeatures()` at `AdminConfigRest.java:96` calls `registry.all()` to materialise every `ConfigDescriptor` in the JVM-resident SPI registry, converts them all to `ConfigFeatureIO` rows, takes `rows.size()` as total, then slices with `rows.subList((int)from, ...)`. The full list is allocated on every request even when the caller asks for a single page. Harmless at current registry size but will regress as the plugin ecosystem grows.
 - **Fix:** Add `ConfigFeatureRegistry.count()` and `ConfigFeatureRegistry.list(long skip, int limit)` that slice the backing list internally. In `listFeatures()`, call `count()` for total and `list(page * pageSize, pageSize)` for the slice — no `subList` on the outer list.
 - **AC:** `GET /v2/admin/config/features?page=1&pageSize=1` returns exactly 1 item and `X-Total-Count` equals the full registry size; a registry with 200 features does not allocate a 200-element list on a page-1 request; `mvn verify -pl backend` green.
@@ -5900,7 +5900,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/semantic/SemanticAdminRest.java:289`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding2`.
 
 ## APISIMP-PLUGINS-INMEM-PAGE — PluginsAdminRest.list() calls isEnabled() on all plugins before subList page slice (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** 🚧 PR open (fire-648, branch `APISIMP-ADMINCONFIG-INMEM-PAGE`).
 - **Why:** `PluginsAdminRest.list()` at `PluginsAdminRest.java:141` calls `registry.list()` to get all registered `PluginEntry` objects, maps them all to `PluginEntryIO` (including an `isEnabled()` call per entry), then computes `rows.size()` for total and slices with `rows.subList()`. All plugins are fully evaluated and mapped on every paginated request regardless of page size.
 - **Fix:** Add `PluginRegistry.count()` and `PluginRegistry.list(long skip, int limit)`. In `list()`, call `count()` for total, then call `list(page * pageSize, pageSize)` and map only the slice — avoids calling `isEnabled()` for all plugins when only a page is needed.
 - **AC:** `GET /v2/admin/plugins?page=0&pageSize=10` with 200 registered plugins only calls `isEnabled()` 10 times; `X-Total-Count` is 200; `mvn verify -pl backend` green.

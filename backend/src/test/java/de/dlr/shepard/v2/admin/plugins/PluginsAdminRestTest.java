@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.plugin.PluginContext;
@@ -77,7 +79,8 @@ class PluginsAdminRestTest {
 
   @Test
   void listEmptyReturns200WithEmptyArray() {
-    Mockito.when(registry.list()).thenReturn(List.of());
+    Mockito.when(registry.count()).thenReturn(0);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of());
 
     Response r = resource.list(0, 50);
 
@@ -99,7 +102,8 @@ class PluginsAdminRestTest {
       Paths.get("/deployments/plugins/shepard-plugin-hdf-hsds-0.3.0.jar"),
       true
     );
-    Mockito.when(registry.list()).thenReturn(List.of(unhide, hdf));
+    Mockito.when(registry.count()).thenReturn(2);
+    Mockito.when(registry.list(0L, 50)).thenReturn(List.of(unhide, hdf));
     Mockito.when(registry.isEnabled("unhide")).thenReturn(false);
     Mockito.when(registry.isEnabled("hdf-hsds")).thenReturn(true);
 
@@ -129,10 +133,9 @@ class PluginsAdminRestTest {
 
   @Test
   void listEnrichedManifest_surfacesPm1cFields() {
-    // A manifest that overrides every PM1c default — title / description /
-    // homepage / repository / licence / dependencies all visible in the IO.
     PluginEntry enriched = new PluginEntry(richManifest(), null, Instant.parse("2026-05-13T05:00:00Z"));
-    Mockito.when(registry.list()).thenReturn(List.of(enriched));
+    Mockito.when(registry.count()).thenReturn(1);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of(enriched));
     Mockito.when(registry.isEnabled("rich")).thenReturn(true);
 
     Response r = resource.list(0, 50);
@@ -157,16 +160,13 @@ class PluginsAdminRestTest {
 
   @Test
   void listBareManifest_collapsesBlankPm1cFieldsToNull() {
-    // A bare manifest takes every PM1c default. title() defaults to id();
-    // description() / licence() are empty strings; URLs are Optional.empty.
-    // The IO collapses blank strings to null so they're omitted under
-    // JsonInclude.NON_NULL — clients see only what the plugin declared.
     PluginEntry bare = new PluginEntry(
       stubManifest("bare", "0.1.0", ">=5.2.0,<6"),
       null,
       Instant.parse("2026-05-13T05:00:00Z")
     );
-    Mockito.when(registry.list()).thenReturn(List.of(bare));
+    Mockito.when(registry.count()).thenReturn(1);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of(bare));
     Mockito.when(registry.isEnabled("bare")).thenReturn(true);
 
     Response r = resource.list(0, 50);
@@ -180,6 +180,23 @@ class PluginsAdminRestTest {
     assertNull(io.licence(), "blank licence collapses to null");
     assertNotNull(io.dependencies(), "dependencies is always a list, never null");
     assertTrue(io.dependencies().isEmpty());
+  }
+
+  @Test
+  void listSlicePassesCorrectSkipAndLimit() {
+    PluginEntry unhide = newEntry("unhide", "1.0.0", ">=5.2.0,<6", null, false);
+    Mockito.when(registry.count()).thenReturn(25);
+    Mockito.when(registry.list(10L, 10)).thenReturn(List.of(unhide));
+    Mockito.when(registry.isEnabled("unhide")).thenReturn(false);
+
+    Response r = resource.list(1, 10);
+
+    assertEquals(200, r.getStatus());
+    Mockito.verify(registry).list(10L, 10);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<PluginEntryIO> body = (PagedResponseIO<PluginEntryIO>) r.getEntity();
+    assertEquals(25L, body.total());
+    assertEquals(1, body.items().size());
   }
 
   // ─── PATCH happy paths ──────────────────────────────────────────────────

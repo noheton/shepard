@@ -3,6 +3,8 @@ package de.dlr.shepard.v2.admin.config.resources;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,7 +89,9 @@ class AdminConfigRestTest {
 
   @Test
   void listFeaturesReturnsRegisteredRows() {
-    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor()));
+    FakeDescriptor d = new FakeDescriptor();
+    Mockito.when(registry.count()).thenReturn(1);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of(d));
     Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
@@ -102,7 +106,8 @@ class AdminConfigRestTest {
 
   @Test
   void listFeaturesReturnsSizeInBody() {
-    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
+    Mockito.when(registry.count()).thenReturn(2);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
     Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
@@ -113,7 +118,8 @@ class AdminConfigRestTest {
 
   @Test
   void listFeaturesEmptyWhenRegistryEmpty() {
-    Mockito.when(registry.all()).thenReturn(List.of());
+    Mockito.when(registry.count()).thenReturn(0);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of());
     Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
@@ -124,7 +130,8 @@ class AdminConfigRestTest {
 
   @Test
   void listFeaturesXTotalCountHeader() {
-    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
+    Mockito.when(registry.count()).thenReturn(2);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of(new FakeDescriptor(), new FakeDescriptor()));
     Response resp = rest.listFeatures(0, 50);
     assertEquals(200, resp.getStatus());
     assertEquals("2", resp.getHeaderString("X-Total-Count"));
@@ -132,13 +139,28 @@ class AdminConfigRestTest {
 
   @Test
   void listFeaturesCustomPageParams() {
-    Mockito.when(registry.all()).thenReturn(List.of(new FakeDescriptor()));
+    Mockito.when(registry.count()).thenReturn(1);
+    Mockito.when(registry.list(anyLong(), anyInt())).thenReturn(List.of());
     Response resp = rest.listFeatures(1, 10);
     assertEquals(200, resp.getStatus());
     @SuppressWarnings("unchecked")
     PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
     assertEquals(1, body.page());
     assertEquals(10, body.pageSize());
+  }
+
+  @Test
+  void listFeaturesSlicePassesCorrectSkipAndLimit() {
+    FakeDescriptor d = new FakeDescriptor();
+    Mockito.when(registry.count()).thenReturn(25);
+    Mockito.when(registry.list(10L, 10)).thenReturn(List.of(d));
+    Response resp = rest.listFeatures(1, 10);
+    assertEquals(200, resp.getStatus());
+    Mockito.verify(registry).list(10L, 10);
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<ConfigFeatureIO> body = (PagedResponseIO<ConfigFeatureIO>) resp.getEntity();
+    assertEquals(25L, body.total());
+    assertEquals(1, body.items().size());
   }
 
   @Test
