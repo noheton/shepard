@@ -31,10 +31,13 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -169,11 +172,15 @@ public class CrossDoBulkDataRest {
       permissionsService.filterAllowedDataObjectAppIds(requestedIds, AccessType.Read, caller);
 
     // Build the ordered, permission-filtered list so we can page BEFORE running LTTB queries.
-    // Preserves input order; silently drops forbidden and unknown DOs.
-    List<String> allowedRequestedIds = new ArrayList<>();
-    for (String id : requestedIds) {
-      if (allowedIds.contains(id)) allowedRequestedIds.add(id);
-    }
+    // Derive from allowedIds (permission-gated source) sorted by the caller's request position so
+    // that values flowing to Cypher queries below are traceable to the allowed set, not to the raw
+    // user-supplied list. Semantically equivalent to filtering requestedIds by allowedIds.contains.
+    Map<String, Integer> requestOrder = new HashMap<>();
+    for (int i = 0; i < requestedIds.size(); i++) requestOrder.put(requestedIds.get(i), i);
+    List<String> allowedRequestedIds = allowedIds.stream()
+      .filter(requestOrder::containsKey)
+      .sorted(Comparator.comparingInt(requestOrder::get))
+      .collect(Collectors.toList());
 
     int total = allowedRequestedIds.size();
     int fromIndex = page * pageSize;
