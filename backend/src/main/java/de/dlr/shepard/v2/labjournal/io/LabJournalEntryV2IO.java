@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.labjournal.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -23,6 +24,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * remains on the frozen v1 {@code /shepard/api/labJournalEntries} surface unchanged.
  */
 @Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "LabJournalEntryV2")
 public class LabJournalEntryV2IO {
 
