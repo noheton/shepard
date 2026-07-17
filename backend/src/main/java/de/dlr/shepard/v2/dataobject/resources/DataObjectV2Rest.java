@@ -22,6 +22,7 @@ import de.dlr.shepard.v2.dataobject.io.DataObjectListFieldFilter;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import de.dlr.shepard.v2.dataobject.io.PredecessorEdgePatchIO;
+import de.dlr.shepard.v2.common.io.BoundedListIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.m4i.M4iDataObjectRenderer;
 import io.quarkus.security.Authenticated;
@@ -855,15 +856,15 @@ public class DataObjectV2Rest {
       "`appId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted predecessors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
-      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
-      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
+      "Results are wrapped in a `BoundedListIO` envelope carrying `items` and `appliedDepth`. " +
+      "This is not a paginated result — the chain is bounded by the `depth` parameter.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Predecessor chain (may be empty when no predecessors exist).",
-    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    headers = @Header(name = "X-Total-Count", description = "Number of items in the chain.", schema = @Schema(implementation = Long.class)),
+    content = @Content(schema = @Schema(implementation = BoundedListIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -884,7 +885,7 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findPredecessorChain(appId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+    return Response.ok(new BoundedListIO<>(result, depth))
         .header("X-Total-Count", (long) result.size())
         .build();
   }
@@ -899,15 +900,15 @@ public class DataObjectV2Rest {
       "`appId` up to `depth` hops (default 10, clamped at 50 server-side). " +
       "Returns compact summaries of all reachable non-deleted successors, excluding the " +
       "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
-      "Results are wrapped in a `PagedResponseIO` envelope with `total`, `page=0`, and " +
-      "`pageSize=total` (chains are bounded by the `depth` param, not paged).\n\n" +
+      "Results are wrapped in a `BoundedListIO` envelope carrying `items` and `appliedDepth`. " +
+      "This is not a paginated result — the chain is bounded by the `depth` parameter.\n\n" +
       "Auth: Read permission on the parent Collection (inherited)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Successor chain (may be empty when no successors exist).",
-    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class)),
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class))
+    headers = @Header(name = "X-Total-Count", description = "Number of items in the chain.", schema = @Schema(implementation = Long.class)),
+    content = @Content(schema = @Schema(implementation = BoundedListIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
@@ -928,7 +929,7 @@ public class DataObjectV2Rest {
     List<DataObject> chain = dataObjectDAO.findSuccessorChain(appId, depth);
     List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
     for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
-    return Response.ok(new PagedResponseIO<>(result, result.size(), 0, result.size()))
+    return Response.ok(new BoundedListIO<>(result, depth))
         .header("X-Total-Count", (long) result.size())
         .build();
   }

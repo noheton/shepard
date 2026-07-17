@@ -5914,7 +5914,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/provenance/resources/ProvenanceRest.java:226,369`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding4`.
 
 ## APISIMP-DO-CHAIN-ENVELOPE — predecessorChain/successorChain return misleading PagedResponseIO implying paginability (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** ✅ shipped (fire-651, PR #2623).
 - **Why:** `DataObjectV2Rest.predecessorChain()` (line 887) and `successorChain()` (line 931) both return `PagedResponseIO(result, result.size(), 0, result.size())`. The `page` parameter is always `0` and `pageSize` equals `items.length`, so `total` always equals `items.length`. No pagination is possible (chains are depth-capped at 50) yet the envelope shape implies it. `APISIMP-DO-CHAIN-MISSING-PAGE-PARAMS` (fire-327, PR #2204) wrapped these in `PagedResponseIO` for schema consistency, but the resulting envelope misleads callers.
 - **Fix:** Return a plain `List<DataObjectSummaryIO>` (with `X-Total-Count` header), or a thin `{ items, depth }` record. If `PagedResponseIO` is retained for tooling consistency, add an `@Operation` note explicitly stating these endpoints are not paginated.
 - **AC:** Chain response shape clearly signals non-paged semantics; callers do not need to inspect `page`/`total` to know all results are in the current response; `mvn verify -pl backend` green.
