@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,7 +24,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotListItemIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.snapshot.io.SnapshotListPageIO;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -36,8 +37,12 @@ import org.junit.jupiter.api.Test;
  * SNAPSHOT-LIST-1-REST — unit tests for {@link SnapshotListRest}.
  *
  * <p>Covers: empty + populated lists, permission-scoped filtering, collection-
- * scoped filtering, pagination envelope shape, 401 unauthenticated, 404 for
- * unknown collectionAppId.
+ * scoped filtering, hasMore flag, pagination envelope shape, 401 unauthenticated,
+ * 404 for unknown collectionAppId, 200-empty for forbidden collection.
+ *
+ * <p>APISIMP-SNAPSHOT-LIST-TOTAL: the old tests that asserted
+ * {@code body.total() == unfilteredCount} are replaced by {@code hasMore}
+ * assertions — the response no longer carries a misleading unfiltered total.
  */
 class SnapshotListRestTest {
 
@@ -89,20 +94,24 @@ class SnapshotListRestTest {
     return c;
   }
 
+  @SuppressWarnings("unchecked")
+  private SnapshotListPageIO<SnapshotListItemIO> body(Response r) {
+    return (SnapshotListPageIO<SnapshotListItemIO>) r.getEntity();
+  }
+
   // ── basic shape ───────────────────────────────────────────────────────────
 
   @Test
   void list_returns200_withEmptyEnvelope_whenNoSnapshots() {
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of());
-    when(snapshotService.countAll()).thenReturn(0L);
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.items()).isEmpty();
-    assertThat(body.total()).isEqualTo(0L);
-    assertThat(body.page()).isEqualTo(0);
-    assertThat(body.pageSize()).isEqualTo(50);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.items()).isEmpty();
+    assertThat(b.page()).isEqualTo(0);
+    assertThat(b.pageSize()).isEqualTo(50);
+    assertThat(b.hasMore()).isFalse();
   }
 
   @Test
@@ -110,19 +119,46 @@ class SnapshotListRestTest {
     Collection c = coll(COLL_A_APP, "LUMEN campaign");
     Snapshot s = snap("snap-1", "v1.0", c);
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of(s));
-    when(snapshotService.countAll()).thenReturn(1L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_A_OGM), eq(AccessType.Read), eq(CALLER), anyLong()))
       .thenReturn(true);
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.items()).hasSize(1);
-    var item = body.items().get(0);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.items()).hasSize(1);
+    var item = b.items().get(0);
     assertThat(item.appId()).isEqualTo("snap-1");
     assertThat(item.name()).isEqualTo("v1.0");
     assertThat(item.collectionAppId()).isEqualTo(COLL_A_APP);
     assertThat(item.collectionName()).isEqualTo("LUMEN campaign");
+  }
+
+  // ── hasMore flag ──────────────────────────────────────────────────────────
+
+  @Test
+  void list_hasMore_isFalse_whenRawPageSmallerThanPageSize() {
+    // DB returned 3 items for pageSize=50 → clearly last page.
+    Collection c = coll(COLL_A_APP, "A");
+    when(snapshotService.listAll(anyInt(), anyInt()))
+        .thenReturn(List.of(snap("a", "a", c), snap("b", "b", c), snap("cc", "cc", c)));
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong()))
+        .thenReturn(true);
+
+    Response r = rest.list(null, 0, 50, sc);
+    assertThat(body(r).hasMore()).isFalse();
+  }
+
+  @Test
+  void list_hasMore_isTrue_whenRawPageEqualsPageSize() {
+    // DB returned exactly pageSize=2 items → there may be more.
+    Collection c = coll(COLL_A_APP, "A");
+    when(snapshotService.listAll(anyInt(), anyInt()))
+        .thenReturn(List.of(snap("a", "a", c), snap("b", "b", c)));
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong()))
+        .thenReturn(true);
+
+    Response r = rest.list(null, 0, 2, sc);
+    assertThat(body(r).hasMore()).isTrue();
   }
 
   // ── permission scoping ───────────────────────────────────────────────────
@@ -134,7 +170,6 @@ class SnapshotListRestTest {
     Snapshot a = snap("snap-a", "Snap A", cA);
     Snapshot b = snap("snap-b", "Snap B", cB);
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of(a, b));
-    when(snapshotService.countAll()).thenReturn(2L);
     // Caller can read A but not B.
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_A_OGM), eq(AccessType.Read), eq(CALLER), anyLong()))
       .thenReturn(true);
@@ -143,23 +178,22 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.items()).hasSize(1);
-    assertThat(body.items().get(0).appId()).isEqualTo("snap-a");
-    // Total still reports the unfiltered count per the class Javadoc.
-    assertThat(body.total()).isEqualTo(2L);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.items()).hasSize(1);
+    assertThat(b.items().get(0).appId()).isEqualTo("snap-a");
+    // APISIMP-SNAPSHOT-LIST-TOTAL: no longer reports misleading unfiltered total.
+    // hasMore reflects whether the raw DB page was full (2 < 50 → false).
+    assertThat(b.hasMore()).isFalse();
   }
 
   @Test
   void list_skipsSnapshotsWithoutAttachedCollection() {
     Snapshot orphan = snap("snap-orphan", "orphan", null);
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of(orphan));
-    when(snapshotService.countAll()).thenReturn(1L);
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.items()).isEmpty();
+    assertThat(body(r).items()).isEmpty();
   }
 
   // ── collection-scoped variant ─────────────────────────────────────────────
@@ -168,17 +202,32 @@ class SnapshotListRestTest {
   void list_scopedToCollection_callsListByCollection() {
     Collection cA = coll(COLL_A_APP, "A");
     Snapshot s = snap("snap-a", "v1.0", cA);
-    when(snapshotService.listByCollection(eq(COLL_A_APP), anyInt(), anyInt())).thenReturn(List.of(s));
-    when(snapshotService.countByCollection(COLL_A_APP)).thenReturn(1L);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_A_OGM), eq(AccessType.Read), eq(CALLER), anyLong()))
       .thenReturn(true);
+    when(snapshotService.listByCollection(eq(COLL_A_APP), anyInt(), anyInt())).thenReturn(List.of(s));
 
     Response r = rest.list(COLL_A_APP, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.items()).hasSize(1);
-    assertThat(body.total()).isEqualTo(1L);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.items()).hasSize(1);
+    // 1 < 50 → hasMore=false (accurate since all collection items are visible)
+    assertThat(b.hasMore()).isFalse();
     verify(snapshotService).listByCollection(eq(COLL_A_APP), anyInt(), anyInt());
+  }
+
+  @Test
+  void list_scopedToCollection_returnsEmptyPage_whenCallerCannotReadCollection() {
+    // Collection exists but caller has no Read → empty page, no DB snapshot fetch.
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_A_OGM), eq(AccessType.Read), eq(CALLER), anyLong()))
+      .thenReturn(false);
+
+    Response r = rest.list(COLL_A_APP, 0, 50, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.items()).isEmpty();
+    assertThat(b.hasMore()).isFalse();
+    // Must NOT have fetched snapshots at all.
+    verify(snapshotService, never()).listByCollection(anyString(), anyInt(), anyInt());
   }
 
   @Test
@@ -202,23 +251,21 @@ class SnapshotListRestTest {
   @Test
   void list_clampsPageAndSize() {
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of());
-    when(snapshotService.countAll()).thenReturn(0L);
     Response r = rest.list(null, -3, 9999, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.page()).isEqualTo(0);
-    assertThat(body.pageSize()).isEqualTo(200);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.page()).isEqualTo(0);
+    assertThat(b.pageSize()).isEqualTo(200);
   }
 
   @Test
   void list_echoesValidPagination() {
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of());
-    when(snapshotService.countAll()).thenReturn(0L);
     Response r = rest.list(null, 3, 25, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
-    assertThat(body.page()).isEqualTo(3);
-    assertThat(body.pageSize()).isEqualTo(25);
+    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
+    assertThat(b.page()).isEqualTo(3);
+    assertThat(b.pageSize()).isEqualTo(25);
   }
 
   // ── APISIMP-SNAPSHOT-LIST-N+1 ────────────────────────────────────────────
@@ -231,7 +278,6 @@ class SnapshotListRestTest {
     Snapshot a = snap("snap-a", "Snap A", cA);
     Snapshot b = snap("snap-b", "Snap B", cB);
     when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of(a, b));
-    when(snapshotService.countAll()).thenReturn(2L);
     when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong()))
       .thenReturn(true);
 

@@ -7,7 +7,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.io.SnapshotListItemIO;
 import de.dlr.shepard.context.snapshot.services.SnapshotService;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.snapshot.io.SnapshotListPageIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -33,7 +33,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-import org.eclipse.microprofile.openapi.annotations.headers.Header;
 import static de.dlr.shepard.v2.common.ProblemResponse.problem;
 
 /**
@@ -55,10 +54,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * <p>Reuses the snapshot → parent-Collection permission walk already in
  * {@link SnapshotRest}: each snapshot's reachability is gated on the
  * caller's Read on the parent Collection. The list endpoint post-filters
- * the DAO page to the readable subset — short pages are acceptable; the
- * envelope {@code total} reports the unfiltered total so an operator
- * looking at the count vs. row-count discrepancy can infer "you can't
- * see N of these". This is the same shape SCENEGRAPH-PERMS-1 uses.
+ * the DAO page to the readable subset.
  *
  * <h2>Pagination</h2>
  *
@@ -66,6 +62,17 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * default 50, clamped into {@code [1, 200]}. {@code collectionAppId}
  * is optional — when supplied, the result is scoped to that Collection;
  * when absent, the result spans every Collection the caller can read.
+ *
+ * <h2>Response shape (APISIMP-SNAPSHOT-LIST-TOTAL)</h2>
+ *
+ * <p>Returns {@link SnapshotListPageIO} — {@code { items, page, pageSize, hasMore }}.
+ * No {@code total} field: computing a permission-accurate total across all
+ * collections is O(collection-count) and the diff-picker autocomplete only
+ * needs to know whether to show a "load more" affordance ({@code hasMore}).
+ *
+ * <p>{@code hasMore} is a conservative signal: when the database returned a
+ * full page (size = {@code pageSize}), the server sets {@code hasMore=true}
+ * even if the remaining rows all happen to be inaccessible to this caller.
  *
  * <h2>Path collision</h2>
  *
@@ -105,19 +112,19 @@ public class SnapshotListRest {
       "newest first (`snapshotCapturedAtMs DESC`). Optional `collectionAppId` " +
       "scopes the result to a single Collection; when absent, the list spans " +
       "every Collection the caller can read.\n\n" +
-      "Response envelope: `{ items[], total, page, pageSize }`. **`total` reports " +
-      "the unfiltered count** (every snapshot in scope, not just the ones the " +
-      "caller can read) — so a caller looking at `items.length` vs. `total` " +
-      "can infer how many they can't see. The page is post-filtered to the " +
-      "readable subset, so `items.length` may be lower than `pageSize` even when " +
-      "more snapshots exist.\n\n" +
+      "Response envelope: `{ items[], page, pageSize, hasMore }`. No `total` " +
+      "is reported — a permission-accurate total would require scanning every " +
+      "collection the caller can access, which is O(collection-count). Instead, " +
+      "`hasMore=true` signals that the database returned a full page and more " +
+      "rows likely exist; use it to drive a 'Load more' / infinite-scroll " +
+      "affordance. When `collectionAppId` is supplied the caller must have Read " +
+      "on that Collection; an empty page is returned immediately when they do not.\n\n" +
       "Surfaces in `SNAPSHOT-LIST-1-FE` (the `/snapshots/diff` picker follow-up)."
   )
   @APIResponse(
     responseCode = "200",
     description = "Snapshot page (may be empty).",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
+    content = @Content(schema = @Schema(implementation = SnapshotListPageIO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "404", description = "collectionAppId supplied but does not resolve to an existing Collection.")
@@ -143,49 +150,60 @@ public class SnapshotListRest {
     int safeSize = Math.min(Math.max(pageSize, 1), 200);
 
     List<Snapshot> rawPage;
-    long total;
+    boolean hasMore;
+    List<SnapshotListItemIO> filtered;
+
     if (collectionAppId != null && !collectionAppId.isBlank()) {
-      // Scoped variant: verify the Collection exists first so we 404 cleanly
-      // rather than silently returning an empty page.
+      // Scoped variant: verify the Collection exists first so we 404 cleanly.
+      long collOgmId;
       try {
-        entityIdResolver.resolveLong(collectionAppId);
+        collOgmId = entityIdResolver.resolveLong(collectionAppId);
       } catch (NotFoundException nfe) {
         return problem(PT_NOT_FOUND, "Not Found", Response.Status.NOT_FOUND,
             "No Collection with appId '" + collectionAppId + "'.");
       }
+      // Collection-level permission is binary: either the caller can Read all
+      // snapshots in this Collection or none. Pre-check once instead of running
+      // the per-snapshot filter loop — this also makes hasMore accurate.
+      if (!permissionsService.isAccessTypeAllowedForUser(collOgmId, AccessType.Read, caller, 0L)) {
+        return Response.ok(new SnapshotListPageIO<>(List.of(), safePage, safeSize, false)).build();
+      }
       rawPage = snapshotService.listByCollection(collectionAppId, safePage, safeSize);
-      total = snapshotService.countByCollection(collectionAppId);
+      hasMore = rawPage.size() == safeSize;
+      // All items are visible (collection Read already verified above).
+      filtered = rawPage.stream()
+          .filter(s -> s.getCollection() != null && s.getCollection().getAppId() != null)
+          .map(SnapshotListItemIO::from)
+          .toList();
     } else {
       rawPage = snapshotService.listAll(safePage, safeSize);
-      total = snapshotService.countAll();
+      hasMore = rawPage.size() == safeSize;
+
+      // APISIMP-SNAPSHOT-LIST-N+1: batch-resolve so the per-snapshot loop below
+      // hits the memo rather than issuing one Cypher round-trip per snapshot.
+      entityIdResolver.resolveLongs(
+          rawPage.stream()
+              .filter(s -> s.getCollection() != null && s.getCollection().getAppId() != null)
+              .map(s -> s.getCollection().getAppId())
+              .distinct()
+              .toList());
+
+      // Permission filter: each snapshot's parent Collection must be Read-able.
+      filtered = new ArrayList<>(rawPage.size());
+      for (Snapshot snap : rawPage) {
+        if (snap.getCollection() == null || snap.getCollection().getAppId() == null) continue;
+        long collOgmId;
+        try {
+          collOgmId = entityIdResolver.resolveLong(snap.getCollection().getAppId());
+        } catch (NotFoundException nfe) {
+          continue;
+        }
+        if (permissionsService.isAccessTypeAllowedForUser(collOgmId, AccessType.Read, caller, 0L)) {
+          filtered.add(SnapshotListItemIO.from(snap));
+        }
+      }
     }
 
-    // APISIMP-SNAPSHOT-LIST-N+1: batch-resolve so the per-snapshot loop below
-    // hits the memo rather than issuing one Cypher round-trip per snapshot.
-    entityIdResolver.resolveLongs(
-        rawPage.stream()
-            .filter(s -> s.getCollection() != null && s.getCollection().getAppId() != null)
-            .map(s -> s.getCollection().getAppId())
-            .distinct()
-            .toList());
-
-    // Permission filter: each snapshot's parent Collection must be Read-able.
-    List<SnapshotListItemIO> filtered = new ArrayList<>(rawPage.size());
-    for (Snapshot snap : rawPage) {
-      if (snap.getCollection() == null || snap.getCollection().getAppId() == null) continue;
-      long collOgmId;
-      try {
-        collOgmId = entityIdResolver.resolveLong(snap.getCollection().getAppId());
-      } catch (NotFoundException nfe) {
-        continue;
-      }
-      if (permissionsService.isAccessTypeAllowedForUser(collOgmId, AccessType.Read, caller, 0L)) {
-        filtered.add(SnapshotListItemIO.from(snap));
-      }
-    }
-
-    return Response.ok(new PagedResponseIO<>(filtered, total, safePage, safeSize))
-        .header("X-Total-Count", total)
-        .build();
+    return Response.ok(new SnapshotListPageIO<>(filtered, safePage, safeSize, hasMore)).build();
   }
 }
