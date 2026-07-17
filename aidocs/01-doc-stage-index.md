@@ -91,6 +91,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-15-fire613.md`](agent-findings/apisimp-sweep-2026-07-15-fire613.md) | APISIMP Sweep — fire-613 (2026-07-15) | 2026-07-15 | 2026-07-15 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-15-fire620.md`](agent-findings/apisimp-sweep-2026-07-15-fire620.md) | APISIMP Sweep — fire-620 (2026-07-15) | 2026-07-15 | 2026-07-15 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-07-15-fire621.md`](agent-findings/apisimp-sweep-2026-07-15-fire621.md) | APISIMP Sweep — fire-621 (2026-07-15) | 2026-07-15 | 2026-07-15 |
+| [`aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md`](agent-findings/apisimp-sweep-2026-07-17-fire647.md) | APISIMP sweep — fire-647 / 2026-07-17 | 2026-07-17 | 2026-07-17 |
 | [`aidocs/agent-findings/apisimp-sweep-fire355-2026-07-02.md`](agent-findings/apisimp-sweep-fire355-2026-07-02.md) | APISIMP REST Surface Sweep — fire-355 (2026-07-02) | 2026-07-02 | 2026-07-15 |
 | [`aidocs/agent-findings/apisimp-sweep-fire367-2026-07-02.md`](agent-findings/apisimp-sweep-fire367-2026-07-02.md) | APISIMP REST Surface Sweep — fire-367 (2026-07-02) | 2026-07-02 | 2026-07-15 |
 | [`aidocs/agent-findings/apisimp-sweep-fire373-2026-07-02.md`](agent-findings/apisimp-sweep-fire373-2026-07-02.md) | APISIMP REST Surface Sweep — fire-373 (2026-07-02) | 2026-07-02 | 2026-07-15 |
@@ -467,12 +468,12 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-07-15 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-07-15 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-07-15 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-16 |
-| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-07-16 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-17 |
+| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-07-17 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-07-15 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-07-15 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-07-15 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-07-16 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-07-17 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-07-15 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-07-15 |
 | [`aidocs/agent-findings/apisimp-sweep-2026-06-13-fire15.md`](agent-findings/apisimp-sweep-2026-06-13-fire15.md) | APISIMP Sweep — 2026-06-13 (fire #N+15) | 2026-06-13 | 2026-07-15 |
