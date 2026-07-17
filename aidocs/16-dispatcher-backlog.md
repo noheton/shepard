@@ -5893,7 +5893,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/config/resources/AdminConfigRest.java:96`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding1`.
 
 ## APISIMP-SEMADMIN-ONTOL-INMEM-PAGE — SemanticAdminRest.listOntologies() materialises full merged bundle list before subList slice (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** 🚧 PR open (fire-649, branch `APISIMP-SEMADMIN-ONTOL-INMEM-PAGE`).
 - **Why:** `SemanticAdminRest.listOntologies()` at `SemanticAdminRest.java:289` calls `configService.listMerged(manifest)` which returns every built-in plus every user-uploaded `OntologyBundle` into a single `ArrayList`, converts all of them to `OntologyBundleIO`, then `subList`s to the requested page. The full merge is materialised on every paged request.
 - **Fix:** Add `OntologyBundleConfigService.countMerged(manifest)` and `.listMerged(manifest, skip, limit)` overloads. The built-in slice and the DAO slice can each be fetched with `skip`/`limit`; delegate to the DAO's existing SKIP/LIMIT support for the user-bundle portion.
 - **AC:** `GET /v2/admin/semantic/ontologies?page=0&pageSize=5` materialises at most 5 `OntologyBundleIO` objects; `X-Total-Count` reflects the total count without allocating a list of that size; `mvn verify -pl backend` green.
