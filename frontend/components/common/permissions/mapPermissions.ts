@@ -102,9 +102,9 @@ function v2ToUserGroup(v2: UserGroupV2): UserGroup {
     id: 0,
     name: v2.name,
     appId: v2.appId,
-    createdAt: v2.createdAt ?? new Date(0),
+    createdAt: v2.createdAt ? new Date(v2.createdAt) : new Date(0),
     createdBy: v2.createdBy ?? "",
-    updatedAt: v2.updatedAt ?? null,
+    updatedAt: v2.updatedAt ? new Date(v2.updatedAt) : null,
     updatedBy: v2.updatedBy ?? null,
     usernames: v2.usernames ?? [],
   };

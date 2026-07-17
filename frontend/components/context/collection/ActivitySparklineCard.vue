@@ -25,8 +25,8 @@ const props = defineProps<{
 const DAY_MILLIS = 24 * 60 * 60 * 1000;
 
 function isoDurationToMs(iso: string): number {
-  const m = iso.match(/^PT(\d+)S$/);
-  return m ? parseInt(m[1]) * 1000 : DAY_MILLIS;
+  const seconds = iso.match(/^PT(\d+)S$/)?.[1];
+  return seconds ? parseInt(seconds) * 1000 : DAY_MILLIS;
 }
 
 /** Preset window options for the picker. */
