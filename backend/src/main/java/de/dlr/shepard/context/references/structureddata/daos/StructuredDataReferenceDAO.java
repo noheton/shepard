@@ -161,6 +161,26 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
   }
 
   /**
+   * APISIMP-SDR-LIST-APPID-PATH — unbounded list of non-deleted StructuredDataReferences
+   * under a DataObject, resolved purely by appId. Used by the non-paged SPI overload in
+   * {@code StructuredDataReferenceKindHandler} (MCP path). Avoids loading the DataObject
+   * numeric Neo4j id.
+   *
+   * @param dataObjectAppId the parent DataObject's appId.
+   * @return all non-deleted StructuredDataReferences; never null.
+   */
+  public List<StructuredDataReference> findByDataObjectAppId(String dataObjectAppId) {
+    String query =
+      "MATCH (d:DataObject {appId: $aid})-[hr:has_reference]->(r:StructuredDataReference) " +
+      "WHERE (r.deleted IS NULL OR r.deleted = false) " +
+      "RETURN r, d, hr " +
+      "ORDER BY r.createdAt ASC";
+    return StreamSupport.stream(
+      findByQuery(query, Map.of("aid", dataObjectAppId)).spliterator(), false
+    ).toList();
+  }
+
+  /**
    * APISIMP-REFS-HANDLER-PAGING-TAIL — paginated list of non-deleted StructuredDataReferences
    * under a DataObject (resolved by appId). Pushes SKIP/LIMIT to Neo4j.
    *

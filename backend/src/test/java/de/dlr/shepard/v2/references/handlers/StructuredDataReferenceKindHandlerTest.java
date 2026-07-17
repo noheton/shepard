@@ -276,8 +276,8 @@ class StructuredDataReferenceKindHandlerTest {
 
   @Test
   void list_delegates() {
-    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(parent);
-    when(structuredDataReferenceDAO.findByDataObjectNeo4jId(42L)).thenReturn(List.of(sdRef()));
+    // APISIMP-SDR-LIST-APPID-PATH: new path calls findByDataObjectAppId directly
+    when(structuredDataReferenceDAO.findByDataObjectAppId(DO_APP_ID)).thenReturn(List.of(sdRef()));
 
     var out = handler.listByDataObject(DO_APP_ID, null);
 
@@ -286,9 +286,14 @@ class StructuredDataReferenceKindHandlerTest {
   }
 
   @Test
-  void list_unknownDataObject_throws404() {
-    when(dataObjectDAO.findByAppId(DO_APP_ID)).thenReturn(null);
-    assertThrows(NotFoundException.class, () -> handler.listByDataObject(DO_APP_ID, null));
+  void list_unknownDataObject_returnsEmpty() {
+    // APISIMP-SDR-LIST-APPID-PATH: non-paged path (consistent with paged overload)
+    // returns empty list for an unknown DataObject instead of throwing 404.
+    when(structuredDataReferenceDAO.findByDataObjectAppId(DO_APP_ID)).thenReturn(List.of());
+
+    var out = handler.listByDataObject(DO_APP_ID, null);
+
+    assertTrue(out.isEmpty());
   }
 
   // ─── uploadContent ──────────────────────────────────────────────────────────
