@@ -122,12 +122,12 @@ public class CollectionReferenceKindHandler implements ReferenceKindHandler {
 
   @Override
   public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind) {
-    DataObject parent = resolveParent(dataObjectAppId);
-    List<CollectionReference> refs = collectionReferenceService.getAllReferencesByDataObjectId(
-      parent.getCollection().getShepardId(),
-      parent.getShepardId(),
-      null
-    );
+    // APISIMP-URI-COLL-DOREF-NONPAGED-APPID: use the appId-keyed DAO path directly rather
+    // than resolving the DataObject numeric Neo4j id via resolveParent() + getAllReferencesByDataObjectId().
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<CollectionReference> refs = collectionReferenceDAO.findByDataObjectAppId(dataObjectAppId);
     List<ReferenceV2IO> out = new ArrayList<>(refs.size());
     for (CollectionReference ref : refs) {
       if (ref != null && !ref.isDeleted()) out.add(toIO(ref));

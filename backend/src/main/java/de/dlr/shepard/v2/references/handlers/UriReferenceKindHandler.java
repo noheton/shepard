@@ -3,6 +3,7 @@ package de.dlr.shepard.v2.references.handlers;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.uri.daos.URIReferenceDAO;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
@@ -26,6 +27,9 @@ public class UriReferenceKindHandler implements ReferenceKindHandler {
 
   @Inject
   URIReferenceService uriReferenceService;
+
+  @Inject
+  URIReferenceDAO uriReferenceDAO;
 
   @Inject
   DataObjectDAO dataObjectDAO;
@@ -95,12 +99,12 @@ public class UriReferenceKindHandler implements ReferenceKindHandler {
 
   @Override
   public List<ReferenceV2IO> listByDataObject(String dataObjectAppId, String subKind) {
-    DataObject parent = resolveParent(dataObjectAppId);
-    List<URIReference> refs = uriReferenceService.getAllReferencesByDataObjectId(
-      parent.getCollection().getShepardId(),
-      parent.getShepardId(),
-      null
-    );
+    // APISIMP-URI-COLL-DOREF-NONPAGED-APPID: use the appId-keyed DAO path directly rather
+    // than resolving the DataObject numeric Neo4j id via resolveParent() + getAllReferencesByDataObjectId().
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) {
+      throw new BadRequestException("dataObjectAppId is required");
+    }
+    List<URIReference> refs = uriReferenceDAO.findByDataObjectAppId(dataObjectAppId);
     List<ReferenceV2IO> out = new ArrayList<>(refs.size());
     for (URIReference ref : refs) {
       if (ref != null && !ref.isDeleted()) out.add(toIO(ref));
