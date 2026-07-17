@@ -5865,7 +5865,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/handlers/UriReferenceKindHandler.java:97`; `CollectionReferenceKindHandler.java:124`; `DataObjectReferenceKindHandler.java:134`.
 
 ## APISIMP-SEARCH-MCP-INMEM — MCP search tool issues N per-label Cypher queries for an all-kinds search (size: M, sweep: fire-641)
-- **Status:** 🔧 in-PR (branch `APISIMP-SEARCH-MCP-INMEM`, fire-646).
+- **Status:** ✅ merged (fire-647, PR #2619, SHA `3b1e143`).
 - **Why:** `SearchMcpTools.search()` iterates `LABELS_BY_KIND` and calls `searchLabel(label, query)` once per Neo4j label — up to 12 separate Cypher round-trips for an all-kinds search. Each call also has its own `LIMIT 500`, so relative ordering between kinds is not guaranteed by the DB. The fix consolidates all arms into a single UNION ALL query with a `kindOrd` literal per arm, an `ORDER BY kindOrd ASC, name ASC, appId ASC`, and a single `LIMIT 2000`. The in-memory permission filter and pagination remain correct (SEARCH-MCP-PERMS-1: filter BEFORE paginate so `total` reflects post-filter count).
 - **Fix:** Add `SEARCH_UNION_LIMIT = 2_000` constant and `KIND_ORDINAL` map. Replace `searchLabel(String, String)` with `searchUnion(List<String>, String)` that builds one UNION ALL Cypher. In `search()`, flatten kinds to labels via `kinds.stream().flatMap(…).toList()` and call `searchUnion`. Update `StubSearchTools` in tests to override `searchUnion` instead of `searchLabel`; add `searchUnionCallCount` counter; add 2 tests verifying exactly-one-call behaviour.
 - **AC:** All-kinds `search()` issues exactly one UNION ALL Cypher; `SearchMcpToolsTest` green (2 new tests + all existing passing); `mvn verify -pl backend` green.
