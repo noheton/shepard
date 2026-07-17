@@ -12,7 +12,7 @@ import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvenanceService;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.common.io.CursorPageIO;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -72,7 +72,7 @@ class ProvenanceRestCursorPagedTest {
         .thenReturn(List.of());
     Response r = resource.listActivities(null, null, null, null, null, 50, securityContext);
     assertEquals(200, r.getStatus());
-    PagedResponseIO<?> body = (PagedResponseIO<?>) r.getEntity();
+    CursorPageIO<?> body = (CursorPageIO<?>) r.getEntity();
     assertEquals(50, body.pageSize(), "pageSize must equal the pageSize param (50), not rows.size() (0)");
   }
 
@@ -135,7 +135,7 @@ class ProvenanceRestCursorPagedTest {
         .thenReturn(List.of());
     Response r = resource.listEntityActivities("some-appid", null, null, 50, securityContext);
     assertEquals(200, r.getStatus());
-    PagedResponseIO<?> body = (PagedResponseIO<?>) r.getEntity();
+    CursorPageIO<?> body = (CursorPageIO<?>) r.getEntity();
     assertEquals(50, body.pageSize());
   }
 

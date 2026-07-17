@@ -5907,7 +5907,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/admin/plugins/PluginsAdminRest.java:141`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding3`.
 
 ## APISIMP-PROV-CURSOR-ENVELOPE — ProvenanceRest global listActivities/listEntityActivities use misleading PagedResponseIO envelope for cursor pagination (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
+- **Status:** ✅ shipped (fire-650, PR #2622).
 - **Why:** `ProvenanceRest.listActivities()` (line 226) and `listEntityActivities()` (line 369) use cursor-based pagination (`since`/`until` epoch-ms) but wrap results in `PagedResponseIO(rows, rows.size(), 0, rows.size())`. `total` always equals the window-result count (not the true DB total), `page` is always 0, and `pageSize` equals the returned count — the envelope actively lies about paginability. The entity-scoped variants at lines 160,312 were addressed by `APISIMP-PROV-CURSOR-PAGED-WRAP` (PR #2408); these are the global variants. Note: may overlap with the fired-but-deferred `APISIMP-PROV-CURSOR-PAGED-WRAP` result — verify line numbers before coding.
 - **Fix:** Introduce a `CursorPageIO<T>` record `{ List<T> items; int pageSize; boolean hasMore; Long nextCursor; }` and return it from cursor-mode endpoints. Remove `PagedResponseIO` from these methods; emit `X-Has-More` and `X-Next-Cursor` response headers.
 - **AC:** `GET /v2/provenance/activities?pageSize=100` response body has no `total` field; `hasMore:true` when more rows exist; `nextCursor` is the epoch-ms of the last row; `mvn verify -pl backend` green.
