@@ -33,6 +33,7 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
+import de.dlr.shepard.v2.common.io.BoundedListIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
@@ -1097,12 +1098,13 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(2, body.total());
-    assertEquals(0, body.page());
-    assertEquals(2, body.pageSize());
+    BoundedListIO<DataObjectSummaryIO> body = (BoundedListIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.items().size());
+    assertEquals(5, body.appliedDepth());
     assertEquals("018f-pred-0010", body.items().get(0).getAppId());
     assertEquals("018f-pred-0009", body.items().get(1).getAppId());
+    assertEquals(2L, r.getHeaderString("X-Total-Count") != null
+        ? Long.parseLong(r.getHeaderString("X-Total-Count")) : 0L);
   }
 
   @Test
@@ -1119,11 +1121,12 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<DataObjectSummaryIO> body = (PagedResponseIO<DataObjectSummaryIO>) r.getEntity();
-    assertEquals(1, body.total());
-    assertEquals(0, body.page());
-    assertEquals(1, body.pageSize());
+    BoundedListIO<DataObjectSummaryIO> body = (BoundedListIO<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.items().size());
+    assertEquals(10, body.appliedDepth());
     assertEquals("018f-succ-0100", body.items().get(0).getAppId());
+    assertEquals(1L, r.getHeaderString("X-Total-Count") != null
+        ? Long.parseLong(r.getHeaderString("X-Total-Count")) : 0L);
   }
 
   @Test
