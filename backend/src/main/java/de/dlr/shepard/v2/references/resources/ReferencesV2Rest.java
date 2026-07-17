@@ -450,11 +450,17 @@ public class ReferencesV2Rest {
       "Content + `Content-Range` for browser-native video scrubbing). An unsatisfiable range " +
       "returns 416.\n\n" +
       "**Auth:** Read permission on the parent DataObject. The JWT may be supplied via the " +
-      "`?access_token=…` query param fallback (RFC 6750 §2.3) for HTML5 `<video src>` usage."
+      "`?access_token=…` query param fallback (RFC 6750 §2.3) for HTML5 `<video src>` usage.\n\n" +
+      "**TIFF-PREVIEW-SUPPORT:** pass `?rendition=png` to request a browser-renderable " +
+      "transcode for `kind=file` references whose source is a TIFF (browsers cannot render " +
+      "TIFF natively). Ignored for non-TIFF sources and for kinds that don't recognise it — " +
+      "those fall back to the unmodified raw-bytes response, so existing callers see zero " +
+      "behaviour change. On transcode failure (corrupt/unsupported TIFF, or a source that " +
+      "exceeds the decode-size cap) the raw TIFF bytes are served instead of erroring."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Full binary payload.",
+    description = "Full binary payload (or, with `?rendition=png` on a TIFF source, the transcoded PNG).",
     content = @Content(mediaType = MediaType.APPLICATION_OCTET_STREAM)
   )
   @APIResponse(
@@ -472,6 +478,8 @@ public class ReferencesV2Rest {
     @HeaderParam("Range") String rangeHeader,
     @Parameter(name = "prefer", description = "Response preference hint. Pass `return=minimal` to suppress the response body on success.")
     @QueryParam("prefer") String prefer,
+    @Parameter(name = "rendition", description = "TIFF-PREVIEW-SUPPORT: request a browser-renderable transcode. Only `png` is recognised today; ignored for non-TIFF sources / unsupporting kinds.")
+    @QueryParam("rendition") String rendition,
     @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
@@ -481,7 +489,7 @@ public class ReferencesV2Rest {
     Response gate = gateOnParent(resolved.get().reference(), AccessType.Read, caller);
     if (gate != null) return gate;
     try {
-      return resolved.get().handler().downloadContent(appId, rangeHeader, prefer);
+      return resolved.get().handler().downloadContent(appId, rangeHeader, prefer, rendition);
     } catch (UnsupportedOperationException uoe) {
       return problem(PROBLEM_TYPE_BAD_REQUEST, "Not supported", Response.Status.BAD_REQUEST, uoe.getMessage());
     } catch (NotFoundException nfe) {

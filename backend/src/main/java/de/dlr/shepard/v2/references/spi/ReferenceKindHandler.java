@@ -233,6 +233,25 @@ public interface ReferenceKindHandler {
   }
 
   /**
+   * TIFF-PREVIEW-SUPPORT — variant that additionally carries a rendition
+   * hint from the {@code ?rendition=} query parameter. Default
+   * implementation forwards to the 3-arg overload so every existing handler
+   * (uri, timeseries, git, video) ignores the hint transparently and keeps
+   * serving raw bytes unchanged. The {@code file} kind handler overrides
+   * this to honour {@code rendition=png}: when the underlying singleton is
+   * a TIFF (browsers cannot render TIFF natively), it transcodes to a
+   * browser-safe PNG on the fly; for any other source format, or on any
+   * transcode failure, it falls back to the unmodified raw-bytes response —
+   * additive, zero behaviour change for existing callers.
+   *
+   * @param rendition hint from the {@code ?rendition=} query parameter;
+   *   currently only {@code "png"} is recognised. May be null.
+   */
+  default Response downloadContent(String appId, String rangeHeader, String prefer, String rendition) {
+    return downloadContent(appId, rangeHeader, prefer);
+  }
+
+  /**
    * APISIMP-ANNOTATION-SUBRESOURCE-COLLISION — whether this kind supports
    * sub-resource annotations at {@code /v2/references/{appId}/annotations}.
    * Kinds that support annotations override this to return {@code true} and

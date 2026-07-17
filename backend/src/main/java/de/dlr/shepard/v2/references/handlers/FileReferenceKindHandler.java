@@ -2,11 +2,13 @@ package de.dlr.shepard.v2.references.handlers;
 
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.HttpRangeUtil;
+import de.dlr.shepard.common.util.SafeImageIO;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.services.SingletonFileReferenceService;
 import de.dlr.shepard.v2.references.io.ReferenceV2IO;
 import de.dlr.shepard.v2.references.spi.ReferenceKindHandler;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
@@ -14,11 +16,15 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import javax.imageio.ImageIO;
 
 /**
  * V2CONV-A2 / APISIMP-KIND-DISCRIMINATOR — in-tree {@link ReferenceKindHandler}
@@ -182,6 +188,94 @@ public class FileReferenceKindHandler implements ReferenceKindHandler {
       .entity(ranged)
       .type(contentType)
       .build();
+  }
+
+  /**
+   * TIFF-PREVIEW-SUPPORT — honours {@code ?rendition=png}. Browsers cannot
+   * render TIFF natively, so the file-reference detail page's inline
+   * quick-look preview requests this transcode for {@code fileKind="image"}
+   * singletons whose backing file is a TIFF. Any other rendition value, a
+   * non-TIFF source, or a transcode failure (corrupt/unsupported TIFF, or a
+   * source that exceeds {@link SafeImageIO#DEFAULT_MAX_PIXELS}) falls back
+   * to the unmodified raw-bytes {@link #downloadContent(String, String)} —
+   * additive, zero behaviour change for every existing caller.
+   */
+  @Override
+  public Response downloadContent(String appId, String rangeHeader, String prefer, String rendition) {
+    if ("png".equalsIgnoreCase(rendition)) {
+      Response pngResponse = tryTiffPngRendition(appId);
+      if (pngResponse != null) {
+        return pngResponse;
+      }
+    }
+    return downloadContent(appId, rangeHeader);
+  }
+
+  /**
+   * Best-effort PNG transcode for a TIFF-backed singleton. Returns
+   * {@code null} (never throws) whenever the rendition isn't applicable or
+   * fails, so the caller falls back to the raw-bytes response — the source
+   * of truth stays "TIFF bytes on disk/storage"; {@code ?rendition=png} is a
+   * best-effort convenience projection on top.
+   */
+  private Response tryTiffPngRendition(String appId) {
+    FileReference ref = singletonService.getByAppId(appId);
+    if (ref == null) {
+      return null;
+    }
+
+    String filename = null;
+    if (ref.getFile() != null && ref.getFile().getFilename() != null) {
+      filename = ref.getFile().getFilename();
+    }
+    if (filename == null || filename.isBlank()) {
+      filename = ref.getName();
+    }
+    if (!isTiffFilename(filename)) {
+      return null;
+    }
+
+    NamedInputStream payload;
+    try {
+      payload = singletonService.getPayload(appId);
+    } catch (NotFoundException nfe) {
+      // Let the normal downloadContent(appId, rangeHeader) 404 handling own this.
+      return null;
+    }
+
+    try (InputStream in = payload.getInputStream()) {
+      BufferedImage rgb = SafeImageIO.readCappedAsRgb8(in, SafeImageIO.DEFAULT_MAX_PIXELS);
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      if (!ImageIO.write(rgb, "PNG", baos)) {
+        Log.warnf("TIFF-PREVIEW-SUPPORT: ImageIO.write(PNG) returned false for appId=%s", appId);
+        return null;
+      }
+      byte[] png = baos.toByteArray();
+      String pngName = stripExtension(filename) + ".png";
+      return Response.ok(png, "image/png")
+        .header("Content-Disposition", "inline; filename=\"" + pngName + "\"")
+        .header("Content-Length", png.length)
+        .build();
+    } catch (IOException e) {
+      Log.warnf(
+        "TIFF-PREVIEW-SUPPORT: PNG rendition failed for appId=%s filename=%s — falling back to raw bytes: %s",
+        appId, filename, e.getMessage()
+      );
+      return null;
+    }
+  }
+
+  private static boolean isTiffFilename(String filename) {
+    if (filename == null) {
+      return false;
+    }
+    String lc = filename.toLowerCase(Locale.ROOT);
+    return lc.endsWith(".tif") || lc.endsWith(".tiff");
+  }
+
+  private static String stripExtension(String filename) {
+    int dot = filename.lastIndexOf('.');
+    return dot > 0 ? filename.substring(0, dot) : filename;
   }
 
   @Override

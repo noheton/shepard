@@ -118,6 +118,46 @@ recognised and played as video. Existing MP4 singletons uploaded
 before this feature are backfilled to `fileKind=video` by the
 idempotent Neo4j migration `V119__promote_video_filekind.cypher`.
 
+### TIFF preview (TIFF-PREVIEW-SUPPORT, 2026-07-10)
+
+(MFFD tapelaying "TPS intermediate evaluation files" — 2048×873
+multi-directory TIFFs — and stringer-welding camera frames are the
+motivating instance.) `.tif`/`.tiff` join `png`/`jpg`/`jpeg`/`gif`/`bmp`/`webp`
+as `fileKind: "image"` (detected the same way, at upload time, by
+extension). Browsers cannot render `image/tiff` natively, so the
+raw bytes alone are not enough to preview a TIFF:
+
+- **Thumbnails** (list rows, both the singleton table and the
+  `FileContainer` payload thumbnail endpoint) decode via
+  `javax.imageio.ImageIO`, which gained TIFF support from the
+  `com.twelvemonkeys.imageio:imageio-tiff` dependency (already on the
+  backend classpath for the thermography plugin's OTvis frame
+  analysis). No new endpoint — `RasterImageThumbnailProvider` simply
+  widened its claimed mime/extension set.
+- **Full-size inline preview** on the file-reference detail page
+  requests a browser-safe transcode via a new, additive query
+  parameter on the existing content-download endpoint:
+
+  | Method | Path | Behaviour |
+  |---|---|---|
+  | `GET` | `/v2/references/{appId}/content?rendition=png` | For a `kind=file` singleton whose source is a TIFF, returns an 8-bit RGB PNG transcode of the first image directory (`200`, `Content-Type: image/png`, `Content-Disposition: inline`). For any non-TIFF source, or when `rendition` is absent/anything other than `png`, behaves identically to the plain `GET .../content` call — **zero behaviour change for existing callers.** On a corrupt/unsupported TIFF, or a source whose decoded pixel count exceeds the 25-megapixel safety cap, falls back to serving the raw (TIFF) bytes rather than erroring — fail-soft, never a 500. |
+
+  Multi-page/multi-directory TIFFs render only the first directory
+  (image index 0); per-page navigation is a deferred follow-up
+  (`TIFF-PREVIEW-SUPPORT-MULTIPAGE` in `aidocs/16`). 16-bit /
+  calibrated-value sources are normalised to 8-bit RGB via a linear
+  color-space remap — not a domain-aware window/level stretch (that
+  stays the job of the dedicated thermography OTvis heatmap renderer
+  for calibrated frames; a generic window/level control for
+  general-purpose TIFF preview is also deferred,
+  `TIFF-PREVIEW-SUPPORT-WINDOWLEVEL` in `aidocs/16`).
+
+  The frontend never constructs this URL for a non-TIFF file — the
+  file-reference detail page's inline preview appends
+  `?rendition=png` only when the filename ends `.tif`/`.tiff`
+  (`frontend/utils/fileRenditionUrl.ts`); every other browser-native
+  image format keeps requesting the raw content URL unchanged.
+
 Permissions: every endpoint resolves the parent DataObject from the
 singleton and asks the same `PermissionsService` the upstream API
 uses. 401 unauthenticated, 403 on permission denied, 404 on missing
