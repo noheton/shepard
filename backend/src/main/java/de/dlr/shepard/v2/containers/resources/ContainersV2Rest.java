@@ -25,6 +25,7 @@ import de.dlr.shepard.v2.references.util.JsonNodeMaps;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.timeseries.io.TimeseriesAnnotationIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataResponseIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.SpatialRolesIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
@@ -791,9 +792,10 @@ public class ContainersV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Raw data for all resolved channels.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total resolved channels.", schema = @Schema(implementation = Long.class)))
+    description = "Raw data for all resolved channels. All resolved channels are returned in a " +
+      "single response — there is no pagination. Unknown channelAppIds are silently skipped.",
+    content = @Content(schema = @Schema(implementation = BulkChannelDataResponseIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Number of resolved channels returned.", schema = @Schema(implementation = Long.class)))
   @APIResponse(responseCode = "400", description = "Validation error on request body, or start/end not a valid ISO 8601 UTC timestamp.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read on the container.")
@@ -828,7 +830,7 @@ public class ContainersV2Rest {
           "Container kind '" + resolved.get().handler().kind() + "' has no channel concept");
     }
     var out = result.get();
-    return Response.ok(new PagedResponseIO<>(out, out.size(), 0, out.size()))
+    return Response.ok(new BulkChannelDataResponseIO(out))
         .header("X-Total-Count", (long) out.size())
         .build();
   }

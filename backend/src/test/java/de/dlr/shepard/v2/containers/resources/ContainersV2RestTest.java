@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.containers.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -29,7 +30,11 @@ import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataResponseIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
 import de.dlr.shepard.v2.containers.services.ContainersV2Service;
 import de.dlr.shepard.v2.containers.spi.ContainerFileDownload;
@@ -1264,5 +1269,49 @@ class ContainersV2RestTest {
     org.junit.jupiter.api.Assertions.assertFalse(
         desc.isBlank(),
         "listTemporalAnnotations pageSize @Parameter description must be present — got: '" + desc + "'");
+  }
+
+  // ─── APISIMP-CONTAINER-BULK-ENVELOPE — bulk channel-data envelope ─────────
+
+  @Test
+  void getBulkChannelData_returns200WithBulkChannelDataResponseIO() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
+    var ts = new Timeseries("vibration", "AFP-1", "head", "sym", "accel");
+    var entry = new TimeseriesWithDataPoints(ts, List.of());
+    when(handler.getBulkChannelData(eq(APP_ID), any(), anyLong(), anyLong()))
+        .thenReturn(Optional.of(List.of(entry)));
+
+    var body = new BulkChannelDataRequestIO(
+        List.of(UUID.randomUUID()), "2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z");
+    var r = resource.getBulkChannelData(APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    var entity = r.getEntity();
+    org.junit.jupiter.api.Assertions.assertInstanceOf(BulkChannelDataResponseIO.class, entity,
+        "Response entity must be BulkChannelDataResponseIO, not PagedResponseIO");
+    var resp = (BulkChannelDataResponseIO) entity;
+    assertEquals(1, resp.items().size());
+  }
+
+  @Test
+  void getBulkChannelData_xTotalCountHeaderMatchesItemCount() {
+    when(containersService.resolveByAppId(APP_ID)).thenReturn(Optional.of(resolved()));
+    when(permissionsService.isAccessTypeAllowedForUser(
+        eq(CONTAINER_NEO_ID), eq(AccessType.Read), eq(CALLER))).thenReturn(true);
+    var ts = new Timeseries("pressure", "sensor-2", "loc", "sym", "bar");
+    var e1 = new TimeseriesWithDataPoints(ts, List.of());
+    var ts2 = new Timeseries("temp", "sensor-2", "loc", "sym", "c");
+    var e2 = new TimeseriesWithDataPoints(ts2, List.of());
+    when(handler.getBulkChannelData(eq(APP_ID), any(), anyLong(), anyLong()))
+        .thenReturn(Optional.of(List.of(e1, e2)));
+
+    var body = new BulkChannelDataRequestIO(
+        List.of(UUID.randomUUID(), UUID.randomUUID()), "2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z");
+    var r = resource.getBulkChannelData(APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    assertEquals("2", r.getHeaders().getFirst("X-Total-Count").toString());
   }
 }
