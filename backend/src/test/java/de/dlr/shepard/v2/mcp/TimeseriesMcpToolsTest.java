@@ -14,7 +14,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
-import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -397,7 +397,8 @@ class TimeseriesMcpToolsTest {
     ann.setPropertyIRI("http://example.org/prop");
     ann.setValueIRI("http://example.org/val");
     when(annotatableTimeseriesService.createAnnotationForChannel(
-            eq(CONTAINER_OGM_ID), eq(CHANNEL_SHEPARD_ID), org.mockito.ArgumentMatchers.any()))
+            eq(CONTAINER_OGM_ID), eq(CHANNEL_SHEPARD_ID),
+            org.mockito.ArgumentMatchers.any(SemanticAnnotationV2IO.class)))
         .thenReturn(ann);
 
     String json = tools.createChannelAnnotation(

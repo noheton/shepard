@@ -12,7 +12,7 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
@@ -561,10 +561,10 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
     long containerId = service.getContainerByAppId(appId).getId();
     long skip = (long) page * pageSize;
     long total = annotatableTimeseriesService.countAnnotationsByChannelShepardId(containerId, channelAppId);
-    List<SemanticAnnotationIO> slice = annotatableTimeseriesService
+    List<SemanticAnnotationV2IO> slice = annotatableTimeseriesService
         .getAnnotationsByChannelShepardId(containerId, channelAppId, skip, pageSize)
         .stream()
-        .map(SemanticAnnotationIO::new)
+        .map(SemanticAnnotationV2IO::new)
         .collect(Collectors.toList());
     return Optional.of(Response.ok(new de.dlr.shepard.v2.common.io.PagedResponseIO<>(slice, total, page, pageSize))
         .header("X-Total-Count", total)
@@ -573,12 +573,12 @@ public class TimeseriesContainerKindHandler implements ContainerKindHandler {
 
   @Override
   public Optional<Response> createChannelAnnotation(
-      String appId, String channelAppId, SemanticAnnotationIO body) {
+      String appId, String channelAppId, SemanticAnnotationV2IO body) {
     long containerId = service.getContainerByAppId(appId).getId();
     SemanticAnnotation created =
         annotatableTimeseriesService.createAnnotationForChannel(containerId, channelAppId, body);
     return Optional.of(Response.status(Response.Status.CREATED)
-        .entity(new SemanticAnnotationIO(created))
+        .entity(new SemanticAnnotationV2IO(created))
         .build());
   }
 

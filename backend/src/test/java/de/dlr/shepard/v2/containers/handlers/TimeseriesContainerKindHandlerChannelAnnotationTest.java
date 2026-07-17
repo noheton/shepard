@@ -7,11 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,9 +20,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * APISIMP-CONT-NS-COLLAPSE-4 — unit tests for the channel-annotation methods
- * on {@link TimeseriesContainerKindHandler}, replacing the deleted
- * {@code TimeseriesChannelAnnotationRestTest}.
+ * APISIMP-SEMIO-NUMERIC-ID — unit tests for the channel-annotation methods
+ * on {@link TimeseriesContainerKindHandler}, verifying the v2-clean IO shape
+ * ({@link SemanticAnnotationV2IO}) is used on the wire.
  */
 class TimeseriesContainerKindHandlerChannelAnnotationTest {
 
@@ -75,7 +75,7 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    var body = (PagedResponseIO<SemanticAnnotationV2IO>) result.get().getEntity();
     assertThat(body.items()).isEmpty();
     assertThat(body.total()).isEqualTo(0);
   }
@@ -96,8 +96,9 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    var body = (PagedResponseIO<SemanticAnnotationV2IO>) result.get().getEntity();
     assertThat(body.items()).hasSize(1);
+    // APISIMP-SEMIO-NUMERIC-ID: v2 IO exposes only UUID/string fields, no numeric id.
     assertThat(body.items().get(0).getPropertyIRI()).isEqualTo("http://example.org/prop");
     assertThat(body.total()).isEqualTo(1);
   }
@@ -118,7 +119,7 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
 
     assertThat(result).isPresent();
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<SemanticAnnotationIO>) result.get().getEntity();
+    var body = (PagedResponseIO<SemanticAnnotationV2IO>) result.get().getEntity();
     assertThat(body.items()).hasSize(2);
     assertThat(body.total()).isEqualTo(3);
   }
@@ -145,20 +146,21 @@ class TimeseriesContainerKindHandlerChannelAnnotationTest {
   void createAnnotation_returnsPresent201() {
     var ann = makeAnnotation(77L, "http://p.org/pred", "pred", "http://v.org/val", "val");
     when(annotatableTimeseriesService.createAnnotationForChannel(
-            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), any(SemanticAnnotationIO.class)))
+            eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), any(SemanticAnnotationV2IO.class)))
         .thenReturn(ann);
 
-    var body = new SemanticAnnotationIO();
+    var body = new SemanticAnnotationV2IO();
     body.setPropertyIRI("http://p.org/pred");
     body.setValueIRI("http://v.org/val");
     var result = handler.createChannelAnnotation(CONTAINER_APP_ID, CHANNEL_SHEPARD_ID, body);
 
     assertThat(result).isPresent();
     assertThat(result.get().getStatus()).isEqualTo(201);
-    var entity = (SemanticAnnotationIO) result.get().getEntity();
-    assertThat(entity.getId()).isEqualTo(77L);
+    // APISIMP-SEMIO-NUMERIC-ID: entity carries propertyIRI, not numeric id.
+    var entity = (SemanticAnnotationV2IO) result.get().getEntity();
+    assertThat(entity.getPropertyIRI()).isEqualTo("http://p.org/pred");
     verify(annotatableTimeseriesService).createAnnotationForChannel(
-        eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), any());
+        eq(CONTAINER_ID), eq(CHANNEL_SHEPARD_ID), any(SemanticAnnotationV2IO.class));
   }
 
   // ── delete annotation ────────────────────────────────────────────────────
