@@ -11,14 +11,11 @@
  * `examples/lumen-showcase/seed.py` is the data source; TR-004 is present.
  */
 import { test, expect } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
-
-const USER = process.env.DEMO_USER || "flodemo";
-const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 
 test.describe("Header search dropdown (UI-002)", () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page, USER, PASSWORD);
+    await loginAs(page, DEMO_USER, DEMO_PASSWORD);
   });
 
   test("typing a known DataObject name produces a matching dataobject row", async ({ page }) => {

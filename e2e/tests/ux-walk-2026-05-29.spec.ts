@@ -19,7 +19,7 @@
  * renamed 2026-05-29 per ROLE-GRANT-DEMO-FLO-DISAMBIGUATE).
  */
 import { test } from "@playwright/test";
-import { loginAs } from "./helpers/auth";
+import { loginAs, DEMO_USER, DEMO_PASSWORD } from "./helpers/auth";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -30,8 +30,11 @@ const MICROSECTIONS_DO_APPID_PH2940_07 = "019e7244-06d0-7051-9add-f3f87fcf0f3b";
 const VP_4K = { width: 3840, height: 2160 };
 const VP_NARROW = { width: 1440, height: 900 };
 
+// Primary credentials come from env (DEMO_USER / DEMO_PASSWORD); fallback
+// list tries additional realm users so the walk succeeds even when the
+// primary account is not provisioned on the target realm.
 const CREDS: ReadonlyArray<readonly [string, string]> = [
-  ["flodemo", "flo-demo"],
+  [DEMO_USER, DEMO_PASSWORD],
   ["bob", "bob-demo"],
   ["alice", "alice-demo"],
 ];

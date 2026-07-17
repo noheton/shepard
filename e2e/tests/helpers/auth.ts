@@ -7,6 +7,16 @@ const KC = process.env.KEYCLOAK_HOST || "https://shepard-auth.nuclide.systems";
 const REALM = "shepard-demo";
 
 /**
+ * Demo Keycloak credentials.  Set DEMO_USER / DEMO_PASSWORD in your shell
+ * (or .env.local) to match the provisioned user on your target realm.
+ * The live shepard-auth.nuclide.systems realm provisions `alice`/`alice-demo`
+ * (user role).  If `flodemo` is not present on your realm, export these vars
+ * before running Playwright.  See e2e/README.md for details.
+ */
+export const DEMO_USER = process.env.DEMO_USER ?? "flodemo";
+export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "flo-demo";
+
+/**
  * Tolerant OIDC browser login. Returns when the app's home page is loaded
  * with the user signed in (SIGN OUT visible).
  *
