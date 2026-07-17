@@ -2,7 +2,7 @@ package de.dlr.shepard.v2.containers.spi;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
-import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
@@ -601,7 +601,7 @@ public interface ContainerKindHandler {
    * @return the response, or empty when this kind has no channel-annotation concept (→ 415).
    */
   default Optional<Response> createChannelAnnotation(
-      String appId, String channelAppId, SemanticAnnotationIO body) {
+      String appId, String channelAppId, SemanticAnnotationV2IO body) {
     return Optional.empty();
   }
 

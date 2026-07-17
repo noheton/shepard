@@ -2,12 +2,14 @@ package de.dlr.shepard.context.semantic.services;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
+import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.v2.timeseriescontainer.io.ChannelAxisAnnotationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -36,6 +38,9 @@ public class AnnotatableTimeseriesService {
 
   @Inject
   TsChannelResolver tsChannelResolver;
+
+  @Inject
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
   public SemanticAnnotation createAnnotation(long containerId, int timeseriesId, SemanticAnnotationIO annotationIO) {
     timeseriesService.getTimeseriesById(containerId, timeseriesId);
@@ -146,6 +151,48 @@ public class AnnotatableTimeseriesService {
 
     var propertyRepository = dao.getSemanticRepositoryById(annotationIO.getPropertyRepositoryId());
     var valueRepository = dao.getSemanticRepositoryById(annotationIO.getValueRepositoryId());
+
+    var annotation = new SemanticAnnotation();
+    var propertyName = semanticAnnotationService.validateTerm(propertyRepository, annotationIO.getPropertyIRI());
+    var valueName = semanticAnnotationService.validateTerm(valueRepository, annotationIO.getValueIRI());
+    annotation.setPropertyRepository(propertyRepository);
+    annotation.setPropertyIRI(annotationIO.getPropertyIRI());
+    annotation.setValueRepository(valueRepository);
+    annotation.setValueIRI(annotationIO.getValueIRI());
+    annotation.setPropertyName(propertyName);
+    annotation.setValueName(valueName);
+    annotatableTimeseries.addAnnotation(annotation);
+    dao.createOrUpdate(annotatableTimeseries);
+
+    return annotation;
+  }
+
+  /**
+   * v2-clean variant — resolves semantic repositories by {@code appId} (UUID v7) instead of
+   * numeric Neo4j node id.  Called by the v2 REST surface; drops {@code propertyRepositoryId}
+   * and {@code valueRepositoryId} from the wire shape.
+   */
+  public SemanticAnnotation createAnnotationForChannel(long containerId, String channelShepardId, SemanticAnnotationV2IO annotationIO) {
+    if (channelShepardId == null || channelShepardId.isBlank()) {
+      throw new BadRequestException("channelShepardId must not be blank");
+    }
+    timeseriesContainerService.getContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
+
+    var annotatableTimeseries = dao.findByAppId(channelShepardId)
+      .orElseThrow(() -> new NotFoundException(
+        "No AnnotatableTimeseries found for channelShepardId=" + channelShepardId +
+        ". Channel must be created via the timeseries upload/write path first (TS-SEMANTIC-01 dual-write)."
+      ));
+
+    var propertyRepository = semanticRepositoryDAO.findByAppId(annotationIO.getPropertyVocabularyEntryAppId());
+    if (propertyRepository == null) {
+      throw new NotFoundException("No vocabulary entry with appId: " + annotationIO.getPropertyVocabularyEntryAppId());
+    }
+    var valueRepository = semanticRepositoryDAO.findByAppId(annotationIO.getValueVocabularyEntryAppId());
+    if (valueRepository == null) {
+      throw new NotFoundException("No vocabulary entry with appId: " + annotationIO.getValueVocabularyEntryAppId());
+    }
 
     var annotation = new SemanticAnnotation();
     var propertyName = semanticAnnotationService.validateTerm(propertyRepository, annotationIO.getPropertyIRI());

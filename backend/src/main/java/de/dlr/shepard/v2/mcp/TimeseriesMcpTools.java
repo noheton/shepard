@@ -2,7 +2,7 @@ package de.dlr.shepard.v2.mcp;
 
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
-import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -468,7 +468,7 @@ public class TimeseriesMcpTools {
         annotatableTimeseriesService.getAnnotationsByChannelShepardId(containerOgmId, channelShepardId);
       List<Map<String, Object>> result = new ArrayList<>(annotations.size());
       for (SemanticAnnotation a : annotations) {
-        var io = new SemanticAnnotationIO(a);
+        var io = new SemanticAnnotationV2IO(a);
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("appId", io.getAppId());
         row.put("propertyIRI", io.getPropertyIRI());
@@ -514,15 +514,15 @@ public class TimeseriesMcpTools {
       var valRepo = semanticRepositoryDAO.findByAppId(valueVocabAppId);
       if (valRepo == null) throw new IllegalArgumentException("unknown valueVocabAppId: " + valueVocabAppId);
 
-      var io = new SemanticAnnotationIO();
+      var io = new SemanticAnnotationV2IO();
       io.setPropertyIRI(propertyIRI);
-      io.setPropertyRepositoryId(propRepo.getId());
+      io.setPropertyVocabularyEntryAppId(propRepo.getAppId());
       io.setValueIRI(valueIRI);
-      io.setValueRepositoryId(valRepo.getId());
+      io.setValueVocabularyEntryAppId(valRepo.getAppId());
 
       SemanticAnnotation created =
         annotatableTimeseriesService.createAnnotationForChannel(containerOgmId, channelShepardId, io);
-      var resultIO = new SemanticAnnotationIO(created);
+      var resultIO = new SemanticAnnotationV2IO(created);
       Map<String, Object> row = new LinkedHashMap<>();
       row.put("appId", resultIO.getAppId());
       row.put("propertyIRI", resultIO.getPropertyIRI());

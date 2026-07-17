@@ -14,6 +14,7 @@ import de.dlr.shepard.v2.filecontainer.io.UploadCommitIO;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.v2.semantic.io.SemanticAnnotationV2IO;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.containers.io.ContainerV2IO;
@@ -1077,7 +1078,7 @@ public class ContainersV2Rest {
       "Non-timeseries kinds answer 415.\n\nAuth: Write on the container."
   )
   @APIResponse(responseCode = "201", description = "Annotation created.",
-    content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
+    content = @Content(schema = @Schema(implementation = SemanticAnnotationV2IO.class)))
   @APIResponse(responseCode = "400", description = "Invalid annotation body.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Write on the container.")
@@ -1087,8 +1088,8 @@ public class ContainersV2Rest {
       @PathParam("appId") String appId,
       @PathParam("channelAppId") String channelAppId,
       @RequestBody(required = true,
-        content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class)))
-      @Valid SemanticAnnotationIO body,
+        content = @Content(schema = @Schema(implementation = SemanticAnnotationV2IO.class)))
+      @Valid SemanticAnnotationV2IO body,
       @Context SecurityContext sc
   ) {
     String caller = callerOrNull(sc);
