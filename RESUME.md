@@ -1,8 +1,8 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-28 ~05:30 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
-**Active arc:** MFFD — cube3 AFP tapelaying + bridgewelding exports both running in tmux. Backend redeploy blocked on Quarkus/Jandex infinite-loop bug (`CompositeIndex.getClassByName` reproducible). TS-AXIS-VERIFY (#236) waits.
-**Status:** Confluence wiki seed (task #137) was the **wrong shape** per user directive 2026-05-28 — "dont seed wiki content with mfffd - we try to integrate on structure". Import script reverted (`0748f3a44`). Live 112 wiki DOs in collection 661923 await snapshot-then-delete. Structural integration filed as MFFD-WIKI-STRUCT umbrella (sub-rows A-E). 10 design principles now codified in CLAUDE.md as `## Always:` rules. REF-EDIT-TPL-3 + TPL-6 shipped (`71d5fada8`).
+**Updated:** 2026-07-17 by claude-opus-4-8 with operator fkrebs@nucli.de
+**Active arc:** Post-dispatcher reconcile. The hourly cloud dispatcher (APISIMP sweep, ran through fire-653 on 2026-07-17) is now **OFF**. July produced ~320 commits of APISIMP surface cleanup + UIRULE conversions + Quarkus 3.37 migration + MP4-video + URDF picker. Reconcile in flight: TIFF PR #2456 rebase+gates, PR #2626 review, ~520 stale APISIMP remote branch prune. Next big thread: MFFD tapelaying TPS ingest (`593529286` decoded the source structure).
+**Status:** Historic sections below (2026-05-28 header era) are ARCHIVE — see dated sections from 2026-06-17 onward for current MFFD state.
 
 ---
 
@@ -187,3 +187,20 @@ Author: claude-opus-4-7 on behalf of fkrebs@nucli.de. Format: live worklog, not 
 - Raw 355GB TPS payloads deferred (W2-TPS-RAW-1, disk-gated: 344GB free < 355GB).
 - MFFD import status: W3 bridge ✓, W8a spot-welding ✓, W6 thermography ✓, W5 cell ✓, W2 pass B ✓. REMAINING: W2 pass A (spatial rework), W8b stringer (247GB zip, disk+parser). Wiki transform also pending.
 - Graph cruft to prune post-import (MFFD-GRAPH-PRUNE): ~3178+ soft-deleted DOs + orphan annotations from iterative imports; live (deleted=false) data is correct.
+
+## 2026-06-17 — MFFD demonstrator users + wiki + username-claim + perms (RECOVERED from stash@{1} on 2026-07-17 — was never committed)
+- Wiki->lab-journal: 218 entries across 6 pages -> mffd collections; 2 :MirroredUser authors (dede_di, bran_lr). Fixes: wiki_common v1-id fallback (v2 dropped numeric id), bounded 403-retry (perm lag), PROJECT_APPID default. committed.
+- 25 real Keycloak logins (all wiki DLR authors, e.g. vist_mi=Vistein Michael), shared pw "demo", user role, verified login. Realm 6->31 users.
+- username-claim DEFAULT flipped to preferred_username (was sub-split/UUID). committed 9f379d2bb + aidocs/34 BREAKING note. Re-keyed 25 demo :User nodes UUID->login-name (admin left as 7eead942 — import key auths as that sub). Verified: vist_mi logs in as "vist_mi", no dup.
+- 4 MFFD teams populated (mffd-afp 8 / welding 6 / ndt 5 / cell 6 = 25); membership by node-edge so survives re-key.
+- ORPHAN PERMISSIONS crisis: redeploy re-ran startup guard -> 27323 BasicEntity lacked :has_permissions (importers, esp v1 paths, don't seed Permissions; V14 backfill only runs once, ran on empty DB during reset). Fix: re-set SHEPARD_PERMISSIONS_DEFAULT_OWNER=7eead942 (override, committed f2e57cfc5) to clear boot guard, then manual Cypher backfill of all 16013 orphans -> PublicReadable + owned_by admin (legacyBackfill='pubread-2026-06-17'). 0 orphans remain. Demo users now read all MFFD content; admin owns write.
+- KNOWN: importers not seeding Permissions is a real bug (file backlog). USERNAME=UUID was instance-wide (now fixed for new users via claim flip; existing admin/flo still UUID).
+
+## 2026-07-17 — dispatcher OFF; repo reconcile session
+- Hourly cloud dispatcher (APISIMP sweep) ran through fire-653 (2026-07-17) and is now OFF per operator. July: ~320 commits (APISIMP surface cleanup, UIRULE dropdown conversions, Quarkus 3.27→3.37 + JUnit 6, MP4→video promotion, URDF searchable picker, tapelaying TPS source decode `593529286`).
+- Reconciled: committed stray ops diff (pgbouncer pool 20→30 + mffd script exec bits, `50f53bf1e`); rebased main onto remote (5 dispatcher merges had landed after switch-off).
+- Dispatched (in flight): (a) TIFF PR #2456 rebase+gates agent; (b) stale-branch janitor — ~520 APISIMP remote branches classified against PR ledger, PR-merged ones pruned, report → `aidocs/agent-findings/branch-reconcile-2026-07-17.md`; (c) PR #2626 (APISIMP-DQR-EVAL-INMEM, last dispatcher fire) review+gate agent.
+- Operator backlog filings this session: UIBUG-RECENT-COLLECTIONS-GETTIME (pager updatedAt.getTime crash — generated-client Date-vs-ISO-string drift); MD-RENDER-UMBRELLA (journal + descriptions render markdown, not HTML).
+- Stale open PRs needing triage: #1774 (Playwright auth fixture), #1773 (PROV read-capture flip), #1762 (bulk semantic-annotation REST), #1701 (backlog flip docs) — all May-era; plus 7 dependabot bumps.
+- Stashes: dropped stash@{0} (stale screenshot churn) + stash@{1} (salvaged above). KEPT stash@{2} (svdx/thermography parser WIP, 530+ lines — verify against merged W6/W8a commits before dropping) + stash@{3} (pre-m4i on dead branch).
+- NEXT after reconcile: MFFD tapelaying TPS ingest per `593529286` scripted-ingest path (W2 pass A spatial rework family); then MFFD-GRAPH-PRUNE.
