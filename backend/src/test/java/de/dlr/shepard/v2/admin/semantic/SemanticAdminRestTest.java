@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -285,9 +287,9 @@ class SemanticAdminRestTest {
 
   @Test
   void list_happyPath_returnsMergedView() {
-    when(configService.listMerged(any())).thenReturn(
-      List.of(view("prov-o", "builtin", true, true), view("custom", "user", false, true))
-    );
+    var views = List.of(view("prov-o", "builtin", true, true), view("custom", "user", false, true));
+    when(configService.countMerged(any())).thenReturn(2);
+    when(configService.listMerged(any(), anyLong(), anyInt())).thenReturn(views);
 
     var r = rest.listOntologies(securityContext, 0, 50);
 
@@ -300,7 +302,8 @@ class SemanticAdminRestTest {
 
   @Test
   void list_emptyMerged_still200() {
-    when(configService.listMerged(any())).thenReturn(List.of());
+    when(configService.countMerged(any())).thenReturn(0);
+    when(configService.listMerged(any(), anyLong(), anyInt())).thenReturn(List.of());
     var r = rest.listOntologies(securityContext, 0, 50);
     assertEquals(200, r.getStatus());
     List<OntologyBundleIO> body = ((PagedResponseIO<OntologyBundleIO>) r.getEntity()).items();
@@ -324,11 +327,23 @@ class SemanticAdminRestTest {
   @Test
   void list_manifestLoadFailure_stillReturnsMergedFromEmptyManifest() {
     when(seedService.loadManifest()).thenThrow(new RuntimeException("boom"));
-    when(configService.listMerged(any())).thenReturn(List.of());
+    when(configService.countMerged(any())).thenReturn(0);
+    when(configService.listMerged(any(), anyLong(), anyInt())).thenReturn(List.of());
 
     var r = rest.listOntologies(securityContext, 0, 50);
 
     assertEquals(200, r.getStatus());
+  }
+
+  @Test
+  void list_slicePassesCorrectSkipAndLimit() {
+    when(configService.countMerged(any())).thenReturn(30);
+    when(configService.listMerged(any(), anyLong(), anyInt())).thenReturn(List.of());
+
+    rest.listOntologies(securityContext, 2, 10);
+
+    verify(configService).countMerged(any());
+    verify(configService).listMerged(any(), eq(20L), eq(10));
   }
 
   // ---------- disable --------------------------------------------------------
@@ -784,7 +799,8 @@ class SemanticAdminRestTest {
   void list_lazyInstantiates_seedService_when_notInjected() {
     // Drop the test-injected seed service so the lazy production path runs.
     rest.setSeedServiceForManifest(null);
-    when(configService.listMerged(any())).thenReturn(List.of());
+    when(configService.countMerged(any())).thenReturn(0);
+    when(configService.listMerged(any(), anyLong(), anyInt())).thenReturn(List.of());
 
     // Production seed service hits the real classpath manifest. We tolerate
     // any RuntimeException from no-classpath-resource — just confirm the

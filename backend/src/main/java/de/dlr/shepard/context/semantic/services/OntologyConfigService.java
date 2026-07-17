@@ -563,6 +563,54 @@ public class OntologyConfigService {
   }
 
   /**
+   * Total count of entries the merged view would produce: {@code builtin.size()} (in-memory,
+   * O(1)) plus the number of user-uploaded bundles (O(1) Cypher count, no full load).
+   * Used by {@link de.dlr.shepard.v2.admin.semantic.SemanticAdminRest#listOntologies} to
+   * populate {@code PagedResponseIO.total} without materialising the full list.
+   */
+  public int countMerged(List<OntologyEntry> builtin) {
+    return builtin.size() + (int) userBundleDAO.countAll();
+  }
+
+  /**
+   * Sliced variant of {@link #listMerged(List)}: produces at most {@code limit} entries
+   * starting at zero-based offset {@code skip}, without allocating the full merged list.
+   * Iterates built-ins first (manifest order) then user bundles (bundleId ASC), matching
+   * the order guaranteed by the no-arg overload.
+   */
+  public List<BundleView> listMerged(List<OntologyEntry> builtin, long skip, int limit) {
+    SemanticConfig cfg = loadSingleton();
+    Set<String> disabled = new LinkedHashSet<>(
+      cfg.getDisabledBundles() == null ? List.of() : cfg.getDisabledBundles()
+    );
+    Set<String> deployTimeSkip = OntologySeedService.parseSkipBundles(
+      readStringConfig(OntologySeedService.SKIP_BUNDLES_PROPERTY, "")
+    );
+    Set<String> effectiveDisabled = new LinkedHashSet<>(disabled);
+    effectiveDisabled.addAll(deployTimeSkip);
+
+    List<BundleView> out = new ArrayList<>(Math.min(limit, 200));
+    long remaining = skip;
+    for (OntologyEntry e : builtin) {
+      if (remaining > 0) { remaining--; continue; }
+      if (out.size() >= limit) return out;
+      boolean enabled = e.required || !effectiveDisabled.contains(e.id);
+      out.add(new BundleView(e.id, e.name, "builtin", e.required, enabled,
+          e.iriPrefix, e.canonicalUrl, e.license, e.sha256, e.sizeBytes));
+    }
+    if (out.size() < limit) {
+      for (OntologyEntry u : listUserEntries()) {
+        if (remaining > 0) { remaining--; continue; }
+        if (out.size() >= limit) return out;
+        boolean enabled = !effectiveDisabled.contains(u.id);
+        out.add(new BundleView(u.id, u.name, "user", false, enabled,
+            u.iriPrefix, u.canonicalUrl, u.license, u.sha256, u.sizeBytes));
+      }
+    }
+    return out;
+  }
+
+  /**
    * Find one bundle by id across built-in + user, projected as a
    * {@link BundleView}. Returns {@link Optional#empty()} when unknown.
    */

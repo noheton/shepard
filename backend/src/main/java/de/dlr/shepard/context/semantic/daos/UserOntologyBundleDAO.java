@@ -6,6 +6,7 @@ import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
@@ -33,6 +34,15 @@ public class UserOntologyBundleDAO extends GenericDAO<UserOntologyBundle> {
     Collection<UserOntologyBundle> hits = session.loadAll(UserOntologyBundle.class, f, DEPTH_ENTITY);
     if (hits == null || hits.isEmpty()) return null;
     return hits.iterator().next();
+  }
+
+  /** Count of all user-uploaded bundles (O(1) Cypher call). */
+  public long countAll() {
+    var result = session.query("MATCH (n:UserOntologyBundle) RETURN count(n) AS c", Map.of());
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
   }
 
   /** All user bundles, snapshot. Stable ordering by {@code bundleId} ASC. */

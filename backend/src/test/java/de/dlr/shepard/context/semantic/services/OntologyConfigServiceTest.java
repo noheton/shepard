@@ -495,4 +495,55 @@ class OntologyConfigServiceTest {
   void looksLikeTurtle_rejectsJson() {
     assertFalse(OntologyConfigService.looksLikeTurtle("{\"id\":\"x\"}"));
   }
+
+  // ---------- countMerged + sliced listMerged (APISIMP-SEMADMIN-ONTOL-INMEM-PAGE) -----------
+
+  @Test
+  void countMerged_sumsBultinSizeAndUserCount() {
+    when(userBundleDAO.countAll()).thenReturn(3L);
+    int count = service.countMerged(List.of(builtin("a", false), builtin("b", true)));
+    assertEquals(5, count, "2 builtins + 3 user bundles");
+  }
+
+  @Test
+  void countMerged_noUser_returnsBuiltinOnly() {
+    when(userBundleDAO.countAll()).thenReturn(0L);
+    assertEquals(2, service.countMerged(List.of(builtin("a", false), builtin("b", false))));
+  }
+
+  @Test
+  void listMergedSliced_firstPage_returnsBuiltins() {
+    when(configDAO.findFirst()).thenReturn(fresh());
+    List<OntologyEntry> manifest = List.of(builtin("a", false), builtin("b", true), builtin("c", false));
+    var rows = service.listMerged(manifest, 0, 2);
+    assertEquals(2, rows.size());
+    assertEquals("a", rows.get(0).id);
+    assertEquals("b", rows.get(1).id);
+  }
+
+  @Test
+  void listMergedSliced_skipIntoUser_returnsUserEntries() {
+    when(configDAO.findFirst()).thenReturn(fresh());
+    UserOntologyBundle u = new UserOntologyBundle();
+    u.setBundleId("user1");
+    u.setIriPrefix("http://u/");
+    u.setLicense("CC0");
+    u.setSha256("ff");
+    u.setByteSize(1L);
+    when(userBundleDAO.listAll()).thenReturn(List.of(u));
+
+    // skip all 2 builtins, take 1 user entry
+    var rows = service.listMerged(List.of(builtin("a", false), builtin("b", false)), 2, 1);
+    assertEquals(1, rows.size());
+    assertEquals("user1", rows.get(0).id);
+    assertEquals("user", rows.get(0).source);
+  }
+
+  @Test
+  void listMergedSliced_skipBeyondTotal_returnsEmpty() {
+    when(configDAO.findFirst()).thenReturn(fresh());
+    when(userBundleDAO.listAll()).thenReturn(List.of());
+    var rows = service.listMerged(List.of(builtin("a", false)), 10, 5);
+    assertTrue(rows.isEmpty());
+  }
 }
