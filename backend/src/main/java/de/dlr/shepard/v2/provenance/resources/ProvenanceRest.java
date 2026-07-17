@@ -9,7 +9,7 @@ import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.provenance.services.ProvenanceStatsService;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.common.io.CursorPageIO;
 import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
@@ -189,10 +189,9 @@ public class ProvenanceRest {
   @APIResponse(
     responseCode = "200",
     description = "Matching activities, sorted by startedAt DESC. " +
-    "Envelope: `pageSize` reflects the `?pageSize=` window; `total` reflects rows returned (not true DB total — cursor mode). " +
-    "Response header `X-Has-More: true` when the window is full and more rows may exist; use the `X-Next-Cursor` epoch-ms value as `?until=` on the next call.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
+    "Envelope: `pageSize` mirrors ?pageSize=; `hasMore=true` when the window is full; `nextCursor` is the epoch-ms of the oldest row in this window — pass as `?until=` on the next call.",
+    content = @Content(schema = @Schema(implementation = CursorPageIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Number of items in this window (not a DB total).", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -223,13 +222,12 @@ public class ProvenanceRest {
       .map(io -> applyProfile(io, prof))
       .toList();
     boolean hasMore = rows.size() >= pageSize;
-    var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, pageSize))
-        .header("X-Has-More", hasMore);
-    if (hasMore) {
-      rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
-    }
-    rb.header("X-Total-Count", (long) rows.size());
-    return rb.build();
+    Long nextCursor = hasMore ? Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli() : null;
+    return Response.ok(new CursorPageIO<>(rows, pageSize, hasMore, nextCursor))
+        .header("X-Has-More", hasMore)
+        .header("X-Next-Cursor", nextCursor)
+        .header("X-Total-Count", (long) rows.size())
+        .build();
   }
 
   private static ActivityIO applyProfile(ActivityIO io, OutputProfile profile) {
@@ -337,10 +335,9 @@ public class ProvenanceRest {
   @APIResponse(
     responseCode = "200",
     description = "Activities targeting the entity, sorted by startedAt DESC. " +
-    "Envelope: `pageSize` reflects the `?pageSize=` window; `total` reflects rows returned (cursor mode, not true DB total). " +
-    "Header `X-Has-More: true` when window is full; use `X-Next-Cursor` epoch-ms as `?until=` on the next call.",
-    content = @Content(schema = @Schema(implementation = PagedResponseIO.class)),
-    headers = @Header(name = "X-Total-Count", description = "Total count before paging.", schema = @Schema(implementation = Long.class))
+    "Envelope: `pageSize` mirrors ?pageSize=; `hasMore=true` when the window is full; `nextCursor` is the epoch-ms of the oldest row — pass as `?until=` on the next call.",
+    content = @Content(schema = @Schema(implementation = CursorPageIO.class)),
+    headers = @Header(name = "X-Total-Count", description = "Number of items in this window (not a DB total).", schema = @Schema(implementation = Long.class))
   )
   @APIResponse(responseCode = "400", description = "Unparseable since/until value.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -366,13 +363,12 @@ public class ProvenanceRest {
       .map(io -> applyProfile(io, prof))
       .toList();
     boolean hasMore = rows.size() >= pageSize;
-    var rb = Response.ok(new PagedResponseIO<>(rows, rows.size(), 0, pageSize))
-        .header("X-Has-More", hasMore);
-    if (hasMore) {
-      rb.header("X-Next-Cursor", Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli());
-    }
-    rb.header("X-Total-Count", (long) rows.size());
-    return rb.build();
+    Long nextCursor = hasMore ? Instant.parse(rows.get(rows.size() - 1).getStartedAt()).toEpochMilli() : null;
+    return Response.ok(new CursorPageIO<>(rows, pageSize, hasMore, nextCursor))
+        .header("X-Has-More", hasMore)
+        .header("X-Next-Cursor", nextCursor)
+        .header("X-Total-Count", (long) rows.size())
+        .build();
   }
 
   @GET
