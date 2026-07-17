@@ -127,12 +127,20 @@ public class DataQualityRequirementService {
    * <p>Stub rule types (always return PASS with a TODO message):
    * {@code NO_TIMESERIES_GAP}, {@code FILE_COUNT_MIN}, {@code CUSTOM_CYPHER}.
    *
+   * <p>Early-exit: accumulates at most {@code maxItems + 1} results so the caller
+   * can detect truncation without materialising the full result set in heap.
+   * When the returned list has size {@code > maxItems}, the caller should truncate
+   * to {@code maxItems} and report {@code truncated = true}; the returned size
+   * ({@code maxItems + 1}) is the approximate total in that case.
+   *
    * @param collectionAppId the Collection's appId
    * @param caller          authenticated username
-   * @return list of DQRResultIO; one entry per (DQR, DataObject) pair for the
-   *         evaluated DQRs; empty when no DQRs are enabled
+   * @param maxItems        maximum items the caller wants; evaluation stops after
+   *                        {@code maxItems + 1} results
+   * @return list of DQRResultIO; one entry per (DQR, DataObject) pair; at most
+   *         {@code maxItems + 1} entries; empty when no DQRs are enabled
    */
-  public List<DQRResultIO> evaluate(String collectionAppId, String caller) {
+  public List<DQRResultIO> evaluate(String collectionAppId, String caller, int maxItems) {
     assertCollectionReadable(collectionAppId, caller);
 
     List<DataQualityRequirement> dqrs = dao.findByCollectionAppId(collectionAppId)
@@ -148,8 +156,11 @@ public class DataQualityRequirementService {
     List<String> allDataObjectAppIds = dao.findDataObjectAppIds(collectionAppId);
 
     List<DQRResultIO> results = new ArrayList<>();
+    int limit = maxItems + 1;  // +1 lets the REST layer detect truncation cheaply
 
     for (DataQualityRequirement dqr : dqrs) {
+      if (results.size() >= limit) break;
+
       DataQualityRequirement.RuleType type;
       try {
         type = DataQualityRequirement.RuleType.valueOf(dqr.getRuleType());
@@ -158,11 +169,12 @@ public class DataQualityRequirementService {
         continue;
       }
 
+      int remaining = limit - results.size();
       switch (type) {
-        case ANNOTATION_REQUIRED -> results.addAll(evaluateAnnotationRequired(dqr, collectionAppId, allDataObjectAppIds));
-        case NO_TIMESERIES_GAP   -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "NO_TIMESERIES_GAP evaluation not yet implemented"));
-        case FILE_COUNT_MIN      -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "FILE_COUNT_MIN evaluation not yet implemented"));
-        case CUSTOM_CYPHER       -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "CUSTOM_CYPHER evaluation not yet implemented"));
+        case ANNOTATION_REQUIRED -> results.addAll(evaluateAnnotationRequired(dqr, collectionAppId, allDataObjectAppIds, remaining));
+        case NO_TIMESERIES_GAP   -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "NO_TIMESERIES_GAP evaluation not yet implemented", remaining));
+        case FILE_COUNT_MIN      -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "FILE_COUNT_MIN evaluation not yet implemented", remaining));
+        case CUSTOM_CYPHER       -> results.addAll(evaluateStub(dqr, allDataObjectAppIds, "CUSTOM_CYPHER evaluation not yet implemented", remaining));
       }
     }
 
@@ -184,17 +196,20 @@ public class DataQualityRequirementService {
    * @param dqr              the DQR being evaluated
    * @param collectionAppId  appId of the Collection being scanned
    * @param allDoAppIds      pre-fetched list of all non-deleted DataObject appIds in the Collection
+   * @param limit            stop after producing this many results (early-exit for heap control)
    */
   private List<DQRResultIO> evaluateAnnotationRequired(
     DataQualityRequirement dqr,
     String collectionAppId,
-    List<String> allDoAppIds
+    List<String> allDoAppIds,
+    int limit
   ) {
     String requiredKey = dqr.getRuleParam();
     Set<String> passing = dao.findDataObjectsHavingAttribute(collectionAppId, requiredKey);
 
     List<DQRResultIO> results = new ArrayList<>();
     for (String doAppId : allDoAppIds) {
+      if (results.size() >= limit) break;
       if (passing.contains(doAppId)) {
         results.add(DQRResultIO.pass(dqr.getAppId(), doAppId));
       } else {
@@ -210,15 +225,19 @@ public class DataQualityRequirementService {
 
   /**
    * Stub evaluator for unimplemented rule types — returns PASS for every
-   * DataObject. Logs a debug message with the TODO explanation.
+   * DataObject up to {@code limit}. Logs a debug message with the TODO explanation.
+   *
+   * @param limit stop after producing this many results (early-exit for heap control)
    */
   private List<DQRResultIO> evaluateStub(
     DataQualityRequirement dqr,
     List<String> allDoAppIds,
-    String todoMessage
+    String todoMessage,
+    int limit
   ) {
     List<DQRResultIO> results = new ArrayList<>();
     for (String doAppId : allDoAppIds) {
+      if (results.size() >= limit) break;
       results.add(DQRResultIO.pass(dqr.getAppId(), doAppId));
     }
     Log.debugf("TPL10: stub evaluation for DQR %s (%s): %s", dqr.getAppId(), dqr.getRuleType(), todoMessage);

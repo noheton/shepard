@@ -180,8 +180,9 @@ public class CollectionDQRRest {
       "returns one result per (DQR, DataObject) pair. A result with `passed == false` " +
       "carries a human-readable `message` describing the violation.\n\n" +
       "Only DQRs with `enabled == true` are evaluated. Disabled DQRs are silently skipped.\n\n" +
-      "Results are capped at `limit` (default 5 000, max 5 000). When the cap is hit, " +
-      "`truncated: true` is set in the envelope and `total` carries the uncapped count.\n\n" +
+      "Results are capped at `maxItems` (default 5 000, max 5 000). When the cap is hit, " +
+      "`truncated: true` is set in the envelope and `total` carries an approximate count " +
+      "(guaranteed >= maxItems; exact when not truncated).\n\n" +
       "Evaluation is synchronous and may be slow on large Collections. A future version " +
       "will add an async variant.\n\n" +
       "Auth: Read permission on the Collection."
@@ -202,7 +203,7 @@ public class CollectionDQRRest {
   ) {
     String caller = caller(securityContext);
     if (caller == null) return unauthorized();
-    List<DQRResultIO> all = service.evaluate(collectionAppId, caller);
+    List<DQRResultIO> all = service.evaluate(collectionAppId, caller, maxItems);
     long total = all.size();
     boolean truncated = total > maxItems;
     List<DQRResultIO> results = truncated ? all.subList(0, maxItems) : all;
