@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -138,17 +137,12 @@ public class PluginsAdminRest {
     @Parameter(description = "Page size 1–200 (default 50).")
     @QueryParam("pageSize") @DefaultValue("50") @Min(1) @Max(200) int pageSize
   ) {
-    List<PluginEntry> entries = registry.list();
-    List<PluginEntryIO> rows = new ArrayList<>(entries.size());
-    for (PluginEntry entry : entries) {
-      rows.add(PluginEntryIO.from(entry, registry.isEnabled(entry.id())));
-    }
-    long from = (long) page * pageSize;
-    List<PluginEntryIO> slice = from >= rows.size()
-        ? List.of()
-        : rows.subList((int) from, (int) Math.min(from + pageSize, rows.size()));
-    return Response.ok(new PagedResponseIO<>(slice, rows.size(), page, pageSize))
-        .header("X-Total-Count", (long) rows.size())
+    long total = registry.count();
+    List<PluginEntryIO> slice = registry.list((long) page * pageSize, pageSize).stream()
+        .map(entry -> PluginEntryIO.from(entry, registry.isEnabled(entry.id())))
+        .toList();
+    return Response.ok(new PagedResponseIO<>(slice, total, page, pageSize))
+        .header("X-Total-Count", total)
         .build();
   }
 
