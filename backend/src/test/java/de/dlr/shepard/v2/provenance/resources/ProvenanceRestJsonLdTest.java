@@ -18,7 +18,7 @@ import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
-import de.dlr.shepard.v2.common.io.PagedResponseIO;
+import de.dlr.shepard.v2.common.io.CursorPageIO;
 import de.dlr.shepard.v2.provenance.io.ActivityCountIO;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import jakarta.ws.rs.core.MediaType;
@@ -87,7 +87,7 @@ class ProvenanceRestJsonLdTest {
   // --- /activities ---------------------------------------------------------
 
   @Test
-  void listActivitiesPlainJsonShapeIsPagedResponse() {
+  void listActivitiesPlainJsonShapeIsCursorPage() {
     when(provenance.list(eq(CALLER), any(), any(), any(), any(), anyInt()))
       .thenReturn(List.of(row("a-1", "CREATE", "Collection", "c-1")));
 
@@ -95,11 +95,11 @@ class ProvenanceRestJsonLdTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    PagedResponseIO<ActivityIO> paged = (PagedResponseIO<ActivityIO>) r.getEntity();
-    assertEquals(1, paged.items().size());
-    assertEquals("a-1", paged.items().get(0).getAppId());
+    CursorPageIO<ActivityIO> page = (CursorPageIO<ActivityIO>) r.getEntity();
+    assertEquals(1, page.items().size());
+    assertEquals("a-1", page.items().get(0).getAppId());
     // Plain-JSON path does NOT carry @context / @graph.
-    assertFalse(paged.items().get(0) instanceof Map);
+    assertFalse(page.items().get(0) instanceof Map);
   }
 
   @Test
