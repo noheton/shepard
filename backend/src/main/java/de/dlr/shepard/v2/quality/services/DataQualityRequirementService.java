@@ -33,6 +33,15 @@ import java.util.Set;
 @RequestScoped
 public class DataQualityRequirementService {
 
+  /**
+   * Upper bound for {@code maxItems} in {@link #evaluate(String, String, int)} —
+   * mirrors the REST contract ({@code @Max(5000)} on {@code ?maxItems} in
+   * {@code CollectionDQRRest.evaluate()}). Kept as a service-side clamp so a
+   * future non-REST caller cannot overflow {@code maxItems + 1} or request an
+   * unbounded result heap.
+   */
+  static final int MAX_EVAL_ITEMS = 5000;
+
   @Inject
   DataQualityRequirementDAO dao;
 
@@ -135,7 +144,8 @@ public class DataQualityRequirementService {
    *
    * @param collectionAppId the Collection's appId
    * @param caller          authenticated username
-   * @param maxItems        maximum items the caller wants; evaluation stops after
+   * @param maxItems        maximum items the caller wants; clamped to
+   *                        {@code [1, MAX_EVAL_ITEMS]}; evaluation stops after
    *                        {@code maxItems + 1} results
    * @return list of DQRResultIO; one entry per (DQR, DataObject) pair; at most
    *         {@code maxItems + 1} entries; empty when no DQRs are enabled
@@ -156,7 +166,10 @@ public class DataQualityRequirementService {
     List<String> allDataObjectAppIds = dao.findDataObjectAppIds(collectionAppId);
 
     List<DQRResultIO> results = new ArrayList<>();
-    int limit = maxItems + 1;  // +1 lets the REST layer detect truncation cheaply
+    // Clamp before the +1: maxItems is user-controlled (?maxItems query param);
+    // without the clamp, Integer.MAX_VALUE would overflow to a negative limit
+    // (CodeQL java/tainted-arithmetic) and silently return an empty result set.
+    int limit = Math.clamp(maxItems, 1, MAX_EVAL_ITEMS) + 1;  // +1 lets the REST layer detect truncation cheaply
 
     for (DataQualityRequirement dqr : dqrs) {
       if (results.size() >= limit) break;

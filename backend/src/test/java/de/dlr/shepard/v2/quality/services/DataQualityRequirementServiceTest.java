@@ -331,6 +331,22 @@ class DataQualityRequirementServiceTest {
     assertEquals(2, results.size());
   }
 
+  @Test
+  void evaluateClampsMaxItemsSoIntegerMaxValueDoesNotOverflow() {
+    // maxItems = Integer.MAX_VALUE must not overflow maxItems + 1 to a negative
+    // limit (which would return an empty list). Clamped to MAX_EVAL_ITEMS; all
+    // 2 results still come back.
+    DataQualityRequirement dqr = makeDQR(DQR_APP_ID, "check", "ANNOTATION_REQUIRED", "status");
+    dqr.setEnabled(true);
+    when(dao.findByCollectionAppId(COLLECTION_APP_ID)).thenReturn(List.of(dqr));
+    when(dao.findDataObjectAppIds(COLLECTION_APP_ID)).thenReturn(List.of(DO_APP_ID_1, DO_APP_ID_2));
+    when(dao.findDataObjectsHavingAttribute(COLLECTION_APP_ID, "status")).thenReturn(Set.of());
+
+    List<DQRResultIO> results = service.evaluate(COLLECTION_APP_ID, ALICE, Integer.MAX_VALUE);
+
+    assertEquals(2, results.size());
+  }
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   private DataQualityRequirement makeDQR(String appId, String name, String ruleType, String ruleParam) {
