@@ -178,12 +178,12 @@ class SnapshotListRestTest {
 
     Response r = rest.list(null, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
-    SnapshotListPageIO<SnapshotListItemIO> b = body(r);
-    assertThat(b.items()).hasSize(1);
-    assertThat(b.items().get(0).appId()).isEqualTo("snap-a");
+    SnapshotListPageIO<SnapshotListItemIO> page = body(r);
+    assertThat(page.items()).hasSize(1);
+    assertThat(page.items().get(0).appId()).isEqualTo("snap-a");
     // APISIMP-SNAPSHOT-LIST-TOTAL: no longer reports misleading unfiltered total.
     // hasMore reflects whether the raw DB page was full (2 < 50 → false).
-    assertThat(b.hasMore()).isFalse();
+    assertThat(page.hasMore()).isFalse();
   }
 
   @Test
