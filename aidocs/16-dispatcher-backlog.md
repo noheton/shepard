@@ -5817,7 +5817,7 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/handlers/StructuredDataReferenceKindHandler.java:266`; `backend/src/main/java/de/dlr/shepard/context/references/structureddata/daos/StructuredDataReferenceDAO.java:172`.
 
 ## APISIMP-CROSSDO-LTTB-PREPAGING — CrossDoBulkDataRest runs LTTB for all allowed DOs before paging (size: S, fire-639)
-- **Status:** 🔧 in-PR (fire-639, PR #2610).
+- **Status:** ✅ merged (fire-639, PR #2610, SHA `9745954`).
 - **Why:** `POST /v2/data-objects/cross-bulk?kind=timeseries` (`CrossDoBulkDataRest.getCrossDoBulkData()`) calls `crossDoChannelResolver.resolveChannelsByPredicate()` and `timeseriesService.getDataPointsLttbOptimised()` for **every** allowed DataObject in the request, builds the full result list in memory, and only then slices with `out.subList(fromIndex, toIndex)`. For a request of 100 DOs with `pageSize=10`, 90 expensive InfluxDB LTTB queries are executed and discarded.
 - **Fix:** Build `allowedRequestedIds` (ordered, permission-filtered) first; compute `total = allowedRequestedIds.size()`; slice to `pagedIds` **before** calling the resolver or LTTB service; call `findNamesByAppIds` only for `pagedIds`; iterate `pagedIds` only for resolver+LTTB calls. Return `PagedResponseIO<>(out, total, page, pageSize)` with `X-Total-Count: total`.
 - **AC:** `pagination_lttbOnlyCalledForPageSlice_doOutsideSliceSkipped` test verifies resolver is never called for DOs outside the page slice. All 18 `CrossDoBulkDataRestTest` tests green.
@@ -5837,8 +5837,15 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/references/handlers/FileBundleReferenceKindHandler.java:80-81`.
 
 ## APISIMP-MEREST-WATCHED-COUNT — MeRest.getMe() loads all CollectionWatcher nodes via findByUsername().size() to get a count (size: XS, sweep: fire-641)
-- **Status:** 🔧 in-PR (fire-641, branch `APISIMP-MEREST-WATCHED-COUNT`).
+- **Status:** ✅ merged (fire-642, PR #2613, SHA `baff16c`).
 - **Why:** `GET /v2/users/me` (`MeRest.getMe()`, line 85) called `collectionWatcherDAO.findByUsername(current.getUsername()).size()` — loading ALL `CollectionWatcher` nodes for the user (a full `MATCH (w:CollectionWatcher) WHERE w.username = $username RETURN w ORDER BY w.since ASC` query with no LIMIT), iterating them to build a `List<CollectionWatcher>`, then discarding the list and taking `.size()` as a single integer. This triggers on every `GET /v2/users/me` call. The pattern parallels `countByCollectionAppId` already on the same DAO — `countByUsername` is the obvious fix.
 - **Fix:** Add `countByUsername(String username)` to `CollectionWatcherDAO` — `MATCH (w:CollectionWatcher) WHERE w.username = $username RETURN count(w) AS cnt` — exactly mirroring `countByCollectionAppId`. Replace `findByUsername(...).size()` in `MeRest.getMe()` with `(int) countByUsername(...)`. Update `MeRestTest` (3 test stubs switching from `findByUsername` → `countByUsername`). Add 2 DAO tests in `CollectionWatcherDAOTest`.
 - **AC:** `GET /v2/users/me` issues a single Cypher `count(w)` query; no `CollectionWatcher` entity hydration; 2 DAO tests + all `MeRestTest` tests green.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/users/resources/MeRest.java:85`; `backend/src/main/java/de/dlr/shepard/v2/collectionwatchers/daos/CollectionWatcherDAO.java:74`; apisimp-sweep-fire641 §Finding 5.
+
+## APISIMP-SNAPSHOT-LIST-N+1 — SnapshotListRest permission loop calls resolveLong() per snapshot, causing up to 200 serial Neo4j round-trips (size: S, fire-642)
+- **Status:** 🔧 in-PR (fire-642, branch `APISIMP-SNAPSHOT-LIST-N+1`).
+- **Why:** `SnapshotListRest.list()` (line 163–176) iterates the DAO page and calls `entityIdResolver.resolveLong(snap.getCollection().getAppId())` for each snapshot. On a cold request (empty memo), each call issues a single-node Cypher query `MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1`. With default `pageSize=50` and 50 distinct collections, that is 50 serial round-trips to Neo4j before the permission check can proceed. `EntityIdResolver.resolveLongs()` (line 202) already exists for this exact batch-resolve use case — it issues one `MATCH (e) WHERE e.appId IN $appIds` query and populates the memo for all resolved entries.
+- **Fix:** Before the permission loop, stream the page to collect distinct non-null collection appIds, call `entityIdResolver.resolveLongs(collectionAppIds)` once to pre-warm the memo, then let the existing `resolveLong()` loop run as-before (all memo hits, zero additional Cypher). No change to wire shape, response envelope, or permission semantics.
+- **AC:** `list_batchResolvesCollectionIds_inSingleCall` test verifies `resolveLongs()` is called exactly once with all collection appIds from the page. `mvn test -Dtest=SnapshotListRestTest` green.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/snapshot/resources/SnapshotListRest.java:163`; `backend/src/main/java/de/dlr/shepard/common/identifier/EntityIdResolver.java:202`.
