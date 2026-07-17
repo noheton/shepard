@@ -5921,11 +5921,12 @@ picks these up. Terse by design.
 - **First refs:** `backend/src/main/java/de/dlr/shepard/v2/dataobject/resources/DataObjectV2Rest.java:887,931`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding5`.
 
 ## APISIMP-CONTAINER-BULK-ENVELOPE — bulk-channel-data POST wraps bounded result in misleading PagedResponseIO (size: S, sweep: fire-647)
-- **Status:** 📋 queued.
-- **Why:** `ContainersV2Rest.java:831` bulk-channel-data endpoint returns `PagedResponseIO(out, out.size(), 0, out.size())`. The result set is bounded by the request body's `channelAppIds` list — there is no pagination (`page=0` is hardcoded and `pageSize=out.size()`). The paged envelope misleads callers into thinking pagination parameters would select a different page.
-- **Fix:** Return a plain `BulkChannelDataIO { List<CrossDoSeriesIO> items; }` record or a simple array. If `PagedResponseIO` must be retained for schema-tooling reasons, set `total` to the requested `channelAppIds` count and document explicitly that all requested channels are returned in one shot.
-- **AC:** `POST .../channels/bulk-data` response body carries no misleading `page` or `pageSize` fields, or an explicit `@Operation` note states all requested channels are returned in a single response; `mvn verify -pl backend` green.
-- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:831`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding6`.
+- **Status:** ✅ shipped (fire-652, PR #2624).
+- **Why:** `ContainersV2Rest.getBulkChannelData()` (`POST /v2/containers/{appId}/channels/data/bulk`) returned `PagedResponseIO(out, out.size(), 0, out.size())`. The result is bounded by the request body's `channelAppIds` list — no pagination is possible. The paged envelope with hardcoded `page=0` and `pageSize=out.size()` misled callers into expecting a page-2 that can never exist.
+- **Fix:** New `BulkChannelDataResponseIO { List<TimeseriesWithDataPoints> items }` record in `de.dlr.shepard.v2.timeseriescontainer.io`. Changed `getBulkChannelData()` to return `BulkChannelDataResponseIO`. Updated `@APIResponse` `@Content` schema annotation and description. Preserved `X-Total-Count` header. Two new tests in `ContainersV2RestTest`: `getBulkChannelData_returns200WithBulkChannelDataResponseIO` (verifies entity is `BulkChannelDataResponseIO`, not `PagedResponseIO`) and `getBulkChannelData_xTotalCountHeaderMatchesItemCount`.
+- **AC:** `POST /v2/containers/{appId}/channels/data/bulk` response is `{ "items":[…] }` with no misleading `page`/`pageSize`/`total` fields. `X-Total-Count` header preserved. `mvn verify -pl backend` green (CI).
+- **Wire-shape change (AWARE):** `{ "items":[…], "total":N, "page":0, "pageSize":N }` → `{ "items":[…] }`. No `/shepard/api/` v1 surface touched.
+- **First refs:** `backend/src/main/java/de/dlr/shepard/v2/containers/resources/ContainersV2Rest.java:831`; `de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataResponseIO`; `aidocs/agent-findings/apisimp-sweep-2026-07-17-fire647.md §Finding6`.
 
 ## APISIMP-SNAPSHOT-LIST-TOTAL — SnapshotListRest.total is unfiltered DB count while items are permission-filtered (size: M, sweep: fire-647)
 - **Status:** 📋 queued.
