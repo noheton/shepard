@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.entities.User;
@@ -227,11 +230,8 @@ public class FileGroupServiceTest {
     g.setFiles(List.of(new ShepardFile("oid", new Date(), "f.bin", "md5")));
     when(fileGroupDAO.findByAppId(GROUP_APP_ID)).thenReturn(g);
     when(fileGroupDAO.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
-    // siblings: 2 groups so the "last group" guard doesn't trip first
-    var siblings = new ArrayList<FileGroup>();
-    siblings.add(g);
-    siblings.add(new FileGroup(2L));
-    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(siblings);
+    // 2 siblings — "last group" guard must not trip
+    when(fileGroupDAO.countByBundleAppId(BUNDLE_APP_ID)).thenReturn(2L);
 
     assertThrows(BadRequestException.class, () -> service.deleteGroup(GROUP_APP_ID, false));
   }
@@ -243,10 +243,7 @@ public class FileGroupServiceTest {
     g.setFiles(List.of(new ShepardFile("oid", new Date(), "f.bin", "md5")));
     when(fileGroupDAO.findByAppId(GROUP_APP_ID)).thenReturn(g);
     when(fileGroupDAO.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
-    var siblings = new ArrayList<FileGroup>();
-    siblings.add(g);
-    siblings.add(new FileGroup(2L));
-    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(siblings);
+    when(fileGroupDAO.countByBundleAppId(BUNDLE_APP_ID)).thenReturn(2L);
     when(userService.getCurrentUser()).thenReturn(new User("alice"));
     when(dateHelper.getDate()).thenReturn(new Date());
     when(fileGroupDAO.createOrUpdate(any(FileGroup.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -261,9 +258,28 @@ public class FileGroupServiceTest {
     g.setName("only");
     when(fileGroupDAO.findByAppId(GROUP_APP_ID)).thenReturn(g);
     when(fileGroupDAO.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
-    when(fileGroupDAO.findByBundleAppId(BUNDLE_APP_ID)).thenReturn(List.of(g));
+    when(fileGroupDAO.countByBundleAppId(BUNDLE_APP_ID)).thenReturn(1L);
 
     assertThrows(BadRequestException.class, () -> service.deleteGroup(GROUP_APP_ID, true));
+  }
+
+  @Test
+  public void deleteGroup_usesCountQueryNotFullLoad() {
+    // Verifies that the sibling guard uses countByBundleAppId (single Cypher COUNT)
+    // rather than findByBundleAppId (full entity hydration of all siblings + their files).
+    FileGroup g = new FileGroup(1L);
+    g.setName("g");
+    when(fileGroupDAO.findByAppId(GROUP_APP_ID)).thenReturn(g);
+    when(fileGroupDAO.findBundleAppIdForGroup(GROUP_APP_ID)).thenReturn(BUNDLE_APP_ID);
+    when(fileGroupDAO.countByBundleAppId(BUNDLE_APP_ID)).thenReturn(2L);
+    when(userService.getCurrentUser()).thenReturn(new User("alice"));
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(fileGroupDAO.createOrUpdate(any(FileGroup.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    service.deleteGroup(GROUP_APP_ID, false);
+
+    verify(fileGroupDAO).countByBundleAppId(eq(BUNDLE_APP_ID));
+    verify(fileGroupDAO, never()).findByBundleAppId(eq(BUNDLE_APP_ID));
   }
 
   @Test
