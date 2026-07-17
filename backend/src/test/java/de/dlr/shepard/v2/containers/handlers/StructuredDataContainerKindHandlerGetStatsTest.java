@@ -8,21 +8,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
-import de.dlr.shepard.data.structureddata.entities.StructuredData;
+import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.v2.containers.io.ContainerStatsIO;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * APISIMP-STRUCT-CONTAINER-STATS-UNIFY — unit tests for
+ * APISIMP-CONTAINER-STATS-OGM-COUNT — unit tests for
  * {@link StructuredDataContainerKindHandler#getStats(String)}.
  *
- * <p>Verifies that the handler returns {@code entryCount} in the {@link ContainerStatsIO}
- * and that kind-specific timeseries fields are null.
+ * <p>Verifies that the handler returns {@code entryCount} via the Cypher DAO (not OGM
+ * lazy-load) and that kind-specific timeseries fields are null.
  */
 class StructuredDataContainerKindHandlerGetStatsTest {
 
@@ -30,12 +29,15 @@ class StructuredDataContainerKindHandlerGetStatsTest {
 
   private StructuredDataContainerKindHandler handler;
   private StructuredDataContainerDAO daoMock;
+  private StructuredDataDAO structuredDataDAOMock;
 
   @BeforeEach
   void setUp() throws Exception {
     handler = new StructuredDataContainerKindHandler();
     daoMock = mock(StructuredDataContainerDAO.class);
+    structuredDataDAOMock = mock(StructuredDataDAO.class);
     inject(handler, "dao", daoMock);
+    inject(handler, "structuredDataDAO", structuredDataDAOMock);
   }
 
   @Test
@@ -62,9 +64,8 @@ class StructuredDataContainerKindHandlerGetStatsTest {
   void returnsEntryCount() {
     StructuredDataContainer c = mock(StructuredDataContainer.class);
     when(c.isDeleted()).thenReturn(false);
-    when(c.getStructuredDatas()).thenReturn(List.of(
-        mock(StructuredData.class), mock(StructuredData.class)));
     when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(structuredDataDAOMock.countByContainerAppId(APP_ID)).thenReturn(2L);
 
     Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
 
@@ -77,24 +78,11 @@ class StructuredDataContainerKindHandlerGetStatsTest {
   }
 
   @Test
-  void returnsZeroWhenEntriesListIsEmpty() {
+  void returnsZeroCount() {
     StructuredDataContainer c = mock(StructuredDataContainer.class);
     when(c.isDeleted()).thenReturn(false);
-    when(c.getStructuredDatas()).thenReturn(List.of());
     when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
-
-    Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
-
-    assertTrue(result.isPresent());
-    assertEquals(0L, result.get().entryCount());
-  }
-
-  @Test
-  void returnsZeroWhenEntriesListIsNull() {
-    StructuredDataContainer c = mock(StructuredDataContainer.class);
-    when(c.isDeleted()).thenReturn(false);
-    when(c.getStructuredDatas()).thenReturn(null);
-    when(daoMock.findByAppId(APP_ID)).thenReturn(Optional.of(c));
+    when(structuredDataDAOMock.countByContainerAppId(APP_ID)).thenReturn(0L);
 
     Optional<ContainerStatsIO> result = handler.getStats(APP_ID);
 

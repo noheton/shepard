@@ -8,6 +8,7 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
+import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
@@ -46,6 +47,9 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
 
   @Inject
   DateHelper dateHelper;
+
+  @Inject
+  StructuredDataDAO structuredDataDAO;
 
   @Override
   public String kind() {
@@ -163,9 +167,9 @@ public class StructuredDataContainerKindHandler implements ContainerKindHandler 
 
   @Override
   public Optional<ContainerStatsIO> getStats(String appId) {
-    StructuredDataContainer c = dao.findByAppId(appId).filter(x -> !x.isDeleted()).orElse(null);
-    if (c == null) return Optional.empty();
-    long count = c.getStructuredDatas() != null ? c.getStructuredDatas().size() : 0L;
+    // APISIMP-CONTAINER-STATS-OGM-COUNT: count via Cypher, not OGM lazy-load.
+    if (!dao.findByAppId(appId).filter(x -> !x.isDeleted()).isPresent()) return Optional.empty();
+    long count = structuredDataDAO.countByContainerAppId(appId);
     return Optional.of(new ContainerStatsIO(null, null, null, null, null, null, count));
   }
 
