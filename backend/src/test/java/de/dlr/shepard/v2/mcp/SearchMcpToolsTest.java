@@ -42,7 +42,7 @@ import org.mockito.MockitoAnnotations;
  *   <li>The pure helpers ({@link SearchMcpTools#resolveKinds},
  *       {@link SearchMcpTools#makeSnippet}) — every branch.</li>
  *   <li>The {@code search} tool's orchestration via a test-only subclass
- *       that overrides {@link SearchMcpTools#searchLabel} to return
+ *       that overrides {@link SearchMcpTools#searchUnion} to return
  *       fixture rows — so dedupe, pagination, envelope shape, and the
  *       caller-fixable error branches are all asserted without hitting
  *       Neo4j.</li>
@@ -374,7 +374,7 @@ class SearchMcpToolsTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(ogmForbidden), eq(AccessType.Read), eq(USERNAME)))
       .thenReturn(false);
 
-    // The stub's searchLabel ignores the query string — it returns whatever
+    // The stub's searchUnion ignores the query string — it returns whatever
     // was stubbed for the label. So both rows flow into the permission
     // filter; the permitted one survives.
     String json = tools.search("anything", "Collection", null, null);
@@ -483,9 +483,32 @@ class SearchMcpToolsTest {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
+  @Test
+  void searchIssuesSingleUnionQueryForAllKinds() throws Exception {
+    // All-kinds search must call searchUnion exactly once, not once per label.
+    tools.stub("Collection", row(COL_APP_ID, "col", null));
+    tools.stub("DataObject", row(DO_APP_ID_1, "do", null));
+
+    tools.search("anything", null, null, null);
+
+    assertEquals(1, tools.searchUnionCallCount,
+      "All-kinds search must issue exactly one UNION ALL query, not one per label");
+  }
+
+  @Test
+  void searchIssuesSingleUnionQueryForSingleKind() throws Exception {
+    // Kind-scoped search still calls searchUnion exactly once.
+    tools.stub("DataObject", row(DO_APP_ID_1, "do", null));
+
+    tools.search("anything", "DataObject", null, null);
+
+    assertEquals(1, tools.searchUnionCallCount,
+      "Single-kind search must still issue exactly one UNION ALL query");
+  }
+
   private static Map<String, Object> row(String appId, String name, String description) {
-    // Stubbed rows match the shape that searchLabel emits — appId, kind, name,
-    // snippet. The stubbed override below sets kind from the requested label,
+    // Stubbed rows match the shape that searchUnion emits — appId, kind, name,
+    // snippet. The stub's searchUnion override sets kind from the fixture label,
     // so we leave it out here and let the stub fill it in.
     Map<String, Object> r = new LinkedHashMap<>();
     r.put("appId", appId);
@@ -495,7 +518,7 @@ class SearchMcpToolsTest {
   }
 
   /**
-   * Test-only subclass that replaces {@link SearchMcpTools#searchLabel} with
+   * Test-only subclass that replaces {@link SearchMcpTools#searchUnion} with
    * fixture lookups so we can unit-test the orchestration (dedupe,
    * pagination, envelope shape) without a live Neo4j substrate.
    *
@@ -539,9 +562,19 @@ class SearchMcpToolsTest {
       collectionOgmIdByAppId.put(collectionAppId, ogmId);
     }
 
+    /** Counts how many times searchUnion was called — used to assert single-query behaviour. */
+    int searchUnionCallCount = 0;
+
     @Override
-    List<Map<String, Object>> searchLabel(String label, String query) {
-      return fixtures.getOrDefault(label, List.of());
+    List<Map<String, Object>> searchUnion(List<String> labels, String query) {
+      searchUnionCallCount++;
+      // Return fixture rows for each requested label in the order they appear
+      // (labels are already in KIND_ORDINAL order from the LABELS_BY_KIND flatMap).
+      List<Map<String, Object>> result = new ArrayList<>();
+      for (String label : labels) {
+        result.addAll(fixtures.getOrDefault(label, List.of()));
+      }
+      return result;
     }
 
     /**
