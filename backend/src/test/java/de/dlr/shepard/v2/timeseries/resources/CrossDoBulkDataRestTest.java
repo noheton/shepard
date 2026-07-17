@@ -382,6 +382,39 @@ public class CrossDoBulkDataRestTest {
     assertTrue(body.items().isEmpty(), "items must be empty when page is beyond last item");
   }
 
+  // ── Pre-paging: LTTB must only fire for DOs in the page slice ────────────
+
+  @Test
+  void pagination_lttbOnlyCalledForPageSlice_doOutsideSliceSkipped() {
+    // page=1, pageSize=1 with [DO_A, DO_B, DO_C] allowed → only DO_B in slice
+    when(permsMock.filterAllowedDataObjectAppIds(any(), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(Set.of(DO_A, DO_B, DO_C));
+    when(daoMock.findNamesByAppIds(any())).thenReturn(Map.of(DO_B, "B"));
+    when(resolverMock.resolveChannelsByPredicate(DO_B, PREDICATE))
+      .thenReturn(List.of(new CrossDoChannelResolver.ResolvedChannel(2L, "m", "d", "l", "symB", "f")));
+    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
+      .thenReturn(List.of());
+
+    Response resp = resource.getCrossDoBulkData(
+      "timeseries", 1, 1,
+      new CrossDoBulkDataRequestIO(List.of(DO_A, DO_B, DO_C), PREDICATE, START_ISO, END_ISO, 500),
+      securityContext
+    );
+
+    assertEquals(200, resp.getStatus());
+    @SuppressWarnings("unchecked")
+    PagedResponseIO<CrossDoSeriesIO> body = (PagedResponseIO<CrossDoSeriesIO>) resp.getEntity();
+    assertEquals(3L, body.total(), "total must count all allowed DOs, not just the page slice");
+    assertEquals(1, body.items().size());
+    assertEquals(DO_B, body.items().get(0).dataObjectAppId());
+
+    // DOs outside the page slice must never trigger a resolver or LTTB call.
+    verify(resolverMock, never()).resolveChannelsByPredicate(eq(DO_A), any());
+    verify(resolverMock, never()).resolveChannelsByPredicate(eq(DO_C), any());
+    verify(serviceMock, times(1))
+      .getDataPointsLttbOptimised(anyLong(), any(Timeseries.class), anyLong(), anyLong(), anyInt());
+  }
+
   // ── Multi-DO LTTB-routing is called once per channel-bearing DO ──────────
 
   @Test
