@@ -2,6 +2,8 @@ package de.dlr.shepard.data.file.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -93,5 +95,28 @@ public class ShepardFileDAOTest extends BaseTestCase {
     when(session.query(query, Map.of("cid", "fc-empty"))).thenReturn(result);
 
     assertEquals(0L, dao.countByContainerAppId("fc-empty"));
+  }
+
+  // APISIMP-BUNDLE-KIND-TOIO-OGM
+
+  @Test
+  public void countByBundleReferenceAppId_returnsCountFromCypher() {
+    var mockResult = org.mockito.Mockito.mock(Result.class);
+    var row = Map.<String, Object>of("total", 5L);
+    when(mockResult.iterator()).thenReturn(List.of(row).iterator());
+    when(session.query(contains("FileBundleReference"), anyMap())).thenReturn(mockResult);
+
+    long count = dao.countByBundleReferenceAppId("bundle-appid-1");
+    assertEquals(5L, count);
+  }
+
+  @Test
+  public void countByBundleReferenceAppId_emptyResult_returnsZero() {
+    var mockResult = org.mockito.Mockito.mock(Result.class);
+    when(mockResult.iterator()).thenReturn(Collections.emptyIterator());
+    when(session.query(contains("FileBundleReference"), anyMap())).thenReturn(mockResult);
+
+    long count = dao.countByBundleReferenceAppId("bundle-appid-empty");
+    assertEquals(0L, count);
   }
 }

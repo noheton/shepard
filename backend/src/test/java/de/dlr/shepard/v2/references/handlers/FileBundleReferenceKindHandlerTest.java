@@ -18,10 +18,12 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
+import de.dlr.shepard.context.references.file.daos.FileGroupDAO;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileContainerService;
@@ -65,6 +67,12 @@ class FileBundleReferenceKindHandlerTest {
   @Mock
   UserService userService;
 
+  @Mock
+  ShepardFileDAO shepardFileDAO;
+
+  @Mock
+  FileGroupDAO fileGroupDAO;
+
   FileBundleReferenceKindHandler handler;
 
   DataObject parent;
@@ -80,6 +88,8 @@ class FileBundleReferenceKindHandlerTest {
     handler.dataObjectDAO = dataObjectDAO;
     handler.dateHelper = dateHelper;
     handler.userService = userService;
+    handler.shepardFileDAO = shepardFileDAO;
+    handler.fileGroupDAO = fileGroupDAO;
 
     var coll = new Collection(1L);
     coll.setShepardId(1L);
@@ -128,6 +138,10 @@ class FileBundleReferenceKindHandlerTest {
 
   @Test
   void toIO_mapsPayloadFields() {
+    // APISIMP-BUNDLE-KIND-TOIO-OGM: counts come from DAO Cypher queries, not OGM lazy-loads.
+    when(fileGroupDAO.countByBundleAppId(REF_APP_ID)).thenReturn(1L);
+    when(shepardFileDAO.countByBundleReferenceAppId(REF_APP_ID)).thenReturn(1L);
+
     var io = handler.toIO(bundle());
     assertEquals("bundle", io.getKind());
     assertEquals("bundle", io.getReferenceShape());
@@ -147,11 +161,21 @@ class FileBundleReferenceKindHandlerTest {
   }
 
   @Test
-  void toIO_nullGroupsAndFiles_yieldsZeroCounts() {
+  void toIO_nullAppId_yieldsZeroCounts() {
+    // Null appId guard: DAO must not be called; counts fall back to 0.
     var ref = bundle();
-    ref.setGroups(null);
-    ref.setFiles(null);
+    ref.setAppId(null);
     var io = handler.toIO(ref);
+    assertEquals(0, io.getPayload().get("groupCount"));
+    assertEquals(0, io.getPayload().get("fileCount"));
+  }
+
+  @Test
+  void toIO_daosReturnZero_yieldsZeroCounts() {
+    // DAO path returns 0 when bundle is empty.
+    when(fileGroupDAO.countByBundleAppId(REF_APP_ID)).thenReturn(0L);
+    when(shepardFileDAO.countByBundleReferenceAppId(REF_APP_ID)).thenReturn(0L);
+    var io = handler.toIO(bundle());
     assertEquals(0, io.getPayload().get("groupCount"));
     assertEquals(0, io.getPayload().get("fileCount"));
   }
