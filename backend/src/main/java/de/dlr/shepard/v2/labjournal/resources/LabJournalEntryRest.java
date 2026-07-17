@@ -4,8 +4,8 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.daos.LabJournalEntryDAO;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
+import de.dlr.shepard.v2.labjournal.io.LabJournalEntryV2IO;
 import de.dlr.shepard.v2.labjournal.io.UpdateLabJournalEntryIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -74,7 +74,7 @@ public class LabJournalEntryRest {
     description = "The LabJournalEntry.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(implementation = LabJournalEntryIO.class)
+      schema = @Schema(implementation = LabJournalEntryV2IO.class)
     )
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -95,7 +95,7 @@ public class LabJournalEntryRest {
       return problem(PT_FORBIDDEN, "Forbidden", Response.Status.FORBIDDEN, "Caller lacks Read permission on the parent DataObject.");
     }
 
-    return Response.ok(new LabJournalEntryIO(entry)).build();
+    return Response.ok(new LabJournalEntryV2IO(entry)).build();
   }
 
   @PUT
@@ -113,7 +113,7 @@ public class LabJournalEntryRest {
     description = "Updated LabJournalEntry.",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = @Schema(implementation = LabJournalEntryIO.class)
+      schema = @Schema(implementation = LabJournalEntryV2IO.class)
     )
   )
   @APIResponse(responseCode = "400", description = "Invalid or missing request body.")
@@ -140,7 +140,7 @@ public class LabJournalEntryRest {
     labJournalEntryService.assertIsCreator(entry);
 
     LabJournalEntry updated = labJournalEntryService.updateLabJournalEntry(entry.getId(), body.getJournalContent());
-    return Response.ok(new LabJournalEntryIO(updated)).build();
+    return Response.ok(new LabJournalEntryV2IO(updated)).build();
   }
 
   @DELETE

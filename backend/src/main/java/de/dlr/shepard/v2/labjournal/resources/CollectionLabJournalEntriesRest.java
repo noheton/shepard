@@ -6,8 +6,8 @@ import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
+import de.dlr.shepard.v2.labjournal.io.LabJournalEntryV2IO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -55,7 +55,7 @@ import static de.dlr.shepard.v2.common.ProblemResponse.problem;
  * which scaled to 8500+ concurrent requests on MFFD-Dropbox and exhausted the
  * browser socket pool. The frontend now hits this single endpoint.
  *
- * <p>The response shape mirrors {@link LabJournalEntryIO}; each entry already
+ * <p>The response shape uses {@link LabJournalEntryV2IO}; each entry already
  * carries {@code dataObjectAppId} (UUID v7 of the parent DataObject), letting
  * the frontend group client-side without a second round-trip.
  */
@@ -127,7 +127,7 @@ public class CollectionLabJournalEntriesRest {
     long total = entriesDAO.countByCollectionAppId(appId);
     int skip = page * pageSize;
     List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(appId, skip, pageSize);
-    List<LabJournalEntryIO> ios = new ArrayList<>();
+    List<LabJournalEntryV2IO> ios = new ArrayList<>();
     for (LabJournalEntry e : entries) {
       // Defensive: skip orphan entries whose owning DataObject didn't hydrate.
       // The DAO Cypher projects a depth-1 neighbourhood so the incoming
@@ -142,7 +142,7 @@ public class CollectionLabJournalEntriesRest {
         );
         continue;
       }
-      ios.add(new LabJournalEntryIO(e));
+      ios.add(new LabJournalEntryV2IO(e));
     }
     return Response.ok(new PagedResponseIO<>(ios, total, page, pageSize))
         .header("X-Total-Count", total)
