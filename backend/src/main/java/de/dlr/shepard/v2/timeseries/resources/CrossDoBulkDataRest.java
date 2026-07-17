@@ -31,9 +31,13 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -167,16 +171,29 @@ public class CrossDoBulkDataRest {
     Set<String> allowedIds =
       permissionsService.filterAllowedDataObjectAppIds(requestedIds, AccessType.Read, caller);
 
-    // Batch phase 3: single Neo4j round-trip for DO names (only for allowed DOs).
-    // Unknown appIds (not in the collection graph) simply won't appear in this map.
-    Map<String, String> namesByAppId = dataObjectDAO.findNamesByAppIds(allowedIds);
+    // Build the ordered, permission-filtered list so we can page BEFORE running LTTB queries.
+    // Derive from allowedIds (permission-gated source) sorted by the caller's request position so
+    // that values flowing to Cypher queries below are traceable to the allowed set, not to the raw
+    // user-supplied list. Semantically equivalent to filtering requestedIds by allowedIds.contains.
+    Map<String, Integer> requestOrder = new HashMap<>();
+    for (int i = 0; i < requestedIds.size(); i++) requestOrder.put(requestedIds.get(i), i);
+    List<String> allowedRequestedIds = allowedIds.stream()
+      .filter(requestOrder::containsKey)
+      .sorted(Comparator.comparingInt(requestOrder::get))
+      .collect(Collectors.toList());
+
+    int total = allowedRequestedIds.size();
+    int fromIndex = page * pageSize;
+    int toIndex = Math.min(fromIndex + pageSize, total);
+    List<String> pagedIds = fromIndex >= total ? List.of() : allowedRequestedIds.subList(fromIndex, toIndex);
+
+    // Batch phase 3: single Neo4j round-trip for DO names — only for the page slice.
+    Map<String, String> namesByAppId = pagedIds.isEmpty()
+      ? Map.of()
+      : dataObjectDAO.findNamesByAppIds(new HashSet<>(pagedIds));
 
     List<CrossDoSeriesIO> out = new ArrayList<>();
-    for (String doAppId : requestedIds) {
-      // Silently drop forbidden DOs; unknown DOs (not attached to any collection) are also
-      // dropped since they won't appear in the allowedIds set.
-      if (!allowedIds.contains(doAppId)) continue;
-
+    for (String doAppId : pagedIds) {
       String doName = namesByAppId.get(doAppId);
 
       List<CrossDoChannelResolver.ResolvedChannel> matches =
@@ -206,11 +223,8 @@ public class CrossDoBulkDataRest {
       out.add(new CrossDoSeriesIO(doAppId, doName, predicate, pick.symbolicName(), points));
     }
 
-    int fromIndex = page * pageSize;
-    int toIndex = Math.min(fromIndex + pageSize, out.size());
-    List<CrossDoSeriesIO> pageData = fromIndex >= out.size() ? List.of() : out.subList(fromIndex, toIndex);
-    return Response.ok(new PagedResponseIO<>(pageData, out.size(), page, pageSize))
-        .header("X-Total-Count", (long) out.size())
+    return Response.ok(new PagedResponseIO<>(out, total, page, pageSize))
+        .header("X-Total-Count", (long) total)
         .build();
   }
 
