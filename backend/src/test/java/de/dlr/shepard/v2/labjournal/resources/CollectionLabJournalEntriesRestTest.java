@@ -12,7 +12,7 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
+import de.dlr.shepard.v2.labjournal.io.LabJournalEntryV2IO;
 import de.dlr.shepard.v2.common.io.PagedResponseIO;
 import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
 import jakarta.ws.rs.NotFoundException;
@@ -107,17 +107,14 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     assertThat(body.items()).hasSize(2);
-    // dataObjectId field must be populated — the frontend uses it to group.
-    assertThat(body.items().get(0).getDataObjectId()).isEqualTo(101L);
-    assertThat(body.items().get(1).getDataObjectId()).isEqualTo(102L);
-    // APISIMP-LJE-DATAOBJECTID-NUMERIC: dataObjectAppId (UUID v7) must also be populated.
+    // APISIMP-LABJOURNAL-NUMID-DATE: v2 IO exposes only UUID v7 dataObjectAppId, no numeric id.
     assertThat(body.items().get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
     assertThat(body.items().get(1).getDataObjectAppId()).isEqualTo(DO_APP_ID_2);
-    // id and journalContent must round-trip.
-    assertThat(body.items().get(0).getId()).isEqualTo(11L);
+    // journalContent and contentFormat must round-trip.
     assertThat(body.items().get(0).getJournalContent()).isEqualTo("newer");
+    assertThat(body.items().get(0).getContentFormat()).isEqualTo("MARKDOWN");
   }
 
   /**
@@ -143,10 +140,9 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     // The orphan is skipped; only the hydrated entry survives.
     assertThat(body.items()).hasSize(1);
-    assertThat(body.items().get(0).getDataObjectId()).isEqualTo(101L);
     assertThat(body.items().get(0).getDataObjectAppId()).isEqualTo(DO_APP_ID_1);
   }
 
@@ -157,7 +153,7 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     assertThat(body.items()).isEmpty();
   }
 
@@ -174,9 +170,9 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 1, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     assertThat(body.items()).hasSize(1);
-    assertThat(body.items().get(0).getId()).isEqualTo(11L);
+    assertThat(body.items().get(0).getJournalContent()).isEqualTo("newer");
   }
 
   @Test
@@ -185,7 +181,7 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 99, 10, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     assertThat(body.items()).isEmpty();
   }
 
@@ -194,7 +190,7 @@ class CollectionLabJournalEntriesRestTest {
     var r = resource.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    var body = (PagedResponseIO<LabJournalEntryIO>) r.getEntity();
+    var body = (PagedResponseIO<LabJournalEntryV2IO>) r.getEntity();
     assertThat(body.items()).hasSize(2);
   }
 
