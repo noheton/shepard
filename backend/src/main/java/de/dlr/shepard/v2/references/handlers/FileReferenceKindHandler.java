@@ -41,8 +41,9 @@ import javax.imageio.ImageIO;
  *       which stores the binary payload and attaches it to the node.
  * </ol>
  *
- * <p>The legacy {@code POST /v2/files} multipart entry point remains active
- * for backwards-compatibility until slice 2 retires it.
+ * <p>The legacy {@code POST /v2/files} multipart entry point no longer exists
+ * (tombstone-deleted in an APISIMP wave); the two-step create + content flow
+ * above is the only upload path.
  */
 @RequestScoped
 public class FileReferenceKindHandler implements ReferenceKindHandler {

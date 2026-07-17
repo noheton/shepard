@@ -164,7 +164,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.6"
+IMPORT_SCRIPT_VERSION = "16.7"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -1653,13 +1653,43 @@ class ShepardClient:
 
         # v2 singleton (fork instances) — with retry (Learning 4/6: ConnectionReset
         # under workers=8 fan-out; file handle re-opened each attempt because
-        # multipart upload consumes the stream on the first read).
-        url_v2 = f"{self._base}/v2/files"
-        params = {"parentDataObjectAppId": app_id, "name": display}
+        # the upload consumes the stream on the first read).
+        #
+        # v16.7: the multipart POST /v2/files entry point no longer exists on
+        # any live backend (tombstone-deleted in an APISIMP wave; the
+        # FileReferenceKindHandler javadoc claiming it "remains active" was
+        # stale). The canonical flow is two-step:
+        #   1. POST /v2/references?kind=file&dataObjectAppId=…  {"name": …}
+        #      → singleton FileReference metadata node (no bytes)
+        #   2. PUT  /v2/references/{refAppId}/content?filename=…
+        #      (application/octet-stream raw body) → bytes + md5 stamped
+        # Verified end-to-end against the deployed backend 2026-07-17
+        # (create 200 → PUT 200 with payload.file.md5 → content readback OK).
+        url_ref_create = f"{self._base}/v2/references"
+        _create_params = {"kind": "file", "dataObjectAppId": app_id}
+        _ref_app_id: str | None = None
         _upload_max_attempts = 5
         _upload_backoff = 4.0
         for _attempt in range(1, _upload_max_attempts + 1):
             try:
+                # Step 1 — metadata node (created once; reused across retries
+                # so a failed content PUT doesn't mint duplicate references).
+                if _ref_app_id is None:
+                    rc = self._s.post(
+                        url_ref_create, params=_create_params,
+                        json={"name": display}, timeout=60,
+                    )
+                    if rc.ok:
+                        _ref_app_id = (rc.json() or {}).get("appId")
+                    if not _ref_app_id:
+                        if _attempt < _upload_max_attempts:
+                            print(f"  [http {rc.status_code}] v2 ref-create {display} attempt {_attempt}/{_upload_max_attempts}: {rc.text[:200]} — retrying in {_upload_backoff:.0f}s")
+                            time.sleep(_upload_backoff)
+                            _upload_backoff = min(_upload_backoff * 2, 60.0)
+                            continue
+                        print(f"  [http {rc.status_code}] v2 ref-create {display}: {rc.text[:300]}")
+                        break  # all v2 attempts failed → try v1
+                # Step 2 — content bytes.
                 with path.open("rb") as fh:
                     with tqdm(
                         total=size,
@@ -1671,7 +1701,16 @@ class ShepardClient:
                         file=sys.stderr,
                     ) as bar:
                         wrapped = _TqdmReader(fh, bar)
-                        r = self._s.post(url_v2, params=params, files={"file": (Path(display).name, wrapped)}, timeout=600)
+                        r = self._s.put(
+                            f"{self._base}/v2/references/{_ref_app_id}/content",
+                            params={"filename": Path(display).name},
+                            data=wrapped,
+                            headers={
+                                "Content-Type": "application/octet-stream",
+                                "Content-Length": str(size),
+                            },
+                            timeout=600,
+                        )
                 if r.ok:
                     return True
                 # v16.6: 404/405 are RETRYABLE, not an instant v1 fallthrough.
