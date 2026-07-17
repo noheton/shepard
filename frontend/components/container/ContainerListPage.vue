@@ -161,8 +161,11 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
   // excluded above by the orphan-check rule, but be defensive here too.
   switch (container.type as ContainerType) {
     case "FILE": {
-      // V2-SWEEP-003: v2 safe-delete (replaces v1 FileContainerApi.deleteFileContainer)
-      const r = await safeDeleteContainer("file", container.id);
+      // APISIMP-CONT-NS-COLLAPSE-6: the unified DELETE /v2/containers/{appId} is
+      // appId-keyed; appId is carried by the wire even though BasicContainer's TS
+      // type omits it. Passing the numeric id here 404s (DAO lookup is appId-strict).
+      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
+      const r = await safeDeleteContainer("file", containerAppId);
       if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
     }
@@ -175,8 +178,10 @@ async function deleteContainerByType(container: BasicContainer): Promise<void> {
       return;
     }
     case "STRUCTUREDDATA": {
-      // V2-SWEEP-003: v2 safe-delete (replaces v1 StructuredDataContainerApi.deleteStructuredDataContainer)
-      const r = await safeDeleteContainer("structured-data", container.id);
+      // APISIMP-CONT-NS-COLLAPSE-6: appId-keyed for the unified DELETE — see FILE
+      // case above; numeric id would 404 against the appId-strict resolver.
+      const containerAppId = (container as unknown as { appId?: string | null }).appId ?? container.id;
+      const r = await safeDeleteContainer("structured-data", containerAppId);
       if (!r.ok) throw new Error(`${r.conflict.referenceCount} active reference(s)`);
       return;
     }
