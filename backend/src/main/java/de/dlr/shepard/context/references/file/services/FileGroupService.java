@@ -235,15 +235,12 @@ public class FileGroupService {
     }
 
     String bundleAppId = findBundleAppIdForGroup(appId);
-    if (bundleAppId != null) {
-      List<FileGroup> siblings = fileGroupDAO.findByBundleAppId(bundleAppId);
-      if (siblings.size() <= 1) {
-        throw new BadRequestException(
-          "Refusing to delete the last remaining FileGroup of FileBundleReference appId=" +
-          bundleAppId +
-          " (would orphan its files)."
-        );
-      }
+    if (bundleAppId != null && fileGroupDAO.countByBundleAppId(bundleAppId) <= 1) {
+      throw new BadRequestException(
+        "Refusing to delete the last remaining FileGroup of FileBundleReference appId=" +
+        bundleAppId +
+        " (would orphan its files)."
+      );
     }
 
     if (group.getFiles() != null && !group.getFiles().isEmpty() && !force) {
