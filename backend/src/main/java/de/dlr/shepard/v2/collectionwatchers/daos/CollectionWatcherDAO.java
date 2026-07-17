@@ -71,6 +71,19 @@ public class CollectionWatcherDAO extends GenericDAO<CollectionWatcher> {
     return iter.hasNext() ? iter.next() : null;
   }
 
+  /** APISIMP-MEREST-WATCHED-COUNT — count all watcher records for a user without loading them. */
+  public long countByUsername(String username) {
+    String query =
+      "MATCH (w:CollectionWatcher) " +
+      "WHERE w.username = $username " +
+      "RETURN count(w) AS cnt";
+    var result = session.query(query, Map.of("username", username));
+    var row = result.iterator();
+    if (!row.hasNext()) return 0L;
+    Object cnt = row.next().get("cnt");
+    return cnt instanceof Number n ? n.longValue() : 0L;
+  }
+
   /** Find all watcher records for a given user. */
   public List<CollectionWatcher> findByUsername(String username) {
     String query =

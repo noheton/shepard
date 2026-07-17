@@ -13,11 +13,9 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.v2.collectionwatchers.daos.CollectionWatcherDAO;
-import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
 import de.dlr.shepard.v2.users.io.MeIO;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -58,7 +56,7 @@ class MeRestTest {
     when(principal.getName()).thenReturn(CALLER);
     when(userService.getCurrentUser()).thenReturn(new User(CALLER, "Alice", "Anderson", "alice@example.org"));
     when(userDAO.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
-    when(collectionWatcherDAO.findByUsername(anyString())).thenReturn(List.of());
+    when(collectionWatcherDAO.countByUsername(anyString())).thenReturn(0L);
   }
 
   // ── CW1: GET /v2/users/me ────────────────────────────────────────────
@@ -72,7 +70,7 @@ class MeRestTest {
 
   @Test
   void getMe_returns200WithZeroWatchCount() {
-    when(collectionWatcherDAO.findByUsername(CALLER)).thenReturn(List.of());
+    when(collectionWatcherDAO.countByUsername(CALLER)).thenReturn(0L);
     var r = resource.getMe(securityContext);
     assertEquals(200, r.getStatus());
     var body = (MeIO) r.getEntity();
@@ -82,9 +80,7 @@ class MeRestTest {
 
   @Test
   void getMe_returnsCorrectWatchCount() {
-    var w1 = new CollectionWatcher();
-    var w2 = new CollectionWatcher();
-    when(collectionWatcherDAO.findByUsername(CALLER)).thenReturn(List.of(w1, w2));
+    when(collectionWatcherDAO.countByUsername(CALLER)).thenReturn(2L);
     var r = resource.getMe(securityContext);
     assertEquals(200, r.getStatus());
     var body = (MeIO) r.getEntity();
