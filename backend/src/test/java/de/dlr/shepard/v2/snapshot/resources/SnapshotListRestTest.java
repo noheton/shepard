@@ -12,6 +12,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.mockito.ArgumentCaptor;
+
 import java.util.Arrays;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
@@ -217,6 +219,28 @@ class SnapshotListRestTest {
     @SuppressWarnings("unchecked") PagedResponseIO<SnapshotListItemIO> body = (PagedResponseIO<SnapshotListItemIO>) r.getEntity();
     assertThat(body.page()).isEqualTo(3);
     assertThat(body.pageSize()).isEqualTo(25);
+  }
+
+  // ── APISIMP-SNAPSHOT-LIST-N+1 ────────────────────────────────────────────
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void list_batchResolvesCollectionIds_inSingleCall() {
+    Collection cA = coll(COLL_A_APP, "A");
+    Collection cB = coll(COLL_B_APP, "B");
+    Snapshot a = snap("snap-a", "Snap A", cA);
+    Snapshot b = snap("snap-b", "Snap B", cB);
+    when(snapshotService.listAll(anyInt(), anyInt())).thenReturn(List.of(a, b));
+    when(snapshotService.countAll()).thenReturn(2L);
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong()))
+      .thenReturn(true);
+
+    rest.list(null, 0, 50, sc);
+
+    ArgumentCaptor<java.util.Collection<String>> captor =
+      ArgumentCaptor.forClass(java.util.Collection.class);
+    verify(entityIdResolver).resolveLongs(captor.capture());
+    assertThat(captor.getValue()).containsExactlyInAnyOrder(COLL_A_APP, COLL_B_APP);
   }
 
   // ─── APISIMP-SNAPSHOT-LIST-PARAMS-UNDOCUMENTED regression ────────────────

@@ -160,6 +160,15 @@ public class SnapshotListRest {
       total = snapshotService.countAll();
     }
 
+    // APISIMP-SNAPSHOT-LIST-N+1: batch-resolve so the per-snapshot loop below
+    // hits the memo rather than issuing one Cypher round-trip per snapshot.
+    entityIdResolver.resolveLongs(
+        rawPage.stream()
+            .filter(s -> s.getCollection() != null && s.getCollection().getAppId() != null)
+            .map(s -> s.getCollection().getAppId())
+            .distinct()
+            .toList());
+
     // Permission filter: each snapshot's parent Collection must be Read-able.
     List<SnapshotListItemIO> filtered = new ArrayList<>(rawPage.size());
     for (Snapshot snap : rawPage) {
