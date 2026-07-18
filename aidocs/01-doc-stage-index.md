@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 101 |
+| `fragment` | 102 |
 | `concept` | 43 |
 | `idea` | 13 |
 | `feature-defined` | 136 |
@@ -40,10 +40,10 @@ section and the `upgrade-overlay` section.
 | `deployed` | 157 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **590** |
+| **total docs** | **591** |
 | **UNTAGGED** | **0** |
 
-## fragment (101)
+## fragment (102)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -106,6 +106,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/db-antipattern-hunt-2026-07-18.md`](agent-findings/db-antipattern-hunt-2026-07-18.md) | DB Anti-Pattern Hunt — 2026-07-18 | 2026-07-18 | 2026-07-18 |
+| [`aidocs/agent-findings/db-ap2-cross-cutting-2026-07-18.md`](agent-findings/db-ap2-cross-cutting-2026-07-18.md) | DB-AP2 — Cross-Cutting Substrate Audit — 2026-07-18 | 2026-07-18 | — |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
@@ -364,7 +365,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-27 |
 | [`aidocs/agent-findings/aidocs-consolidation-survey.md`](agent-findings/aidocs-consolidation-survey.md) | aidocs consolidation survey — single source of truth enforcement | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-26 |
-| [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-07-18 |
 | [`aidocs/agent-findings/api-scrutinizer-v14-import.md`](agent-findings/api-scrutinizer-v14-import.md) | API Scrutinizer — v14 → v15 import-script review | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-scrutinizer.md`](agent-findings/api-scrutinizer.md) | API Scrutinizer — Shepard /v2/ Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/backend-logs-sift-2026-05-24.md`](agent-findings/backend-logs-sift-2026-05-24.md) | Backend logs sift — 2026-05-24 ~06:00 CEST | 2026-05-24 | 2026-05-26 |
