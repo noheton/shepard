@@ -25,18 +25,20 @@
 
 ## Immediate next action
 
-**BLOCKED — backend rebuild keeps hanging in Jandex infinite loop.** Two consecutive attempts (PIDs 354722, 500244) ran 40+ min and 5h respectively, both stuck at `org.jboss.jandex.CompositeIndex.getClassByName` inside `quarkus-arc AnnotationsTransformer.apply()`. The Makefile comment at the `build-backend` target attributes this to stale class files and prescribes `mvn clean` — but `rm -rf backend/target/` + `mvn clean package` reproduces the hang. Real root cause unclear; needs targeted investigation (Jandex index corruption in `~/.m2`? specific class with circular annotation? recent plugin commit introduced the trigger?).
+**✅ RESOLVED (2026-07-18) — the Jandex build hang does NOT reproduce on current main.** `mvn clean package -Dmaven.test.skip=true` completes in ~28–30s (augmentation ~7–8s) with **zero** ghost/index WARNs, verified twice (deterministic). The 2026-05-29 root cause (Quarkus `AutoAddScopeBuildItem.implementsInterface` spins forever when a candidate bean's **superclass** is a "ghost" not in the Jandex composite index) is fully mitigated: the `shepard-admin` `quarkus.index-dependency` fix is intact (`application.properties:558-559`), and no new ghost superclass exists (0 `Failed to index … does not exist in ClassLoader` WARNs). The Jul-17 hang was stale — either fixed by a later commit or an environmental dirty-`~/.m2`/killed-build-leftover state that a clean build clears. Deployed backend image is from **Jul-10** (not May-26 — that note was also stale).
 
-**Backend in production stays at the 2026-05-26 image** until this is resolved. TS-AXIS-AUTO (`/v2/timeseries-containers/{id}/channels/spatial-roles`) and TS-SEMANTIC-REST (`POST .../channels/{shepardId}/annotations`) are in code (`483282896`, `babb5c8f6`) but NOT live.
+**Diagnostic playbook if it recurs:** (1) `mvn clean package` (NO `-q`) → `grep -E 'does not exist in ClassLoader|Failed to index'` — this names the ghost **superclass** directly, *before* the wedge. (2) Fix by indexing the jar that **contains the ghost superclass** (add `quarkus.index-dependency.<artifact>.*` to `application.properties` + a compile-scope dep), NOT the subclass plugin. (3) Confirm the spin with `jstack <mvn-pid>` → look for `CompositeIndex.getClassByName` in `RUNNABLE`. Full context: `aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`.
+
+**UNBLOCKED now that the build works:** TS-AXIS-AUTO (`/v2/timeseries-containers/{id}/channels/spatial-roles`, `483282896`) + TS-SEMANTIC-REST (`POST .../channels/{shepardId}/annotations`, `babb5c8f6`) can be built + deployed; the CRITICAL `NEO-AUDIT-2026-07-18-ACTIVITY-SUPERNODE` fix (needs backend rebuild) is now actionable. NOTE: a backend redeploy restarts the container the live ingest talks to — schedule it deliberately (the ingest's retry logic survives a restart, but don't do it mid-critical-window without intent).
+
+**After the current ingest work:**
+1. TS-AXIS-VERIFY (#236): re-run `annotate_spatial_roles` for container 987749 (`lbr`, `afp-s1`); verify `/spatial-roles` returns non-null roles; confirm Trace3D dialog auto-populates.
+2. Track A: task #145 — fileRef parser bug for 8462 MFFD-Dropbox DOs (still needs fresh DLR JWT).
+3. Delete the 112 wiki DOs in collection 661923 (snapshot first per PRE-MUT-SNAP).
 
 **Cube-side (Track A) — RUNNING:**
 - AFP tapelaying export (cube3 → ts-export/) tmux session
 - **NEW:** Bridge-welding export (cube3 coll 163811 → ts-export-bridgewelding/) tmux session `mffd-fw-export`; uses `mffd-ts-export.py` with `SKIP_TAPELAYING=1 INCLUDE_BRIDGEWELDING=1`. Wrapper `mffd-fw-export.py` shipped in `bb8c99bcd`.
-
-**After backend rebuild is figured out:**
-1. TS-AXIS-VERIFY (#236): re-run `annotate_spatial_roles` for container 987749 (`lbr`, `afp-s1`); verify `/spatial-roles` returns non-null roles; confirm Trace3D dialog auto-populates.
-2. Track A: task #145 — fileRef parser bug for 8462 MFFD-Dropbox DOs (still needs fresh DLR JWT).
-3. Delete the 112 wiki DOs in collection 661923 (snapshot first per PRE-MUT-SNAP).
 
 ## Hot artefacts (verify before recommending)
 
