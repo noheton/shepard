@@ -104,7 +104,7 @@ committed) the connection is closed instead.
       "start": "2026-01-01T00:00:00Z",
       "end":   "2026-02-01T00:00:00Z"
     },
-    "container_id_in": [42, 99],
+    "container_app_id_in": ["018f7c91-…", "018f7c92-…"],
     "tag_filter": "sensor=PT100"
   },
   "limit": 50000,
@@ -118,7 +118,7 @@ committed) the connection is closed instead.
 | `select` | yes | Columns to return. Each item has `column` (required) and optional `alias`. |
 | `from` | yes | Table name. Must be an allowed table (e.g. `timeseries_data_points`). |
 | `where.time_between` | yes | ISO-8601 UTC start/end window. Both bounds are inclusive. |
-| `where.container_id_in` | yes | List of TimescaleDB container IDs to include. Filtered against the caller's read permissions; IDs the caller cannot read are silently dropped. |
+| `where.container_app_id_in` | yes | List of timeseries container **appIds** (UUID v7 strings) to include. Filtered against the caller's read permissions; containers the caller cannot read are silently dropped. (The legacy numeric `container_id_in` was removed — `400` if sent.) |
 | `where.tag_filter` | no | Tag-filter expression applied as an additional `WHERE` predicate. |
 | `limit` | no | Row cap for this request. Effective cap is `min(limit, max-rows)`. |
 | `order_by` | no | List of `{column, direction}` objects. Direction is `ASC` or `DESC`. |

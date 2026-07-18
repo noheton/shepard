@@ -168,6 +168,16 @@ Patchable fields: `qualityScoreThreshold` (double, °C), `heatmapGridRows` (int)
 
 ---
 
+### `provenance`
+
+Runtime provenance capture settings: master switch, read capture, and retention window.
+
+Patchable fields: `enabled` (Boolean), `captureReads` (Boolean), `retentionDays` (Long, > 0; `null` reverts to the deploy-time default).
+
+See the [Provenance dashboard & capture config](../admin/provenance-dashboard.md) admin guide for the full behaviour, precedence rules, and the instance-wide activity dashboard these knobs feed.
+
+---
+
 ### `aas` (plugin)
 
 AAS plugin: registry URL, API key, base URL, and enabled toggle.
