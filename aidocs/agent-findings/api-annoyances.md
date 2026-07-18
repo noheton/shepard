@@ -73,6 +73,16 @@ backlog rows under `aidocs/16` API-critique section. See
 
 ---
 
+### `GET /v2/containers?q=` name filter is case-SENSITIVE (2026-07-18)
+
+- **verb + path:** `GET /v2/containers?kind=…&q=…` (ContainersV2Rest.list); same shape on `GET /v2/references/urdf?q=…`
+- **expected:** case-insensitive substring match — a searchable picker's user types "bench" and expects "Bench 3" to match
+- **got:** case-sensitive substring (documented in the `@QueryParam("q")` javadoc). "bench" misses "Bench 3".
+- **workaround:** frontend pickers (WatchedContainersPanel container picker, URDF picker) leave Vuetify's client-side filter ON, which is case-insensitive — so browsed results filter correctly, but only within the first page (default 50). A case-mismatched query for a container past page 1 silently misses.
+- **fix:** lower-case both sides of the `q` LIKE on the server (or `ILIKE`/`=~ '(?i)'`). Cheap, and removes the page-boundary trap for every name-search picker at once.
+
+---
+
 ## How to add an entry
 
 Open this file, add a new dated subsection under today's date heading,
