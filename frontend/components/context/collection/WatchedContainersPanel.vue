@@ -3,6 +3,7 @@ import {
   useWatchedContainers,
   type WatchedContainerKind,
 } from "~/composables/context/useWatchedContainers";
+import { useFetchWatchableContainerOptions } from "~/composables/context/useFetchWatchableContainers";
 import {
   iconForContainerType,
   urlSegmentForContainerType,
@@ -34,11 +35,45 @@ const containerKindRoutes: Record<WatchedContainerKind, string> = {
 // Add-watch form state.
 const showAddForm = ref(false);
 const draftKind = ref<WatchedContainerKind>("TIMESERIES");
-const draftAppId = ref("");
+// v-autocomplete with `clearable` sets the model to null on clear, hence
+// `string | null`. commitAdd() and the disabled guard both null-check.
+const draftAppId = ref<string | null>("");
+// UIRULE-NO-MANUAL-IDS — the "advanced: paste appId" escape hatch, kept for ONE
+// deprecation window so a container in another collection can still be added
+// until the picker covers every reachable container. Picker is the default.
+const showAdvancedPaste = ref(false);
+
+// UIRULE-NO-MANUAL-IDS — searchable, permission-filtered container picker over
+// GET /v2/containers?kind=…, scoped by the selected draftKind.
+const {
+  query: containerSearch,
+  options: containerOptions,
+  isLoading: containerOptionsLoading,
+  refresh: refreshContainerOptions,
+} = useFetchWatchableContainerOptions(draftKind);
+
+function openAddForm() {
+  draftAppId.value = "";
+  showAdvancedPaste.value = false;
+  showAddForm.value = true;
+  refreshContainerOptions();
+}
+
+function toggleAdvancedPaste() {
+  showAdvancedPaste.value = !showAdvancedPaste.value;
+  // Switching modes clears the draft so a stale pick/paste can't leak across.
+  draftAppId.value = "";
+}
+
+// Changing the kind invalidates any container picked for the previous kind.
+watch(draftKind, () => {
+  draftAppId.value = "";
+});
 
 async function commitAdd() {
-  if (!draftAppId.value.trim()) return;
-  const ok = await add(draftKind.value, draftAppId.value.trim());
+  const appId = draftAppId.value?.trim();
+  if (!appId) return;
+  const ok = await add(draftKind.value, appId);
   if (ok) {
     draftAppId.value = "";
     showAddForm.value = false;
@@ -122,9 +157,10 @@ function availabilityChipLabel(a?: string): string {
       <div class="text-caption text-medium-emphasis mb-2">
         Add a container to this collection's watchlist. You need Read on the target container.
       </div>
-      <div class="d-flex flex-wrap ga-2 align-end">
+      <div class="d-flex flex-wrap ga-2 align-start">
         <!-- UIRULE-DROPDOWN-SEARCH-SORT: 3-option type enum kept as v-select;
-             items listed in natural (alphabetical) order — no meaningful ladder. -->
+             items listed in natural (alphabetical) order — no meaningful ladder.
+             It scopes the searchable container picker beside it. -->
         <v-select
           v-model="draftKind"
           label="Kind"
@@ -133,23 +169,69 @@ function availabilityChipLabel(a?: string): string {
           hide-details
           style="max-width: 200px"
         />
-        <v-text-field
-          v-model="draftAppId"
-          label="Container appId"
-          placeholder="01HX..."
-          density="compact"
-          hide-details
-          style="flex: 1; min-width: 240px"
-        />
-        <v-btn variant="text" size="small" @click="showAddForm = false">Cancel</v-btn>
-        <v-btn
-          variant="flat"
-          color="primary"
-          size="small"
-          :loading="mutating"
-          :disabled="!draftAppId.trim()"
-          @click="commitAdd"
-        >Add</v-btn>
+        <div style="flex: 1; min-width: 260px">
+          <!-- UIRULE-NO-MANUAL-IDS: searchable, permission-filtered container
+               picker over GET /v2/containers?kind=… — the user searches by name;
+               the appId travels invisibly (item-value). Replaces the raw
+               "paste the container appId" text field. -->
+          <v-autocomplete
+            v-if="!showAdvancedPaste"
+            v-model="draftAppId"
+            v-model:search="containerSearch"
+            :items="containerOptions"
+            :loading="containerOptionsLoading"
+            item-title="name"
+            item-value="appId"
+            label="Container"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            auto-select-first
+            spellcheck="false"
+            placeholder="search a container by name"
+            no-data-text="No matching containers you can read"
+            data-testid="watch-container-autocomplete"
+          />
+          <!-- Advanced escape hatch (one deprecation window): paste an appId to
+               watch a container the picker doesn't list (e.g. in another
+               collection). The picker above is the default per the
+               "user never types an ID" rule. -->
+          <v-text-field
+            v-else
+            v-model="draftAppId"
+            label="Container appId"
+            placeholder="01HX..."
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            spellcheck="false"
+            data-testid="watch-container-paste"
+          />
+          <v-btn
+            variant="text"
+            size="x-small"
+            density="compact"
+            class="mt-1"
+            :prepend-icon="showAdvancedPaste ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            data-testid="watch-advanced-toggle"
+            @click="toggleAdvancedPaste"
+          >
+            {{ showAdvancedPaste ? "Pick from a list instead" : "Advanced: paste an appId" }}
+          </v-btn>
+        </div>
+        <div class="d-flex ga-2 align-center">
+          <v-btn variant="text" size="small" @click="showAddForm = false">Cancel</v-btn>
+          <v-btn
+            variant="flat"
+            color="primary"
+            size="small"
+            :loading="mutating"
+            :disabled="!draftAppId || !draftAppId.trim()"
+            @click="commitAdd"
+          >Add</v-btn>
+        </div>
       </div>
     </div>
 
@@ -159,7 +241,7 @@ function availabilityChipLabel(a?: string): string {
         size="small"
         prepend-icon="mdi-plus-circle"
         color="primary"
-        @click="showAddForm = true"
+        @click="openAddForm"
       >Add watch</v-btn>
     </div>
   </div>
