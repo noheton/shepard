@@ -105,7 +105,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire572-2026-07-13.md`](agent-findings/apisimp-sweep-fire572-2026-07-13.md) | APISIMP Sweep — fire-572 (2026-07-13) | 2026-07-13 | 2026-07-13 |
 | [`aidocs/agent-findings/batch-api-audit-2026-05-27.md`](agent-findings/batch-api-audit-2026-05-27.md) | Batch API — Per-Substrate Primitives Audit (2026-05-27) | — | 2026-05-27 |
 | [`aidocs/agent-findings/client-regen-trial-2026-06-11.md`](agent-findings/client-regen-trial-2026-06-11.md) | V2-SWEEP-001-CLIENT-REGEN — trial regen findings (ABORTED) | 2026-06-11 | 2026-06-11 |
-| [`aidocs/agent-findings/db-antipattern-hunt-2026-07-18.md`](agent-findings/db-antipattern-hunt-2026-07-18.md) | DB Anti-Pattern Hunt — 2026-07-18 | 2026-07-18 | — |
+| [`aidocs/agent-findings/db-antipattern-hunt-2026-07-18.md`](agent-findings/db-antipattern-hunt-2026-07-18.md) | DB Anti-Pattern Hunt — 2026-07-18 | 2026-07-18 | 2026-07-18 |
 | [`aidocs/agent-findings/mffd-afp-spatial-analysis-cases.md`](agent-findings/mffd-afp-spatial-analysis-cases.md) | MFFD AFP Spatial Data — Analysis Cases | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-wiki-analysis-findings.md`](agent-findings/mffd-wiki-analysis-findings.md) | MFFD Confluence Wiki Analysis — Findings | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/mffd-wiki-reading-guide.md`](agent-findings/mffd-wiki-reading-guide.md) | MFFD Confluence Wiki — Complete Systematic Review | — | 2026-05-28 |
