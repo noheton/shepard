@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-07-18 — MFFD tapelaying TPS ingest: UPLOAD-FANOUT (5.9× speedup)
+
+**Context:** the tapelaying TPS ingest (tmux `mffd-tapelaying-20260710b`) was crawling — 2% after 11 h, ETA ~307 h (~13 d) at ~4.4 s/file. Diagnosis:
+
+- **NOT latency** (idle RTT to dest ~20 ms) and **NOT the 404 perms-lag retry tax** (only 121 file-retries / 636 s over the whole 11 h run).
+- **Root cause:** `run_local_mode`'s file-byte loop (`mffd-import-v15.py` L4706) was **single-threaded**. `--workers 4` only fans out DataObject *creation* (Pass 1/2), not the transfer. Payload is 355 GB / 258 671 files, ~1.4 MB mean → bandwidth-serial.
+
+**Fix (v16.8 UPLOAD-FANOUT, committed):** new `MFFD_UPLOAD_WORKERS` env knob (default 8) fans out the upload loop via `ThreadPoolExecutor`; `_upload_one(fp)` owns skip-check + upload + `state.mark_file_done` (all thread-safe); serial fallback at `<=1`. Graceful cutover: SIGINT (exit 5 → runner stops) → relaunched with `MFFD_UPLOAD_WORKERS=8`, resumed from state file (6 036 done → resume-skipped). **Measured live 5.9× (0.74 s/file, ETA ~2.2 d), 0 gateway 504s, dest idle GET stays ~30 ms.** Relaunch wrapper: `scripts/.relaunch-tapelaying-w8.sh`; new log `/tmp/mffd-ingest-tapelaying-20260710b-w8.log`. Backlog: `MFFD-IMPORT-PERF4` (done). Tests: `tests/test_upload_fanout.py`. **If pool-exhaustion 504s appear, dial down: set `MFFD_UPLOAD_WORKERS` lower and relaunch.**
+
+**Also filed `MFFD-TELEMETRY-ORPHAN` (queued):** 1 365 ts-import `404 "…is null or deleted"` — the importer's self-telemetry (`TELEMETRY_TS_CONTAINER_ID=593750`), manifest (`473932`), and runlog (`593753`) POST to dest containers wiped by the full-reset. Secondary/fail-soft (doesn't block, core uploads fine) but noisy + the importer's own observability isn't landing. Fix = resolve/auto-provision those containers by name at startup.
+
+**Branch triage:** deleted 3 fully-merged local `worktree-agent-*` branches (incl. the pgbouncer one). 2 stale `origin/APISIMP-*` remotes remain — prune with `git push origin --delete` when convenient.
+
+---
+
 ## Immediate next action
 
 **BLOCKED — backend rebuild keeps hanging in Jandex infinite loop.** Two consecutive attempts (PIDs 354722, 500244) ran 40+ min and 5h respectively, both stuck at `org.jboss.jandex.CompositeIndex.getClassByName` inside `quarkus-arc AnnotationsTransformer.apply()`. The Makefile comment at the `build-backend` target attributes this to stale class files and prescribes `mvn clean` — but `rm -rf backend/target/` + `mvn clean package` reproduces the hang. Real root cause unclear; needs targeted investigation (Jandex index corruption in `~/.m2`? specific class with circular annotation? recent plugin commit introduced the trigger?).

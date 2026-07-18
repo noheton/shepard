@@ -5,6 +5,19 @@
 #!/usr/bin/env python3
 """mffd-import-v15.py — MFFD manufacturing process data ingest with provenance.
 
+v16.8 (UPLOAD-FANOUT):
+     - run_local_mode's file-byte upload loop was single-threaded — the tapelaying
+       TPS ingest (355 GB / 258k files, ~1.4 MB mean) ran bandwidth-serial at
+       ~4.4 s/file → ~13-day wall. PRESERVE_HIERARCHY_WORKERS only fans out
+       DataObject *creation*, not the transfer. New MFFD_UPLOAD_WORKERS knob
+       (default 8) fans out the upload loop via ThreadPoolExecutor; measured
+       5.9× (0.74 s/file, ETA ~2.2 days) with 0 gateway errors and the dest
+       staying responsive (~30 ms idle GET). Serial fallback at <=1.
+     - Dial DOWN if 504/pool-exhaustion appears (feedback_no_parallel_heavy_ingests);
+       independent of the DO-pool connection-reset tuning. state.mark_file_done is
+       RLock-guarded (MFFD-IMPORT-PERF1); requests.Session is shared thread-safely.
+     - Tests: tests/test_upload_fanout.py (env-parsing contract, empty-string rescue).
+
 v16.5 (BATCH-API-3):
      - Pass 1 now uses POST /v2/data-objects/batch (bulk create, 100 items/chunk).
      - For 8,500 DOs: ~85 chunks × ~3s/chunk ≈ 5 min vs ~50 min per-DO.
@@ -164,7 +177,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.7"
+IMPORT_SCRIPT_VERSION = "16.8"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -177,6 +190,21 @@ PRESERVE_HIERARCHY_WORKERS: int = max(
     # (common when an empty `.env` line wins over the default). `or "8"`
     # rescues both cases.
     1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS") or "4")  # was "8" — v16.4 lowered to stay under connection-reset threshold
+)
+
+# v16.8 UPLOAD-FANOUT — parallelize the local-mode file-byte upload loop.
+# run_local_mode's `for fp in files:` was single-threaded (concurrency=1),
+# making the tapelaying TPS ingest bandwidth-serial: 355 GB / 258k files
+# @ ~1.4 MB mean → ~13-day wall. PRESERVE_HIERARCHY_WORKERS only fans out
+# DataObject *creation*, not the byte transfer. This knob fans out the
+# upload loop itself. Independent of connection-RESET tuning on the DO pool
+# (idle RTT to dest is ~20 ms; 29 net errors over an 11h serial run), but
+# tunable so an operator can dial DOWN if 504/pool-exhaustion appears
+# (see feedback_no_parallel_heavy_ingests). state.mark_file_done is already
+# RLock-guarded (MFFD-IMPORT-PERF1); requests.Session is shared thread-safely
+# by the existing DO-level pool, so the upload loop is safe to parallelize.
+UPLOAD_WORKERS: int = max(
+    1, int(os.environ.get("MFFD_UPLOAD_WORKERS") or "8")
 )
 
 # v16 PRESERVE-HIERARCHY — sentinel for "parentId kwarg not supplied" on
@@ -4702,28 +4730,60 @@ def run_local_mode(client: ShepardClient, coll_id: int, state: ImportState | Non
 
         existing_names = client.list_file_refs(coll_id, dest_do["id"])
         uploaded = 0
-        with tqdm(total=len(files), desc=f"  files [{step_key}]", unit="file", file=sys.stderr) as bar:
-            for fp in files:
-                display = str(fp.relative_to(DATA_DIR))
-                state_key = f"{step_key}/{display}"
-                bar.set_postfix_str(fp.name[:30])
-                if state is not None and state.is_file_done(state_key):
-                    bar.write(f"  [resume-skip] {display}")
-                    bar.update(1)
-                    continue
-                if display in existing_names or fp.name in existing_names:
-                    bar.write(f"  [skip] {display}")
-                    if state is not None:
-                        state.mark_file_done(state_key)
-                    bar.update(1)
-                    continue
-                ok = client.upload_file(app_id, fp, display, coll_id, dest_do["id"])
-                bar.write(f"  {'[ok]  ' if ok else '[err] '}{display}  ({_human(fp.stat().st_size)})")
-                if ok:
+
+        # v16.8 UPLOAD-FANOUT — one unit of work per file. Skip checks + the
+        # upload + the state mark all happen inside so the worker owns the
+        # file end-to-end; the main thread only drains results and drives the
+        # bar. Returns (fp, status) with status ∈ {resume-skip, skip, ok, err}.
+        def _upload_one(fp: Path) -> tuple[Path, str]:
+            display = str(fp.relative_to(DATA_DIR))
+            state_key = f"{step_key}/{display}"
+            if state is not None and state.is_file_done(state_key):
+                return fp, "resume-skip"
+            if display in existing_names or fp.name in existing_names:
+                if state is not None:
+                    state.mark_file_done(state_key)
+                return fp, "skip"
+            ok = client.upload_file(app_id, fp, display, coll_id, dest_do["id"])
+            if ok and state is not None:
+                state.mark_file_done(state_key)
+            return fp, ("ok" if ok else "err")
+
+        def _drain(fp: Path, status: str, bar: tqdm) -> None:
+            nonlocal uploaded
+            display = str(fp.relative_to(DATA_DIR))
+            if status == "resume-skip":
+                bar.write(f"  [resume-skip] {display}")
+            elif status == "skip":
+                bar.write(f"  [skip] {display}")
+            else:
+                bar.write(f"  {'[ok]  ' if status == 'ok' else '[err] '}{display}  ({_human(fp.stat().st_size)})")
+                if status == "ok":
                     uploaded += 1
-                    if state is not None:
-                        state.mark_file_done(state_key)
-                bar.update(1)
+            bar.update(1)
+
+        with tqdm(total=len(files), desc=f"  files [{step_key}]", unit="file", file=sys.stderr) as bar:
+            if UPLOAD_WORKERS <= 1:
+                for fp in files:
+                    bar.set_postfix_str(fp.name[:30])
+                    _fp, status = _upload_one(fp)
+                    _drain(_fp, status, bar)
+            else:
+                from concurrent.futures import ThreadPoolExecutor, as_completed
+                with ThreadPoolExecutor(
+                    max_workers=UPLOAD_WORKERS,
+                    thread_name_prefix=f"upl-{step_key}",
+                ) as executor:
+                    futures = {executor.submit(_upload_one, fp): fp for fp in files}
+                    for fut in as_completed(futures):
+                        fp = futures[fut]
+                        try:
+                            _fp, status = fut.result()
+                        except Exception as exc:  # defensive — _upload_one already catches
+                            bar.write(f"  [err] {fp} — {exc!r}")
+                            bar.update(1)
+                            continue
+                        _drain(_fp, status, bar)
 
         if uploaded:
             client.verify_references(coll_id, dest_do["id"], dest_do_name)
