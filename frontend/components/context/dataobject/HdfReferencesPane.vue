@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFetchHdfContainerOptions } from "~/composables/context/useFetchHdfContainerOptions";
+
 /**
  * A5c — per-DataObject HDF5 dataset reference panel.
  *
@@ -74,6 +76,26 @@ const createForm = reactive<HdfReferenceCreateBody>({
   description: undefined,
 });
 
+// UIRULE-NO-MANUAL-IDS: the "HDF Container" field is a searchable, permission-
+// filtered picker over GET /v2/containers?kind=hdf — the user searches by name;
+// the appId travels invisibly (item-value). Replaces the raw "paste the UUID v7
+// of the HdfContainer" text field. The paste fallback survives one deprecation
+// window behind an "advanced" toggle per the rule.
+const {
+  query: containerSearch,
+  options: containerOptions,
+  isLoading: containerOptionsLoading,
+  refresh: refreshContainerOptions,
+} = useFetchHdfContainerOptions();
+const showAdvancedPaste = ref(false);
+
+function toggleAdvancedPaste() {
+  showAdvancedPaste.value = !showAdvancedPaste.value;
+  // Reset the in-flight selection so a picked value and a pasted value never
+  // silently coexist in the shared createForm.hdfContainerAppId model.
+  createForm.hdfContainerAppId = "";
+}
+
 // ── Fetch ─────────────────────────────────────────────────────────────────
 async function fetchReferences() {
   isLoading.value = true;
@@ -106,7 +128,11 @@ function openCreate() {
   createForm.datasetPath = "";
   createForm.description = undefined;
   saveError.value = null;
+  showAdvancedPaste.value = false;
+  containerSearch.value = "";
   showCreateDialog.value = true;
+  // Populate the picker options on open (search-as-you-type refines afterwards).
+  refreshContainerOptions();
 }
 
 async function submitCreate() {
@@ -263,14 +289,53 @@ onMounted(fetchReferences);
       <template #form>
         <v-row class="pt-4">
           <v-col cols="12">
+            <!-- UIRULE-NO-MANUAL-IDS: searchable, permission-filtered picker over
+                 GET /v2/containers?kind=hdf — the user searches an HDF container by
+                 name; its appId travels invisibly (item-value). Replaces the raw
+                 "paste the UUID v7 of the HdfContainer" text field. -->
+            <v-autocomplete
+              v-if="!showAdvancedPaste"
+              v-model="createForm.hdfContainerAppId"
+              v-model:search="containerSearch"
+              :items="containerOptions"
+              :loading="containerOptionsLoading"
+              item-title="name"
+              item-value="appId"
+              label="HDF Container"
+              hint="Search an HDF container you can read; its appId is stored automatically."
+              persistent-hint
+              clearable
+              auto-select-first
+              spellcheck="false"
+              placeholder="search an HDF container by name"
+              no-data-text="No matching HDF containers you can read"
+              data-testid="hdf-container-autocomplete"
+            />
+            <!-- Advanced escape hatch (one deprecation window): paste an appId
+                 directly. The picker above is the default per the "user never
+                 types an ID" rule; this survives only until the picker is proven
+                 to cover every case an operator needs. -->
             <v-text-field
+              v-else
               v-model="createForm.hdfContainerAppId"
               label="HDF Container appId"
               placeholder="UUID v7 of the HdfContainer"
               hint="The appId of the HdfContainer this reference points into."
               persistent-hint
-              required
+              spellcheck="false"
+              data-testid="hdf-container-paste"
             />
+            <v-btn
+              variant="text"
+              size="x-small"
+              density="compact"
+              class="mt-1"
+              :prepend-icon="showAdvancedPaste ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              data-testid="hdf-container-advanced-toggle"
+              @click="toggleAdvancedPaste"
+            >
+              {{ showAdvancedPaste ? "Pick from a list instead" : "Advanced: paste an appId" }}
+            </v-btn>
           </v-col>
           <v-col cols="12">
             <v-text-field
