@@ -21,6 +21,8 @@
 
 **Branch triage:** deleted 3 fully-merged local `worktree-agent-*` branches (incl. the pgbouncer one). 2 stale `origin/APISIMP-*` remotes remain — prune with `git push origin --delete` when convenient.
 
+**Frontend redeployed 2026-07-18 21:13** (new image, smoke **26/26 PASS**) — ships both new UIRULE-NO-MANUAL-IDS pickers (WatchedContainersPanel + HdfReferencesPane container-appId → searchable picker). Gate 5 (deploy+smoke) ✅. **Gate 6 (interactive Playwright @4K) DEFERRED** — the e2e harness couldn't reach a collection-detail page *as alice* to exercise the watch picker: (a) Vuetify `v-data-table` row-click (`CollectionList.vue:162 @click=router.push`) doesn't fire under programmatic Playwright clicks, and (b) the v2 API needs a Bearer token (Playwright `page.request` cookies → 401). Green specs sidestep this by `goto('/collections/${knownAppId}')` — so the 4K interactive test needs a **known alice-EDITABLE collection appId** (unknown whether alice can edit any current-seed collection; MFFD-Dropbox etc. are importer-owned). Not a picker defect (unit-tested, typecheck/lint green, deployed). Tracked in the UIRULE-NO-MANUAL-IDS `Follow-up: Playwright 4K` rows.
+
 ---
 
 ## Immediate next action
