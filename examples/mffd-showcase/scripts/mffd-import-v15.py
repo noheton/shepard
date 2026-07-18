@@ -5,6 +5,19 @@
 #!/usr/bin/env python3
 """mffd-import-v15.py — MFFD manufacturing process data ingest with provenance.
 
+v16.9 (MFFD-TELEMETRY-ORPHAN):
+     - The importer's own observability containers (telemetry TS 593750, manifest
+       File 473932, runlog SD 593753) were addressed by baked-in numeric-id env
+       defaults. A dest full-reset deletes them → every telemetry flush() +
+       manifest poll 404s (~1.4k over an 11 h run) and the importer's own
+       observability silently stops landing.
+     - New `resolve_observability_containers()` runs at startup (before Telemetry
+       is built): probe-or-create each container, reassign the module global,
+       persist to a per-session sidecar so runner restarts reuse it. If
+       provisioning fails, the id → 0 so the channel fails SILENT (no 404 spam)
+       rather than retrying every interval. Fail-soft; never aborts the import.
+     - Tests: tests/test_obs_container_resolve.py.
+
 v16.8 (UPLOAD-FANOUT):
      - run_local_mode's file-byte upload loop was single-threaded — the tapelaying
        TPS ingest (355 GB / 258k files, ~1.4 MB mean) ran bandwidth-serial at
@@ -177,7 +190,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.8"
+IMPORT_SCRIPT_VERSION = "16.9"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -2443,6 +2456,28 @@ class ShepardClient:
         """Create a structured data container on the dest instance. Returns OGM id."""
         r = self._post(f"{self._base}/shepard/api/structuredDataContainers", {"name": name})
         return r.json().get("id") if r else None
+
+    def create_file_container(self, name: str) -> int | None:
+        """Create a file container on the dest instance. Returns OGM id.
+
+        v16.9 MFFD-TELEMETRY-ORPHAN — needed to self-heal the manifest
+        FileContainer when a dest reset deletes it.
+        """
+        r = self._post(f"{self._base}/shepard/api/fileContainers", {"name": name})
+        return r.json().get("id") if r else None
+
+    def container_exists(self, kind_path: str, container_id: int) -> bool:
+        """Probe whether a container still exists on the dest.
+
+        `kind_path` is the REST segment — 'timeseriesContainers',
+        'fileContainers', or 'structuredDataContainers'. Returns True only on a
+        200; a 404 (container deleted by a dest reset) or any error → False.
+        Uses the raw probe so a 404 doesn't get swallowed as None like `_get`.
+        """
+        if not container_id:
+            return False
+        r = self._get_raw(f"{self._base}/shepard/api/{kind_path}/{container_id}")
+        return r is not None and r.status_code == 200
 
     def link_structured_to_do(
         self, coll_id: int, do_id: int, container_id: int, name: str,
@@ -6115,6 +6150,74 @@ def _human(n: int | float) -> str:
     return f"{n:.1f} PB"
 
 
+# ── v16.9 MFFD-TELEMETRY-ORPHAN — self-heal observability containers ──────────
+# The importer's own telemetry (TS), manifest (File), and runlog (SD) containers
+# are addressed by baked-in numeric-id env defaults. A dest full-reset deletes
+# them, so every telemetry flush() + manifest poll 404s (~1.4k over an 11 h run)
+# and the importer's observability silently stops landing. Probe-or-create at
+# startup: keep the configured id if it still resolves; otherwise provision a
+# fresh container by name, reassign the module global, and persist to a
+# per-session sidecar so runner restarts reuse it instead of re-creating. If
+# provisioning fails, set the id to 0 so the channel fails SILENT (the Telemetry
+# _enabled gate turns off) rather than 404-noisy. Fail-soft throughout —
+# observability is a secondary concern and must never abort the import.
+_OBS_SIDECAR = Path(f".mffd-obs-containers-{SESSION_ID}.json")
+
+
+def resolve_observability_containers(dest_client: "ShepardClient") -> dict:
+    """Probe/provision the 3 observability containers; reassign module globals.
+
+    Returns {global_name: resolved_id}. Idempotent across runner restarts via
+    the per-session sidecar. Must be called BEFORE Telemetry(...) is built so
+    the _enabled gate + startup diag read the resolved ids.
+    """
+    specs = [
+        ("TELEMETRY_TS_CONTAINER_ID", "timeseriesContainers",
+         f"MFFD-Importer-Telemetry-{SESSION_ID}", dest_client.create_ts_container),
+        ("MANIFEST_CONTAINER_ID", "fileContainers",
+         f"MFFD-Importer-Manifest-{SESSION_ID}", dest_client.create_file_container),
+        ("RUNLOG_SD_CONTAINER_ID", "structuredDataContainers",
+         f"MFFD-Importer-Runlog-{SESSION_ID}", dest_client.create_structured_container),
+    ]
+    saved: dict = {}
+    try:
+        if _OBS_SIDECAR.exists():
+            saved = _json.loads(_OBS_SIDECAR.read_text())
+    except Exception:
+        saved = {}
+
+    g = globals()
+    resolved: dict = {}
+    for gname, kind, cname, creator in specs:
+        current = saved.get(gname) or g.get(gname)
+        if current and dest_client.container_exists(kind, int(current)):
+            resolved[gname] = int(current)
+            continue
+        try:
+            cid = creator(cname)
+        except Exception as exc:
+            print(f"  [obs] provisioning {kind} {cname!r} failed: {exc!r}")
+            cid = None
+        if cid:
+            print(f"  [obs] provisioned {kind} id={cid} ({cname}) — "
+                  f"set the matching MFFD_* env var to pin it across resets")
+            resolved[gname] = int(cid)
+        else:
+            print(f"  [obs] could NOT provision {kind} — disabling that "
+                  f"observability channel for this run (fail-silent, no 404 spam)")
+            resolved[gname] = 0
+        g[gname] = resolved[gname]  # reassign the module global in-place
+
+    # Ensure the globals reflect resolution even for the keep-existing branch.
+    for gname, val in resolved.items():
+        g[gname] = val
+    try:
+        _OBS_SIDECAR.write_text(_json.dumps(resolved))
+    except Exception:
+        pass
+    return resolved
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -6414,6 +6517,15 @@ def main() -> None:
         print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID}")
 
     dest_client = ShepardClient(SHEPARD_URL, SHEPARD_API_KEY, SHEPARD_BEARER_TOKEN)
+
+    # v16.9 MFFD-TELEMETRY-ORPHAN — self-heal the observability containers BEFORE
+    # Telemetry(...) reads their ids (its _enabled gate + the startup diag emit
+    # below both consume the module globals). Fail-soft: never abort the import.
+    try:
+        resolve_observability_containers(dest_client)
+    except Exception as _obs_exc:
+        print(f"[v{IMPORT_SCRIPT_VERSION}] observability-container resolve failed "
+              f"(non-fatal): {_obs_exc!r}")
 
     # v15.4 IMPORT-T1/SU1/CP1 — start observability stack BEFORE warmup so a
     # failed warmup is itself captured as an event the operator can see in

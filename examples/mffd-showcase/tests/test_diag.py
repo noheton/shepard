@@ -462,8 +462,8 @@ class TestTelemetryMirror(unittest.TestCase):
 
 
 class TestVersionConstant(unittest.TestCase):
-    def test_version_is_15_11(self):
-        self.assertEqual(mffd.IMPORT_SCRIPT_VERSION, "15.11")
+    def test_version_is_16_9(self):
+        self.assertEqual(mffd.IMPORT_SCRIPT_VERSION, "16.9")
 
     def test_default_diag_mode_is_normal(self):
         self.assertEqual(mffd.DIAG_MODE, "normal")

@@ -64,8 +64,8 @@ class TestCadenceConstants(unittest.TestCase):
     def test_wedge_threshold_default_180s(self):
         self.assertEqual(mffd_v15.HEARTBEAT_WEDGE_S, 180.0)
 
-    def test_version_bumped_to_15_11(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.11")
+    def test_version_bumped_to_16_9(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.9")
 
 
 # ── Phase vocabulary is the canonical set the brief specified ───────────────
