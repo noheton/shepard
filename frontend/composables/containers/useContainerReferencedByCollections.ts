@@ -16,6 +16,7 @@
  */
 
 import type { DataObject } from "@dlr-shepard/backend-client";
+import { unwrapList } from "~/utils/unwrapList";
 
 type SupportedType = "FILE" | "TIMESERIES" | "STRUCTUREDDATA";
 
@@ -85,7 +86,7 @@ export function useContainerReferencedByCollections(
         },
       });
       if (response.ok) {
-        const dataObjects = (await response.json()) as DataObject[];
+        const dataObjects = unwrapList<DataObject>(await response.json());
         // Derive unique collection IDs from the DataObject list.
         const ids = [...new Set(dataObjects.map((d) => d.collectionId))];
         collectionIds.value = ids;

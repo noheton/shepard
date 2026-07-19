@@ -11,6 +11,8 @@
  * caller can't read are silently dropped.
  */
 
+import { unwrapList } from "~/utils/unwrapList";
+
 export interface CrossDoPoint {
   timestamp: number; // absolute UTC nanoseconds
   value: unknown;
@@ -82,7 +84,7 @@ export function useCrossDoBulkData() {
         series.value = [];
         return;
       }
-      series.value = (await response.json()) as CrossDoSeries[];
+      series.value = unwrapList<CrossDoSeries>(await response.json());
     } catch (e) {
       error.value = (e as Error).message;
       series.value = [];

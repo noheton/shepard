@@ -10,6 +10,8 @@
  * Raw fetch (no generated client) — same pattern as useFetchPlugins.ts.
  */
 
+import { unwrapList } from "~/utils/unwrapList";
+
 export interface OntologyBundleIO {
   id: string;
   name?: string | null;
@@ -85,7 +87,7 @@ export function useOntologyBundles() {
         handleError(fetchError.value, "listOntologyBundles");
         return;
       }
-      bundles.value = (await response.json()) as OntologyBundleIO[];
+      bundles.value = unwrapList<OntologyBundleIO>(await response.json());
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Network error";
       fetchError.value = msg;
