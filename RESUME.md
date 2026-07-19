@@ -25,6 +25,17 @@
 
 ---
 
+## ⚠️ PENDING BACKEND DEPLOY — two dormant migrations awaiting a post-ingest window (2026-07-19)
+
+Two CRITICAL/MAJOR backend fixes are **code-complete on `main` but NOT deployed** — deliberately held because their migrations mutate the live graph and the tapelaying ingest is still running (`feedback_mutate_after_snapshot` / PRE-MUT-SNAP):
+
+- **V121 — `NEO-AUDIT-ACTIVITY-SUPERNODE`** (`ed8692e88`): `ActivityDAO` writes a time-bucketed `(:User)-[:agent_acted_in_month {ym}]->(:Activity)` edge; V121 range index + backfill of ~2.87M edges. Reuses the V80 pattern.
+- **V122 — `APPID-CHILD-MINT-REGRESSION`** (`23c64000f`): choke-point mint of `appId` on child `:Timeseries` (`ReferencedTimeseriesNodeEntity` ctors) + `:ShepardFile` (`FileStorageService.storeFile`); V122 backfill of the **198 + 550k+ NULL-appId** legacy rows (v4, documented). NOTE: **the ingest keeps creating un-appId'd `:ShepardFile` nodes until this deploys** (550k and climbing) — the write-path fix only bites once live.
+
+Both: accountable gates GREEN (5803/5807 unit tests, JaCoCo met, SpotBugs/findsecbugs clean; the 49 IT failures are environmental — no test backend in the worktree, `HealthzIT` fails identically). Both migrations EXPLAIN-validated read-only against live Neo4j (syntax + ym-format correct). Both are fail-fast startup migrations.
+
+**DEPLOY PLAN (do NOT deploy mid-ingest):** after the tapelaying ingest completes (~1.5 d), in a deliberate window: (1) snapshot per PRE-MUT-SNAP; (2) `make redeploy-backend` — the MigrationsRunner runs V121+V122 at startup (heavy but batched, `CALL {} IN TRANSACTIONS OF 1000`, ~minutes; operators wanting fast first-boot can run the `.cypher` files via cypher-shell beforehand per each migration's runbook comment); (3) verify: `MATCH (:User)-[r:agent_acted_in_month]->() RETURN count(r)` and `MATCH (n:ShepardFile) WHERE n.appId IS NULL RETURN count(n)` (→ 0). Also ships the undeployed TS-AXIS-AUTO + TS-SEMANTIC-REST at the same time.
+
 ## Immediate next action
 
 **✅ RESOLVED (2026-07-18) — the Jandex build hang does NOT reproduce on current main.** `mvn clean package -Dmaven.test.skip=true` completes in ~28–30s (augmentation ~7–8s) with **zero** ghost/index WARNs, verified twice (deterministic). The 2026-05-29 root cause (Quarkus `AutoAddScopeBuildItem.implementsInterface` spins forever when a candidate bean's **superclass** is a "ghost" not in the Jandex composite index) is fully mitigated: the `shepard-admin` `quarkus.index-dependency` fix is intact (`application.properties:558-559`), and no new ghost superclass exists (0 `Failed to index … does not exist in ClassLoader` WARNs). The Jul-17 hang was stale — either fixed by a later commit or an environmental dirty-`~/.m2`/killed-build-leftover state that a clean build clears. Deployed backend image is from **Jul-10** (not May-26 — that note was also stale).
