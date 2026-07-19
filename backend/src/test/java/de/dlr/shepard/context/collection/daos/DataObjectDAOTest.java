@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.collection.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.neo4j.ogm.model.Result;
@@ -113,8 +115,11 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — the Cypher MATCH constrains membership to c1
+    // (c.shepardId=1001 -[:has_dataobject]-> d), so the session only ever yields
+    // in-collection rows; the DAO no longer re-filters by collection client-side.
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper();
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
@@ -143,8 +148,10 @@ public class DataObjectDAOTest extends BaseTestCase {
     paramsMap.put("name", null);
 
     String query =
-      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND (v.uid = '00000000-0000-0000-0000-000000000001') WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND (v.uid = '00000000-0000-0000-0000-000000000001') WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection membership is Cypher-constrained; session
+    // yields only in-collection rows (see findAllByShepardIdsTest).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper();
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params, versionUID);
@@ -205,8 +212,10 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
+      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection membership is Cypher-constrained; session
+    // yields only in-collection rows (see findAllByShepardIdsTest).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper();
     var dataObjectAttribute = DataObjectAttributes.name;
@@ -271,8 +280,10 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
+      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection membership is Cypher-constrained; session
+    // yields only in-collection rows (see findAllByShepardIdsTest).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper().withPageAndSize(3, 100);
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
@@ -337,8 +348,10 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
+      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection membership is Cypher-constrained; session
+    // yields only in-collection rows (see findAllByShepardIdsTest).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper().withPageAndSize(3, 100);
     var dataObjectAttribute = DataObjectAttributes.name;
@@ -392,7 +405,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withName("Yes");
@@ -447,7 +460,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withName("Yes");
@@ -507,7 +520,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -567,7 +580,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withPageAndSize(3, 100).withName("Yes");
@@ -645,8 +658,11 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection AND parent are both Cypher-constrained, so the
+    // session only yields the in-collection rows whose parent is d1 (just d2); the DAO
+    // no longer re-filters by collection client-side.
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d2));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId());
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
@@ -702,7 +718,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId());
@@ -782,8 +798,10 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
+      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection AND parent are both Cypher-constrained, so the
+    // session only yields the in-collection rows whose parent is d1 (just d2).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d2));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId());
     var dataObjectAttribute = DataObjectAttributes.name;
@@ -861,7 +879,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
     var params = new QueryParamHelper().withParentId(-1L);
@@ -900,7 +918,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
 
     var params = new QueryParamHelper().withParentId(-1L);
@@ -1002,7 +1020,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withName("Yes");
@@ -1068,7 +1086,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d ORDER BY toLower(d.name) DESC MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withName("Yes");
@@ -1130,7 +1148,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withPageAndSize(3, 100);
@@ -1192,7 +1210,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withPageAndSize(3, 100);
@@ -1266,7 +1284,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withPageAndSize(3, 100).withName("Yes");
@@ -1340,7 +1358,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE })<-[:has_child]-(parent:DataObject {deleted: FALSE, shepardId: 11}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4));
 
     var params = new QueryParamHelper().withParentId(d1.getShepardId()).withPageAndSize(3, 100).withName("Yes");
@@ -1423,8 +1441,11 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
+      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection, top-level (no parent) and name are all
+    // Cypher-constrained, so the session yields only in-collection top-level rows
+    // named "Yes" (just d1); the DAO no longer re-filters by collection client-side.
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
@@ -1506,8 +1527,11 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { name : $name, deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
-    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1, d2, d3, d4, d5));
+      " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE})) WITH d ORDER BY toLower(d.name) DESC SKIP $offset LIMIT $size MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
+    // DATAOBJECT-LIST-ON2 — collection, top-level (no parent) and name are all
+    // Cypher-constrained, so the session yields only in-collection top-level rows
+    // named "Yes" (just d1).
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper().withParentId(-1L).withPageAndSize(3, 100).withName("Yes");
     var dataObjectAttribute = DataObjectAttributes.name;
@@ -1563,7 +1587,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })<-[:has_successor]-(predecessor:DataObject {deleted: FALSE, shepardId: 2011}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", null);
 
@@ -1619,7 +1643,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", null);
 
@@ -1677,7 +1701,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE })-[:has_successor]->(successor:DataObject {deleted: FALSE, shepardId: 2011}) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", null);
 
@@ -1733,7 +1757,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE})) WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", null);
 
@@ -1942,7 +1966,7 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " AND d.status = $status WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " AND d.status = $status WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper().withStatus("READY");
@@ -1970,13 +1994,118 @@ public class DataObjectDAOTest extends BaseTestCase {
     String query =
       "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
-      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference') RETURN d, nodes(path), relationships(path)";
     when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
 
     var params = new QueryParamHelper();
     var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
     verify(session).query(DataObject.class, query, paramsMap);
     assertEquals(List.of(d1), actual);
+  }
+
+  /**
+   * DATAOBJECT-LIST-ON2 — the list query's depth-1 return neighborhood must NOT
+   * hydrate either of the two fan-out edges whose OGM {@code coerceCollection}
+   * ({@code ArrayList.indexOf}) is O(n²): the shared {@code :Collection} back-edge
+   * ({@code has_dataobject}, quadratic in the collection's DataObject count) and the
+   * per-DataObject {@code has_reference} edge (quadratic in one DataObject's
+   * reference count — the live 2026-07-19 spiral, where the MFFD-Dropbox
+   * "Tapelaying" DataObject holds 102,953 FileReferences). This test pins the
+   * generated Cypher so the guard cannot silently regress: (1) the return MATCH
+   * excludes BOTH {@code has_dataobject} and {@code has_reference}, (2) the
+   * {@code name} filter is pushed into the node pattern (so the
+   * {@code find_data_object ?name=…} call returns one row, not the whole
+   * collection), and (3) pagination pushes down as {@code SKIP/LIMIT}.
+   *
+   * <p>NB: a true O(n)-vs-O(n²) mapping benchmark needs a live OGM + Neo4j
+   * session (the testcontainer IT, infra-gated in a bare worktree); this mock
+   * test asserts the query <em>shape</em> that removes the fan-out hydration.
+   */
+  @Test
+  public void listQueryDoesNotHydrateFanOutEdges_ON2() {
+    var c1 = new Collection(100L);
+    c1.setShepardId(1001L);
+
+    ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+    when(session.query(any(), queryCaptor.capture(), anyMap())).thenReturn(Collections.emptyList());
+
+    var params = new QueryParamHelper().withName("TR-004").withPageAndSize(0, 50);
+    dao.findByCollectionByShepardIds(c1.getShepardId(), params);
+
+    String query = queryCaptor.getValue();
+    // (1) BOTH fan-out edges are excluded from the hydrated neighborhood.
+    assertTrue(
+      query.contains("NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject' OR type(rel) = 'has_reference')"),
+      "list return must exclude has_dataobject AND has_reference to avoid O(n²) OGM coercion: " + query
+    );
+    // Explicit guard: has_reference (the live-incident edge) must be named in the exclusion.
+    assertTrue(query.contains("type(rel) = 'has_reference'"), "list return must exclude the has_reference edge: " + query);
+    // regression guard: the old un-guarded neighborhood (which hydrated the fan-out
+    // edges and caused the CPU spiral) must be gone.
+    assertFalse(
+      query.contains("(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN"),
+      "list return must not use the un-guarded neighborhood that hydrates the fan-out edges: " + query
+    );
+    // (2) name pushed into Cypher (exact-match node property), not filtered client-side only
+    assertTrue(query.contains("{ name : $name, deleted: FALSE }"), "name filter must push to Cypher: " + query);
+    // (3) pagination pushed to Cypher
+    assertTrue(query.contains("SKIP $offset LIMIT $size"), "pagination must push to Cypher: " + query);
+  }
+
+  /**
+   * DATAOBJECT-LIST-ON2 — {@link DataObjectDAO#reconstructReferenceStubsByDoNeo4jIds}
+   * rebuilds each DataObject's references as lightweight, correctly-typed stubs from a
+   * scalar {@code labels(r)} projection, so the list IO's referenceIds + per-kind counts
+   * stay byte-compatible even though the list neighborhood no longer hydrates
+   * {@code has_reference}. Verifies the label→concrete-subtype mapping that drives
+   * {@code DataObjectIO}'s {@code instanceof} counts.
+   */
+  @Test
+  public void reconstructReferenceStubsMapsLabelsToConcreteTypes_ON2() {
+    // One DataObject (shepardId 77) with one reference of each counted kind plus a
+    // neutral (FileReference label → not one of the three typed counters).
+    Map<String, Object> ts = new HashMap<>();
+    ts.put("doId", 77L);
+    ts.put("refId", 1L);
+    ts.put("labels", List.of("TimeseriesReference"));
+    Map<String, Object> fb = new HashMap<>();
+    fb.put("doId", 77L);
+    fb.put("refId", 2L);
+    fb.put("labels", List.of("FileBundleReference"));
+    Map<String, Object> sd = new HashMap<>();
+    sd.put("doId", 77L);
+    sd.put("refId", 3L);
+    sd.put("labels", List.of("StructuredDataReference"));
+    Map<String, Object> neutral = new HashMap<>();
+    neutral.put("doId", 77L);
+    neutral.put("refId", 4L);
+    neutral.put("labels", List.of("FileReference"));
+
+    Result result = mock(Result.class);
+    when(result.queryResults()).thenReturn(List.of(ts, fb, sd, neutral));
+    when(session.query(anyString(), anyMap())).thenReturn(result);
+
+    var stubs = dao.reconstructReferenceStubsByDoNeo4jIds(List.of(77L));
+
+    var refs = stubs.get(77L);
+    assertEquals(4, refs.size());
+    // referenceIds must contain every reference's shepardId (order-independent).
+    var ids = refs.stream().map(r -> r.getShepardId()).collect(java.util.stream.Collectors.toSet());
+    assertEquals(java.util.Set.of(1L, 2L, 3L, 4L), ids);
+    // Concrete subtypes reproduce DataObjectIO's instanceof-based per-kind counts.
+    assertEquals(1, refs.stream().filter(r -> r instanceof de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference).count());
+    assertEquals(1, refs.stream().filter(r -> r instanceof de.dlr.shepard.context.references.file.entities.FileBundleReference).count());
+    assertEquals(1, refs.stream().filter(r -> r instanceof de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference).count());
+    // The neutral FileReference-labelled stub is a plain BasicReference (counts as zero
+    // in all three typed counters — matching v1 DataObjectIO, which never counted it).
+    assertTrue(refs.stream().anyMatch(r ->
+      r.getShepardId() == 4L
+      && !(r instanceof de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference)
+      && !(r instanceof de.dlr.shepard.context.references.file.entities.FileBundleReference)
+      && !(r instanceof de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference)
+    ));
+    // Empty input → empty map (no round-trip).
+    assertTrue(dao.reconstructReferenceStubsByDoNeo4jIds(List.of()).isEmpty());
   }
 
   // ── UX-DOPANEL-TOTAL-COUNT: countByCollectionByShepardIds ────────────────

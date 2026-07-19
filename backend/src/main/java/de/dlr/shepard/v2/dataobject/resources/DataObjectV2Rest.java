@@ -282,7 +282,11 @@ public class DataObjectV2Rest {
 
     params = params.withPageAndSize(page, pageSize);
 
-    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
+    // DATAOBJECT-LIST-ON2 — pass reconstructReferences=false: the v2 list shape
+    // @JsonIgnores referenceIds, default-trims the deprecated int counts, and computes
+    // its modern per-kind counts via findRefCountsByAppIds (below), so it must NOT pay
+    // to rebuild (potentially 100k+) reference stubs on the fork's primary sidebar path.
+    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null, false);
 
     // Collect appIds for the batch count query (one round-trip for the whole page).
     List<String> appIds = new ArrayList<>(dataObjects.size());

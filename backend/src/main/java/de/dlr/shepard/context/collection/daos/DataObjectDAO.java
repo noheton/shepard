@@ -5,6 +5,10 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
+import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
+import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -13,9 +17,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -368,12 +374,24 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     if (paramsWithShepardIds.hasPagination()) {
       query += " " + CypherQueryHelper.getPaginationPart();
     }
-    query += " " + CypherQueryHelper.getReturnPart("d");
+    // DATAOBJECT-LIST-ON2 — use the list-specific return that does NOT hydrate the two
+    // fan-out edges that make OGM entity mapping O(n²): the shared :Collection
+    // back-edge (has_dataobject) and the per-DataObject has_reference edge. The live
+    // spiral was coerceCollection on d.references — the MFFD-Dropbox "Tapelaying"
+    // DataObject holds 102,953 FileReferences, so hydrating that one row was O(K²).
+    // DataObjectService.getAllDataObjectsByShepardIds cheaply re-attaches the
+    // (light-loaded) parent Collection so DataObjectIO.collectionId resolves, and
+    // reconstructs lightweight reference stubs (scalar collect projection) so
+    // DataObjectIO.referenceIds + per-kind counts stay byte-compatible. The
+    // collection-membership constraint is enforced in Cypher by the
+    // `(c:Collection {shepardId=…})-[:has_dataobject]->d` MATCH above, so the old
+    // client-side matchCollectionByShepardId filter (which required the now-excluded
+    // collection edge to be hydrated) is dropped as redundant.
+    query += " " + CypherQueryHelper.getReturnPartForList("d");
     var result = new ArrayList<DataObject>();
     for (var obj : findByQuery(query, paramsMap)) {
       List<DataObject> parentList = obj.getParent() != null ? List.of(obj.getParent()) : Collections.emptyList();
       if (
-        matchCollectionByShepardId(obj, collectionShepardId) &&
         matchName(obj, paramsWithShepardIds.getName()) &&
         matchRelatedByShepardId(parentList, paramsWithShepardIds.getParentId()) &&
         matchRelatedByShepardId(obj.getSuccessors(), paramsWithShepardIds.getSuccessorId()) &&
@@ -472,6 +490,83 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       if (val instanceof Number n) return n.longValue();
     }
     return 0L;
+  }
+
+  /**
+   * DATAOBJECT-LIST-ON2 — reconstructs each DataObject's non-deleted references as
+   * <strong>lightweight stubs</strong> in a single scalar Cypher round-trip, so the
+   * list return part can safely exclude the {@code has_reference} edge (whose OGM
+   * hydration is O(K²) for a DataObject holding K references) while
+   * {@code DataObjectIO.referenceIds} + the per-kind reference counts stay
+   * byte-compatible on the frozen v1 surface.
+   *
+   * <p>The query is a pure scalar projection ({@code r.shepardId} + {@code labels(r)}),
+   * so no OGM entity graph is built and no {@code coerceCollection} runs — the cost is
+   * O(total references), not O(K²). Only non-deleted references are returned
+   * ({@code NOT coalesce(r.deleted,false)}), matching the {@code n.deleted = FALSE OR
+   * n.deleted IS NULL} filter the old depth-1 neighborhood applied.
+   *
+   * <p>Each stub is instantiated as the concrete {@link BasicReference} subtype that
+   * reproduces {@code DataObjectIO}'s {@code instanceof}-based per-kind counts:
+   * {@link TimeseriesReference}, {@link FileBundleReference},
+   * {@link StructuredDataReference}, or a neutral {@link BasicReference} for every
+   * other label (FileReference / SingletonFileReference / URIReference / … — all of
+   * which {@code DataObjectIO} already counts as zero in the three typed counters).
+   * Only {@code shepardId} + {@code deleted=false} are populated; no other field is
+   * read by the list IO. (Plugin video references — counted via the
+   * {@code @VideoPayload} annotation — collapse to the neutral stub and therefore read
+   * as 0 in {@code videoStreamReferenceCount}; this is an accepted, documented
+   * limitation for the list shape, and video references never coexist with the
+   * file-heavy DataObjects that triggered this fix.)
+   *
+   * <p><b>Keyed by OGM node id, not shepardId.</b> Versioning duplicates a DataObject
+   * into one {@code :DataObject} node per {@code :Version}, all sharing the same
+   * {@code shepardId} (only an index, not a unique constraint, guards it — see
+   * {@code copyDataObjectsWithParentsAndPredecessors}). Keying on {@code shepardId}
+   * would therefore pull references from every version snapshot and over-count on
+   * {@code ?versionUID=} queries; {@code id(d)} is unique per node, so it re-attaches
+   * exactly the references of the version-resolved DataObject the list query returned.
+   *
+   * @param doNeo4jIds the DataObject OGM node ids ({@link DataObject#getId()}) to
+   *                   reconstruct references for
+   * @return map keyed by DataObject OGM node id → its non-deleted reference stubs
+   *         (DataObjects with no references are absent; callers default to empty)
+   */
+  public Map<Long, List<BasicReference>> reconstructReferenceStubsByDoNeo4jIds(List<Long> doNeo4jIds) {
+    Map<Long, List<BasicReference>> out = new LinkedHashMap<>();
+    if (doNeo4jIds == null || doNeo4jIds.isEmpty()) return out;
+    String cypher =
+      "MATCH (d:DataObject)-[:has_reference]->(r) " +
+      "WHERE id(d) IN $doNeo4jIds AND NOT coalesce(r.deleted, false) " +
+      "RETURN id(d) AS doId, r.shepardId AS refId, labels(r) AS labels";
+    var result = session.query(cypher, Map.of("doNeo4jIds", doNeo4jIds));
+    for (Map<String, Object> row : result.queryResults()) {
+      if (!(row.get("doId") instanceof Number doNum)) continue;
+      Long doId = doNum.longValue();
+      Long refId = row.get("refId") instanceof Number refNum ? refNum.longValue() : null;
+      Set<String> labels = new HashSet<>();
+      if (row.get("labels") instanceof Iterable<?> it) {
+        for (Object label : it) if (label != null) labels.add(label.toString());
+      }
+      out.computeIfAbsent(doId, k -> new ArrayList<>()).add(newReferenceStub(labels, refId));
+    }
+    return out;
+  }
+
+  /**
+   * Builds a single lightweight reference stub of the concrete {@link BasicReference}
+   * subtype implied by {@code labels}, carrying only {@code shepardId} +
+   * {@code deleted=false}. See {@link #reconstructReferenceStubsByDoShepardIds}.
+   */
+  private BasicReference newReferenceStub(Set<String> labels, Long refShepardId) {
+    BasicReference stub;
+    if (labels.contains(TimeseriesReference.class.getSimpleName())) stub = new TimeseriesReference();
+    else if (labels.contains(FileBundleReference.class.getSimpleName())) stub = new FileBundleReference();
+    else if (labels.contains(StructuredDataReference.class.getSimpleName())) stub = new StructuredDataReference();
+    else stub = new BasicReference();
+    stub.setShepardId(refShepardId);
+    stub.setDeleted(false);
+    return stub;
   }
 
   /**
@@ -626,10 +721,6 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
 
   private boolean matchCollection(DataObject obj, long collectionId) {
     return obj.getCollection() != null && obj.getCollection().getId().equals(collectionId);
-  }
-
-  private boolean matchCollectionByShepardId(DataObject obj, long collectionShepardId) {
-    return obj.getCollection() != null && obj.getCollection().getShepardId().equals(collectionShepardId);
   }
 
   public List<DataObject> getDataObjectsByQuery(String query) {

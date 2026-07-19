@@ -19,6 +19,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteService;
@@ -32,9 +33,12 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -360,10 +364,66 @@ public class DataObjectService {
     QueryParamHelper paramsWithShepardIds,
     UUID versionUID
   ) {
-    collectionService.getCollection(collectionShepardId, versionUID);
+    // Default byte-compatible path: reconstruct references so DataObjectIO.referenceIds
+    // + per-kind counts are populated. The v1 DataObjectRest list uses this overload.
+    return getAllDataObjectsByShepardIds(collectionShepardId, paramsWithShepardIds, versionUID, true);
+  }
+
+  /**
+   * DATAOBJECT-LIST-ON2 — the DAO list query intentionally does NOT hydrate the two
+   * fan-out edges that make OGM entity mapping O(n²): the shared {@code :Collection}
+   * back-edge ({@code has_dataobject}) and each DataObject's {@code has_reference}
+   * edge. The live 2026-07-19 spiral was {@code coerceCollection} on
+   * {@code d.references} — the MFFD-Dropbox "Tapelaying" DataObject holds 102,953
+   * FileReferences, so hydrating that one row was O(K²). Excluding both edges makes
+   * hydrating a row O(1); this method cheaply re-attaches what the list IO still needs:
+   *
+   * <ul>
+   *   <li>the already permission-checked, light-loaded parent {@code :Collection}
+   *       (single shared reference — every returned DataObject belongs to it, per the
+   *       DAO's Cypher MATCH) so {@code DataObjectIO.collectionId} resolves;</li>
+   *   <li>when {@code reconstructReferences} is true, lightweight reference stubs from
+   *       a single scalar {@code collect} projection so {@code DataObjectIO.referenceIds}
+   *       + the per-kind reference counts stay byte-compatible on the frozen v1 surface.</li>
+   * </ul>
+   *
+   * <p>The v2 list ({@code DataObjectV2Rest.list}) passes {@code reconstructReferences =
+   * false}: it {@code @JsonIgnore}s {@code referenceIds}, default-trims the deprecated
+   * int counts, and computes its modern per-kind counts via a separate batch query, so
+   * it neither needs nor should pay for reconstructing (potentially 100k+) stubs on the
+   * fork's primary sidebar path.
+   *
+   * @param reconstructReferences whether to re-attach reference stubs (v1 byte-compat)
+   */
+  public List<DataObject> getAllDataObjectsByShepardIds(
+    long collectionShepardId,
+    QueryParamHelper paramsWithShepardIds,
+    UUID versionUID,
+    boolean reconstructReferences
+  ) {
+    Collection collection = collectionService.getCollection(collectionShepardId, versionUID);
 
     var unfiltered = dataObjectDAO.findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds, versionUID);
-    var dataObjects = unfiltered.stream().map(this::cutDeleted).toList();
+
+    // Key on the OGM node id (id(d)), not shepardId: versioning duplicates a DataObject
+    // into one node per Version snapshot, all sharing shepardId (index, not unique
+    // constraint), so shepardId keying would over-count references across snapshots on
+    // ?versionUID queries. id(d) re-attaches exactly the version-resolved node's refs.
+    Map<Long, List<BasicReference>> refStubs = reconstructReferences
+      ? dataObjectDAO.reconstructReferenceStubsByDoNeo4jIds(
+          unfiltered.stream().map(DataObject::getId).filter(Objects::nonNull).toList()
+        )
+      : Collections.emptyMap();
+
+    var dataObjects = new ArrayList<DataObject>(unfiltered.size());
+    for (var dataObject : unfiltered) {
+      cutDeleted(dataObject);
+      dataObject.setCollection(collection);
+      if (reconstructReferences) {
+        dataObject.setReferences(refStubs.getOrDefault(dataObject.getId(), Collections.emptyList()));
+      }
+      dataObjects.add(dataObject);
+    }
     return dataObjects;
   }
 
