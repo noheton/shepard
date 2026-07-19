@@ -290,10 +290,17 @@ public class ActivityDAO extends GenericDAO<Activity> {
    * time-bucketed agent edge. Held as a constant so the unit test can assert on
    * a byte-identical string (spacing drift would silently break the assertion).
    */
+  // NEO-AUDIT-SUPERNODE: MERGE on the ~2.87M-degree service :User would scan
+  // the supernode's rels on every write (O(degree)) — pathological on the hot
+  // path (ProvenanceCaptureFilter creates an Activity per mutation). The Activity
+  // is brand-new, so we CREATE (O(1)); the `WHERE NOT` existence guard is checked
+  // from the Activity side (`a`'s incoming agent_acted_in_month degree is ≤1, so
+  // O(1)) to stay idempotent if wireEdges is ever re-invoked for the same Activity.
   static final String AGENT_ACTED_IN_MONTH_CYPHER =
     "MATCH (u:User {username: $username}) " +
     "MATCH (a:Activity {appId: $activityAppId}) " +
-    "MERGE (u)-[:agent_acted_in_month {ym: $ym}]->(a)";
+    "WHERE NOT (a)<-[:agent_acted_in_month]-(u) " +
+    "CREATE (u)-[:agent_acted_in_month {ym: $ym}]->(a)";
 
   /**
    * Wire the PROV-O edges (plus the time-bucketed agent index) for a freshly
