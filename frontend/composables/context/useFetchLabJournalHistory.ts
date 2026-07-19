@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * J1d — fetches the revision history of a single lab journal entry.
  *
@@ -62,7 +64,7 @@ export function useFetchLabJournalHistory(entryAppId: string) {
         );
         return;
       }
-      revisions.value = (await resp.json()) as LabJournalRevisionIO[];
+      revisions.value = unwrapList<LabJournalRevisionIO>(await resp.json());
     } catch (err) {
       error.value = err instanceof Error ? err.message : "Network error";
       handleError(error.value, "fetchLabJournalHistory");

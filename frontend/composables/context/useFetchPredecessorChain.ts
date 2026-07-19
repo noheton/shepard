@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * UX-PROV1 — fetch the predecessor chain for a DataObject.
  *
@@ -64,8 +66,7 @@ export function useFetchPredecessorChain(
         },
       });
       if (response.ok) {
-        const items = (await response.json()) as DataObjectChainItem[];
-        chain.value = Array.isArray(items) ? items : [];
+        chain.value = unwrapList<DataObjectChainItem>(await response.json());
       } else {
         chain.value = [];
         if (response.status !== 404) hasError.value = true;

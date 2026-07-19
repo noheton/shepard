@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * TS-ANNOT-B — container-scoped temporal annotations.
  *
@@ -70,7 +72,7 @@ export function useTimeseriesContainerAnnotations(containerId: Ref<string | null
       const url = `${v2BaseUrl()}/v2/containers/${containerId.value}/temporal-annotations`;
       const response = await fetch(url, { headers });
       if (response.ok) {
-        annotations.value = (await response.json()) as ContainerAnnotationDto[];
+        annotations.value = unwrapList<ContainerAnnotationDto>(await response.json());
       } else {
         annotations.value = [];
       }

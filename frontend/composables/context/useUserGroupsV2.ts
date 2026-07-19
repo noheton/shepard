@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * V2-SWEEP-002-2 — appId-keyed user-group CRUD against the `/v2/user-groups`
  * surface shipped by `UserGroupV2Rest` (V2-SWEEP-002 slice 1).
@@ -83,7 +85,7 @@ export function useUserGroupsV2() {
       credentials: "include",
     });
     if (!res.ok) throw new Error(`listUserGroups failed: ${res.status}`);
-    return (await res.json()) as UserGroupV2[];
+    return unwrapList<UserGroupV2>(await res.json());
   }
 
   async function getUserGroup(appId: string): Promise<UserGroupV2> {

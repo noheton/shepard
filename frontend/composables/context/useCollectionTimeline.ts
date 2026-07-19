@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * COLL-TIMELINE-1 / COLL-TIMELINE-CROSS-1 — composables for
  * `GET /v2/collections/{collectionAppId}/timeline` (single) and
@@ -139,6 +141,5 @@ export async function fetchCollectionsForCompare(
     headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
   });
   if (!resp.ok) return [];
-  const items = (await resp.json()) as CollectionSummary[];
-  return Array.isArray(items) ? items : [];
+  return unwrapList<CollectionSummary>(await resp.json());
 }
