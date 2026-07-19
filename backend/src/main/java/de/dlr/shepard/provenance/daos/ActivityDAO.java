@@ -286,7 +286,18 @@ public class ActivityDAO extends GenericDAO<Activity> {
   }
 
   /**
-   * Wire the three PROV-O edges for a freshly saved {@link Activity}.
+   * NEO-AUDIT-2026-07-18-ACTIVITY-SUPERNODE — the exact Cypher issued for the
+   * time-bucketed agent edge. Held as a constant so the unit test can assert on
+   * a byte-identical string (spacing drift would silently break the assertion).
+   */
+  static final String AGENT_ACTED_IN_MONTH_CYPHER =
+    "MATCH (u:User {username: $username}) " +
+    "MATCH (a:Activity {appId: $activityAppId}) " +
+    "MERGE (u)-[:agent_acted_in_month {ym: $ym}]->(a)";
+
+  /**
+   * Wire the PROV-O edges (plus the time-bucketed agent index) for a freshly
+   * saved {@link Activity}.
    *
    * <ul>
    *   <li>{@code (:Activity)-[:WAS_ASSOCIATED_WITH]->(:User)} — agent who
@@ -295,12 +306,21 @@ public class ActivityDAO extends GenericDAO<Activity> {
    *       created by a {@code CREATE} action.</li>
    *   <li>{@code (:Activity)-[:USED]->(:BasicEntity)} — target entity
    *       read / mutated by a {@code READ / UPDATE / DELETE / EXECUTE} action.</li>
+   *   <li>{@code (:User)-[:agent_acted_in_month {ym:"YYYYMM"}]->(:Activity)} —
+   *       NEO-AUDIT-2026-07-18-ACTIVITY-SUPERNODE. A time-bucketed agent index
+   *       mirroring {@code DataObjectDAO.writeCreatedInMonth} (NEO-AUDIT-004).
+   *       The service {@code :User} carries ~2.87M incoming
+   *       {@code WAS_ASSOCIATED_WITH} edges (~28× Neo4j's dense-node threshold);
+   *       agent+time provenance queries can label-scan this bounded, ym-indexed
+   *       rel instead of walking the supernode. See
+   *       {@code V121__add_agent_acted_in_month_index.cypher}.</li>
    * </ul>
    *
-   * <p>All three MERGEs are idempotent. Only the edges relevant to this
+   * <p>All MERGEs are idempotent. Only the edges relevant to this
    * activity's {@code actionKind} and available identifiers are executed.
    * Failures are logged and suppressed — provenance edges are observability,
-   * never contract (see {@code aidocs/55 §4}).
+   * never contract (see {@code aidocs/55 §4}); each edge write sits in its own
+   * try/catch so one failing edge never suppresses the others.
    *
    * <p>Called from {@link de.dlr.shepard.provenance.services.ProvenanceService#record}
    * immediately after the activity node is saved, inside the same best-effort
@@ -335,6 +355,55 @@ public class ActivityDAO extends GenericDAO<Activity> {
         io.quarkus.logging.Log.debugf(e, "PROV-O %s edge failed for Activity %s → %s",
           edgeLabel, saved.getAppId(), targetAppId);
       }
+    }
+
+    // Edge 3: (:User)-[:agent_acted_in_month {ym}]->(:Activity) — NEO-AUDIT-SUPERNODE.
+    // Time-bucketed agent index so agent+time provenance queries avoid walking the
+    // ~2.87M-degree service :User supernode. Best-effort, in its own try/catch.
+    writeAgentActedInMonth(saved, agentUsername);
+  }
+
+  /**
+   * NEO-AUDIT-2026-07-18-ACTIVITY-SUPERNODE — write the time-bucketed
+   * {@code (:User)-[:agent_acted_in_month {ym:"YYYYMM"}]->(:Activity)} edge.
+   *
+   * <p>Mirrors {@code DataObjectDAO.writeCreatedInMonth}: the {@code ym} is
+   * derived from the Activity's {@code startedAtMillis} (epoch-millis), formatted
+   * UTC-explicitly as a 6-char {@code "YYYYMM"} string so it aligns with the
+   * Cypher backfill migration (which uses {@code datetime({epochMillis: x})}, UTC).
+   * Using the JVM-default timezone would diverge for activities near midnight in
+   * timezones east of UTC.
+   *
+   * <p>Uses MERGE so the call is idempotent. Best-effort — skips (WARN) when the
+   * username or {@code startedAtMillis} is missing, and swallows any query
+   * failure, so a write here never blocks the primary provenance capture
+   * (CLAUDE.md fire-and-forget rule).
+   *
+   * @param saved         the freshly persisted Activity (non-null appId asserted
+   *                      by the caller)
+   * @param agentUsername the acting agent's username (may be {@code null}/blank)
+   */
+  void writeAgentActedInMonth(Activity saved, String agentUsername) {
+    if (agentUsername == null || agentUsername.isBlank()) return;
+    Long startedAtMillis = saved.getStartedAtMillis();
+    if (startedAtMillis == null) {
+      io.quarkus.logging.Log.debugf(
+        "NEO-AUDIT-SUPERNODE: skipping agent_acted_in_month for Activity %s — null startedAtMillis",
+        saved.getAppId()
+      );
+      return;
+    }
+    var utc = java.time.Instant.ofEpochMilli(startedAtMillis).atZone(java.time.ZoneOffset.UTC);
+    String ym = String.format("%04d%02d", utc.getYear(), utc.getMonthValue());
+    try {
+      session.query(
+        AGENT_ACTED_IN_MONTH_CYPHER,
+        Map.of("username", agentUsername, "activityAppId", saved.getAppId(), "ym", ym)
+      );
+    } catch (RuntimeException e) {
+      io.quarkus.logging.Log.debugf(e,
+        "NEO-AUDIT-SUPERNODE: agent_acted_in_month edge failed for Activity %s (user=%s, ym=%s)",
+        saved.getAppId(), agentUsername, ym);
     }
   }
 
