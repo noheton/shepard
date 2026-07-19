@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useFetchHdfContainerOptions } from "~/composables/context/useFetchHdfContainerOptions";
+import { unwrapList } from "~/utils/unwrapList";
 
 /**
  * A5c — per-DataObject HDF5 dataset reference panel.
@@ -114,7 +115,7 @@ async function fetchReferences() {
       loadError.value = `Failed to load HDF references (HTTP ${response.status}).`;
       return;
     }
-    references.value = (await response.json()) as HdfReference[];
+    references.value = unwrapList<HdfReference>(await response.json());
   } catch {
     loadError.value = "Failed to load HDF references.";
   } finally {

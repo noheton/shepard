@@ -26,6 +26,7 @@
  */
 
 import { naturalSort } from "~/utils/naturalSort";
+import { unwrapList } from "~/utils/unwrapList";
 
 export interface ReferenceOption {
   appId: string;
@@ -79,7 +80,7 @@ async function fetchKindOptions(
     });
     // 403 (no access), 404 (DO missing), unknown-kind 400 → silent empty.
     if (!response.ok) return [];
-    const refs = (await response.json()) as { appId?: string; name?: string }[];
+    const refs = unwrapList<{ appId?: string; name?: string }>(await response.json());
     return mapToReferenceOptions(refs, kind);
   } catch {
     return [];

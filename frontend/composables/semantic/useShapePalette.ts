@@ -20,6 +20,7 @@
  * annotation-picker data sources per the B6 brief.
  */
 import { ref, type Ref } from "vue";
+import { unwrapList } from "~/utils/unwrapList";
 
 /** One pickable predicate in the palette. */
 export interface PalettePredicate {
@@ -206,7 +207,7 @@ export function useShapePalette() {
         searchResults.value = [];
         return;
       }
-      const rows = (await res.json()) as TermSuggestion[];
+      const rows = unwrapList<TermSuggestion>(await res.json());
       searchResults.value = (Array.isArray(rows) ? rows : []).map((r) => ({
         uri: r.uri,
         label: r.label ?? null,
