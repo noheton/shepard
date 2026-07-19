@@ -4756,14 +4756,26 @@ def run_local_mode(client: ShepardClient, coll_id: int, state: ImportState | Non
         do_ids[step_key] = dest_do["id"]
         app_id = dest_do.get("appId") or ""
 
-        client.verify_references(coll_id, dest_do["id"], dest_do_name)
+        # v16.10 DATAOBJECT-LIST-ON2: verify_references + list_file_refs GET the
+        # DO's /fileReferences, which loads ALL of the DO's references via the
+        # backend's O(K²) getAllReferencesByDataObjectId (the Tapelaying DO holds
+        # 102,953 FileReferences → ~10^10 OGM coerce ops → backend spiral). BOTH
+        # are non-essential here: verify_references only prints a [refs] summary,
+        # and existing_names is a *backup* upload-skip dedup — `state.is_file_done`
+        # (the state file) is the authoritative resume mechanism (see the hoist
+        # comment in run_source_mode). Skip both until the backend O(K²) reference-
+        # load path is fixed. Re-enable via MFFD_VERIFY_REFS=1 for small DOs.
+        if os.environ.get("MFFD_VERIFY_REFS") == "1":
+            client.verify_references(coll_id, dest_do["id"], dest_do_name)
 
         files = file_list(local_dir)
         if not files:
             print(f"  no local files in {local_dir or '(no dir)'}")
             continue
 
-        existing_names = client.list_file_refs(coll_id, dest_do["id"])
+        # existing_names intentionally empty — resume-skip is driven by
+        # state.is_file_done below, not a per-DO /fileReferences fetch (O(K²)).
+        existing_names: set[str] = set()
         uploaded = 0
 
         # v16.8 UPLOAD-FANOUT — one unit of work per file. Skip checks + the
@@ -4820,7 +4832,9 @@ def run_local_mode(client: ShepardClient, coll_id: int, state: ImportState | Non
                             continue
                         _drain(_fp, status, bar)
 
-        if uploaded:
+        if uploaded and os.environ.get("MFFD_VERIFY_REFS") == "1":
+            # v16.10 DATAOBJECT-LIST-ON2: skip the post-upload [refs] summary —
+            # it GETs /fileReferences (O(K²) on the 102k-ref DO). Opt in for small DOs.
             client.verify_references(coll_id, dest_do["id"], dest_do_name)
 
     return do_ids
