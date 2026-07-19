@@ -1,3 +1,4 @@
+import { unwrapList } from "~/utils/unwrapList";
 /**
  * WATCH1 — Collection "watched containers" CRUD wrapper.
  *
@@ -26,21 +27,18 @@ export interface WatchDto {
 }
 
 /**
- * Unwrap the `GET /v2/collections/{appId}/watches` response into a plain
- * `WatchDto[]`.
+ * Unwrap the `GET /v2/collections/{appId}/watched-containers` response into a
+ * plain `WatchDto[]` (thin typed wrapper over the shared {@link unwrapList}).
  *
  * The endpoint returns a paged envelope (`{items,total,page,pageSize}`) after
  * the APISIMP pagination sweep. Assigning the raw envelope to `watches` made it
  * a non-array object → `watches.length` was `undefined` (so the empty-state
  * masked it) and `v-for="w in watches"` iterated the object's VALUES
  * (`[]`,0,0,50) → `w.containerKind.toLowerCase()` threw and collapsed the whole
- * panel the moment the Add-watch form opened. Tolerates a bare array from an
- * older backend and any non-conforming shape (→ empty). Exported for testing.
+ * panel the moment the Add-watch form opened. Exported for testing.
  */
 export function unwrapWatchesResponse(json: unknown): WatchDto[] {
-  if (Array.isArray(json)) return json as WatchDto[];
-  const items = (json as { items?: unknown } | null)?.items;
-  return (Array.isArray(items) ? items : []) as WatchDto[];
+  return unwrapList<WatchDto>(json);
 }
 
 function v2BaseUrl(): string {
