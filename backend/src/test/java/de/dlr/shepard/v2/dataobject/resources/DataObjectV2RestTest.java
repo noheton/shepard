@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -154,7 +155,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext);
     assertEquals(404, r.getStatus());
-    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -172,7 +173,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext);
@@ -190,7 +191,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
     // Simulate the batch count query returning specific counts for this DO.
     when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
@@ -216,7 +217,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
     when(dataObjectDAO.findTsContainerIdsByDataObjectAppIds(List.of(DO_APP_ID)))
       .thenReturn(Map.of(DO_APP_ID, List.of(containerNeo4jId)));
@@ -241,7 +242,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(8514L);
 
@@ -262,7 +263,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
     when(dataObjectDAO.countByCollectionByShepardIds(eq(COLL_OGM_ID), any())).thenReturn(0L);
 
@@ -281,7 +282,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext);
@@ -303,7 +304,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(d));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
@@ -321,7 +322,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null,
@@ -336,7 +337,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext);
@@ -353,7 +354,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -372,7 +373,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -388,7 +389,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -407,7 +408,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(d));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, true, null, null, securityContext);
@@ -429,7 +430,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectDAO.findByAppId(parentAppId)).thenReturn(parent);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(child));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, parentAppId, null, null, null, securityContext);
@@ -455,7 +456,7 @@ class DataObjectV2RestTest {
     assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
     assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
     assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
-    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -465,7 +466,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(d));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -490,7 +491,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectDAO.findByAppId(predAppId)).thenReturn(pred);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(child));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -518,7 +519,7 @@ class DataObjectV2RestTest {
     assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
     assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
     assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
-    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -532,7 +533,7 @@ class DataObjectV2RestTest {
       .thenReturn(true);
     when(dataObjectDAO.findByAppId(succAppId)).thenReturn(succ);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(pred));
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
@@ -560,7 +561,7 @@ class DataObjectV2RestTest {
     assertEquals("dataobjects */0", r.getHeaderString("Content-Range"));
     assertEquals("max-age=300, must-revalidate", r.getHeaderString("Cache-Control"));
     assertEquals("default-trim", r.getHeaderString("X-Shepard-Payload-Diet"));
-    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any(), anyBoolean());
   }
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -1147,7 +1148,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d));
     return d;
   }
@@ -1243,7 +1244,7 @@ class DataObjectV2RestTest {
     org.junit.jupiter.api.Assertions.assertNotNull(detail);
     org.junit.jupiter.api.Assertions.assertTrue(detail.contains("bogusField"), "400 body should cite the offending field name; got: " + detail);
     // 400 must short-circuit before any DB hit
-    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
+    verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any(), anyBoolean());
   }
 
   @Test
@@ -1267,7 +1268,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null), eq(false)))
       .thenReturn(List.of(d, d, d, d, d));
 
     String trimmed = (String) resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext).getEntity();
@@ -1323,7 +1324,7 @@ class DataObjectV2RestTest {
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
-    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null)))
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(Collections.emptyList());
 
     Response r = resource.list(COLL_APP_ID, "afp-run", null, 0, 50, null, null, null, null, null, null, null, null, null, securityContext);

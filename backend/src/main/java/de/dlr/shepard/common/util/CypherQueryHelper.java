@@ -101,6 +101,69 @@ public class CypherQueryHelper {
     return "RETURN " + entity;
   }
 
+  /**
+   * DATAOBJECT-LIST-ON2 — list-specific depth-1 neighborhood return that
+   * <strong>excludes the two fan-out edges that make OGM entity mapping
+   * O(n²)</strong>: the shared {@code :Collection} back-edge
+   * ({@code has_dataobject}) and the per-DataObject {@code has_reference} edge.
+   *
+   * <p>The default {@link #getReturnPart(String)} walks {@code (d)-[*0..1]-(n)}
+   * undirected. Neo4j-OGM then populates each hydrated one-to-many collection by
+   * merging every returned path row into it with an {@code ArrayList.indexOf}
+   * dedup ({@code EntityAccessManager.coerceCollection}) — quadratic in the size
+   * of that collection. Two collections blow up at scale:
+   * <ul>
+   *   <li><b>{@code Collection.dataObjects}</b> — every DataObject in the list
+   *       re-discovers its incoming {@code has_dataobject} edge to the single
+   *       shared {@code :Collection} node, so a collection with N DataObjects is
+   *       O(N²).</li>
+   *   <li><b>{@code DataObject.references}</b> — a single DataObject holding K
+   *       references (the live MFFD-Dropbox "Tapelaying" DataObject holds
+   *       <b>102,953</b> FileReferences) makes hydrating that one row O(K²). This
+   *       is the actual 2026-07-19 jstack spiral: {@code mapOneToMany →
+   *       coerceCollection} on {@code d.references}, confirmed against live Neo4j
+   *       (the collection has only 2 DataObjects, so {@code Collection.dataObjects}
+   *       cannot be the term).</li>
+   * </ul>
+   *
+   * <p>Excluding both edges keeps every OTHER depth-1 relationship the list IO
+   * needs (successors, predecessors, children, parent, incoming
+   * DataObjectReferences, created/updated-by) while dropping only the two
+   * fan-out edges, so hydrating a DataObject row is O(1) regardless of how many
+   * references it holds or how large the collection is. The caller is
+   * responsible for cheaply re-attaching:
+   * <ul>
+   *   <li>the (already-loaded, light) parent Collection, so
+   *       {@code DataObjectIO.collectionId} resolves;</li>
+   *   <li>lightweight reference stubs (via a scalar {@code collect} projection),
+   *       so {@code DataObjectIO.referenceIds} + the per-kind counts stay
+   *       byte-compatible on the frozen v1 surface.</li>
+   * </ul>
+   * See {@code DataObjectService.getAllDataObjectsByShepardIds}.
+   *
+   * <p>The {@code NONE(rel IN relationships(path) ...)} guard preserves the
+   * zero-length path (the DataObject itself, whose {@code relationships(path)}
+   * is empty) so {@code d} is always returned.
+   *
+   * @param entity the Cypher variable bound to the DataObject rows
+   * @return a {@code MATCH path=... RETURN entity, nodes(path), relationships(path)}
+   *         clause that never traverses a {@code has_dataobject} or
+   *         {@code has_reference} edge
+   */
+  public static String getReturnPartForList(String entity) {
+    return (
+      "MATCH path=(" +
+      entity +
+      ")-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = '" +
+      Constants.HAS_DATAOBJECT +
+      "' OR type(rel) = '" +
+      Constants.HAS_REFERENCE +
+      "') RETURN " +
+      entity +
+      ", nodes(path), relationships(path)"
+    );
+  }
+
   public static String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
     String ret;
     boolean isString = orderByAttribute.isString();

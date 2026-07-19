@@ -197,6 +197,35 @@ public class DataObjectServiceTest {
     assertEquals(List.of(dataObjectNotDeleted), returned);
   }
 
+  /**
+   * DATAOBJECT-LIST-ON2 — the DAO list query intentionally returns DataObjects with a
+   * null parent Collection (the shared {@code has_dataobject} edge is excluded so OGM
+   * mapping is O(n) in returned rows rather than O(n²) in the whole collection). The
+   * service MUST re-attach the light-loaded parent Collection so
+   * {@code DataObjectIO.collectionId} still resolves. This locks the behaviour that
+   * the removed client-side {@code matchCollectionByShepardId} filter used to
+   * guarantee. (In production {@code getCollection} throws rather than returning null,
+   * so there is no real NPE path; this pins the re-attachment.)
+   */
+  @Test
+  public void getAllDataObjectsByShepardIds_reattachesCollection_ON2() {
+    Collection collection = aCollection().id(7L).shepardId(1001L).build();
+    DataObject withNullCollection = aDataObject().id(5L).shepardId(55L).build();
+    // As the DATAOBJECT-LIST-ON2 DAO query returns it: no parent Collection hydrated.
+    withNullCollection.setCollection(null);
+
+    QueryParamHelper params = new QueryParamHelper();
+    Long collectionShepardId = 1001L;
+    when(collectionService.getCollection(collectionShepardId, null)).thenReturn(collection);
+    when(dao.findByCollectionByShepardIds(collectionShepardId, params, null)).thenReturn(List.of(withNullCollection));
+
+    List<DataObject> returned = service.getAllDataObjectsByShepardIds(collectionShepardId, params, null);
+
+    assertEquals(1, returned.size());
+    assertEquals(collection, returned.get(0).getCollection());
+    assertEquals(Long.valueOf(1001L), returned.get(0).getCollection().getShepardId());
+  }
+
   @Test
   public void createDataObjectByShepardIdWithoutPredecessorsTest() {
     Date date = new Date(23);
