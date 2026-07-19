@@ -25,14 +25,24 @@
 
 ---
 
-## ⚠️ PENDING BACKEND DEPLOY — two dormant migrations awaiting a post-ingest window (2026-07-19)
+## 🚨 DEPLOY INCIDENT + CURRENT STATE (2026-07-19) — READ FIRST
 
-Two CRITICAL/MAJOR backend fixes are **code-complete on `main` but NOT deployed** — deliberately held because their migrations mutate the live graph and the tapelaying ingest is still running (`feedback_mutate_after_snapshot` / PRE-MUT-SNAP):
+**Current state is STABLE but the ingest is PAUSED and must STAY paused until the O(n²) fix deploys.** Backend healthy+idle (write-path fixes live + verified); ingest stopped (`/tmp/mffd-runner.stop` present, 0 procs, ~102,927 files done, state backed up `/tmp/mffd-import-tapelaying-20260710b.state.json.predeploy-*`).
 
-- **V121 — `NEO-AUDIT-ACTIVITY-SUPERNODE`** (`ed8692e88`): `ActivityDAO` writes a time-bucketed `(:User)-[:agent_acted_in_month {ym}]->(:Activity)` edge; V121 range index + backfill of ~2.87M edges. Reuses the V80 pattern.
-- **V122 — `APPID-CHILD-MINT-REGRESSION`** (`23c64000f`): choke-point mint of `appId` on child `:Timeseries` (`ReferencedTimeseriesNodeEntity` ctors) + `:ShepardFile` (`FileStorageService.storeFile`); V122 backfill of the **198 + 550k+ NULL-appId** legacy rows (v4, documented). NOTE: **the ingest keeps creating un-appId'd `:ShepardFile` nodes until this deploys** (550k and climbing) — the write-path fix only bites once live.
+**What deployed (image `shepard-backend-patched:local`, recreated ~19:14, several restarts since):**
+- **V121 (index-only)** + **V122 (NOOP)** — the heavy backfills were pulled OUT of startup after an incident (see below). Recovery commit `e7d2c7219`.
+- **Write-path fixes LIVE + directly verified:** (1) new Activities get `(:User)-[:agent_acted_in_month {ym}]->(:Activity)` via an **O(1) guarded CREATE** (was a pathological MERGE); index `agent_acted_in_month_ym_idx` exists. (2) a file uploaded via API got a **v7 appId** on its `:ShepardFile` (`FileStorageService.storeFile`). Both confirmed against live Neo4j.
 
-Both: accountable gates GREEN (5803/5807 unit tests, JaCoCo met, SpotBugs/findsecbugs clean; the 49 IT failures are environmental — no test backend in the worktree, `HealthzIT` fails identically). Both migrations EXPLAIN-validated read-only against live Neo4j (syntax + ym-format correct). Both are fail-fast startup migrations.
+**Incident chain:** (a) First deploy hung backend startup — V121's in-`CALL` `MATCH…MERGE` backfill didn't stream and MERGE on the 2.87M-degree `:User` supernode is O(degree)/row (7 min, 0 commits). Recovered: index-only V121, NOOP V122, write-path MERGE→guarded CREATE (plan-verified O(1)). (b) Redeploy succeeded but exposed **`DATAOBJECT-LIST-ON2`** (CRITICAL, filed): `GET .../collections/{id}/dataObjects` (= `DataObjectRest.getAllDataObjects` → `findByCollectionByShepardIds`) is **O(n²)** on the 100k-DO MFFD-Dropbox collection (OGM `coerceCollection` hydrating the shared `:Collection` node's 100k children). The **ingest's own `find_data_object`** (in `ensure_dest_do`, lists all DOs by name) triggers it → ReadTimeout → retry → death spiral (99 reqs, 12+ cores). This is a **new-backend regression** (ingest resumed fine on the Jul-10 image). Restarting the backend + pausing the ingest drains it (backend now idle).
+
+**IN FLIGHT — O(n² fix agent** (worktree, dispatched ~20:20): fixing `findByCollectionByShepardIds` to be O(n) (push name-filter+pagination to Cypher, stop hydrating the shared Collection). When it lands: review → rebuild image → redeploy (fast now, migrations are index+noop) → **then resume ingest** (`rm /tmp/mffd-runner.stop` + relaunch `.relaunch-tapelaying-w8.sh`). Do NOT resume before the O(n²) fix — it re-spirals.
+
+**CLEANUP TODO:** revert the TEMP Caddy access-logging block in `infrastructure/proxy/Caddyfile` (added to hunt the caller; the caller turned out to be the ingest, and its calls go via `shepard-api` direct, bypassing Caddy) + `caddy reload`.
+
+**DEFERRED (not deployed, tracked in aidocs/16):** the historical backfills — `ACTIVITY-SUPERNODE-BACKFILL` (~2.87M edges) + `CHILD-APPID-BACKFILL` (567k+ `:ShepardFile` appIds, v4-legacy) — run offline against a paused-ingest window with tuned streaming queries, NOT as startup migrations.
+
+### (superseded) original dormant-deploy plan — kept for reference
+Both fixes were code-complete on `main`; accountable gates GREEN (5803/5807 unit tests, JaCoCo, SpotBugs, findsecbugs; 49 ITs environmental). The plan was to deploy in a post-ingest window; the user chose to deploy now, which surfaced the incident above.
 
 **DEPLOY PLAN (do NOT deploy mid-ingest):** after the tapelaying ingest completes (~1.5 d), in a deliberate window: (1) snapshot per PRE-MUT-SNAP; (2) `make redeploy-backend` — the MigrationsRunner runs V121+V122 at startup (heavy but batched, `CALL {} IN TRANSACTIONS OF 1000`, ~minutes; operators wanting fast first-boot can run the `.cypher` files via cypher-shell beforehand per each migration's runbook comment); (3) verify: `MATCH (:User)-[r:agent_acted_in_month]->() RETURN count(r)` and `MATCH (n:ShepardFile) WHERE n.appId IS NULL RETURN count(n)` (→ 0). Also ships the undeployed TS-AXIS-AUTO + TS-SEMANTIC-REST at the same time.
 
