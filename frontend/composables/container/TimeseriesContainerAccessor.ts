@@ -12,6 +12,7 @@ import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 import { safeDeleteContainer } from "./safeDeleteContainer";
 import { v2BaseUrl } from "./createV2Container";
+import { unwrapList } from "~/utils/unwrapList";
 
 export class TimeseriesContainerAccessor extends ContainerAccessor {
   api = useShepardApi(TimeseriesContainerApi);
@@ -114,7 +115,7 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
       );
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       // The v2 channel IO is a superset of the v1 TimeseriesEntity 5-tuple.
-      this.measurements.value = (await resp.json()) as TimeseriesEntity[];
+      this.measurements.value = unwrapList<TimeseriesEntity>(await resp.json());
     } catch (e) {
       handleError(e as ResponseError, "fetching timeseries channels");
       // Don't rethrow — a single fetch failure would otherwise cascade into an

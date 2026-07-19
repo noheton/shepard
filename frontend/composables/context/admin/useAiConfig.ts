@@ -15,6 +15,7 @@
  *   value        → replace
  *   apiKey omitted in PATCH → existing key kept; included → replace
  */
+import { unwrapList } from "~/utils/unwrapList";
 
 export interface AiCapabilityConfigIO {
   capability: string;
@@ -75,7 +76,7 @@ export function useAiConfig() {
         },
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      slots.value = (await response.json()) as AiCapabilityConfigIO[];
+      slots.value = unwrapList<AiCapabilityConfigIO>(await response.json());
     } catch (e) {
       error.value = "Failed to load AI config";
       handleError(e, "fetching AI config");
@@ -119,7 +120,7 @@ export function useAiConfig() {
         error.value = detail;
         return null;
       }
-      const updated = (await response.json()) as AiCapabilityConfigIO[];
+      const updated = unwrapList<AiCapabilityConfigIO>(await response.json());
       slots.value = updated;
       return updated;
     } catch (e) {

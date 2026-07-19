@@ -20,6 +20,7 @@
  * read-only semantic endpoints. Auth header still sent if available, but
  * not required.
  */
+import { unwrapList } from "~/utils/unwrapList";
 
 export interface OntologyAlignmentIO {
   appId: string;
@@ -64,7 +65,7 @@ export function useOntologyAlignment() {
         { headers },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      alignments.value = (await response.json()) as OntologyAlignmentIO[];
+      alignments.value = unwrapList<OntologyAlignmentIO>(await response.json());
     } catch (e) {
       error.value = "Failed to load ontology alignment registry";
       handleError(e, "fetching ontology alignment");

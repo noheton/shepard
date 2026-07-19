@@ -9,6 +9,7 @@
  * when the backend returns an error, or when no ontology data is loaded —
  * the endpoint guarantees 200 + empty array in those cases.
  */
+import { unwrapList } from "~/utils/unwrapList";
 
 export interface TermSuggestion {
   uri: string;
@@ -46,7 +47,7 @@ export function useTermSearch() {
         },
       });
       if (!resp.ok) return [];
-      return (await resp.json()) as TermSuggestion[];
+      return unwrapList<TermSuggestion>(await resp.json());
     } catch {
       return [];
     }

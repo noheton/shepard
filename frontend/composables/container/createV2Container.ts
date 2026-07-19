@@ -12,6 +12,7 @@
  * worktree — see the V2CONV-A3 report). Mirrors the A2 `/v2/references` fetch
  * helpers.
  */
+import { unwrapList } from "~/utils/unwrapList";
 
 export type V2ContainerKind = "file" | "timeseries" | "structured-data";
 
@@ -85,7 +86,7 @@ export async function listV2Containers(
       headers,
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return (await resp.json()) as V2Container[];
+    return unwrapList<V2Container>(await resp.json());
   } catch (e) {
     handleError(e as Error, `listing ${kind} containers`);
     return [];
