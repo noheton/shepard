@@ -370,6 +370,52 @@ class FileStorageServiceTest {
     assertEquals("s3", FileStorageService.effectiveProviderId(s3row));
   }
 
+  // ── APPID-CHILD-MINT-REGRESSION: storeFile mints a v7 appId ────────────────
+
+  @Test
+  void storeFile_gridfsActive_mintsV7AppIdOnResult() {
+    // Regression guard for DB-AP2 #1/#2: the bundle + singleton paths obtain
+    // their ShepardFile from storeFile and persist it as a CASCADED CHILD, which
+    // GenericDAO.createOrUpdate never mints. storeFile must stamp the appId here.
+    when(registry.requireActive()).thenReturn(gridfs);
+    ShepardFile created = new ShepardFile("oid-appid", new Date(), "doc.pdf", "md5");
+    InputStream bytes = new ByteArrayInputStream(new byte[] { 1, 2, 3 });
+    when(fileService.createFile(CONTAINER, "doc.pdf", bytes, 3L)).thenReturn(created);
+
+    ShepardFile result = service.storeFile(CONTAINER, "doc.pdf", bytes, 3L);
+
+    assertNotNull(result.getAppId(), "storeFile must mint a non-null appId (child-mint regression)");
+    assertEquals(7, java.util.UUID.fromString(result.getAppId()).version(), "appId must be UUID v7");
+  }
+
+  @Test
+  void storeFile_s3Active_mintsV7AppIdOnResult() throws Exception {
+    when(registry.requireActive()).thenReturn(s3);
+    when(s3.put(any(StoragePutRequest.class)))
+      .thenReturn(new StorageLocator("s3", CONTAINER + "/appid-key"));
+
+    ShepardFile result = service.storeFile(
+      CONTAINER, "clip.bin", new ByteArrayInputStream(new byte[] { 1, 2, 3 }), 3L);
+
+    assertNotNull(result.getAppId(), "storeFile (s3 path) must mint a non-null appId");
+    assertEquals(7, java.util.UUID.fromString(result.getAppId()).version(), "appId must be UUID v7");
+  }
+
+  @Test
+  void storeFile_preExistingAppId_isNotOverwritten() {
+    // The mint is guarded by `if (appId == null)` — an already-stamped file
+    // (e.g. a future adapter that sets it) keeps its identity.
+    when(registry.requireActive()).thenReturn(gridfs);
+    ShepardFile created = new ShepardFile("oid-keep", new Date(), "doc.pdf", "md5");
+    created.setAppId("0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506");
+    InputStream bytes = new ByteArrayInputStream(new byte[] { 1 });
+    when(fileService.createFile(CONTAINER, "doc.pdf", bytes, 1L)).thenReturn(created);
+
+    ShepardFile result = service.storeFile(CONTAINER, "doc.pdf", bytes, 1L);
+
+    assertEquals("0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506", result.getAppId());
+  }
+
   @Test
   void storeFile_gridfs_nullResultIsTolerated() {
     // Defensive: a null from the adapter must not NPE the stamp guard.
