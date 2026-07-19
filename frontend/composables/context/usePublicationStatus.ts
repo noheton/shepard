@@ -1,3 +1,5 @@
+import { unwrapList } from "~/utils/unwrapList";
+
 /**
  * KIP1k — composable fetching the publications list for an entity
  * from {@code GET /v2/publications?entityAppId=…}.
@@ -104,8 +106,7 @@ export function usePublicationStatus(
         publications.value = [];
         return;
       }
-      const body = (await response.json()) as PublicationRecord[];
-      publications.value = Array.isArray(body) ? body : [];
+      publications.value = unwrapList<PublicationRecord>(await response.json());
     } catch {
       // Network error — degrade gracefully.
       publications.value = [];
