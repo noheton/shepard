@@ -1,5 +1,6 @@
 package de.dlr.shepard.storage;
 
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileService;
@@ -136,6 +137,24 @@ public class FileStorageService {
         result.getProviderId(),
         "ShepardFile.providerId must be set before persistence (NEO-AUDIT-002)"
       );
+      // APPID-CHILD-MINT-REGRESSION — mint a stable UUID v7 appId here, at the
+      // single choke point through which the bundle-upload
+      // ({@code BundleGroupsV2Rest} → {@code FileGroupService.attachFile}) and
+      // singleton ({@code SingletonFileReferenceService}) paths obtain their
+      // ShepardFile. Those callers attach the returned entity to a parent
+      // (FileGroup / FileBundleReference / SingletonFileReference) and persist
+      // it as a CASCADED CHILD via {@code GenericDAO.createOrUpdate(parent)},
+      // which mints appId only on the top-level argument — never on cascaded
+      // children. Without this stamp every such child was born with
+      // {@code appId == null} (DB-AP2 finding #1/#2: 0 / 505,759 :ShepardFile
+      // carried an appId). This mirrors the sibling providerId write-path fix
+      // (NEO-AUDIT-002 / V34) at the very same choke point: stamp at the one
+      // place all these paths pass through rather than at each construction
+      // site. New rows therefore carry a v7 appId; legacy NULLs are mopped up
+      // by the V122 backfill migration.
+      if (result.getAppId() == null) {
+        result.setAppId(AppIdGenerator.next());
+      }
     }
     return result;
   }
