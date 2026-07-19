@@ -121,7 +121,7 @@ function availabilityChipLabel(a?: string): string {
             {{ w.containerName ?? w.containerAppId }}
           </div>
           <div class="text-caption text-medium-emphasis">
-            <span>{{ w.containerKind.toLowerCase().replace("_", "-") }}</span>
+            <span>{{ (w.containerKind ?? "").toLowerCase().replace("_", "-") }}</span>
             <span v-if="w.addedBy"> · added by {{ w.addedBy }}</span>
           </div>
         </div>

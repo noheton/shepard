@@ -25,6 +25,24 @@ export interface WatchDto {
   addedBy?: string;
 }
 
+/**
+ * Unwrap the `GET /v2/collections/{appId}/watches` response into a plain
+ * `WatchDto[]`.
+ *
+ * The endpoint returns a paged envelope (`{items,total,page,pageSize}`) after
+ * the APISIMP pagination sweep. Assigning the raw envelope to `watches` made it
+ * a non-array object → `watches.length` was `undefined` (so the empty-state
+ * masked it) and `v-for="w in watches"` iterated the object's VALUES
+ * (`[]`,0,0,50) → `w.containerKind.toLowerCase()` threw and collapsed the whole
+ * panel the moment the Add-watch form opened. Tolerates a bare array from an
+ * older backend and any non-conforming shape (→ empty). Exported for testing.
+ */
+export function unwrapWatchesResponse(json: unknown): WatchDto[] {
+  if (Array.isArray(json)) return json as WatchDto[];
+  const items = (json as { items?: unknown } | null)?.items;
+  return (Array.isArray(items) ? items : []) as WatchDto[];
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
@@ -66,7 +84,7 @@ export function useWatchedContainers(collectionAppId: Ref<string | undefined>) {
       const headers = await authHeaders();
       const response = await fetch(base, { headers });
       if (response.ok) {
-        watches.value = (await response.json()) as WatchDto[];
+        watches.value = unwrapWatchesResponse(await response.json());
       } else if (response.status === 404 || response.status === 403) {
         // 404 = collection has no appId yet (pre-L2a) or doesn't exist
         // 403 = caller lacks Read on the collection
