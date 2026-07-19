@@ -25,9 +25,26 @@
 
 ---
 
-## 🚨 DEPLOY INCIDENT + CURRENT STATE (2026-07-19) — READ FIRST
+## ✅ DEPLOY INCIDENT — RESOLVED (2026-07-19). Ingest RUNNING again. READ FIRST
 
-**Current state is STABLE but the ingest is PAUSED and must STAY paused until the O(n²) fix deploys.** Backend healthy+idle (write-path fixes live + verified); ingest stopped (`/tmp/mffd-runner.stop` present, 0 procs, ~102,927 files done, state backed up `/tmp/mffd-import-tapelaying-20260710b.state.json.predeploy-*`).
+**Resolved.** Backend deployed with all fixes; **ingest resumed and progressing** (past the 102,927 resume point, uploading new files; write-paths verified on REAL uploads — ShepardFiles-with-v7-appId + agent edges both growing). No new permanent failures.
+
+**Everything that shipped (all on `main`, backend image `shepard-backend-patched:local`):**
+- V121 **index-only** + write-path `(:User)-[:agent_acted_in_month {ym}]->(:Activity)` via **O(1) guarded CREATE** (`e7d2c7219`).
+- V122 **NOOP** + write-path v7 appId mint on `:ShepardFile`/`:Timeseries` (`e7d2c7219`).
+- **DATAOBJECT-LIST-ON2 fix** (`1a59c61a6`): `getReturnPartForList` excludes `has_reference`+`has_dataobject` → the DO-list query dropped **102,965 → 10 rows**; verified live (v1/v2 list now <1.1s, was minutes). v1 byte-compat kept.
+- **Ingest v16.10** (`321a9b056`): skips `list_file_refs`/`verify_references` (each GET the DO's /fileReferences → O(K²) on the 102k-ref Tapelaying DO); resume-skip driven by `state.is_file_done`. `MFFD_VERIFY_REFS=1` re-enables for small DOs.
+
+**⚠️ OPEN FOLLOW-UPS (not blocking, but real):**
+1. **`:User` deadlock from the agent-edge write (`NODE(183)`).** The V121 `agent_acted_in_month` CREATE adds a 2nd `:User` supernode lock per Activity; 8 upload workers deadlock on it → transient 500s on `POST /v2/references` → retried OK (0 new `[err]`), but ~halves throughput (~0.65 file/s). The secondary write poisons the primary tx on deadlock (violates fire-and-forget). **Fix:** make `writeAgentActedInMonth` a separate tx / truly async, OR add a runtime disable flag. Filed AGENT-EDGE-DEADLOCK in aidocs/16. Immediate mitigation if it worsens: lower `MFFD_UPLOAD_WORKERS`.
+2. **Backend `getDataObject`-full O(K²)** on large-fanout DOs (the single-DO detail path, `findByShepardId` non-light) is STILL unfixed — opening the Tapelaying DO's **detail page** in the frontend will spiral. Sibling of DATAOBJECT-LIST-ON2, filed. The ingest now avoids it (v16.10).
+3. **Deferred historical backfills** — ACTIVITY-SUPERNODE-BACKFILL (~2.87M edges) + CHILD-APPID-BACKFILL (567k appIds) — run offline against a paused-ingest window.
+
+**Incident chain (for the record):** deploy → V121 backfill hung startup (MERGE on 2.87M supernode, O(degree)/row) → recovered (index-only, write-path MERGE→CREATE) → redeploy exposed O(n²) DataObject-list (OGM coerceCollection on the Tapelaying DO's 102k has_reference) → death-spiral → fixed list query (verified 102,965→10 rows) → 2nd O(K²) path via ingest's reference-listing → ingest-side skip (v16.10) → `:User` deadlock under concurrency (follow-up #1). ~5 backend redeploys. Lesson: EXPLAIN-validation ≠ runtime-cost validation; profile migrations/queries against real data scale before deploy.
+
+---
+### (historical) mid-incident notes
+Earlier this section read "ingest PAUSED, must stay paused until O(n² fix." That state is superseded — the fixes shipped and the ingest resumed. Original: backed-up state at `/tmp/mffd-import-tapelaying-20260710b.state.json.predeploy-*`.
 
 **What deployed (image `shepard-backend-patched:local`, recreated ~19:14, several restarts since):**
 - **V121 (index-only)** + **V122 (NOOP)** — the heavy backfills were pulled OUT of startup after an incident (see below). Recovery commit `e7d2c7219`.
