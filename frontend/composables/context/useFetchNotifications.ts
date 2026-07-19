@@ -5,6 +5,7 @@
  * Full notification list is fetched via load() when the panel opens.
  * Polling starts when startPolling() is called and stops via stopPolling().
  */
+import { unwrapList } from "~/utils/unwrapList";
 
 export interface NotificationIO {
   appId: string;
@@ -75,7 +76,7 @@ export function useFetchNotifications() {
         error.value = `Error ${res.status}: ${await res.text()}`;
         return;
       }
-      notifications.value = await res.json() as NotificationIO[];
+      notifications.value = unwrapList<NotificationIO>(await res.json());
       unreadCount.value = notifications.value.filter(n => !n.read).length;
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e);
