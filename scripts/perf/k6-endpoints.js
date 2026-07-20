@@ -47,6 +47,20 @@ import { Trend, Rate } from "k6/metrics";
 const BASE_URL = (__ENV.BASE_URL || "http://localhost:8080").replace(/\/$/, "");
 const API_KEY  = __ENV.API_KEY || "";
 
+// ── LARGE-DATA-K6-COVERAGE (2026-07-20) ──────────────────────────────────────
+// Read-only probes of the endpoints that can deliver LARGE data, pointed at REAL
+// high-cardinality entities (set these to point k6 at e.g. the MFFD Tapelaying DO
+// with 178k+ FileReferences, the 8,483-DataObject mffd-afp-tapelaying collection,
+// the ~190-channel TPS timeseries container). When an ID is unset, that probe is
+// skipped. These validate the supernode load-depth fixes (DATAOBJECT-LIST-ON2,
+// GETDO-DETAIL-ON2, and the queued SUPERNODE-F* / GETDO-DETAIL-TARGETED) do not
+// regress under load. READ-ONLY on purpose — never point these at mutating paths,
+// which would pollute the live dataset. Run AFTER a large ingest completes.
+const LARGE_DO_APPID      = __ENV.LARGE_DO_APPID   || "";   // large-fanout DataObject (detail + ref lists)
+const LARGE_COLL_APPID    = __ENV.LARGE_COLL_APPID || "";   // large collection (DO list)
+const LARGE_TS_CONT_APPID = __ENV.LARGE_TS_CONT_APPID || ""; // many-channel timeseries container
+const LARGE_DO_COLL_APPID = __ENV.LARGE_DO_COLL_APPID || ""; // parent collection appId of LARGE_DO_APPID (for the detail URL)
+
 // ── Named scenario configuration ─────────────────────────────────────────────
 
 const ACTIVE = (__ENV.K6_SCENARIO || "steady,ramp,spike")
@@ -95,6 +109,11 @@ const tTsIngest        = new Trend("ep_ts_ingest",        true);
 const tTsRangeScan     = new Trend("ep_ts_range_scan",    true);
 const tProvWalk        = new Trend("ep_prov_walk",        true);
 const tAdminFeatures   = new Trend("ep_admin_features",   true);
+// LARGE-DATA-K6-COVERAGE — large-data read paths
+const tLargeDoDetail   = new Trend("ep_large_do_detail",  true); // GETDO-DETAIL-ON2
+const tLargeRefList    = new Trend("ep_large_ref_list",   true); // paged /v2/references on a huge-fanout DO
+const tLargeCollDoList = new Trend("ep_large_coll_do_list", true); // DATAOBJECT-LIST-ON2 on a large collection
+const tLargeTsChannels = new Trend("ep_large_ts_channels", true); // many-channel container
 const errorRate        = new Rate("endpoint_error_rate");
 
 // ── Options: scenarios + thresholds ──────────────────────────────────────────
@@ -340,6 +359,14 @@ export default function (data) {
     doAdminFeatures(data);
   }
 
+  // LARGE-DATA-K6-COVERAGE — each self-skips unless its LARGE_* env var is set,
+  // so this is a no-op on the default synthetic run and only fires when pointed
+  // at real high-cardinality entities post-ingest.
+  doLargeDoDetail(data);
+  doLargeRefList(data);
+  doLargeCollDoList(data);
+  doLargeTsChannels(data);
+
   sleep(0.5);
 }
 
@@ -525,6 +552,62 @@ function doAdminFeatures(_data) {
         x.status === 200 || x.status === 401 || x.status === 403,
     });
     errorRate.add(ok ? 0 : 1);
+  });
+}
+
+// ── LARGE-DATA-K6-COVERAGE probes (read-only; env-gated) ─────────────────────
+
+// GETDO-DETAIL-ON2: single-DO detail on a large-fanout DataObject. Before the fix
+// this pegged the backend for minutes (O(K²) OGM coerceCollection); after, the
+// load is O(K)-db (VarLengthExpand excluding has_reference) → a small (~600B) 200.
+function doLargeDoDetail(_data) {
+  if (!LARGE_DO_APPID || !LARGE_DO_COLL_APPID) return;
+  group("large-do-detail", () => {
+    const r = http.get(
+      `${BASE_URL}/v2/collections/${LARGE_DO_COLL_APPID}/data-objects/${LARGE_DO_APPID}`,
+      { headers: authHeaders(), tags: { endpoint: "large_do_detail" } }
+    );
+    tLargeDoDetail.add(r.timings.duration);
+    errorRate.add(check(r, { "large_do_detail 200/401/404": (x) => [200, 401, 404].includes(x.status) }) ? 0 : 1);
+  });
+}
+
+// Paged reference list on a huge-fanout DO — must stay bounded (page, not all 178k).
+function doLargeRefList(data) {
+  if (!LARGE_DO_APPID) return;
+  group("large-ref-list", () => {
+    const r = http.get(
+      `${BASE_URL}/v2/references?kind=file&dataObjectAppId=${LARGE_DO_APPID}&page=0&pageSize=50`,
+      { headers: authHeaders(), tags: { endpoint: "large_ref_list" } }
+    );
+    tLargeRefList.add(r.timings.duration);
+    errorRate.add(check(r, { "large_ref_list 200/401": (x) => [200, 401].includes(x.status) }) ? 0 : 1);
+  });
+}
+
+// DATAOBJECT-LIST-ON2: DO list on a large collection (8k+ DataObjects).
+function doLargeCollDoList(_data) {
+  if (!LARGE_COLL_APPID) return;
+  group("large-coll-do-list", () => {
+    const r = http.get(
+      `${BASE_URL}/v2/collections/${LARGE_COLL_APPID}/data-objects?page=0&pageSize=50`,
+      { headers: authHeaders(), tags: { endpoint: "large_coll_do_list" } }
+    );
+    tLargeCollDoList.add(r.timings.duration);
+    errorRate.add(check(r, { "large_coll_do_list 200/401": (x) => [200, 401].includes(x.status) }) ? 0 : 1);
+  });
+}
+
+// Many-channel timeseries container (SUPERNODE-F3 sibling: don't hydrate all channels).
+function doLargeTsChannels(_data) {
+  if (!LARGE_TS_CONT_APPID) return;
+  group("large-ts-channels", () => {
+    const r = http.get(
+      `${BASE_URL}/v2/containers/${LARGE_TS_CONT_APPID}`,
+      { headers: authHeaders(), tags: { endpoint: "large_ts_channels" } }
+    );
+    tLargeTsChannels.add(r.timings.duration);
+    errorRate.add(check(r, { "large_ts_channels 200/401/404": (x) => [200, 401, 404].includes(x.status) }) ? 0 : 1);
   });
 }
 
