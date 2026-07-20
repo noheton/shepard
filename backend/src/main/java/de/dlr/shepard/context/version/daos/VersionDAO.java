@@ -8,8 +8,8 @@ import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -24,8 +24,22 @@ public class VersionDAO extends GenericDAO<Version> {
    * @return the found version
    */
   public Version find(UUID id) {
-    Version version = session.load(getEntityType(), id, DEPTH_ENTITY);
-    return version;
+    // SUPERNODE-F1-VERSION: a :Version node (the collection HEAD) carries ~25k
+    // INCOMING has_version edges. A depth-1 undirected OGM load
+    // (session.load(type, id, 1)) drags every one of them over the wire even
+    // though Version maps ZERO incoming relationships — pure wire/heap waste.
+    // Version's only mapped relationships are the two OUTGOING single edges
+    // createdBy (created_by) and predecessor (has_predecessor), which is all any
+    // caller reads (VersionIO, MCP VersionMcpTools.toRow). A directed OUTGOING
+    // depth-1 return hydrates exactly those two and never traverses has_version.
+    // uid is stored as a string (UuidStringConverter is NOT applied to raw
+    // Cypher params), so bind id.toString() for a string-to-string match.
+    String query = "MATCH (v:Version) WHERE v.uid = $uid " + CypherQueryHelper.getReturnPart("v", Neighborhood.OUTGOING);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("uid", id.toString());
+    var resultSet = findByQuery(query, paramsMap);
+    Iterator<Version> it = resultSet.iterator();
+    return it.hasNext() ? it.next() : null;
   }
 
   @Override
@@ -34,21 +48,26 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public List<Version> findAllVersions(long collectionId) {
-    ArrayList<Version> result = new ArrayList<Version>();
-    HashSet<Version> resultHashSet = new HashSet<Version>();
+    // SUPERNODE-F1-VERSION: this used to run an EVERYTHING (undirected depth-1)
+    // neighborhood query AND THEN re-load each returned version via find(uid) —
+    // dragging the whole ~25k has_version neighborhood ONCE PER VERSION (nested
+    // O(versions × 25k)). That nested re-drag is the mechanistic cause of the
+    // SNAPSHOT-ASYNC-CAPTURE 502s on large collections. A single directed
+    // OUTGOING return hydrates each version's createdBy + predecessor in ONE
+    // query and never touches has_version. Dedup preserves the prior behaviour
+    // (the neighborhood return yields one row per outgoing edge, so a version
+    // appears more than once); LinkedHashSet keeps a stable order.
     Map<String, Object> paramsMap = new HashMap<>();
-    String query = "";
-    query = query + "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " + collectionId + " ";
-    query = query + CypherQueryHelper.getReturnPart("ver", Neighborhood.EVERYTHING);
+    String query =
+      "MATCH (col:Collection)-[:has_version]->(ver:Version) WHERE col.shepardId = " +
+      collectionId +
+      " " +
+      CypherQueryHelper.getReturnPart("ver", Neighborhood.OUTGOING);
 
     var resultSet = findByQuery(query, paramsMap);
-    Iterator<Version> it = resultSet.iterator();
-    while (it.hasNext()) {
-      Version next = it.next();
-      resultHashSet.add(find(next.getUid()));
-    }
-    for (Version ver : resultHashSet) result.add(ver);
-    return result;
+    LinkedHashSet<Version> dedup = new LinkedHashSet<>();
+    resultSet.forEach(dedup::add);
+    return new ArrayList<>(dedup);
   }
 
   public Version findHEADVersion(long collectionId) {
@@ -59,7 +78,10 @@ public class VersionDAO extends GenericDAO<Version> {
       " AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " " +
-      CypherQueryHelper.getReturnPart("v", Neighborhood.EVERYTHING);
+      // SUPERNODE-F1-VERSION: OUTGOING (not EVERYTHING) — the HEAD Version has ~25k
+      // incoming has_version edges that OGM does not map; the caller (createVersion)
+      // reads only the outgoing predecessor + createdBy edges.
+      CypherQueryHelper.getReturnPart("v", Neighborhood.OUTGOING);
     Map<String, Object> paramsMap = new HashMap<>();
     var resultSet = findByQuery(query, paramsMap);
     Iterator<Version> it = resultSet.iterator();

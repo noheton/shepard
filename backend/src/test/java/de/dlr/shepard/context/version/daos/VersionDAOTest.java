@@ -2,6 +2,10 @@ package de.dlr.shepard.context.version.daos;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -107,9 +111,17 @@ public class VersionDAOTest extends BaseTestCase {
     Version ver = new Version();
     ver.setDescription("version");
     UUID id = new UUID(1L, 2L);
-    when(session.load(Version.class, id, 1)).thenReturn(ver);
+    String query = "MATCH (v:Version) WHERE v.uid = $uid " + CypherQueryHelper.getReturnPart("v", Neighborhood.OUTGOING);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("uid", id.toString());
+    when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver));
     Version found = dao.find(id);
     assertEquals(ver, found);
+    // SUPERNODE-F1-VERSION: resolve via the directed OUTGOING query (createdBy +
+    // predecessor only), NEVER the depth-1 undirected OGM load that drags the
+    // ~25k incoming has_version neighborhood over the wire.
+    verify(session).query(Version.class, query, paramsMap);
+    verify(session, never()).load(any(), any(), anyInt());
   }
 
   @Test
@@ -118,9 +130,16 @@ public class VersionDAOTest extends BaseTestCase {
     ver.setDescription("version");
     UUID id = new UUID(1L, 2L);
     ver.setUid(id);
-    when(session.load(Version.class, id, 1)).thenReturn(ver);
+    String query = "MATCH (v:Version) WHERE v.uid = $uid " + CypherQueryHelper.getReturnPart("v", Neighborhood.OUTGOING);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("uid", id.toString());
+    when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver));
     Version found = dao.find(id);
     assertEquals(ver, found);
+    // The uid is bound as its String form (uid is stored as a string; the raw
+    // Cypher param is not run through UuidStringConverter).
+    verify(session).query(Version.class, query, paramsMap);
+    verify(session, never()).load(any(), any(), anyInt());
   }
 
   @Test
@@ -130,14 +149,20 @@ public class VersionDAOTest extends BaseTestCase {
     ver1.setName("name1");
     ver2.setName("ver2");
     long collectionId = 5;
-    String query = "";
-    query = query + "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " + collectionId + " ";
-    query = query + CypherQueryHelper.getReturnPart("ver", Neighborhood.EVERYTHING);
+    String query =
+      "MATCH (col:Collection)-[:has_version]->(ver:Version) WHERE col.shepardId = " +
+      collectionId +
+      " " +
+      CypherQueryHelper.getReturnPart("ver", Neighborhood.OUTGOING);
     Map<String, Object> paramsMap = new HashMap<>();
     when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver1, ver2));
     List<Version> allVersions = dao.findAllVersions(collectionId);
-    assertThat(allVersions.contains(ver1));
-    assertThat(allVersions.contains(ver2));
+    assertThat(allVersions).contains(ver1, ver2);
+    // SUPERNODE-F1-VERSION: ONE directed query for the whole list — never the old
+    // nested find(uid)-per-version re-drag (which re-loaded the 25k neighborhood
+    // once per version), and never a depth-1 undirected OGM load.
+    verify(session, times(1)).query(Version.class, query, paramsMap);
+    verify(session, never()).load(any(), any(), anyInt());
   }
 
   @Test
@@ -153,10 +178,14 @@ public class VersionDAOTest extends BaseTestCase {
       " AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " " +
-      CypherQueryHelper.getReturnPart("v", Neighborhood.EVERYTHING);
+      CypherQueryHelper.getReturnPart("v", Neighborhood.OUTGOING);
     when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver));
     Version headVersion = dao.findHEADVersion(collectionId);
     assertEquals(ver, headVersion);
+    // SUPERNODE-F1-VERSION: OUTGOING neighborhood, not EVERYTHING — the HEAD
+    // Version's 25k incoming has_version edges are never traversed.
+    verify(session).query(Version.class, query, paramsMap);
+    verify(session, never()).load(any(), any(), anyInt());
   }
 
   @Test
