@@ -76,7 +76,7 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
     for (var row : session.query(query, Map.of("containerAppId", containerAppId))) {
       Long neo4jId = (Long) row.get("neo4jId");
       if (neo4jId == null) continue;
-      DataObject loaded = session.load(DataObject.class, neo4jId, DEPTH_ENTITY);
+      DataObject loaded = loadLinkedDataObjectForPanel(neo4jId);
       if (loaded != null) result.add(loaded);
     }
     return result;
@@ -107,10 +107,38 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
         Map.of("containerAppId", containerAppId, "skip", skip, "limit", limit))) {
       Long neo4jId = (Long) row.get("neo4jId");
       if (neo4jId == null) continue;
-      DataObject loaded = session.load(DataObject.class, neo4jId, DEPTH_ENTITY);
+      DataObject loaded = loadLinkedDataObjectForPanel(neo4jId);
       if (loaded != null) result.add(loaded);
     }
     return result;
+  }
+
+  /**
+   * SUPERNODE-F3-CONTAINER-LINKED-DO — load a single linked DataObject for the
+   * container "referenced-by" panel WITHOUT hydrating its {@code has_reference}
+   * fan-out. A linked DataObject on the MFFD tapelaying/TPS containers can hold
+   * ~177k {@code has_reference} edges; a depth-1 {@code session.load} would
+   * materialise every reference row into OGM (O(K²) {@code coerceCollection})
+   * merely to map the DataObject to a {@code DataObjectIO} that only needs its
+   * name/appId/status/collection.
+   *
+   * <p>A plain depth-0 load is NOT viable here: {@code DataObjectIO}'s
+   * constructor reads {@code dataObject.getCollection().getShepardId()} (no null
+   * guard) plus successors/predecessors/children, all of which are unhydrated at
+   * depth 0 (→ NPE / empty arrays). We therefore reuse GETDO-DETAIL-ON2's
+   * {@link CypherQueryHelper#getReturnPartForDetail(String)}, which keeps the
+   * bounded structural neighbourhood (collection + successors + predecessors +
+   * children + version) and excludes ONLY the {@code has_reference} supernode
+   * edge. OGM then coerces ~6 rows, not 177k. The linked DO's own
+   * {@code referenceIds}/counts come back empty — acceptable: the panel renders
+   * name + status + owning-collection only (LinkedDataObjectRow.vue).
+   */
+  private DataObject loadLinkedDataObjectForPanel(long neo4jId) {
+    String query =
+      "MATCH (do:DataObject) WHERE id(do) = $id WITH do " +
+      CypherQueryHelper.getReturnPartForDetail("do");
+    var it = session.query(DataObject.class, query, Map.of("id", neo4jId)).iterator();
+    return it.hasNext() ? it.next() : null;
   }
 
   /**

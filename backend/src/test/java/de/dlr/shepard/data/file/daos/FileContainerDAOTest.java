@@ -2,6 +2,7 @@ package de.dlr.shepard.data.file.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -271,20 +272,63 @@ public class FileContainerDAOTest extends BaseTestCase {
     do2.setName("Dataset B");
 
     // Production resolves DataObjects in two steps: a row query that yields
-    // neo4jIds, then session.load per id. Build the Result mock first to avoid
-    // nesting stubbing inside the outer when(...) call.
+    // neo4jIds, then a per-id detail query (SUPERNODE-F3) that excludes the
+    // has_reference fan-out. Build the Result mock first to avoid nesting
+    // stubbing inside the outer when(...) call.
     org.neo4j.ogm.model.Result rows =
       resultOf(List.of(Map.of("neo4jId", 1L), Map.of("neo4jId", 2L)));
     when(session.query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
       .thenReturn(rows);
-    when(session.load(DataObject.class, 1L, 1)).thenReturn(do1);
-    when(session.load(DataObject.class, 2L, 1)).thenReturn(do2);
+    when(session.query(
+        org.mockito.ArgumentMatchers.eq(DataObject.class),
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.eq(Map.of("id", 1L))))
+      .thenReturn(List.of(do1));
+    when(session.query(
+        org.mockito.ArgumentMatchers.eq(DataObject.class),
+        org.mockito.ArgumentMatchers.anyString(),
+        org.mockito.ArgumentMatchers.eq(Map.of("id", 2L))))
+      .thenReturn(List.of(do2));
 
     List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
 
     assertEquals(2, result.size());
     assertEquals("Dataset A", result.get(0).getName());
     assertEquals("Dataset B", result.get(1).getName());
+  }
+
+  /**
+   * SUPERNODE-F3-CONTAINER-LINKED-DO — the linked-DataObject load MUST NOT
+   * hydrate the DataObject's has_reference supernode: it must go through a
+   * reference-excluding detail query, never a depth-1 {@code session.load}.
+   */
+  @Test
+  public void findLinkedDataObjects_neverHydratesReferences() {
+    String containerAppId = "01900000-0000-7000-8000-000000000003";
+
+    DataObject do1 = new DataObject();
+    do1.setName("Dataset A");
+
+    org.neo4j.ogm.model.Result rows = resultOf(List.of(Map.of("neo4jId", 7L)));
+    when(session.query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
+      .thenReturn(rows);
+    org.mockito.ArgumentCaptor<String> queryCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    when(session.query(
+        org.mockito.ArgumentMatchers.eq(DataObject.class),
+        queryCaptor.capture(),
+        org.mockito.ArgumentMatchers.eq(Map.of("id", 7L))))
+      .thenReturn(List.of(do1));
+
+    dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+
+    // No depth-1 (or any-depth) entity load of the supernode DataObject.
+    verify(session, never()).load(
+        org.mockito.ArgumentMatchers.eq(DataObject.class),
+        org.mockito.ArgumentMatchers.anyLong(),
+        org.mockito.ArgumentMatchers.anyInt());
+    // The detail query must exclude the has_reference edge.
+    assertTrue(queryCaptor.getValue().contains("has_reference"));
+    assertTrue(queryCaptor.getValue().contains("id(do) = $id"));
   }
 
   /** Build an OGM Result over the given rows (it is just an Iterable of maps). */
