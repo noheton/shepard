@@ -344,7 +344,7 @@ class ProvenanceCaptureFilterTest {
   void anonymizeOff_defaultBehaviour_identityIncluded() throws IOException {
     User alice = new User("alice");
     alice.setAnonymizeInProvenance(false);
-    when(userDAO.find("alice")).thenReturn(alice);
+    when(userDAO.findLight("alice")).thenReturn(alice);
 
     when(request.getMethod()).thenReturn("POST");
     when(response.getStatus()).thenReturn(201);
@@ -376,7 +376,7 @@ class ProvenanceCaptureFilterTest {
   void anonymizeOn_identitySuppressedInActivityRow() throws IOException {
     User alice = new User("alice");
     alice.setAnonymizeInProvenance(true);
-    when(userDAO.find("alice")).thenReturn(alice);
+    when(userDAO.findLight("alice")).thenReturn(alice);
 
     when(request.getMethod()).thenReturn("POST");
     when(response.getStatus()).thenReturn(201);
@@ -410,7 +410,7 @@ class ProvenanceCaptureFilterTest {
   void anonymizeOn_suppressesMirroredUserAppIdToo() throws IOException {
     User alice = new User("alice");
     alice.setAnonymizeInProvenance(true);
-    when(userDAO.find("alice")).thenReturn(alice);
+    when(userDAO.findLight("alice")).thenReturn(alice);
 
     // Simulate X-Source-User-* headers being present (importer scenario).
     when(request.getHeaderString(ProvenanceCaptureFilter.HDR_SOURCE_USERNAME)).thenReturn("ext_user");
@@ -448,7 +448,7 @@ class ProvenanceCaptureFilterTest {
    */
   @Test
   void resolveAgentUsername_defaultsToNonAnonymized_onUserNotFound() {
-    when(userDAO.find("alice")).thenReturn(null); // user not yet in DB
+    when(userDAO.findLight("alice")).thenReturn(null); // user not yet in DB
 
     String result = filter.resolveAgentUsername("alice");
 
@@ -461,7 +461,7 @@ class ProvenanceCaptureFilterTest {
    */
   @Test
   void resolveAgentUsername_defaultsToNonAnonymized_onDAOException() {
-    when(userDAO.find("alice")).thenThrow(new RuntimeException("Neo4j timeout"));
+    when(userDAO.findLight("alice")).thenThrow(new RuntimeException("Neo4j timeout"));
 
     // Must not throw; must return the principal name (fail-open).
     String result = filter.resolveAgentUsername("alice");
@@ -477,7 +477,7 @@ class ProvenanceCaptureFilterTest {
   void resolveAgentUsername_returnsNull_whenAnonymizeEnabled() {
     User alice = new User("alice");
     alice.setAnonymizeInProvenance(true);
-    when(userDAO.find("alice")).thenReturn(alice);
+    when(userDAO.findLight("alice")).thenReturn(alice);
 
     String result = filter.resolveAgentUsername("alice");
 

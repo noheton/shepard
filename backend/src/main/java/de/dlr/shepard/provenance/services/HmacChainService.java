@@ -125,13 +125,11 @@ public class HmacChainService {
   // ─── Internals ────────────────────────────────────────────────────
 
   private String findLatestHmac() {
-    // The cheapest "tail of the chain" query: the most-recent row by
-    // startedAtMillis whose auditHmac is non-null. We read via the
-    // existing list endpoint with limit=1 + filter post-fetch to keep
-    // this PR scoped — a dedicated DAO method is a follow-up.
-    var recent = activityDAO.list(null, null, null, null, null, 1);
-    if (recent == null || recent.isEmpty()) return null;
-    return recent.get(0).getAuditHmac();
+    // NEO-AUDIT-2026-07-20-HMAC-TAIL-SCAN: the tail of the chain via a dedicated
+    // index-backed DAO query (backward NodeIndexScan on Activity_startedAtMillis_idx,
+    // 2 db-hits) instead of the former list(...) call that scanned all 3M+ Activities
+    // on every mutation. See ActivityDAO#findLatestAuditHmac.
+    return activityDAO.findLatestAuditHmac();
   }
 
   /**

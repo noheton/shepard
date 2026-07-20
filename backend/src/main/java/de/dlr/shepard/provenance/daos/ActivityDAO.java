@@ -74,6 +74,34 @@ public class ActivityDAO extends GenericDAO<Activity> {
   }
 
   /**
+   * Return the {@code auditHmac} of the most-recent Activity (the tail of the
+   * HMAC chain), or {@code null} when there are no activities.
+   *
+   * <p>NEO-AUDIT-2026-07-20-HMAC-TAIL-SCAN: the previous implementation
+   * ({@code HmacChainService.findLatestHmac} via {@link #list} with all-null
+   * filters) planned as a {@code NodeByLabelScan} + Sort over <em>every</em>
+   * Activity — 3M+ db-hits on the hot path of <em>every</em> mutation (the
+   * {@code HmacChainService.stamp} call in {@code ProvenanceService.record}).
+   * The {@code WHERE a.startedAtMillis IS NOT NULL} predicate lets the planner
+   * satisfy the {@code ORDER BY … DESC LIMIT 1} with a backward
+   * {@code NodeIndexScan} on the existing {@code Activity_startedAtMillis_idx}
+   * range index (2 db-hits, verified via PROFILE). Returns only the scalar
+   * {@code auditHmac} so no Activity node is hydrated.
+   *
+   * @return the latest audit HMAC, or {@code null} if the chain is empty
+   */
+  public String findLatestAuditHmac() {
+    String cypher =
+      "MATCH (a:Activity) WHERE a.startedAtMillis IS NOT NULL " +
+      "RETURN a.auditHmac AS h ORDER BY a.startedAtMillis DESC LIMIT 1";
+    var result = session.query(cypher, Map.of());
+    var iter = result.queryResults().iterator();
+    if (!iter.hasNext()) return null;
+    Object h = iter.next().get("h");
+    return h == null ? null : h.toString();
+  }
+
+  /**
    * Delete activities older than {@code beforeMillis}. Returns the
    * number of rows removed. Used by the nightly retention job
    * (per {@code aidocs/55 §7}).

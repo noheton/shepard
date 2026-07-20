@@ -241,7 +241,10 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
    */
   String resolveAgentUsername(String principalName) {
     try {
-      User user = userDAO.find(principalName);
+      // NEO-AUDIT-2026-07-20-USER-SUPERNODE: this runs on every mutating request
+      // and only reads the scalar isAnonymizeInProvenance() flag — load shallow so
+      // the ~2.87M-edge service :User supernode is not hydrated on the hot path.
+      User user = userDAO.findLight(principalName);
       if (user != null && user.isAnonymizeInProvenance()) {
         return null;
       }

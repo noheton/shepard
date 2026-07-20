@@ -43,7 +43,7 @@ class HmacChainServiceTest {
 
   @Test
   void stampSetsAllChainFieldsOnFirstActivity() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of());
+    when(activityDAO.findLatestAuditHmac()).thenReturn(null);
 
     Activity a = newActivity("CREATE", "alice", 1000L, 2000L);
     service.stamp(a);
@@ -57,7 +57,7 @@ class HmacChainServiceTest {
   void stampChainsToLatestActivity() {
     Activity prior = newActivity("CREATE", "alice", 100L, 200L);
     prior.setAuditHmac("deadbeef".repeat(8));
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of(prior));
+    when(activityDAO.findLatestAuditHmac()).thenReturn(prior.getAuditHmac());
 
     Activity next = newActivity("UPDATE", "alice", 300L, 400L);
     service.stamp(next);
@@ -81,7 +81,7 @@ class HmacChainServiceTest {
 
   @Test
   void stampIsBestEffortOnDaoFailure() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1)))
+    when(activityDAO.findLatestAuditHmac())
       .thenThrow(new RuntimeException("neo4j down"));
 
     Activity a = newActivity("CREATE", "alice", 1L, 2L);
@@ -95,7 +95,7 @@ class HmacChainServiceTest {
 
   @Test
   void verifySucceedsOnUntamperedChain() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of());
+    when(activityDAO.findLatestAuditHmac()).thenReturn(null);
 
     Activity a = newActivity("CREATE", "alice", 1L, 2L);
     service.stamp(a);
@@ -107,7 +107,7 @@ class HmacChainServiceTest {
 
   @Test
   void verifyFailsWhenChainPointerForged() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of());
+    when(activityDAO.findLatestAuditHmac()).thenReturn(null);
     Activity a = newActivity("CREATE", "alice", 1L, 2L);
     service.stamp(a);
     a.setAuditPrevHmac("forged_pointer".repeat(4) + "f"); // 64 hex-ish chars
@@ -119,7 +119,7 @@ class HmacChainServiceTest {
 
   @Test
   void verifyFailsWhenDataMutated() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of());
+    when(activityDAO.findLatestAuditHmac()).thenReturn(null);
     Activity a = newActivity("CREATE", "alice", 1L, 2L);
     service.stamp(a);
 
@@ -133,7 +133,7 @@ class HmacChainServiceTest {
 
   @Test
   void verifyFailsWhenKeyVersionMissing() {
-    when(activityDAO.list(any(), any(), any(), any(), any(), eq(1))).thenReturn(List.of());
+    when(activityDAO.findLatestAuditHmac()).thenReturn(null);
     Activity a = newActivity("CREATE", "alice", 1L, 2L);
     service.stamp(a);
 
