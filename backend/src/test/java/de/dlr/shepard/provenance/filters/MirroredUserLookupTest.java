@@ -239,7 +239,7 @@ class MirroredUserLookupTest {
     when(mirroredUserDAO.createOrUpdateBySourceKey(any())).thenReturn(saved);
 
     User localUser = new User("kreb_fl"); // blank firstName/lastName from constructor
-    when(userDAO.find("kreb_fl")).thenReturn(localUser);
+    when(userDAO.findLight("kreb_fl")).thenReturn(localUser);
 
     filter.resolveMirroredUserAppId(request, "kreb_fl");
 
@@ -262,7 +262,7 @@ class MirroredUserLookupTest {
     when(mirroredUserDAO.createOrUpdateBySourceKey(any())).thenReturn(saved);
 
     User localUser = new User("fkrebs", "Florian", "Krebs", "florian@dlr.de"); // already populated
-    when(userDAO.find("fkrebs")).thenReturn(localUser);
+    when(userDAO.findLight("fkrebs")).thenReturn(localUser);
 
     filter.resolveMirroredUserAppId(request, "fkrebs");
 
@@ -278,7 +278,7 @@ class MirroredUserLookupTest {
 
     MirroredUser saved = mirroredUser("mu-006", "https://cube3.dlr.de", "ghost");
     when(mirroredUserDAO.createOrUpdateBySourceKey(any())).thenReturn(saved);
-    when(userDAO.find("ghost")).thenReturn(null); // not in DB
+    when(userDAO.findLight("ghost")).thenReturn(null); // not in DB
 
     // Must not throw.
     String appId = filter.resolveMirroredUserAppId(request, "ghost");
