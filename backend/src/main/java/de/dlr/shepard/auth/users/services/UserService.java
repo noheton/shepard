@@ -111,7 +111,36 @@ public class UserService {
    * @return the user object for the user sending the request
    */
   public User getCurrentUser() {
-    User currentUser = userDAO.find(authenticationContext.getCurrentUserName());
+    return resolveCurrentUser(false);
+  }
+
+  /**
+   * Identity-only variant of {@link #getCurrentUser()} that loads the current
+   * {@code :User} at depth 0 (no mapped collections).
+   *
+   * <p>NEO-AUDIT-2026-07-20-USER-SUPERNODE: {@link #getCurrentUser()} does a
+   * {@code DEPTH_ENTITY=1} load that drags the shared service user's millions of
+   * unmapped {@code WAS_ASSOCIATED_WITH} provenance edges over the wire on every
+   * authenticated mutation (~3.3 s / ~hundreds of MB on the 2.87M-degree user, and
+   * a JVM-heap risk under the ingest's 8× concurrency). Callers that only need the
+   * user for a {@code setCreatedBy}/{@code setUpdatedBy} edge or a role check must use
+   * this. Roles are scalar {@code @Property} fields so authorization is unaffected;
+   * only the (here unused) mapped collections are skipped. See {@link UserDAO#findLight}.
+   *
+   * @return the current user at depth 0
+   */
+  public User getCurrentUserLight() {
+    return resolveCurrentUser(true);
+  }
+
+  /**
+   * Resolve the request's current user, optionally light (depth-0) to avoid the
+   * {@code :User} supernode hydration. Shares the BUG-USER-PROVISION-EMAIL-COLLISION
+   * email fallback so both variants behave identically on username divergence.
+   */
+  private User resolveCurrentUser(boolean light) {
+    String username = authenticationContext.getCurrentUserName();
+    User currentUser = light ? userDAO.findLight(username) : userDAO.find(username);
 
     if (currentUser == null) {
       // BUG-USER-PROVISION-EMAIL-COLLISION: when the stored Neo4j username diverges

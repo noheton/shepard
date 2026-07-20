@@ -312,6 +312,42 @@ public class UserServiceTest {
   }
 
   /**
+   * NEO-AUDIT-2026-07-20-USER-SUPERNODE: getCurrentUserLight must resolve via the
+   * depth-0 {@code findLight} loader (never the DEPTH_ENTITY {@code find} that
+   * hydrates the :User supernode's millions of provenance edges).
+   */
+  @Test
+  public void getCurrentUserLight_usesShallowLoader_neverHydrates() {
+    var node = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(dao.findLight("admin")).thenReturn(node);
+
+    var result = service.getCurrentUserLight();
+
+    assertEquals(node, result);
+    verify(dao).findLight("admin");
+    verify(dao, never()).find("admin");
+  }
+
+  /**
+   * getCurrentUserLight must share getCurrentUser's BUG-USER-PROVISION-EMAIL-COLLISION
+   * email fallback (username miss → resolve by email), so identity resolution is
+   * identical between the two variants.
+   */
+  @Test
+  public void getCurrentUserLight_emailFallback_succeedsWhenUsernameMissesButEmailHits() {
+    var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
+    when(dao.findLight("admin")).thenReturn(null);
+    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+
+    var result = service.getCurrentUserLight();
+
+    assertEquals(storedNode, result, "light variant must share the email fallback");
+  }
+
+  /**
    * getCurrentUser must still throw when both username and email lookups miss.
    */
   @Test

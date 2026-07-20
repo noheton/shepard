@@ -17,6 +17,32 @@ public class UserDAO extends GenericDAO<User> {
   }
 
   /**
+   * Find a user by username loading only the node itself (depth 0) — no mapped
+   * relationships (subscriptions / apiKeys / gitCredentials).
+   *
+   * <p>NEO-AUDIT-2026-07-20-USER-SUPERNODE: the {@code DEPTH_ENTITY=1} {@link #find}
+   * generates an OGM {@code MATCH p=(n)-[*0..1]-(m)} that drags <em>every</em>
+   * relationship on the node over the wire — including the millions of
+   * <em>unmapped</em> incoming {@code WAS_ASSOCIATED_WITH} provenance edges (and
+   * their Activity nodes) on the shared service {@code :User}. On a 2.87M-degree
+   * user that is a multi-second, multi-hundred-MB load that OGM then mostly
+   * discards, and it is on the hot path of every authenticated mutation
+   * (each create does {@code setCreatedBy(getCurrentUser())}). Depth 0 returns the
+   * node with its scalar properties — crucially {@code username}, {@code appId} and
+   * the role {@code @Property} fields — which is all an identity-only caller needs.
+   *
+   * <p>Use only where the returned user is consumed for identity / role checks or a
+   * {@code setCreatedBy}/{@code setUpdatedBy} edge — never where the caller reads the
+   * mapped collections (those need {@link #find}).
+   *
+   * @param username the OGM {@code @Id} username to load
+   * @return the User node at depth 0, or {@code null} when none exists
+   */
+  public User findLight(String username) {
+    return session.load(getEntityType(), username, 0);
+  }
+
+  /**
    * Find a user by their email address.
    *
    * <p>After the V81 {@code user_email_unique} constraint is applied, at most one

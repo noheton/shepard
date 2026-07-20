@@ -164,7 +164,7 @@ public class SingletonFileReferenceService {
     if (parent == null) {
       throw new NotFoundException("No DataObject with appId " + dataObjectAppId);
     }
-    User user = userService.getCurrentUser();
+    User user = userService.getCurrentUserLight();
 
     FileReference singleton = new FileReference();
     singleton.setName(name);
@@ -246,7 +246,7 @@ public class SingletonFileReferenceService {
     ref.setFile(saved);
     ref.setFileKind(detectFileKind(filename, saved));
     ref.setUpdatedAt(dateHelper.getDate());
-    ref.setUpdatedBy(userService.getCurrentUser());
+    ref.setUpdatedBy(userService.getCurrentUserLight());
     FileReference updated = singletonFileReferenceDAO.createOrUpdate(ref);
 
     Log.debugf(
@@ -328,7 +328,7 @@ public class SingletonFileReferenceService {
       saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, declaredSize);
     }
 
-    User user = userService.getCurrentUser();
+    User user = userService.getCurrentUserLight();
 
     FileReference singleton = new FileReference();
     singleton.setName(name);
@@ -432,7 +432,7 @@ public class SingletonFileReferenceService {
       saved = fileStorageService.storeFile(SHARED_FILES_NAMESPACE, filename, payload, 0L);
     }
 
-    User user = userService.getCurrentUser();
+    User user = userService.getCurrentUserLight();
 
     FileReference singleton = new FileReference();
     singleton.setName(name);
@@ -539,7 +539,7 @@ public class SingletonFileReferenceService {
     }
 
     ref.setUpdatedAt(dateHelper.getDate());
-    ref.setUpdatedBy(userService.getCurrentUser());
+    ref.setUpdatedBy(userService.getCurrentUserLight());
     return singletonFileReferenceDAO.createOrUpdate(ref);
   }
 
@@ -563,7 +563,7 @@ public class SingletonFileReferenceService {
     // soft-delete posture for Reference primitives).
     ref.setDeleted(true);
     ref.setUpdatedAt(dateHelper.getDate());
-    ref.setUpdatedBy(userService.getCurrentUser());
+    ref.setUpdatedBy(userService.getCurrentUserLight());
     singletonFileReferenceDAO.createOrUpdate(ref);
 
     // Hard-delete the byte payload — there's no other Reference
