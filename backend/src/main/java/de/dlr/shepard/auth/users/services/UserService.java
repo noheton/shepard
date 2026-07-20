@@ -108,24 +108,62 @@ public class UserService {
   }
 
   /**
-   * @return the user object for the user sending the request
+   * @return the user object for the user sending the request, loaded at DEPTH 0
+   *   (no mapped collections)
+   *
+   * <p>NEO-AUDIT-2026-07-20-USER-SUPERNODE / GETCURRENTUSER-GLOBAL-DEPTH0: the
+   * default {@code getCurrentUser()} now loads the caller at depth 0. The former
+   * {@code DEPTH_ENTITY=1} load dragged the shared service user's millions of
+   * unmapped {@code WAS_ASSOCIATED_WITH} provenance edges (now ~3.9M) over the wire
+   * on <em>every</em> authenticated mutation — each create does
+   * {@code setCreatedBy(getCurrentUser())} — for multi-second, multi-hundred-MB
+   * loads that OGM then mostly discards, with a JVM-heap risk under the ingest's
+   * 8× concurrency.
+   *
+   * <p>The vast majority of callers (~47 of ~50) only read the user's identity
+   * ({@code username}/{@code appId}), the scalar role {@code @Property} fields, or
+   * attach it as a {@code setCreatedBy}/{@code setUpdatedBy} edge — none of which
+   * touch the mapped collections. Roles are scalars, so <strong>authorization
+   * decisions are byte-identical</strong> at depth 0. The three call sites that
+   * project the mapped {@code subscriptions}/{@code apiKeys} collections onto a
+   * {@link de.dlr.shepard.auth.users.io.UserIO} wire response (v1
+   * {@code GET /shepard/api/users}, v2 {@code GET /v2/users/me}, v2
+   * {@code PATCH /v2/users/me}) use {@link #getCurrentUserWithCollections()}
+   * instead. See {@link UserDAO#findLight}.
    */
   public User getCurrentUser() {
+    return resolveCurrentUser(true);
+  }
+
+  /**
+   * Depth-1 variant of {@link #getCurrentUser()} that additionally hydrates the
+   * mapped {@code subscriptions} / {@code apiKeys} / {@code gitCredentials}
+   * collections.
+   *
+   * <p>GETCURRENTUSER-GLOBAL-DEPTH0: use this <em>only</em> where the returned
+   * user's mapped collections are actually read — currently the three
+   * {@link de.dlr.shepard.auth.users.io.UserIO}-constructing call sites that emit
+   * (or, for {@code GET /v2/users/me}, compute) {@code subscriptionIds} /
+   * {@code apiKeyIds}. Every other caller must use the depth-0
+   * {@link #getCurrentUser()} to avoid re-introducing the {@code :User} supernode
+   * hydration. NB: {@link de.dlr.shepard.auth.apikey.services.ApiKeyService} and
+   * {@link de.dlr.shepard.common.subscription.services.SubscriptionService} read
+   * their collections off {@link #getUser(String)} (an independent by-username
+   * {@code find}), not this path, so they are unaffected by the depth-0 default.
+   *
+   * @return the current user at depth 1 (mapped collections hydrated)
+   */
+  public User getCurrentUserWithCollections() {
     return resolveCurrentUser(false);
   }
 
   /**
-   * Identity-only variant of {@link #getCurrentUser()} that loads the current
-   * {@code :User} at depth 0 (no mapped collections).
-   *
-   * <p>NEO-AUDIT-2026-07-20-USER-SUPERNODE: {@link #getCurrentUser()} does a
-   * {@code DEPTH_ENTITY=1} load that drags the shared service user's millions of
-   * unmapped {@code WAS_ASSOCIATED_WITH} provenance edges over the wire on every
-   * authenticated mutation (~3.3 s / ~hundreds of MB on the 2.87M-degree user, and
-   * a JVM-heap risk under the ingest's 8× concurrency). Callers that only need the
-   * user for a {@code setCreatedBy}/{@code setUpdatedBy} edge or a role check must use
-   * this. Roles are scalar {@code @Property} fields so authorization is unaffected;
-   * only the (here unused) mapped collections are skipped. See {@link UserDAO#findLight}.
+   * Identity-only variant of {@link #getCurrentUser()}. Since the depth-0 flip
+   * (GETCURRENTUSER-GLOBAL-DEPTH0) this is <em>equivalent</em> to
+   * {@link #getCurrentUser()}; it is retained as an explicit-intent alias for
+   * call sites that want to state "identity only, never the collections" at the
+   * call site, and to keep its existing callers/tests stable. See
+   * {@link UserDAO#findLight}.
    *
    * @return the current user at depth 0
    */
@@ -136,7 +174,9 @@ public class UserService {
   /**
    * Resolve the request's current user, optionally light (depth-0) to avoid the
    * {@code :User} supernode hydration. Shares the BUG-USER-PROVISION-EMAIL-COLLISION
-   * email fallback so both variants behave identically on username divergence.
+   * email fallback so both variants behave identically on username divergence — and
+   * the fallback honours the requested depth too, so the light path never hydrates
+   * the supernode even when it resolves via email (see {@link UserDAO#findByEmailLight}).
    */
   private User resolveCurrentUser(boolean light) {
     String username = authenticationContext.getCurrentUserName();
@@ -147,9 +187,12 @@ public class UserService {
       // from the token's preferred_username (e.g. importer service-account UUID vs.
       // interactive "admin"), the username lookup misses. Fall back to email if the
       // JWT carried the email claim, so the request can proceed with the correct node.
+      // GETCURRENTUSER-GLOBAL-DEPTH0: honour the requested depth on the fallback too —
+      // the light path uses the depth-0 email twin so the supernode-keyed
+      // service account is never hydrated even on the miss→email branch.
       String email = authenticationContext.getCurrentUserEmail();
       if (email != null && !email.isBlank()) {
-        Optional<User> byEmail = userDAO.findByEmail(email);
+        Optional<User> byEmail = light ? userDAO.findByEmailLight(email) : userDAO.findByEmail(email);
         if (byEmail.isPresent()) {
           Log.warnf(
             "BUG-USER-PROVISION-EMAIL-COLLISION: getCurrentUser by username '%s' failed; " +

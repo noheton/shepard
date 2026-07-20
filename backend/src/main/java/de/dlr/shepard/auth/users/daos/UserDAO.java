@@ -63,6 +63,35 @@ public class UserDAO extends GenericDAO<User> {
   }
 
   /**
+   * Depth-0 twin of {@link #findByEmail(String)} — resolves a :User by email
+   * loading only the node itself (no mapped collections).
+   *
+   * <p>NEO-AUDIT-2026-07-20-USER-SUPERNODE / GETCURRENTUSER-GLOBAL-DEPTH0: the
+   * {@link #findByEmail} above loads at {@code DEPTH_ENTITY=1}, so it drags the
+   * supernode's millions of unmapped {@code WAS_ASSOCIATED_WITH} edges over the
+   * wire — the very cost the depth-0 {@code getCurrentUser()} path exists to
+   * avoid. The BUG-USER-PROVISION-EMAIL-COLLISION fallback in
+   * {@link de.dlr.shepard.auth.users.services.UserService#resolveCurrentUser(boolean)}
+   * fires precisely for the service-account username divergence (importer
+   * service-account UUID vs. interactive {@code preferred_username}), i.e. exactly
+   * the account most likely to BE the supernode. Without this light twin the
+   * light path would still hydrate the supernode whenever it fell to the email
+   * fallback. Use only where the returned user is consumed for identity / role
+   * checks or a {@code setCreatedBy}/{@code setUpdatedBy} edge — never where the
+   * caller reads the mapped collections (those need {@link #findByEmail}).
+   *
+   * @param email the email address to look up (case-sensitive)
+   * @return an Optional containing the matching User at depth 0, or empty when none found
+   */
+  public Optional<User> findByEmailLight(String email) {
+    if (email == null || email.isBlank()) return Optional.empty();
+    Filter f = new Filter("email", ComparisonOperator.EQUALS, email);
+    Collection<User> hits = session.loadAll(getEntityType(), f, 0);
+    if (hits == null || hits.isEmpty()) return Optional.empty();
+    return Optional.of(hits.iterator().next());
+  }
+
+  /**
    * Count the number of distinct email addresses that appear on more than one
    * :User node. Returns 0 once the V81 uniqueness constraint is active (it is
    * impossible to insert duplicates at that point). Used by the startup WARN

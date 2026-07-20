@@ -46,7 +46,10 @@ public class UserRest {
   )
   @APIResponse(responseCode = "400", description = "bad request")
   public Response getCurrentUser() {
-    User currentUser = userService.getCurrentUser();
+    // GETCURRENTUSER-GLOBAL-DEPTH0: this frozen upstream-compat surface emits the
+    // caller's subscriptionIds/apiKeyIds on the wire via UserIO, so it needs the
+    // depth-1 loader (the default getCurrentUser() is depth-0 and would empty them).
+    User currentUser = userService.getCurrentUserWithCollections();
     UserIO io = new UserIO(currentUser);
     JWTPrincipal principal = authenticationContext.getPrincipal();
     if (principal != null) {

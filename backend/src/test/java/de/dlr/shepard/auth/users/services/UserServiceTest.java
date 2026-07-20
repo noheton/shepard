@@ -303,8 +303,11 @@ public class UserServiceTest {
 
     when(authCtx.getCurrentUserName()).thenReturn("admin");
     when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
-    when(dao.find("admin")).thenReturn(null);
-    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+    // GETCURRENTUSER-GLOBAL-DEPTH0: getCurrentUser is now the depth-0 path, so the
+    // email fallback resolves via the depth-0 findByEmailLight (never the supernode-
+    // hydrating findByEmail).
+    when(dao.findLight("admin")).thenReturn(null);
+    when(dao.findByEmailLight("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
 
     var result = service.getCurrentUser();
 
@@ -340,11 +343,14 @@ public class UserServiceTest {
     when(authCtx.getCurrentUserName()).thenReturn("admin");
     when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
     when(dao.findLight("admin")).thenReturn(null);
-    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+    // GETCURRENTUSER-GLOBAL-DEPTH0: the light path uses the depth-0 email twin so it
+    // never hydrates the supernode even on the username-miss → email fallback branch.
+    when(dao.findByEmailLight("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
 
     var result = service.getCurrentUserLight();
 
     assertEquals(storedNode, result, "light variant must share the email fallback");
+    verify(dao, never()).findByEmail("admin@demo.shepard.local");
   }
 
   /**
@@ -354,8 +360,9 @@ public class UserServiceTest {
   public void getCurrentUser_throwsWhenNeitherUsernameNorEmailMatch() {
     when(authCtx.getCurrentUserName()).thenReturn("ghost");
     when(authCtx.getCurrentUserEmail()).thenReturn("ghost@nowhere.example");
-    when(dao.find("ghost")).thenReturn(null);
-    when(dao.findByEmail("ghost@nowhere.example")).thenReturn(Optional.empty());
+    // GETCURRENTUSER-GLOBAL-DEPTH0: getCurrentUser resolves via the depth-0 loaders.
+    when(dao.findLight("ghost")).thenReturn(null);
+    when(dao.findByEmailLight("ghost@nowhere.example")).thenReturn(Optional.empty());
 
     assertThrows(InvalidRequestException.class, () -> service.getCurrentUser());
   }
@@ -371,8 +378,10 @@ public class UserServiceTest {
     var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
     when(authCtx.getCurrentUserName()).thenReturn("admin");
     when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
-    when(dao.find("admin")).thenReturn(null);
-    when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+    // GETCURRENTUSER-GLOBAL-DEPTH0: assertCurrentUserEquals resolves through the
+    // depth-0 getCurrentUser (identity/username only — a scalar — so authz is unchanged).
+    when(dao.findLight("admin")).thenReturn(null);
+    when(dao.findByEmailLight("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
 
     // path param = the stored username (the node key) → must NOT throw
     service.assertCurrentUserEquals("uuid-service");
@@ -388,9 +397,69 @@ public class UserServiceTest {
     var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
     when(authCtx.getCurrentUserName()).thenReturn("admin");
     when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
+    when(dao.findLight("admin")).thenReturn(null);
+    when(dao.findByEmailLight("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
+
+    assertThrows(InvalidAuthException.class, () -> service.assertCurrentUserEquals("admin"));
+  }
+
+  // ── GETCURRENTUSER-GLOBAL-DEPTH0: loader-selection invariants ────────────────
+
+  /**
+   * GETCURRENTUSER-GLOBAL-DEPTH0: the default getCurrentUser() now resolves the
+   * caller at DEPTH 0 (findLight), never the DEPTH_ENTITY find that hydrates the
+   * :User supernode's millions of provenance edges. Authorization is unaffected —
+   * roles are scalar @Property fields present at depth 0.
+   */
+  @Test
+  public void getCurrentUser_usesShallowLoader_neverHydrates() {
+    var node = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(dao.findLight("admin")).thenReturn(node);
+
+    var result = service.getCurrentUser();
+
+    assertEquals(node, result);
+    verify(dao).findLight("admin");
+    verify(dao, never()).find("admin");
+  }
+
+  /**
+   * GETCURRENTUSER-GLOBAL-DEPTH0: getCurrentUserWithCollections() is the dedicated
+   * depth-1 loader for the three UserIO-constructing call sites that project the
+   * mapped subscriptions/apiKeys collections onto the wire. It must use the deep
+   * find (never the depth-0 findLight).
+   */
+  @Test
+  public void getCurrentUserWithCollections_usesDeepLoader_neverLight() {
+    var node = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(dao.find("admin")).thenReturn(node);
+
+    var result = service.getCurrentUserWithCollections();
+
+    assertEquals(node, result);
+    verify(dao).find("admin");
+    verify(dao, never()).findLight("admin");
+  }
+
+  /**
+   * GETCURRENTUSER-GLOBAL-DEPTH0: the deep variant's email fallback must use the
+   * depth-1 findByEmail (which hydrates the collections the caller needs), not the
+   * light twin.
+   */
+  @Test
+  public void getCurrentUserWithCollections_emailFallback_usesDeepEmailLookup() {
+    var storedNode = new User("uuid-service", "Admin", "User", "admin@demo.shepard.local");
+    when(authCtx.getCurrentUserName()).thenReturn("admin");
+    when(authCtx.getCurrentUserEmail()).thenReturn("admin@demo.shepard.local");
     when(dao.find("admin")).thenReturn(null);
     when(dao.findByEmail("admin@demo.shepard.local")).thenReturn(Optional.of(storedNode));
 
-    assertThrows(InvalidAuthException.class, () -> service.assertCurrentUserEquals("admin"));
+    var result = service.getCurrentUserWithCollections();
+
+    assertEquals(storedNode, result);
+    verify(dao).findByEmail("admin@demo.shepard.local");
+    verify(dao, never()).findByEmailLight("admin@demo.shepard.local");
   }
 }

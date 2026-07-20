@@ -8,14 +8,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.v2.collectionwatchers.daos.CollectionWatcherDAO;
 import de.dlr.shepard.v2.users.io.MeIO;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -54,7 +59,7 @@ class MeRestTest {
     resource.collectionWatcherDAO = collectionWatcherDAO;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
-    when(userService.getCurrentUser()).thenReturn(new User(CALLER, "Alice", "Anderson", "alice@example.org"));
+    when(userService.getCurrentUserWithCollections()).thenReturn(new User(CALLER, "Alice", "Anderson", "alice@example.org"));
     when(userDAO.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
     when(collectionWatcherDAO.countByUsername(anyString())).thenReturn(0L);
   }
@@ -91,7 +96,7 @@ class MeRestTest {
   void getMe_populatesUserFields() {
     var user = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     user.setOrcid(VALID_ORCID);
-    when(userService.getCurrentUser()).thenReturn(user);
+    when(userService.getCurrentUserWithCollections()).thenReturn(user);
     var r = resource.getMe(securityContext);
     assertEquals(200, r.getStatus());
     var body = (MeIO) r.getEntity();
@@ -148,7 +153,7 @@ class MeRestTest {
   void explicitNullClearsOrcid() throws Exception {
     var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     existing.setOrcid(VALID_ORCID);
-    when(userService.getCurrentUser()).thenReturn(existing);
+    when(userService.getCurrentUserWithCollections()).thenReturn(existing);
 
     var r = resource.patchMe(MAPPER.readTree("{\"orcid\":null}"), securityContext);
     assertEquals(200, r.getStatus());
@@ -162,7 +167,7 @@ class MeRestTest {
   void emptyStringClearsOrcid() throws Exception {
     var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     existing.setOrcid(VALID_ORCID);
-    when(userService.getCurrentUser()).thenReturn(existing);
+    when(userService.getCurrentUserWithCollections()).thenReturn(existing);
 
     var r = resource.patchMe(MAPPER.readTree("{\"orcid\":\"\"}"), securityContext);
     assertEquals(200, r.getStatus());
@@ -177,7 +182,7 @@ class MeRestTest {
     // RFC 7396: missing fields are NOT changed. {} should leave orcid as-is.
     var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     existing.setOrcid(VALID_ORCID);
-    when(userService.getCurrentUser()).thenReturn(existing);
+    when(userService.getCurrentUserWithCollections()).thenReturn(existing);
 
     var r = resource.patchMe(MAPPER.readTree("{}"), securityContext);
     assertEquals(200, r.getStatus());
@@ -215,7 +220,7 @@ class MeRestTest {
   void displayNameExplicitNullClears() throws Exception {
     var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     existing.setDisplayName("Dr. A");
-    when(userService.getCurrentUser()).thenReturn(existing);
+    when(userService.getCurrentUserWithCollections()).thenReturn(existing);
 
     var r = resource.patchMe(MAPPER.readTree("{\"displayName\":null}"), securityContext);
     assertEquals(200, r.getStatus());
@@ -229,7 +234,7 @@ class MeRestTest {
   void displayNameEmptyStringClears() throws Exception {
     var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
     existing.setDisplayName("Dr. A");
-    when(userService.getCurrentUser()).thenReturn(existing);
+    when(userService.getCurrentUserWithCollections()).thenReturn(existing);
 
     var r = resource.patchMe(MAPPER.readTree("{\"displayName\":\"\"}"), securityContext);
     assertEquals(200, r.getStatus());
@@ -260,5 +265,30 @@ class MeRestTest {
     var passed = captor.getValue();
     assertEquals(VALID_ORCID, passed.getOrcid());
     assertEquals("Dr. A", passed.getDisplayName());
+  }
+
+  // ── GETCURRENTUSER-GLOBAL-DEPTH0: wire-shape regression ─────────────────────
+
+  /**
+   * GETCURRENTUSER-GLOBAL-DEPTH0: patchMe echoes a raw UserIO, so the caller's
+   * subscriptionIds/apiKeyIds must still appear on the wire. This is the exact
+   * regression the depth-0 flip risked: patchMe now loads via the depth-1
+   * getCurrentUserWithCollections(), so a user carrying a subscription + apikey
+   * projects both onto the response. (Depth-0 would have emptied them.)
+   */
+  @Test
+  void patchMe_response_populatesSubscriptionAndApiKeyIds() throws Exception {
+    var uid = UUID.randomUUID();
+    var withCollections = new User(CALLER, "Alice", "Anderson", "alice@example.org");
+    withCollections.setApiKeys(List.of(new ApiKey(uid)));
+    withCollections.setSubscriptions(List.of(new Subscription(7L)));
+    when(userService.getCurrentUserWithCollections()).thenReturn(withCollections);
+
+    var r = resource.patchMe(MAPPER.readTree("{}"), securityContext);
+    assertEquals(200, r.getStatus());
+
+    var io = (UserIO) r.getEntity();
+    assertEquals("[" + uid + "]", Arrays.toString(io.getApiKeyIds()));
+    assertEquals("[7]", Arrays.toString(io.getSubscriptionIds()));
   }
 }

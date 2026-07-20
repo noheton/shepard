@@ -80,7 +80,11 @@ public class MeRest {
       return problem(PROBLEM_TYPE_UNAUTHORIZED, "Unauthorized", Response.Status.UNAUTHORIZED,
           "Authentication is required to access this endpoint.");
     }
-    User current = userService.getCurrentUser();
+    // GETCURRENTUSER-GLOBAL-DEPTH0: builds a UserIO (which reads the mapped
+    // subscriptions/apiKeys collections), so use the depth-1 loader rather than the
+    // depth-0 default. MeIO currently projects the collections away, but keeping the
+    // deep loader here means a future MeIO field addition cannot silently return empty.
+    User current = userService.getCurrentUserWithCollections();
     UserIO userIO = new UserIO(current);
     int watchedCount = (int) collectionWatcherDAO.countByUsername(current.getUsername());
     return Response.ok(MeIO.from(userIO, watchedCount)).build();
@@ -117,7 +121,11 @@ public class MeRest {
         Response.Status.BAD_REQUEST, "PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
-    User current = userService.getCurrentUser();
+    // GETCURRENTUSER-GLOBAL-DEPTH0: the response echoes a raw UserIO (with
+    // subscriptionIds/apiKeyIds on the wire), so load depth-1. This also keeps the
+    // subsequent createOrUpdate(current) byte-identical to the pre-flip behaviour:
+    // the mapped collections are hydrated, so the depth-1 save preserves them exactly.
+    User current = userService.getCurrentUserWithCollections();
 
     if (patch.has("orcid")) {
       JsonNode orcidNode = patch.get("orcid");
