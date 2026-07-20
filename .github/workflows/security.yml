@@ -114,7 +114,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
         with:
           # Fail the PR if any newly-added dep has CVSS >= 7 (matches the
           # OWASP Dependency-Check threshold) OR carries a banned licence.
