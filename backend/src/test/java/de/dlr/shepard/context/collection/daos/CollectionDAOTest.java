@@ -529,6 +529,60 @@ public class CollectionDAOTest extends BaseTestCase {
   }
 
   @Test
+  public void findAllCollectionsByShepardIdLight_excludesHasDataobjectFanout() {
+    // SUPERNODE-F2-COLLECTION-DETAIL: the light list loader must emit the
+    // collection-detail return-part (NONE(... has_dataobject)) so listing never drags
+    // each Collection's members into OGM. The heavy variant keeps getReturnPart.
+    var col1 = new Collection(1L);
+    col1.setShepardId(11L);
+    col1.setName("Yes");
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", null);
+
+    var query =
+      """
+      MATCH (c:Collection { deleted: FALSE })-[:has_version]->(v:Version) WHERE (NOT exists((c)-[:has_permissions]->(:Permissions)) \
+      OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"bob\" })) \
+      OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) \
+      OR exists((c)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) \
+      OR exists((c)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"bob\"}))) \
+      AND""" +
+      " " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " WITH c " +
+      CypherQueryHelper.getReturnPartForCollectionDetail("c");
+    when(session.query(Collection.class, query, paramsMap)).thenReturn(List.of(col1));
+
+    var params = new QueryParamHelper();
+    var actual = dao.findAllCollectionsByShepardIdLight(params, "bob");
+    verify(session).query(Collection.class, query, paramsMap);
+    assertEquals(List.of(col1), actual);
+  }
+
+  @Test
+  public void findByShepardIdForCollectionDetail_usesCollectionDetailReturnPart() {
+    // SUPERNODE-F2-COLLECTION-DETAIL: the detail loader (the v2 GET /v2/collections/{appId}
+    // path) must exclude the has_dataobject fan-out (8,483 members on mffd-afp-tapelaying)
+    // while keeping every other bounded edge.
+    var col = new Collection(1L);
+    col.setShepardId(11L);
+    col.setName("Yes");
+
+    var query =
+      "MATCH (o:Collection {deleted: FALSE})-[:has_version]->(v:Version) WHERE " +
+      CypherQueryHelper.getShepardIdPart("o", 11L) +
+      " AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " WITH o " +
+      CypherQueryHelper.getReturnPartForCollectionDetail("o");
+    when(session.query(Collection.class, query, Map.of())).thenReturn(List.of(col));
+
+    var actual = dao.findByShepardIdForCollectionDetail(11L, null);
+    verify(session).query(Collection.class, query, Map.of());
+    assertEquals(col, actual);
+  }
+
+  @Test
   public void createOrUpdate_setsAppIdOnNewCollection() {
     // L2a: a freshly-built Collection (extends AbstractEntity) should get a
     // UUID v7 appId minted by the GenericDAO seam before the OGM session.save

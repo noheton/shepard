@@ -174,7 +174,10 @@ public class CollectionV2Rest {
     if (q != null) params = params.withName(q);
 
     long total = collectionService.countAllCollections(params);
-    var items = collectionService.getAllCollections(params.withPageAndSize(page, pageSize)).stream()
+    // SUPERNODE-F2-COLLECTION-DETAIL: light list load — excludes the has_dataobject
+    // fan-out per Collection. CollectionV2IO @JsonIgnores dataObjectIds, so listing
+    // never drags each Collection's members (up to 8,483) into OGM.
+    var items = collectionService.getAllCollectionsLight(params.withPageAndSize(page, pageSize)).stream()
         .map(CollectionV2IO::new)
         .toList();
 
@@ -223,7 +226,11 @@ public class CollectionV2Rest {
     Response gate = enforceAccess(ogmId, AccessType.Read, sc);
     if (gate != null) return gate;
 
-    Collection c = collectionService.getCollectionWithDataObjectsAndIncomingReferences(ogmId);
+    // SUPERNODE-F2-COLLECTION-DETAIL: light detail load — excludes the has_dataobject
+    // fan-out (up to 8,483 members on mffd-afp-tapelaying). CollectionV2IO @JsonIgnores
+    // dataObjectIds, so this is wire-identical; the member list is served by the paged
+    // GET /v2/collections/{appId}/data-objects endpoint.
+    Collection c = collectionService.getCollectionForDetail(ogmId);
     return Response.ok(new CollectionV2IO(c))
       .header("Cache-Control", "max-age=300, must-revalidate")
       .build();

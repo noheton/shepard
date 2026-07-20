@@ -126,6 +126,25 @@ public class CollectionService {
     return collections;
   }
 
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — light variant of {@link #getAllCollections}
+   * that excludes the {@code has_dataobject} fan-out per Collection, so listing
+   * Collections never drags each one's members into OGM. Used by the v2 list
+   * and the MCP {@code list_collections} tool — both members-ignoring. The v1
+   * {@code /shepard/api/collections} list keeps {@link #getAllCollections}
+   * because {@code CollectionIO.dataObjectIds} is {@code required=true}.
+   *
+   * @param params encapsulates possible parameters
+   * @return a list of Collections without their {@code dataObjects} members
+   */
+  public List<Collection> getAllCollectionsLight(QueryParamHelper params) {
+    List<Collection> queryResult = collectionDAO.findAllCollectionsByShepardIdLight(
+      params,
+      authenticationContext.getCurrentUserName()
+    );
+    return queryResult.stream().map(this::cutDeleted).toList();
+  }
+
   /** Returns the count of Collections visible to the current user, optionally filtered by name. */
   public long countAllCollections(QueryParamHelper params) {
     return collectionDAO.countAllCollectionsByShepardId(params, authenticationContext.getCurrentUserName());
@@ -179,6 +198,48 @@ public class CollectionService {
    */
   public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId, UUID versionUID) {
     return getCollection(shepardId, versionUID, false);
+  }
+
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — fetches a Collection for the v2 detail surface.
+   * Hydrates the bounded structural neighborhood (permissions, version, default file
+   * container, created/updated-by, incoming references) but NOT the
+   * {@code has_dataobject} members — those are served separately by the paged
+   * {@code GET /v2/collections/{appId}/data-objects} endpoint. This keeps the
+   * collection-detail page O(1) regardless of member count (the live
+   * {@code mffd-afp-tapelaying} Collection holds 8,483 DataObjects). Because the v2
+   * response shape ({@code CollectionV2IO}) {@code @JsonIgnore}s {@code dataObjectIds},
+   * the response is wire-identical to the previous members-hydrating load.
+   *
+   * @param shepardId shepardId of the desired collection
+   * @return Collection without its {@code dataObjects} members
+   * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
+   */
+  public Collection getCollectionForDetail(long shepardId) {
+    return getCollectionForDetail(shepardId, null);
+  }
+
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — versioned sibling of
+   * {@link #getCollectionForDetail(long)}.
+   *
+   * @param shepardId  shepardId of the desired collection
+   * @param versionUID the version to load, or {@code null} for HEAD
+   * @return Collection without its {@code dataObjects} members
+   * @throws InvalidPathException if no collection (with specified version) could be found
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
+   */
+  public Collection getCollectionForDetail(long shepardId, UUID versionUID) {
+    Collection ret = collectionDAO.findByShepardIdForCollectionDetail(shepardId, versionUID);
+    if (ret == null || ret.isDeleted()) {
+      throw new InvalidPathException(
+        "ID ERROR - Collection with id %s is null or deleted".formatted(shepardId)
+      );
+    }
+    assertIsAllowedToReadCollection(shepardId);
+    cutDeleted(ret);
+    return ret;
   }
 
   /**

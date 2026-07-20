@@ -32,6 +32,19 @@ public class CypherQueryHelperTest {
   }
 
   @Test
+  public void getReturnPartForCollectionDetail_excludesOnlyHasDataobject() {
+    // SUPERNODE-F2-COLLECTION-DETAIL: collection detail/list load excludes the
+    // has_dataobject fan-out (up to 8,483 members on mffd-afp-tapelaying) but KEEPS
+    // every other edge (permissions, version, default file container, incoming refs).
+    var actual = CypherQueryHelper.getReturnPartForCollectionDetail("o");
+    assertEquals(
+      "MATCH path=(o)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND " +
+      "NONE(rel IN relationships(path) WHERE type(rel) = 'has_dataobject') RETURN o, nodes(path), relationships(path)",
+      actual
+    );
+  }
+
+  @Test
   public void getReturnPartTest_omitIncoming() {
     var actual = CypherQueryHelper.getReturnPart("entity", Neighborhood.OUTGOING);
     assertEquals(

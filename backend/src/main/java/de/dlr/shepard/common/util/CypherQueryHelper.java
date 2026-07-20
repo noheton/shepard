@@ -201,6 +201,61 @@ public class CypherQueryHelper {
     );
   }
 
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — Collection <em>detail/list</em> depth-1
+   * neighborhood return that excludes <strong>only</strong> the
+   * {@code has_dataobject} fan-out edge.
+   *
+   * <p>Sibling of {@link #getReturnPartForList(String)} (DataObject list) and
+   * {@link #getReturnPartForDetail(String)} (DataObject detail), but for the
+   * {@code :Collection} root. The one edge that makes a Collection a supernode is
+   * {@code has_dataobject}: the live {@code mffd-afp-tapelaying} Collection carries
+   * <b>8,483</b> {@code has_dataobject} edges, so the default
+   * {@link #getReturnPart(String)} (undirected {@code (c)-[*0..1]-(n)},
+   * {@code Neighborhood.EVERYTHING}) hydrates all 8,483 contained DataObjects into
+   * OGM on every collection-detail open — the single most-visited surface in the
+   * app — and each row re-discovers its incoming {@code has_dataobject} edge to the
+   * shared {@code :Collection} node, spiralling to O(N²) in
+   * {@code EntityAccessManager.coerceCollection} (the same {@code ArrayList.indexOf}
+   * dedup landmine documented on {@link #getReturnPartForList(String)}).
+   *
+   * <p>The collection-detail response needs the Collection's own scalars plus its
+   * <em>bounded</em> structural edges — {@code has_permissions}, {@code has_version},
+   * {@code has_default_file_container} (so {@code defaultFileContainerAppId}
+   * populates), {@code created_by}/{@code updated_by}, and any incoming
+   * {@code CollectionReference}s — but NOT the O(N) member list. The contained
+   * DataObjects are served separately by the paged
+   * {@code GET /v2/collections/{appId}/data-objects} endpoint, and the v2 response
+   * shape ({@code CollectionV2IO}) already {@code @JsonIgnore}s
+   * {@code dataObjectIds}/{@code incomingIds} — so excluding {@code has_dataobject}
+   * here is <em>wire-identical</em> on the v2 surface (no id reconstruction needed,
+   * unlike the DataObject list/detail fixes).
+   *
+   * <p>Excludes ONLY {@code has_dataobject} — every other depth-1 edge is kept, so a
+   * Collection row hydrates in O(1) regardless of how many DataObjects it holds. The
+   * v1 {@code /shepard/api/} surface (whose {@code CollectionIO.dataObjectIds} is
+   * {@code required=true}) must NOT use this return-part; its loaders stay on the
+   * members-hydrating {@link #getReturnPart(String)}.
+   *
+   * <p>The {@code NONE(rel IN relationships(path) ...)} guard preserves the
+   * zero-length path (the Collection itself) so {@code entity} is always returned.
+   *
+   * @param entity the Cypher variable bound to the Collection
+   * @return a {@code MATCH path=... RETURN entity, nodes(path), relationships(path)}
+   *         clause that never traverses a {@code has_dataobject} edge
+   */
+  public static String getReturnPartForCollectionDetail(String entity) {
+    return (
+      "MATCH path=(" +
+      entity +
+      ")-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = '" +
+      Constants.HAS_DATAOBJECT +
+      "') RETURN " +
+      entity +
+      ", nodes(path), relationships(path)"
+    );
+  }
+
   public static String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
     String ret;
     boolean isString = orderByAttribute.isString();

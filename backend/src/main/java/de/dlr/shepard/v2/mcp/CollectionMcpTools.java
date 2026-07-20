@@ -84,7 +84,9 @@ public class CollectionMcpTools {
         params = params.withName(name);
       }
 
-      List<Collection> collections = collectionService.getAllCollections(params);
+      // SUPERNODE-F2-COLLECTION-DETAIL: light list load — this tool reads only
+      // scalars (appId/name/description/status), so exclude the has_dataobject fan-out.
+      List<Collection> collections = collectionService.getAllCollectionsLight(params);
       List<Map<String, Object>> result = new ArrayList<>(collections.size());
       for (Collection c : collections) {
         Map<String, Object> row = new LinkedHashMap<>();

@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RequestScoped
 public class CollectionDAO extends VersionableEntityDAO<Collection> {
@@ -64,6 +65,32 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
    * @return a list of collections
    */
   public List<Collection> findAllCollectionsByShepardId(QueryParamHelper params, String username) {
+    return findAllCollectionsByShepardId(params, username, false);
+  }
+
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — light variant of
+   * {@link #findAllCollectionsByShepardId(QueryParamHelper, String)} that excludes
+   * the {@code has_dataobject} fan-out per Collection, so listing Collections never
+   * drags each one's members (up to <b>8,483</b> on the live
+   * {@code mffd-afp-tapelaying} Collection) into OGM.
+   *
+   * <p>Used only by members-ignoring callers: the v2 list
+   * ({@code CollectionV2IO} {@code @JsonIgnore}s {@code dataObjectIds}) and the MCP
+   * {@code list_collections} tool (reads only {@code appId}/{@code name}/
+   * {@code description}/{@code status}). The v1 {@code /shepard/api/collections}
+   * list keeps the members-hydrating {@link #findAllCollectionsByShepardId} because
+   * {@code CollectionIO.dataObjectIds} is {@code required=true}.
+   *
+   * @param params   encapsulates possible parameters
+   * @param username the name of the user
+   * @return a list of Collections without their {@code dataObjects} members
+   */
+  public List<Collection> findAllCollectionsByShepardIdLight(QueryParamHelper params, String username) {
+    return findAllCollectionsByShepardId(params, username, true);
+  }
+
+  private List<Collection> findAllCollectionsByShepardId(QueryParamHelper params, String username, boolean light) {
     String versionVariable = "v";
     String collectionVariable = "c";
     Map<String, Object> paramsMap = new HashMap<>();
@@ -91,7 +118,11 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     if (params.hasPagination()) {
       query += " " + CypherQueryHelper.getPaginationPart();
     }
-    query += " " + CypherQueryHelper.getReturnPart(collectionVariable);
+    query +=
+      " " +
+      (light
+          ? CypherQueryHelper.getReturnPartForCollectionDetail(collectionVariable)
+          : CypherQueryHelper.getReturnPart(collectionVariable));
     ArrayList<Collection> result = new ArrayList<Collection>();
     for (Collection col : findByQuery(query, paramsMap)) {
       if (matchName(col, params.getName())) {
@@ -153,6 +184,42 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
       " WITH c " +
       CypherQueryHelper.getReturnPart("c");
     var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
+  /**
+   * SUPERNODE-F2-COLLECTION-DETAIL — collection-detail load that hydrates the
+   * bounded structural neighborhood (permissions, version, default file container,
+   * created/updated-by, incoming CollectionReferences) but <strong>excludes the
+   * {@code has_dataobject} fan-out edge</strong>, so opening the detail page of a
+   * large Collection (the live {@code mffd-afp-tapelaying} holds <b>8,483</b>
+   * DataObjects) stays O(1) instead of dragging every member into OGM.
+   *
+   * <p>The contained DataObjects are served separately by the paged
+   * {@code GET /v2/collections/{appId}/data-objects} endpoint. Used by the v2 detail
+   * surface only ({@code CollectionV2IO} {@code @JsonIgnore}s {@code dataObjectIds},
+   * so the response is wire-identical); the v1 detail path keeps the
+   * members-hydrating {@link VersionableEntityDAO#findByShepardId(Long, boolean)}
+   * because {@code CollectionIO.dataObjectIds} is {@code required=true}. Loaders that
+   * genuinely iterate the members (RO-Crate / DMP export) stay on the heavy load.
+   *
+   * @param shepardId  identifies the Collection
+   * @param versionUID the version to load, or {@code null} for HEAD
+   * @return the Collection without its {@code dataObjects} members, or {@code null}
+   * @see CypherQueryHelper#getReturnPartForCollectionDetail(String)
+   */
+  public Collection findByShepardIdForCollectionDetail(long shepardId, UUID versionUID) {
+    String versionPart = (versionUID != null)
+      ? CypherQueryHelper.getVersionPart("v", versionUID)
+      : CypherQueryHelper.getVersionHeadPart("v");
+    String query =
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
+          getEntityType().getSimpleName(),
+          CypherQueryHelper.getShepardIdPart("o", shepardId),
+          versionPart
+        );
+    query += CypherQueryHelper.getReturnPartForCollectionDetail("o");
+    var iter = findByQuery(query, Map.of()).iterator();
     return iter.hasNext() ? iter.next() : null;
   }
 

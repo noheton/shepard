@@ -97,7 +97,7 @@ class CollectionMcpToolsTest {
   @Test
   void listCollectionsReturnsJsonArray() throws Exception {
     Collection c = makeCollection(COLL_OGM_ID, COLL_APP_ID, "LUMEN Campaign 2024");
-    when(collectionService.getAllCollections(any())).thenReturn(List.of(c));
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(List.of(c));
 
     String json = tools.listCollections(null, null, null);
 
@@ -111,7 +111,7 @@ class CollectionMcpToolsTest {
 
   @Test
   void listCollectionsPageSizeDefaults() throws Exception {
-    when(collectionService.getAllCollections(any())).thenReturn(Collections.emptyList());
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(Collections.emptyList());
 
     String json = tools.listCollections(null, null, null);
 
@@ -121,10 +121,10 @@ class CollectionMcpToolsTest {
 
   @Test
   void listCollectionsCapsSize() {
-    when(collectionService.getAllCollections(any())).thenReturn(Collections.emptyList());
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(Collections.emptyList());
     tools.listCollections(0, 9999, null);
     // Verify the QueryParamHelper doesn't crash with oversized size.
-    verify(collectionService).getAllCollections(any());
+    verify(collectionService).getAllCollectionsLight(any());
   }
 
   // ── listDataObjects ───────────────────────────────────────────────────────

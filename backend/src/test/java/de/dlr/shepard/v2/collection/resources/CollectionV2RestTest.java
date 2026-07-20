@@ -96,7 +96,7 @@ class CollectionV2RestTest {
     c.setAppId(COLL_APP_ID);
     c.setName("demo");
     when(collectionService.countAllCollections(any())).thenReturn(1L);
-    when(collectionService.getAllCollections(any())).thenReturn(List.of(c));
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(List.of(c));
 
     Response r = resource.list(null, 0, 50);
 
@@ -114,7 +114,7 @@ class CollectionV2RestTest {
   @Test
   void listReturnsEmptyPagedEnvelopeWhenNoCollections() {
     when(collectionService.countAllCollections(any())).thenReturn(0L);
-    when(collectionService.getAllCollections(any())).thenReturn(List.of());
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(List.of());
 
     Response r = resource.list(null, 0, 50);
 
@@ -128,7 +128,7 @@ class CollectionV2RestTest {
   @Test
   void list_qParam_filtersResults() {
     when(collectionService.countAllCollections(any())).thenReturn(0L);
-    when(collectionService.getAllCollections(any())).thenReturn(List.of());
+    when(collectionService.getAllCollectionsLight(any())).thenReturn(List.of());
 
     Response r = resource.list("search-term", 0, 50);
 
@@ -196,7 +196,9 @@ class CollectionV2RestTest {
       .thenReturn(false);
     Response r = resource.get(COLL_APP_ID, securityContext);
     assertEquals(403, r.getStatus());
-    verify(collectionService, never()).getCollectionWithDataObjectsAndIncomingReferences(anyLong());
+    // SUPERNODE-F2-COLLECTION-DETAIL: the detail GET now loads via the light
+    // getCollectionForDetail path; assert it is not reached before the perm gate.
+    verify(collectionService, never()).getCollectionForDetail(anyLong());
   }
 
   @Test
@@ -208,7 +210,7 @@ class CollectionV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
       .thenReturn(true);
-    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLL_OGM_ID)).thenReturn(c);
+    when(collectionService.getCollectionForDetail(COLL_OGM_ID)).thenReturn(c);
 
     Response r = resource.get(COLL_APP_ID, securityContext);
 

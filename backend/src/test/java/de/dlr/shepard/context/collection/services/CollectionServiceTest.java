@@ -96,6 +96,23 @@ public class CollectionServiceTest {
   }
 
   @Test
+  public void getAllCollectionsLight_delegatesToLightDaoLoader() {
+    // SUPERNODE-F2-COLLECTION-DETAIL: the light list service method must call the
+    // has_dataobject-excluding DAO loader, not the members-hydrating one.
+    String username = "manni";
+    Collection collectionNotDeleted = aCollection().id(5L).shepardId(55L).build();
+    QueryParamHelper params = new QueryParamHelper();
+
+    when(authenticationContext.getCurrentUserName()).thenReturn(username);
+    when(dao.findAllCollectionsByShepardIdLight(params, username)).thenReturn(List.of(collectionNotDeleted));
+
+    List<Collection> returned = service.getAllCollectionsLight(params);
+
+    assertEquals(List.of(collectionNotDeleted), returned);
+    verify(dao).findAllCollectionsByShepardIdLight(params, username);
+  }
+
+  @Test
   public void createCollectionTest() {
     User user = aUser().username("bob").build();
     Date date = new Date(23);
@@ -369,6 +386,42 @@ public class CollectionServiceTest {
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     assertEquals(ret, result);
     assertEquals(null, result.getFileContainer());
+  }
+
+  @Test
+  public void getCollectionForDetail_usesLightDetailLoaderAndChecksReadPermission() {
+    // SUPERNODE-F2-COLLECTION-DETAIL: the v2 detail service path must load via the
+    // has_dataobject-excluding DAO method (findByShepardIdForCollectionDetail) and
+    // still enforce the Read permission gate.
+    Collection ret = aCollection().id(1L).build();
+    long shepardId = 2L;
+    when(dao.findByShepardIdForCollectionDetail(shepardId, null)).thenReturn(ret);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong()))
+      .thenReturn(true);
+
+    var result = service.getCollectionForDetail(shepardId);
+
+    assertEquals(ret, result);
+    verify(dao).findByShepardIdForCollectionDetail(shepardId, null);
+  }
+
+  @Test
+  public void getCollectionForDetail_notFoundThrows() {
+    long shepardId = 2L;
+    when(dao.findByShepardIdForCollectionDetail(shepardId, null)).thenReturn(null);
+    assertThrows(InvalidPathException.class, () -> service.getCollectionForDetail(shepardId));
+  }
+
+  @Test
+  public void getCollectionForDetail_noReadPermissionThrows() {
+    Collection ret = aCollection().id(1L).build();
+    long shepardId = 2L;
+    when(dao.findByShepardIdForCollectionDetail(shepardId, null)).thenReturn(ret);
+    when(authenticationContext.getCurrentUserName()).thenReturn("eric");
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("eric"), anyLong()))
+      .thenReturn(false);
+    assertThrows(InvalidAuthException.class, () -> service.getCollectionForDetail(shepardId));
   }
 
   @Test
