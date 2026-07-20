@@ -154,7 +154,7 @@ class SingletonFileReferenceServiceTest {
     parent.setAppId(DO_APP_ID);
     parent.setShepardId(101L);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(dataObjectDAO.findLightByNeo4jId(DO_OGM_ID)).thenReturn(parent);
 
     var savedFile = new ShepardFile(new Date(), "doc.pdf", "deadbeef");
     savedFile.setOid("file-oid-1");
@@ -227,7 +227,7 @@ class SingletonFileReferenceServiceTest {
     parent.setAppId(DO_APP_ID);
     parent.setDeleted(true);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(dataObjectDAO.findLightByNeo4jId(DO_OGM_ID)).thenReturn(parent);
     InputStream payload = new ByteArrayInputStream(new byte[] { 1 });
     assertThrows(NotFoundException.class, () ->
       service.createSingleton(DO_APP_ID, "name", "doc.pdf", payload)
@@ -385,7 +385,7 @@ class SingletonFileReferenceServiceTest {
     var parent = new DataObject(DO_OGM_ID);
     parent.setAppId(DO_APP_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(dataObjectDAO.findLightByNeo4jId(DO_OGM_ID)).thenReturn(parent);
     when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> {
       FileReference r = inv.getArgument(0);
       if (r.getAppId() == null) r.setAppId(SINGLETON_APP_ID);
@@ -399,6 +399,33 @@ class SingletonFileReferenceServiceTest {
     assertNull(created.getFile());
     verify(fileStorageService, never()).storeFile(anyString(), anyString(), any(InputStream.class), anyLong());
     verify(singletonDao, times(2)).createOrUpdate(any(FileReference.class));
+  }
+
+  /**
+   * NEO-AUDIT-2026-07-20-REF-CREATE-LOADDEPTH regression: the parent DataObject
+   * MUST be resolved via the depth-0 {@code findLightByNeo4jId} loader, never the
+   * {@code DEPTH_ENTITY=1} {@code findByNeo4jId} loader that hydrates the parent's
+   * entire {@code has_reference} collection (~200 MB / 100k-ref DO → transaction
+   * memory-limit 500s + O(K) create). Guards against a regression that would
+   * re-introduce the ingest-killing blowup.
+   */
+  @Test
+  void createSingletonMetadata_resolvesParentShallow_neverHydratesReferences() {
+    var parent = new DataObject(DO_OGM_ID);
+    parent.setAppId(DO_APP_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(dataObjectDAO.findLightByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(singletonDao.createOrUpdate(any(FileReference.class))).thenAnswer(inv -> {
+      FileReference r = inv.getArgument(0);
+      if (r.getAppId() == null) r.setAppId(SINGLETON_APP_ID);
+      r.setShepardId(42L);
+      return r;
+    });
+
+    service.createSingletonMetadata(DO_APP_ID, "my-doc");
+
+    verify(dataObjectDAO).findLightByNeo4jId(DO_OGM_ID);
+    verify(dataObjectDAO, never()).findByNeo4jId(anyLong());
   }
 
   @Test

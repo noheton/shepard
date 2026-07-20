@@ -642,6 +642,26 @@ public class SingletonFileReferenceService {
   /**
    * Resolve a DataObject by its appId via the OGM-Long bridge in
    * {@link EntityIdResolver}.
+   *
+   * <p>NEO-AUDIT-2026-07-20-REF-CREATE-LOADDEPTH: loads the parent <em>shallow</em>
+   * (depth 0, {@link DataObjectDAO#findLightByNeo4jId}) rather than at
+   * {@code DEPTH_ENTITY=1}. A depth-1 load hydrates the parent's entire
+   * {@code has_reference} collection into the OGM session — on a large-fanout
+   * DataObject (the MFFD Tapelaying DO carries 100k+ singleton FileReferences)
+   * that is a ~200 MB transaction that trips {@code dbms.memory.transaction.total.max}
+   * (HTTP 500 {@code TransientException}) and makes every single-file create O(K)
+   * in the growing collection size. The three create paths that call this only
+   * ever {@code setDataObject(parent)} — they never touch {@code parent.getReferences()}
+   * or {@code parent.getCollection()} — so the node alone (with its scalar
+   * {@code deleted} flag) is sufficient.
+   *
+   * <p>Cascade-delete safety: OGM only deletes relationships it previously loaded
+   * into the mapping context. A depth-0 parent never hydrates {@code references},
+   * so saving a new singleton with {@code setDataObject(parent)} creates exactly the
+   * one new {@code has_reference} edge and touches no sibling edges — the same
+   * safety profile {@code attachContent} has relied on (it loads the parent from the
+   * reference side, leaving {@code references} at depth 2 = unmapped) across 100k+
+   * live creates without loss.
    */
   private DataObject resolveDataObjectByAppId(String appId) {
     if (appId == null) return null;
@@ -651,7 +671,7 @@ public class SingletonFileReferenceService {
     } catch (NotFoundException e) {
       return null;
     }
-    DataObject dataObject = dataObjectDAO.findByNeo4jId(ogmId);
+    DataObject dataObject = dataObjectDAO.findLightByNeo4jId(ogmId);
     if (dataObject == null || dataObject.isDeleted()) {
       return null;
     }
