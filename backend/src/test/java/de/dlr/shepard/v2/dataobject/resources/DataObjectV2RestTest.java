@@ -428,7 +428,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(parentAppId)).thenReturn(parent);
+    when(dataObjectDAO.findLightByAppId(parentAppId)).thenReturn(parent);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(child));
@@ -447,7 +447,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(parentAppId)).thenReturn(null);
+    when(dataObjectDAO.findLightByAppId(parentAppId)).thenReturn(null);
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null, null, null, parentAppId, null, null, null, securityContext);
 
@@ -475,7 +475,7 @@ class DataObjectV2RestTest {
     assertEquals(200, r.getStatus());
     assertEquals(-1L, paramsCaptor.getValue().getParentId());
     // parentAppId path must not be consulted when topLevel wins.
-    verify(dataObjectDAO, never()).findByAppId(any());
+    verify(dataObjectDAO, never()).findLightByAppId(any());
   }
 
   // ── BUG-COLL-APPID-ROUTE-006-V2-LIST: predecessorAppId + successorAppId filters ──
@@ -489,7 +489,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(predAppId)).thenReturn(pred);
+    when(dataObjectDAO.findLightByAppId(predAppId)).thenReturn(pred);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(child));
@@ -509,7 +509,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(predAppId)).thenReturn(null);
+    when(dataObjectDAO.findLightByAppId(predAppId)).thenReturn(null);
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
       null, null, null, null, predAppId, null, securityContext);
@@ -531,7 +531,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(succAppId)).thenReturn(succ);
+    when(dataObjectDAO.findLightByAppId(succAppId)).thenReturn(succ);
     ArgumentCaptor<QueryParamHelper> paramsCaptor = ArgumentCaptor.forClass(QueryParamHelper.class);
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), paramsCaptor.capture(), eq(null), eq(false)))
       .thenReturn(List.of(pred));
@@ -551,7 +551,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectDAO.findByAppId(succAppId)).thenReturn(null);
+    when(dataObjectDAO.findLightByAppId(succAppId)).thenReturn(null);
 
     Response r = resource.list(COLL_APP_ID, null, null, 0, 50, null, null, null,
       null, null, null, null, null, succAppId, securityContext);

@@ -337,7 +337,11 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
    */
   private void tryBackfillLocalUser(String username, String displayName, String email) {
     try {
-      User user = userDAO.find(username);
+      // NEO-AUDIT-USER-SUPERNODE: read/write only scalar name+email fields — load
+      // shallow so the ~3.9M-edge service :User is not hydrated. createOrUpdate on a
+      // depth-0 user is cascade-safe (the unloaded mapped collections are never in
+      // the OGM mapping context, so the save touches no relationships).
+      User user = userDAO.findLight(username);
       if (user == null) return;
 
       boolean firstBlank = user.getFirstName() == null || user.getFirstName().isBlank();

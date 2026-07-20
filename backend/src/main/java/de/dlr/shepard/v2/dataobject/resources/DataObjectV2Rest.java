@@ -256,7 +256,7 @@ public class DataObjectV2Rest {
     if (Boolean.TRUE.equals(topLevel)) {
       params = params.withTopLevelOnly();
     } else if (parentAppId != null && !parentAppId.isBlank()) {
-      DataObject parent = dataObjectDAO.findByAppId(parentAppId);
+      DataObject parent = dataObjectDAO.findLightByAppId(parentAppId);
       if (parent == null || parent.isDeleted() || parent.getShepardId() == null) {
         // Unknown / deleted parent → empty page (mirrors an unmatched filter).
         return emptyListResponse();
@@ -266,14 +266,14 @@ public class DataObjectV2Rest {
 
     // BUG-COLL-APPID-ROUTE-006-V2-LIST — predecessor / successor appId filters.
     if (predecessorAppId != null && !predecessorAppId.isBlank()) {
-      DataObject predecessor = dataObjectDAO.findByAppId(predecessorAppId);
+      DataObject predecessor = dataObjectDAO.findLightByAppId(predecessorAppId);
       if (predecessor == null || predecessor.isDeleted() || predecessor.getShepardId() == null) {
         return emptyListResponse();
       }
       params = params.withPredecessorShepardId(predecessor.getShepardId());
     }
     if (successorAppId != null && !successorAppId.isBlank()) {
-      DataObject successor = dataObjectDAO.findByAppId(successorAppId);
+      DataObject successor = dataObjectDAO.findLightByAppId(successorAppId);
       if (successor == null || successor.isDeleted() || successor.getShepardId() == null) {
         return emptyListResponse();
       }

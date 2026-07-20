@@ -642,6 +642,27 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * Resolve a DataObject by appId loading ONLY the node itself (depth 0) — no
+   * relationships hydrated.
+   *
+   * <p>SUPERNODE-F5: {@link #findByAppId} re-loads at {@code DEPTH_ENTITY=1}, which on
+   * a large-fanout DataObject drags its whole {@code has_reference} collection (the
+   * MFFD Tapelaying DO holds 178k+) into the session. Call sites that only need the
+   * resolved node's scalar identity — {@code appId}, {@code shepardId},
+   * {@code deleted} — must use this. Never use it where the caller reads the node's
+   * references, collection, or lineage (those need {@link #findByAppId}).
+   *
+   * @param appId the DataObject's UUID v7 appId
+   * @return the DataObject node at depth 0, or {@code null} if not found
+   */
+  public DataObject findLightByAppId(String appId) {
+    if (appId == null || appId.isBlank()) return null;
+    String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
+    var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
+    return StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+  }
+
+  /**
    * Fetches the {@code name} property for each of the supplied DataObject appIds in a single
    * Cypher round-trip.  Only the scalar {@code name} field is read — no entity loading or
    * relationship hydration occurs, making this suitable for high-fan-out batch views.
