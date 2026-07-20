@@ -1,8 +1,33 @@
 # RESUME — current worklog
 
-**Updated:** 2026-07-17 by claude-opus-4-8 with operator fkrebs@nucli.de
+**Updated:** 2026-07-20 by claude-opus-4-8 with operator fkrebs@nucli.de
 **Active arc:** Post-dispatcher reconcile. The hourly cloud dispatcher (APISIMP sweep, ran through fire-653 on 2026-07-17) is now **OFF**. July produced ~320 commits of APISIMP surface cleanup + UIRULE conversions + Quarkus 3.37 migration + MP4-video + URDF picker. Reconcile in flight: TIFF PR #2456 rebase+gates, PR #2626 review, ~520 stale APISIMP remote branch prune. Next big thread: MFFD tapelaying TPS ingest (`593529286` decoded the source structure).
 **Status:** Historic sections below (2026-05-28 header era) are ARCHIVE — see dated sections from 2026-06-17 onward for current MFFD state.
+
+---
+
+## 2026-07-20 — Ingest throughput: three supernode load-depth fixes (~2.5× faster), async-provenance decision deferred to operator
+
+**Ask:** "both backend fixes, one redeploy" (AGENT-EDGE-DEADLOCK + getDataObject O(K²)). **Reality: the plan's premise was wrong** — the ingest's `POST /v2/references` 500s had a bigger, un-planned root cause, and "two fixes" became three (all the *same* supernode/load-depth landmine at different call sites). The ingest is now **~2.5× faster and stable**; the true ceiling (the `:User` write contention) is an audit-write-timing change left as an **operator decision** (`PROV-ASYNC-WRITE`).
+
+**Diagnosis (profiled, not guessed — the lesson from the 07-19 incident):** the create path's 500s were **two** distinct causes, and after fixing them a **third** per-mutation cost surfaced:
+1. **Transaction-memory OOM (the dominant killer, NOT in the plan):** `SingletonFileReferenceService.create*` loaded the parent DO at DEPTH_ENTITY=1 → hydrated the Tapelaying DO's 127k+ `has_reference` collection (~200 MB tx) → `dbms.memory.transaction.total.max` 500s + O(K)-in-DO-size. → **`NEO-AUDIT-REF-CREATE-LOADDEPTH`**, depth-0 `findLightByNeo4jId`.
+2. **`:User` supernode read-hydration on every mutation:** `getCurrentUser()`/`ProvenanceCaptureFilter`/`UserDAO.find` at depth-1 dragged all ~3M `WAS_ASSOCIATED_WITH` edges over the wire. → **`NEO-AUDIT-USER-SUPERNODE`** + **`NEO-AUDIT-PROV-HOTPATH`**, `getCurrentUserLight`/`findLight`.
+3. **HMAC chain tail scan:** `findLatestHmac` → `NodeByLabelScan` over **3,071,963** Activities per mutation. → indexed `ActivityDAO.findLatestAuditHmac` (backward `NodeIndexScan`, **2 db-hits**, PROFILE-verified).
+
+**Shipped (3 commits on `main`, backend image redeployed 3×):** `19eec9389` (REF-CREATE-LOADDEPTH) · `b3413763a` (USER-SUPERNODE service) · prov-hotpath (filter `findLight` + indexed HMAC). All semantics-preserving; roles are scalar `@Property` so **authz unchanged**. Tests added/migrated; all gate-1 unit tests green.
+
+**Cascade-delete gate (data-loss risk on the live 127k-ref DO):** verified before each restart — scratch DO 4→5 refs (seeds survived), Tapelaying create returned 201 (was OOM-500). OGM only deletes relationships it loaded; a depth-0 parent/user never hydrates its collection, so a create touches exactly one new edge.
+
+**Measured effect:** single-thread quiesced create 5-ref DO **2.0s→0.88s**, 127k DO **2.9s→1.56s**. Live ingest **~54-66 → ~133 refs/min (~2.5×)**, stable, 0 memory-500s.
+
+**Worker-count A/B (the advisor's free lever + `feedback_no_parallel_heavy_ingests`):** W=3→49/min/0 deadlocks vs W=8→133/min/~15 deadlocks/min. Throughput scales **~linearly** (~16-17/min/worker) → ingest is per-worker-**latency**-bound (content upload + residual :User edge-write), NOT lock-bound. **Kept WORKERS=8** (2.5× > fewer-workers). Deadlocks are a retried tax, not a cap.
+
+**DEFERRED to operator — `PROV-ASYNC-WRITE`:** the residual ceiling (~0.88s baseline + the AGENT-EDGE-DEADLOCK deadlocks) is the three per-mutation `:User` edge-writes (`WAS_ASSOCIATED_WITH` LockingMerge + `agent_acted_in_month` CREATE + `created_by`) all exclusive-locking the 3.5M-degree NODE(183). Removing it needs async single-writer/batched provenance — an **audit-write-timing change** (EU AI Act / HMAC / "audit trail is a graph") → operator's call, not unilateral.
+
+**Also filed:** `GETDO-DETAIL-ON2` (detail-page O(K²), still open — Tapelaying DO detail page unopenable), `DEPTH-ENTITY-SUPERNODE-SWEEP` (the pattern hit 4× this session — audit all `DEPTH_ENTITY` loads on supernode-adjacent entities; known un-fixed: global `getCurrentUser`, `tryBackfillLocalUser` L337, GETDO detail).
+
+**Ingest ops state:** running in tmux `mffd-tapelaying-20260710b`, **WORKERS=8**, ~50% done (~130k/258k refs), ETA ~10-16h. Supervisor `.relaunch-tapelaying-w8.sh` (resume-only, no `--reset`); stop via `touch /tmp/mffd-runner.stop` + SIGINT. **Restart gotcha (bit me twice):** SIGKILL leaves a stale `.mffd-import.lock` (blocks next start, runner backoff-loops) AND each restart pays a resume-skip re-scan of the 129k done files (~2-4 min before uploads resume) — prefer SIGINT (graceful, releases lock) and avoid needless restarts. Scratch `CASCADE-GATE-fixA` collection deleted; 0 probe refs left on the real DO.
 
 ---
 
