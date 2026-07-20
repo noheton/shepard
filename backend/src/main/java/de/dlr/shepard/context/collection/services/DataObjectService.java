@@ -272,7 +272,20 @@ public class DataObjectService {
 
     collectionService.assertIsAllowedToReadCollection(ret.getCollection().getShepardId());
     cutDeleted(ret);
+    completeNeighbours(ret);
+    return ret;
+  }
 
+  /**
+   * Re-fetch the bounded structural neighbours (incoming DataObjectReferences,
+   * children, predecessors, successors, parent) of a loaded DataObject so their
+   * fields are fully populated (a depth-1 load leaves them as id-only stubs).
+   * Shared by {@link #getDataObject(long, UUID)} and
+   * {@link #getDataObjectForDetail(long, long, UUID, boolean)}. These edges are
+   * structurally bounded (lineage links, not the {@code has_reference} fan-out),
+   * so this stays cheap even on a large-fanout DataObject.
+   */
+  private void completeNeighbours(DataObject ret) {
     HashSet<Long> incomingReferencesIdList = new HashSet<Long>();
     for (DataObjectReference reference : ret.getIncoming()) incomingReferencesIdList.add(reference.getId());
     List<DataObjectReference> completeIncomingReferences = new ArrayList<DataObjectReference>();
@@ -298,6 +311,52 @@ public class DataObjectService {
     ret.setPredecessors(completePredecessors);
     ret.setSuccessors(completeSuccessors);
     if (ret.getParent() != null) ret.setParent(dataObjectDAO.findByNeo4jId(ret.getParent().getId()));
+  }
+
+  /**
+   * GETDO-DETAIL-ON2 — detail-view load that does NOT hydrate the
+   * {@code has_reference} fan-out (the O(K²) {@code coerceCollection} spiral on a
+   * large-fanout DataObject that makes the detail page unopenable). Loads via
+   * {@link DataObjectDAO#findByShepardIdForDetail} (bounded structural neighborhood),
+   * runs the same permission + collection-membership gates as
+   * {@link #getDataObject(long, long, UUID)}, then re-attaches the bounded neighbours.
+   *
+   * <p>{@code reconstructReferences}: when true (v1 byte-compat), re-attaches
+   * lightweight reference stubs (scalar {@code labels(r)} projection, O(K) not O(K²),
+   * keyed on {@code id(d)}) so {@code DataObjectIO.referenceIds} + the per-kind counts
+   * stay populated. v2 passes false — {@code DataObjectDetailV2IO} {@code @JsonIgnore}s
+   * those legacy fields and sources references from the bounded
+   * {@code findContainersByDataObjectAppId} instead.
+   */
+  public DataObject getDataObjectForDetail(long collectionShepardId, long shepardId, UUID versionUID, boolean reconstructReferences) {
+    collectionService.getCollection(collectionShepardId);
+
+    DataObject ret = dataObjectDAO.findByShepardIdForDetail(shepardId, versionUID);
+    if (ret == null || ret.isDeleted()) {
+      String errorMsg = versionUID == null
+        ? "DataObject with id %s is null or deleted".formatted(shepardId)
+        : "DataObject with id %s and versionUID %s is null or deleted".formatted(shepardId, versionUID);
+      Log.error(errorMsg);
+      throw new InvalidPathException("ID ERROR - " + errorMsg);
+    }
+
+    try {
+      collectionService.assertIsAllowedToReadCollection(ret.getCollection().getShepardId());
+    } catch (InvalidAuthException ex) {
+      throw new InvalidPathException("ID ERROR - There is no association between collection and dataObject");
+    }
+    if (!ret.getCollection().getShepardId().equals(collectionShepardId)) {
+      throw new InvalidPathException("ID ERROR - There is no association between collection and dataObject");
+    }
+
+    cutDeleted(ret);
+    completeNeighbours(ret);
+
+    if (reconstructReferences) {
+      Map<Long, List<BasicReference>> refStubs =
+        dataObjectDAO.reconstructReferenceStubsByDoNeo4jIds(List.of(ret.getId()));
+      ret.setReferences(refStubs.getOrDefault(ret.getId(), Collections.emptyList()));
+    }
     return ret;
   }
 

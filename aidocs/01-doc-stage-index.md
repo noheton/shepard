@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 102 |
 | `concept` | 43 |
 | `idea` | 13 |
-| `feature-defined` | 136 |
+| `feature-defined` | 137 |
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
 | `deployed` | 157 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **591** |
+| **total docs** | **592** |
 | **UNTAGGED** | **0** |
 
 ## fragment (102)
@@ -216,7 +216,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (136)
+## feature-defined (137)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -227,6 +227,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/backend-jandex-hang-investigation-2026-05-28.md`](agent-findings/backend-jandex-hang-investigation-2026-05-28.md) | Backend rebuild — Quarkus/Jandex infinite-loop investigation (2026-05-28) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`](agent-findings/btkvs-docket-showcase-2026-05-29.md) | BT-KVS docket showcase — C/C and C/SiC fabrication tracking | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/depth-entity-supernode-sweep-2026-07-20.md`](agent-findings/depth-entity-supernode-sweep-2026-07-20.md) | DEPTH_ENTITY supernode sweep (2026-07-20) | 2026-07-20 | — |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/frontend-v2-exclusivity-audit.md`](agent-findings/frontend-v2-exclusivity-audit.md) | Frontend v2 / appId exclusivity audit | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -470,7 +471,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/00-doc-stages.md`](00-doc-stages.md) | 00 — Doc lifecycle stages (taxonomy SSOT) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-26 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-19 |
+| [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-07-20 |
 | [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-07-19 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-30 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |

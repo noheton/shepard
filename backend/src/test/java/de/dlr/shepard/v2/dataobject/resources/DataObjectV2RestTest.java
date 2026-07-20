@@ -592,7 +592,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.getDataObjectForDetail(COLL_OGM_ID, DO_OGM_ID, null, false)).thenReturn(d);
 
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
@@ -800,7 +800,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.getDataObjectForDetail(COLL_OGM_ID, DO_OGM_ID, null, false)).thenReturn(d);
 
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 
@@ -839,7 +839,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.getDataObjectForDetail(COLL_OGM_ID, DO_OGM_ID, null, false)).thenReturn(d);
 
     // Simulate Cypher returning one TS reference with a known refAppId.
     String tsRefAppId = "01900000-0000-7000-aaaa-000000000001";
@@ -879,7 +879,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
-    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+    when(dataObjectService.getDataObjectForDetail(COLL_OGM_ID, DO_OGM_ID, null, false)).thenReturn(d);
 
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, null, securityContext);
 

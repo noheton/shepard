@@ -164,7 +164,11 @@ public class DataObjectRest {
       versionUUID = UUID.fromString(versionUID);
     }
 
-    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId, versionUUID);
+    // GETDO-DETAIL-ON2: detail-load that excludes the has_reference fan-out (avoids
+    // the O(K²) coerceCollection spiral on a large-fanout DO). reconstructReferences=true
+    // re-attaches reference stubs via a scalar projection (O(K)) so this frozen v1
+    // response stays byte-compatible (referenceIds[] + per-kind counts).
+    DataObject dataObject = dataObjectService.getDataObjectForDetail(collectionId, dataObjectId, versionUUID, true);
     return Response.ok(new DataObjectIO(dataObject)).build();
   }
 

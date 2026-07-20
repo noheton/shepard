@@ -106,6 +106,45 @@ public class DataObjectServiceTest {
   }
 
   @Test
+  public void getDataObjectForDetail_usesDetailLoaderAndReconstructsWhenFlagTrue() {
+    // GETDO-DETAIL-ON2: detail path must load via findByShepardIdForDetail (no
+    // has_reference fan-out) and, for v1 byte-compat, reconstruct reference stubs.
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject dataObject = aDataObject().id(5L).shepardId(55L).inCollection(collection).build();
+    when(collectionService.getCollection(5555L)).thenReturn(collection);
+    when(dao.findByShepardIdForDetail(55L, null)).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(eq(5555L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())
+    ).thenReturn(true);
+    when(dao.reconstructReferenceStubsByDoNeo4jIds(java.util.List.of(5L))).thenReturn(java.util.Map.of());
+
+    DataObject returned = service.getDataObjectForDetail(5555L, 55L, null, true);
+
+    assertEquals(dataObject, returned);
+    verify(dao).findByShepardIdForDetail(55L, null);
+    verify(dao).reconstructReferenceStubsByDoNeo4jIds(java.util.List.of(5L));
+    verify(dao, never()).findByShepardId(anyLong()); // must NOT use the spiraling full loader
+  }
+
+  @Test
+  public void getDataObjectForDetail_skipsReconstructWhenFlagFalse() {
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject dataObject = aDataObject().id(5L).shepardId(55L).inCollection(collection).build();
+    when(collectionService.getCollection(5555L)).thenReturn(collection);
+    when(dao.findByShepardIdForDetail(55L, null)).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(eq(5555L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())
+    ).thenReturn(true);
+
+    DataObject returned = service.getDataObjectForDetail(5555L, 55L, null, false);
+
+    assertEquals(dataObject, returned);
+    verify(dao, never()).reconstructReferenceStubsByDoNeo4jIds(any());
+  }
+
+  @Test
   public void getDataObjectTest_deleted() {
     DataObject dataObject = aDataObject().id(5L).shepardId(55L).deleted(true).build();
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);

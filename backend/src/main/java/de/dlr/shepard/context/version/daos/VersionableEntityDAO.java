@@ -47,6 +47,32 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     return result.iterator().next();
   }
 
+  /**
+   * GETDO-DETAIL-ON2 — detail-view load that hydrates the bounded structural
+   * neighborhood (collection, successors, predecessors, children, version) but
+   * excludes the {@code has_reference} fan-out edge, so a large-fanout entity's
+   * detail load stays O(1) instead of O(K²) in its reference count. Reference
+   * data is re-attached out-of-band by the caller. See
+   * {@link CypherQueryHelper#getReturnPartForDetail(String)}.
+   */
+  public T findByShepardIdForDetail(Long shepardId, UUID versionUID) {
+    Map<String, Object> paramsMap = new HashMap<>();
+    var returnPart = CypherQueryHelper.getReturnPartForDetail("o");
+    String versionPart = (versionUID != null)
+      ? CypherQueryHelper.getVersionPart("v", versionUID)
+      : CypherQueryHelper.getVersionHeadPart("v");
+    String query =
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
+          getEntityType().getSimpleName(),
+          CypherQueryHelper.getShepardIdPart("o", shepardId),
+          versionPart
+        );
+    query += returnPart;
+    Iterable<T> result = findByQuery(query, paramsMap);
+    if (!result.iterator().hasNext()) return null;
+    return result.iterator().next();
+  }
+
   public List<T> findByShepardIds(List<Long> shepardIds) {
     return findByShepardIds(shepardIds, false);
   }

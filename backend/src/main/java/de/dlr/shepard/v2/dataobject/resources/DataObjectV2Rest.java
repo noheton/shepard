@@ -413,7 +413,11 @@ public class DataObjectV2Rest {
     Response gate = enforceDataObjectAccess(appId, AccessType.Read, sc);
     if (gate != null) return gate;
 
-    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    // GETDO-DETAIL-ON2: detail-load that never hydrates the has_reference fan-out
+    // (the O(K²) spiral on a large-fanout DO). reconstructReferences=false — this v2
+    // shape @JsonIgnores the legacy referenceIds/counts and sources references from
+    // the bounded buildContainersFromCypher below.
+    DataObject d = dataObjectService.getDataObjectForDetail(collectionOgmId, dataObjectOgmId, null, false);
 
     // M4I-c — content-negotiation. Caller requested
     // `Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"`

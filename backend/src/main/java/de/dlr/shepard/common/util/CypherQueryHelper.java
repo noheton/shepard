@@ -164,6 +164,43 @@ public class CypherQueryHelper {
     );
   }
 
+  /**
+   * GETDO-DETAIL-ON2 — single-DataObject <em>detail</em> depth-1 neighborhood return
+   * that excludes <strong>only</strong> the {@code has_reference} fan-out edge.
+   *
+   * <p>Sibling of {@link #getReturnPartForList(String)} but for the detail path.
+   * Unlike the list, a single DataObject's detail view genuinely needs its bounded
+   * structural edges hydrated — the parent {@code :Collection} ({@code has_dataobject},
+   * which the detail service reads via {@code d.getCollection().getShepardId()} for
+   * the permission check), plus successors / predecessors / children / version. So we
+   * keep {@code has_dataobject} (a single incoming edge here, not the O(N) collection
+   * fan-out the list feared) and drop ONLY {@code has_reference} — the edge that on a
+   * large-fanout DataObject (the MFFD Tapelaying DO holds 177k+ FileReferences) makes
+   * OGM's {@code coerceCollection} ({@code ArrayList.indexOf} dedup) O(K²) and pegs the
+   * backend for minutes, rendering the detail page unopenable.
+   *
+   * <p>Reference data is re-attached out-of-band: v2 detail sources it from
+   * {@code DataObjectDAO.findContainersByDataObjectAppId} (Cypher, bounded) and
+   * {@code @JsonIgnore}s the legacy {@code referenceIds}/counts; v1 detail reconstructs
+   * {@code referenceIds}+counts via a scalar projection (byte-compat), same as the list
+   * fix. See {@code DataObjectService.getDataObject(..., reconstructReferences)}.
+   *
+   * @param entity the Cypher variable bound to the DataObject
+   * @return a {@code MATCH path=... RETURN entity, nodes(path), relationships(path)}
+   *         clause that never traverses a {@code has_reference} edge
+   */
+  public static String getReturnPartForDetail(String entity) {
+    return (
+      "MATCH path=(" +
+      entity +
+      ")-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = '" +
+      Constants.HAS_REFERENCE +
+      "') RETURN " +
+      entity +
+      ", nodes(path), relationships(path)"
+    );
+  }
+
   public static String getOrderByPart(String variable, OrderByAttribute orderByAttribute, Boolean orderDesc) {
     String ret;
     boolean isString = orderByAttribute.isString();

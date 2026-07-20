@@ -20,6 +20,18 @@ public class CypherQueryHelperTest {
   }
 
   @Test
+  public void getReturnPartForDetail_excludesOnlyHasReference() {
+    // GETDO-DETAIL-ON2: detail load excludes the has_reference fan-out (the O(K²)
+    // spiral) but KEEPS has_dataobject (the collection edge the detail service needs).
+    var actual = CypherQueryHelper.getReturnPartForDetail("o");
+    assertEquals(
+      "MATCH path=(o)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND " +
+      "NONE(rel IN relationships(path) WHERE type(rel) = 'has_reference') RETURN o, nodes(path), relationships(path)",
+      actual
+    );
+  }
+
+  @Test
   public void getReturnPartTest_omitIncoming() {
     var actual = CypherQueryHelper.getReturnPart("entity", Neighborhood.OUTGOING);
     assertEquals(
