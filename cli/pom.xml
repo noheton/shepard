@@ -37,7 +37,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <picocli.version>4.7.6</picocli.version>
-    <jackson.version>2.22.0</jackson.version>
+    <jackson.version>2.22.1</jackson.version>
     <junit.version>5.10.5</junit.version>
     <assertj.version>3.27.7</assertj.version>
     <mockito.version>5.22.0</mockito.version>
