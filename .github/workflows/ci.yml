@@ -214,10 +214,27 @@ jobs:
           QUARKUS_DATASOURCE_SPATIAL_USERNAME: shepard
           QUARKUS_DATASOURCE_SPATIAL_PASSWORD: shepard_secret
         run: |
+          # Launch the packaged IT app in the `test` profile (QUARKUS_PROFILE) so
+          # it uses the test config (oidc/s3/audit defaults that let the unit-test
+          # suite boot) rather than prod, while the QUARKUS_* env above overrides
+          # the datasources to the ephemeral compose on localhost.
+          set -o pipefail
           mvn -B -P integration \
               -Dit.test='*V5WireFidelityIT' \
               -Dsurefire.failIfNoSpecifiedTests=false \
-              verify
+              -Dquarkus.test.integration-test-profile=test \
+              verify \
+            || { echo "=== shepard.log (real app boot error) ==="; \
+                 tail -300 backend/logs/shepard.log 2>/dev/null || echo "(no shepard.log)"; \
+                 exit 1; }
+
+      - name: Upload app boot log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shepard-app-log
+          path: backend/logs/shepard.log
+          if-no-files-found: ignore
 
       - name: Upload failsafe reports
         if: always()
