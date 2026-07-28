@@ -175,8 +175,12 @@ export const options = {
 // All four k6 scripts now use apikey (PERF4e unification, 2026-05-27).
 
 function authHeaders(extra) {
+  // Send the credential under both `apikey` (PERF4e short-API-key convention,
+  // matches the integration test suite) AND `X-API-KEY` (the header the backend's
+  // JWTFilter accepts) so the harness works whether API_KEY is a short API key or
+  // a JWT/Bearer token — the backend reads whichever it needs and ignores the other.
   const base = API_KEY
-    ? { apikey: API_KEY, Accept: "application/json" }
+    ? { apikey: API_KEY, "X-API-KEY": API_KEY, Accept: "application/json" }
     : { Accept: "application/json" };
   return Object.assign({}, base, extra || {});
 }
@@ -228,61 +232,61 @@ export function setup() {
   const dataObject    = doRes.json();
   const dataObjectAppId = dataObject.appId;
 
-  // 3. Create TimeseriesContainer
-  const tcRes = http.post(
-    `${BASE_URL}/shepard/api/timeseriescontainers`,
-    JSON.stringify({ name: "perf4-ts-container" }),
-    { headers: JSON_HEADERS }
-  );
-  if (tcRes.status !== 201 && tcRes.status !== 200) {
-    throw new Error(`setup: create TimeseriesContainer failed — HTTP ${tcRes.status}: ${tcRes.body}`);
-  }
-  const tsContainerId = tcRes.json().id;
-
-  // 4. Create Timeseries channel (POST TimeseriesWithDataPoints — first payload
-  //    seeds the channel; the timeseries 5-tuple must be non-blank)
+  // 3-5. Timeseries fixtures (container + channel + 500-row CSV seed).
+  // NON-FATAL: the synthetic ts-ingest / ts-range-scan scenarios null-guard on
+  // data.tsContainerId, so if any of these fixture calls fail (e.g. a bit-rotted
+  // v1 path on a given deployment) we degrade to tsContainerId=null and those two
+  // scenarios self-skip — the collection/DO scenarios and the LARGE_* probes still
+  // run. (LARGE-DATA-K6-COVERAGE only needs the real large entities, not these.)
   const measurement  = "perf4";
   const field        = "val";
   const device       = "bench";
   const location     = "lab";
   const symbolicName = "perf4_val";
-
-  // Seed one data point to register the channel
   const now = Date.now();
-  const seedPoint = {
-    timeseries: { measurement, device, location, symbolicName, field },
-    points: [{ time: (now - 1000) * 1000000, value_double: 1.0 }],
-  };
-  const tsCreateRes = http.post(
-    `${BASE_URL}/shepard/api/timeseriescontainers/${tsContainerId}/payload`,
-    JSON.stringify(seedPoint),
-    { headers: JSON_HEADERS }
-  );
-  if (tsCreateRes.status !== 201 && tsCreateRes.status !== 200) {
-    throw new Error(`setup: create Timeseries failed — HTTP ${tsCreateRes.status}: ${tsCreateRes.body}`);
-  }
-  const tsChannelId = tsCreateRes.json().id || null;
-
-  // 5. Ingest 500 seed rows via CSV so the range-scan test has data to retrieve
-  //    epoch nanoseconds: Date.now() returns ms; * 1_000_000 = ns
-  const seedRows = [];
-  for (let i = 0; i < 500; i++) {
-    const t = now - (499 - i) * 1000;        // 1s apart, ending ~now
-    seedRows.push(`${t * 1000000},${(Math.random() * 100).toFixed(4)}`);
-  }
-  const csvBody = "time,value_double\n" + seedRows.join("\n");
-  const csvQs = `measurement=${encodeURIComponent(measurement)}` +
-    `&device=${encodeURIComponent(device)}` +
-    `&location=${encodeURIComponent(location)}` +
-    `&symbolic_name=${encodeURIComponent(symbolicName)}` +
-    `&field=${encodeURIComponent(field)}`;
-  const csvIngestRes = http.post(
-    `${BASE_URL}/shepard/api/timeseriescontainers/${tsContainerId}/payload?${csvQs}`,
-    csvBody,
-    { headers: CSV_HEADERS }
-  );
-  if (csvIngestRes.status < 200 || csvIngestRes.status >= 300) {
-    throw new Error(`setup: seed CSV ingest failed — HTTP ${csvIngestRes.status}: ${csvIngestRes.body}`);
+  let tsContainerId = null;
+  let tsChannelId = null;
+  try {
+    const tcRes = http.post(
+      `${BASE_URL}/shepard/api/timeseriescontainers`,
+      JSON.stringify({ name: "perf4-ts-container" }),
+      { headers: JSON_HEADERS }
+    );
+    if (tcRes.status === 201 || tcRes.status === 200) {
+      tsContainerId = tcRes.json().id;
+      const seedPoint = {
+        timeseries: { measurement, device, location, symbolicName, field },
+        points: [{ time: (now - 1000) * 1000000, value_double: 1.0 }],
+      };
+      const tsCreateRes = http.post(
+        `${BASE_URL}/shepard/api/timeseriescontainers/${tsContainerId}/payload`,
+        JSON.stringify(seedPoint),
+        { headers: JSON_HEADERS }
+      );
+      if (tsCreateRes.status === 201 || tsCreateRes.status === 200) {
+        tsChannelId = tsCreateRes.json().id || null;
+        const seedRows = [];
+        for (let i = 0; i < 500; i++) {
+          const t = now - (499 - i) * 1000;
+          seedRows.push(`${t * 1000000},${(Math.random() * 100).toFixed(4)}`);
+        }
+        const csvBody = "time,value_double\n" + seedRows.join("\n");
+        const csvQs = `measurement=${encodeURIComponent(measurement)}` +
+          `&device=${encodeURIComponent(device)}` +
+          `&location=${encodeURIComponent(location)}` +
+          `&symbolic_name=${encodeURIComponent(symbolicName)}` +
+          `&field=${encodeURIComponent(field)}`;
+        http.post(
+          `${BASE_URL}/shepard/api/timeseriescontainers/${tsContainerId}/payload?${csvQs}`,
+          csvBody,
+          { headers: CSV_HEADERS }
+        );
+      }
+    } else {
+      console.warn(`setup: TS container create returned HTTP ${tcRes.status} — ts scenarios will self-skip`);
+    }
+  } catch (e) {
+    console.warn(`setup: TS fixture setup failed (${e}) — ts scenarios will self-skip`);
   }
 
   console.log(

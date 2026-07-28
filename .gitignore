@@ -158,3 +158,8 @@ pnpm-lock.yaml
 # Local ingest credentials (never commit — contains SHEPARD_API_KEY JWT)
 .env.local
 **/.env.local
+
+# k6 perf run output (regenerated per run, not source)
+scripts/perf/last-run.json
+# Per-session importer observability-container sidecar (v16.9) — runtime state
+examples/mffd-showcase/scripts/.mffd-obs-containers-*.json

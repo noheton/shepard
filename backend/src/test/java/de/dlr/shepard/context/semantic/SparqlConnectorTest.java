@@ -201,4 +201,29 @@ public class SparqlConnectorTest extends BaseTestCase {
     assertFalse(actual);
     verify(client).close();
   }
+
+  /**
+   * SEMREPO-HEALTHCHECK-NPE-500 — an unreachable SPARQL endpoint must yield a clean
+   * {@code false}, not an exception.
+   *
+   * <p>{@code request()} returns {@code null} on {@link ProcessingException}; the old
+   * {@code parseJson(null)} called Jackson's {@code readTree(null)}, which throws an
+   * {@link IllegalArgumentException} — NOT a {@code JsonProcessingException}, so it
+   * escaped the catch and surfaced as a 500 on {@code POST /semanticRepositories}
+   * (should be a 400). Surfaced live by the 2026-07-28 MFFD tapelaying ingest, whose
+   * {@code mffd-migration-*} repo create pointed at a non-resolving placeholder host.
+   */
+  @Test
+  public void healthCheckTest_UnreachableEndpointReturnsFalse() {
+    when(client.target("endpoint")).thenReturn(webTarget);
+    when(webTarget.queryParam("query", askQuery)).thenReturn(webTarget);
+    when(webTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
+    when(builder.buildGet()).thenReturn(invocation);
+    when(invocation.invoke()).thenThrow(new ProcessingException("endpoint unreachable"));
+
+    var actual = connector.healthCheck();
+
+    assertFalse(actual);
+    verify(client).close();
+  }
 }

@@ -82,6 +82,15 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
   }
 
   private Optional<JsonNode> parseJson(String string) {
+    // SEMREPO-HEALTHCHECK-NPE-500: request() returns null when the endpoint is
+    // unreachable (ProcessingException). Jackson's readTree(null) throws an
+    // IllegalArgumentException — NOT a JsonProcessingException — so an unreachable
+    // SPARQL endpoint escaped this catch and surfaced as a 500 on
+    // POST /shepard/api/semanticRepositories instead of a 400. Treat "no response"
+    // the same as "unparseable response": empty.
+    if (string == null) {
+      return Optional.empty();
+    }
     JsonNode tree;
     try {
       tree = mapper.readTree(string);
