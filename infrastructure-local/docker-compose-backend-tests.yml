@@ -4,6 +4,13 @@ services:
     container_name: neo
     environment:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PW}
+      # WIREFIDELITY-IT-CI-GAP: the backend's Neo4j migrations (V49 semantic
+      # bootstrap, V61 v15 predicates, V81 email constraint) call apoc.*/n10s.*
+      # procedures at startup — a plain neo4j image fails migrate-at-start.
+      # Mirror the live stack's plugin set so the packaged app can boot.
+      - NEO4J_PLUGINS=["apoc","n10s"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,n10s.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,n10s.*
     ports:
       - "7474:7474"
       - "7687:7687"
