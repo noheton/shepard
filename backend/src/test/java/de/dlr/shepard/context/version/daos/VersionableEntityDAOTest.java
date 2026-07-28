@@ -41,11 +41,11 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     ent.setShepardId(11L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o:TestObject {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId in " +
+      "MATCH (o:VersionableEntity)-[:has_version]->(v:Version) WHERE o.shepardId in " +
       "[" +
       ent.getShepardId() +
       "]" +
-      " AND " +
+      " AND o:TestObject AND o.deleted = FALSE AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
@@ -61,7 +61,7 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     UUID versionUID = new UUID(1L, 2L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o:TestObject {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND (v.uid = '00000000-0000-0001-0000-000000000002') WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
+      "MATCH (o:VersionableEntity)-[:has_version]->(v:Version) WHERE o.shepardId = 11 AND o:TestObject AND o.deleted = FALSE AND (v.uid = '00000000-0000-0001-0000-000000000002') WITH o MATCH path=(o)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN o, nodes(path), relationships(path)";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));
     VersionableEntity actual = dao.findByShepardId(ent.getShepardId(), versionUID);
     assertEquals(ent, actual);
@@ -87,11 +87,11 @@ public class VersionableEntityDAOTest extends BaseTestCase {
     ent.setShepardId(11L);
     Map<String, Object> paramsMap = new HashMap<>();
     String query =
-      "MATCH (o:TestObject {deleted: FALSE})-[:has_version]->(v:Version) WHERE o.shepardId in " +
+      "MATCH (o:VersionableEntity)-[:has_version]->(v:Version) WHERE o.shepardId in " +
       "[" +
       ent.getShepardId() +
       "]" +
-      " AND " +
+      " AND o:TestObject AND o.deleted = FALSE AND " +
       CypherQueryHelper.getVersionHeadPart("v") +
       " WITH o RETURN o";
     when(session.query(TestObject.class, query, paramsMap)).thenReturn(List.of(ent));

@@ -36,9 +36,10 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     if (versionUID != null) versionPart = CypherQueryHelper.getVersionPart("v", versionUID);
     else versionPart = CypherQueryHelper.getVersionHeadPart("v");
     String query =
-      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
-          getEntityType().getSimpleName(),
+      "MATCH %s-[:has_version]->(v:Version) WHERE %s AND %s AND %s WITH o ".formatted(
+          CypherQueryHelper.getIndexedShepardIdSeedPattern("o", getEntityType().getSimpleName()),
           CypherQueryHelper.getShepardIdPart("o", shepardId),
+          CypherQueryHelper.getConcreteLabelAndNotDeletedPart("o", getEntityType().getSimpleName()),
           versionPart
         );
     query += returnPart;
@@ -62,9 +63,10 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
       ? CypherQueryHelper.getVersionPart("v", versionUID)
       : CypherQueryHelper.getVersionHeadPart("v");
     String query =
-      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
-          getEntityType().getSimpleName(),
+      "MATCH %s-[:has_version]->(v:Version) WHERE %s AND %s AND %s WITH o ".formatted(
+          CypherQueryHelper.getIndexedShepardIdSeedPattern("o", getEntityType().getSimpleName()),
           CypherQueryHelper.getShepardIdPart("o", shepardId),
+          CypherQueryHelper.getConcreteLabelAndNotDeletedPart("o", getEntityType().getSimpleName()),
           versionPart
         );
     query += returnPart;
@@ -82,9 +84,10 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
 
     String query =
-      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
-          getEntityType().getSimpleName(),
+      "MATCH %s-[:has_version]->(v:Version) WHERE %s AND %s AND %s WITH o ".formatted(
+          CypherQueryHelper.getIndexedShepardIdSeedPattern("o", getEntityType().getSimpleName()),
           CypherQueryHelper.getShepardIdsPart("o", shepardIds),
+          CypherQueryHelper.getConcreteLabelAndNotDeletedPart("o", getEntityType().getSimpleName()),
           CypherQueryHelper.getVersionHeadPart("v")
         );
     query += returnPart;

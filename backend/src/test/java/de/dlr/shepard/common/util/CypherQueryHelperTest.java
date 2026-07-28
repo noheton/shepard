@@ -184,4 +184,31 @@ public class CypherQueryHelperTest {
 
     assertEquals(expected, actual);
   }
+
+  /**
+   * GETDO-DETAIL-SHEPARDID-INDEX — the shepardId seed must target the label that is
+   * actually indexed ({@code :VersionableEntity}, via {@code idx_VersionableEntity_shepardId}),
+   * with the concrete label re-asserted as a predicate.
+   *
+   * <p>Seeding on the concrete label instead ({@code MATCH (o:DataObject …)}) cannot use
+   * that index — Neo4j will not apply a superclass-label index to a subclass pattern — so
+   * the planner falls back to a label scan. Measured on live data: 20,892 db-hits vs 33
+   * (~633x), the latter a real {@code NodeIndexSeek}. This test pins the shape so a future
+   * edit cannot silently reintroduce the scan.
+   */
+  @Test
+  public void getIndexedShepardIdSeedPattern_targetsTheIndexedSuperclassLabel() {
+    var pattern = CypherQueryHelper.getIndexedShepardIdSeedPattern("o", "DataObject");
+    var predicate = CypherQueryHelper.getConcreteLabelAndNotDeletedPart("o", "DataObject");
+
+    // The seek must bind the INDEXED label, not the concrete one.
+    assertEquals("(o:VersionableEntity)", pattern);
+    // ...and the concrete label + soft-delete filter must still be asserted, so the
+    // match set is unchanged.
+    assertEquals("o:DataObject AND o.deleted = FALSE", predicate);
+    org.junit.jupiter.api.Assertions.assertFalse(
+      pattern.contains("DataObject"),
+      "seed pattern must not bind the concrete label — that defeats the index"
+    );
+  }
 }
