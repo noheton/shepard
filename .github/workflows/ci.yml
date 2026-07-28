@@ -147,22 +147,28 @@ jobs:
           update-comment: true
 
   # ───────────────────────────────────────────────────────────────────────────
-  # 1b. Backend integration tests (@QuarkusIntegrationTest failsafe *IT)
+  # 1b. Backend integration tests (@QuarkusIntegrationTest failsafe *IT) — SKELETON
   #     WIREFIDELITY-IT-CI-GAP: these guard the FROZEN /shepard/api byte surface
   #     (DataObjectV5WireFidelityIT et al.) but were run by NO push/PR CI — ci.yml
   #     skipped ITs and no integration-test job existed. This job stands up the
   #     ephemeral test datastores (infrastructure-local/docker-compose-backend-tests.yml)
-  #     on this runner's localhost and runs the packaged app's failsafe ITs against
-  #     them via the `integration` maven profile (quarkus.profile=test, skipUTs).
+  #     on this runner's localhost and runs the packaged app's failsafe ITs.
   #     Runs ONLY on an ephemeral CI runner — never a live host (the compose binds
   #     the same host ports the live stack uses).
-  #     Bring-up scope: the *V5WireFidelityIT family first (the stated byte-compat
-  #     gate). Follow-up INTEGRATION-IT-FULL-SUITE: broaden to the whole failsafe
-  #     suite + gate build-backend on it (`needs:`) once proven stable.
+  #
+  #     STATUS: tracked skeleton, `workflow_dispatch`-only (does NOT gate push/PR
+  #     CI). The harness works (compose + apoc/n10s + wait verified green) but the
+  #     packaged app is a first-ever CI run of a dormant suite and needs the FULL
+  #     prod-config surface to boot — notably a VALID `OIDC_PUBLIC` JWT key (not a
+  #     dummy string). Greening this = a provisioning task, tracked as
+  #     INTEGRATION-IT-PROVISION in aidocs/16. Wire it into push/PR CI (and gate
+  #     build-backend via `needs:`) only once it boots green here.
   # ───────────────────────────────────────────────────────────────────────────
   integration-tests:
-    name: Backend integration tests (wire-fidelity)
+    name: Backend integration tests (wire-fidelity) [skeleton]
     runs-on: ubuntu-latest
+    # Non-gating: manual-dispatch only until INTEGRATION-IT-PROVISION greens it.
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v7
 
@@ -209,10 +215,15 @@ jobs:
           QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://localhost:5432/postgres
           QUARKUS_DATASOURCE_USERNAME: shepard
           QUARKUS_DATASOURCE_PASSWORD: shepard_secret
-          SHEPARD_SPATIAL_DATA_ENABLED: "true"
-          QUARKUS_DATASOURCE_SPATIAL_JDBC_URL: jdbc:postgresql://localhost:5433/postgres
-          QUARKUS_DATASOURCE_SPATIAL_USERNAME: shepard
-          QUARKUS_DATASOURCE_SPATIAL_PASSWORD: shepard_secret
+          # Match the deploy default (spatial off) — enabling it forces a second
+          # datasource + PostGIS flyway that the first cut wrongly turned on.
+          SHEPARD_SPATIAL_DATA_ENABLED: "false"
+          # INTEGRATION-IT-PROVISION — the remaining boot blocker: the app needs a
+          # VALID OIDC public key (JWT verification) + authority to start, plus any
+          # other required prod config. Wire these (a CI test key + OIDC_AUTHORITY,
+          # confirm the launch profile) before this job can boot green.
+          # OIDC_PUBLIC: <CI test JWT public key>
+          # OIDC_AUTHORITY: <test authority / disable JWT verification in test>
         run: |
           # Launch the packaged IT app in the `test` profile (QUARKUS_PROFILE) so
           # it uses the test config (oidc/s3/audit defaults that let the unit-test
