@@ -29,10 +29,22 @@ jobs:
 
       - name: Install integration test dependencies
         working-directory: e2e/api
-        run: |
-          pip install --quiet \
-            --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple \
-            ".[test]" shepard-client shepard
+        # PYTHON-API-IT-RED: this step had been failing every scheduled run.
+        # Two causes, both fixed:
+        #   1. e2e/api/pyproject.toml declared build-backend
+        #      "setuptools.backends.legacy:build", which does not exist →
+        #      BackendUnavailable. Corrected to "setuptools.build_meta".
+        #   2. The install pulled a package named `shepard` that is NOT DLR
+        #      shepard — no such package exists on the GitLab index, so pip fell
+        #      through to PUBLIC PyPI and got an unrelated AWS-CDK project
+        #      (shepard 1.0.2 → awscli==1.27.89, boto3, aws-cdk-lib). awscli
+        #      pins PyYAML<5.5 → PyYAML 5.4.1, which has no cp312 wheel and
+        #      fails to build against Cython 3 ('build_ext' object has no
+        #      attribute 'cython_sources'). That is a dependency-confusion
+        #      install, so it is removed rather than pinned around.
+        # These tests import only httpx / pytest / dotenv / stdlib + local
+        # helpers (verified by grep) — no shepard client is needed at all.
+        run: pip install --quiet ".[test]"
 
       - name: Run auth + error-shape tests (no seed required)
         working-directory: e2e/api
