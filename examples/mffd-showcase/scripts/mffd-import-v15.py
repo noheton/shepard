@@ -2657,6 +2657,10 @@ class ShepardClient:
     # Excludes 500 (genuine server bug — fail fast so we see it).
     _RETRY_STATUSES = frozenset({502, 503, 504, 520, 521, 522, 523, 524})
 
+    # MFFD-POST-RETRY-NONIDEMPOTENT: methods where a blind re-send after a
+    # read-timeout can duplicate a server-side entity. See _request_with_retry.
+    _NON_IDEMPOTENT_METHODS = frozenset({"POST", "PATCH"})
+
     def _request_with_retry(
         self,
         method: str,
@@ -2726,6 +2730,31 @@ class ShepardClient:
                             (time.monotonic() - _req_start) * 1000.0
                         )
                     last_label = exc.__class__.__name__
+
+                    # MFFD-POST-RETRY-NONIDEMPOTENT: a read-timeout means the request
+                    # WAS sent and the server may have applied it — we just never saw
+                    # the response. Re-sending a non-idempotent method then duplicates
+                    # the entity. That is exactly how the 2026-07-21 tapelaying tail
+                    # produced 12 empty duplicate `Bridgewelding-*` DataObjects: each
+                    # retry inside this loop re-POSTed a create through a 900s window.
+                    #
+                    # A ConnectionError / 502-504 is different — the request most
+                    # likely never reached the app — so those stay retryable here.
+                    #
+                    # For non-idempotent methods we bail out to the caller instead,
+                    # whose find-or-create logic (e.g. `ensure_dest_do`) re-resolves
+                    # by name and picks up whatever the server actually committed.
+                    # (The backend has no Idempotency-Key support to lean on.)
+                    if method.upper() in self._NON_IDEMPOTENT_METHODS and isinstance(
+                        exc, requests.exceptions.Timeout
+                    ):
+                        print(
+                            f"  [retry-guard] {method} {url.split('?')[0]} timed out after "
+                            f"the request was sent; NOT re-sending (would risk a duplicate). "
+                            f"Caller must re-resolve.",
+                            flush=True,
+                        )
+                        return None
 
                 if not waiting:
                     print(
