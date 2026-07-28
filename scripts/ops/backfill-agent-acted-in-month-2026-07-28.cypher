@@ -76,9 +76,24 @@ RETURN name AS indexPresent;
 // were INSIDE the CALL, the subquery would get ONE implicit row -> run ONCE ->
 // all ~3M CREATEs in a single transaction = the exact non-streaming, 0-commits
 // shape of the 07-19 hang. Keep the MATCH before the CALL.
-MATCH (a:Activity)-[:WAS_ASSOCIATED_WITH]->(u:User)
+// !! PLANNER NOTE (corrected 2026-07-28 after PROFILE on live data) !!
+// The single-pattern form `MATCH (a:Activity)-[:WAS_ASSOCIATED_WITH]->(u:User)`
+// did NOT drive from the Activity side despite the intent above: the COST
+// planner chose `NodeByLabelScan(u:User)` + `Expand(All)` over the :User
+// supernode's ~3.3M WAS_ASSOCIATED_WITH edges, then an `AntiSemiApply` with
+// `Expand(Into)` for the guard. Measured: 2,183,547 db-hits to yield 200 rows
+// (and 2,197,047 for 2,000) — a ~2.18M FIXED cost, i.e. the very supernode-driven
+// shape this script exists to avoid.
+// Splitting the pattern — filter Activities FIRST, then expand to the user —
+// forces the bounded drive: 995 db-hits @200 rows, 9,067 @2,000 (~4.5/row,
+// linear). That is a ~2,200x reduction on the driving query.
+// The guard uses the anonymous `-()` form: verified 0 Activities have more than
+// one WAS_ASSOCIATED_WITH user, so it is semantically identical and cheaper.
+MATCH (a:Activity)
 WHERE a.startedAtMillis IS NOT NULL
-  AND NOT (a)<-[:agent_acted_in_month]-(u)
+  AND NOT (a)<-[:agent_acted_in_month]-()
+WITH a
+MATCH (a)-[:WAS_ASSOCIATED_WITH]->(u:User)
 WITH u, a, apoc.temporal.format(datetime({epochMillis: a.startedAtMillis}), 'yyyyMM') AS ym
 CALL {
   WITH u, a, ym
@@ -86,8 +101,9 @@ CALL {
 } IN TRANSACTIONS OF 10000 ROWS ON ERROR FAIL;
 
 // --- Post-check: backfillable remainder should be 0 --------------------------
-MATCH (a:Activity)-[:WAS_ASSOCIATED_WITH]->(u:User)
-WHERE a.startedAtMillis IS NOT NULL AND NOT (a)<-[:agent_acted_in_month]-(u)
+MATCH (a:Activity)
+WHERE a.startedAtMillis IS NOT NULL AND NOT (a)<-[:agent_acted_in_month]-()
+WITH a MATCH (a)-[:WAS_ASSOCIATED_WITH]->(:User)
 RETURN count(a) AS remainingBackfillable;   // expect 0
 
 // -----------------------------------------------------------------------------
