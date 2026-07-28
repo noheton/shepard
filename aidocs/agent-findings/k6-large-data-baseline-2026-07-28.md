@@ -103,3 +103,75 @@ revealed a large O(1)-per-request constant that had been hidden behind it.** The
 un-indexed `shepardId` seed that agent B flagged as a "residual" in the PROFILE is, at
 the HTTP layer, now the *dominant* cost. Good reminder that a query-level win does not
 automatically become a user-visible win.
+
+---
+
+## FOLLOW-UP (same day) — the ~1.8 s constant is NOT the shepardId seed
+
+I attributed the ~1.8 s constant per DataObject-detail read to the un-indexed
+`shepardId` seed and raised `GETDO-DETAIL-SHEPARDID-INDEX` to MAJOR on that basis.
+**I shipped the fix, measured it, and the attribution was wrong.** Recording it
+because a wrong-but-plausible attribution is worth more dead than alive.
+
+### What actually shipped (and is correct, on its own terms)
+
+The backlog row's premise ("`shepardId` has no index") was itself wrong: the index
+`idx_VersionableEntity_shepardId` already existed — on the **superclass** label,
+which Neo4j will not apply to a `MATCH (o:DataObject …)` pattern. Fixed in
+`3e6bb40ad` by seeding on `:VersionableEntity` and re-asserting the concrete label:
+
+| Detail seed | db-hits |
+|---|---|
+| Concrete-label (before) | 20,892 |
+| `:VersionableEntity` seek (after) | **33** |
+
+Real `NodeIndexSeek`, ~633×, zero new indexes, O(1) rather than O(N) in entity
+count. Verified safe substrate-direct first (every `shepardId` node carries
+`:VersionableEntity`, 0 exceptions; `shepardId` unique there, 0 duplicates).
+
+### But wall-time did not move
+
+| Quiescent probe | Before | After |
+|---|---|---|
+| DO detail, 258,751-ref | 3.1–3.4 s | 3.4–3.8 s |
+| DO detail, <10-ref | 1.8 s | 1.9–2.0 s |
+
+Unchanged (deltas are noise / post-restart warmup). **20,892 db-hits is only ~10–20 ms
+of a ~1,900 ms request** — the seed was never the bottleneck at 13.6k DataObjects.
+It would have become one at 10× the entity count; the fix is worth keeping as
+insurance, not as a latency win.
+
+### Where the time actually is (measured, authenticated, quiescent)
+
+| Endpoint | Time |
+|---|---|
+| `/v2/admin/config/feature-toggles` | **0.025 s** |
+| unauthenticated 401 fast-reject | 0.016 s |
+| `/v2/collections?size=1` | ~0.65 s |
+| `/v2/collections/{appId}` (detail, 16 DOs) | ~0.70 s |
+| `/v2/collections/{c}/data-objects/{appId}` (<10 refs) | ~1.6–1.9 s |
+| same, 258,751 refs | ~3.4–3.8 s |
+
+Two dead hypotheses, both killed by measurement:
+- **Not auth overhead.** An authenticated admin-config read is 25 ms. Auth is cheap.
+- **Not a regression from the 2026-07-28 agent-edge backfill.** The endpoints k6
+  measured fast *before* the backfill are still fast after it (25 ms vs k6's 9 ms
+  steady p95, the gap being TLS + a different client host). The 3.3M new `:User`
+  edges did not slow the request path.
+
+So the cost is **inside the collection/DataObject read handlers specifically** —
+~0.65 s floor shared with the collection list, plus ~0.9 s more for DO detail, plus
+~1.6 s that does scale with reference fan-out. Candidates not yet eliminated:
+permission-predicate construction, OGM hydration/mapping cost, and the v2 detail's
+out-of-band reference re-attachment (`findContainersByDataObjectAppId`).
+
+**This needs application-level profiling (JFR / async-profiler on the running
+backend), not more Cypher PROFILE** — the Cypher layer is now demonstrably not where
+the milliseconds are. Filed as `DO-DETAIL-LATENCY-PROFILE`.
+
+### Lesson
+
+A 633× reduction in db-hits bought exactly nothing in wall-time. Optimising the
+layer you can measure easily is not the same as optimising the layer that costs.
+Measure the endpoint, not the query, before claiming a user-visible win — and when
+the number does not move, say so.
