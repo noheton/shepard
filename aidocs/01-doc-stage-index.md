@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 102 |
 | `concept` | 44 |
 | `idea` | 13 |
-| `feature-defined` | 138 |
+| `feature-defined` | 139 |
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
 | `deployed` | 158 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **595** |
+| **total docs** | **596** |
 | **UNTAGGED** | **0** |
 
 ## fragment (102)
@@ -217,7 +217,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (138)
+## feature-defined (139)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -235,6 +235,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/gh-lean-cost-consult-2026-05-23.md`](agent-findings/gh-lean-cost-consult-2026-05-23.md) | GH lean-extension cost consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/jandex-hang-fix-2026-05-29.md`](agent-findings/jandex-hang-fix-2026-05-29.md) | Jandex hang — root cause + fix (2026-05-29) | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/jandex-hang-trigger-investigation-2026-05-28.md`](agent-findings/jandex-hang-trigger-investigation-2026-05-28.md) | Jandex hang — trigger-class hunt (2026-05-28) | 2026-05-28 | 2026-05-28 |
+| [`aidocs/agent-findings/k6-large-data-baseline-2026-07-28.md`](agent-findings/k6-large-data-baseline-2026-07-28.md) | k6 LARGE-DATA baseline — first post-tapelaying-ingest perf run (2026-07-28) | 2026-07-28 | — |
 | [`aidocs/agent-findings/mcp-coverage-audit.md`](agent-findings/mcp-coverage-audit.md) | MCP-COV-01-AUDIT — REST × MCP coverage inventory | 2026-06-29 | 2026-06-29 |
 | [`aidocs/agent-findings/mffd-data-inventory-2026-06-02.md`](agent-findings/mffd-data-inventory-2026-06-02.md) | MFFD real-data inventory — 2026-06-02 | 2026-06-02 | 2026-06-02 |
 | [`aidocs/agent-findings/mffd-feature-gaps-2026-06-02.md`](agent-findings/mffd-feature-gaps-2026-06-02.md) | MFFD feature-gap discovery — 2026-06-02 | 2026-06-02 | 2026-06-02 |
