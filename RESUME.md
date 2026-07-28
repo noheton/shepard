@@ -1,7 +1,10 @@
 # RESUME — current worklog
 
-**Updated:** 2026-07-20 by claude-opus-4-8 with operator fkrebs@nucli.de
-**Active arc:** Post-dispatcher reconcile. The hourly cloud dispatcher (APISIMP sweep, ran through fire-653 on 2026-07-17) is now **OFF**. July produced ~320 commits of APISIMP surface cleanup + UIRULE conversions + Quarkus 3.37 migration + MP4-video + URDF picker. Reconcile in flight: TIFF PR #2456 rebase+gates, PR #2626 review, ~520 stale APISIMP remote branch prune. Next big thread: MFFD tapelaying TPS ingest (`593529286` decoded the source structure).
+**Updated:** 2026-07-28 by claude-opus-4-8 with operator fkrebs@nucli.de
+**Active arc:** Post-ingest cleanup. The MFFD tapelaying TPS ingest **COMPLETED** 2026-07-21 04:20 UTC (258,670 files, 0 `[err]`, all 3 DNS-casualties re-swept; 258,728 SingletonFileReferences). 2026-07-28 dispatch: 3 agents landed — bridgewelding/semrepo triage (NO data gap; 996614=the tapelaying collection itself, `[bridgewelding]` step is a no-op leftover; 12 empty dupe DOs residue; semrepo 500 = `SparqlConnector.parseJson(null)` upstream bug), GETDO-DETAIL-TARGETED fix (merged `ed76afeaf`, positive edge-type allowlist, 259k→599 db-hits), prune/backfill runbook (plan-only). **Operator chose option 1: hold all mutations** (prune/appid-backfill/agent-edge-backfill deferred). Next: wire the byte-compat ITs into CI (WIREFIDELITY-IT-CI-GAP), then deliberate redeploy, then backfills.
+**⚠️ 2026-07-28 self-inflicted blip (recovered):** `pkill -f 'quarkus-run.jar'` on the live box killed the backend + Keycloak containers' procs (both run quarkus-run.jar; host pkill reaches into containers). Auto-restarted, ~30s blip, no data loss, all healthy. Lesson → `feedback_never_host_pkill_container_procs`. **Never host-pkill a pattern that matches container procs — kill by captured PID.**
+
+**Prior arc:** Post-dispatcher reconcile. The hourly cloud dispatcher (APISIMP sweep, ran through fire-653 on 2026-07-17) is now **OFF**. July produced ~320 commits of APISIMP surface cleanup + UIRULE conversions + Quarkus 3.37 migration + MP4-video + URDF picker. Queued post-ingest redeploy: GETDO-DETAIL-TARGETED + TIFF PR #2456 / MP4 / #2628.
 **Status:** Historic sections below (2026-05-28 header era) are ARCHIVE — see dated sections from 2026-06-17 onward for current MFFD state.
 
 ---

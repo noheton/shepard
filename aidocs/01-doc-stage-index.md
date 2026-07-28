@@ -168,7 +168,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/apisimp-sweep-fire387-2026-07-03.md`](agent-findings/apisimp-sweep-fire387-2026-07-03.md) | APISIMP Sweep — 2026-07-03 (fire-387) | 2026-07-03 | 2026-07-03 |
 | [`aidocs/agent-findings/apisimp-sweep-fire404-2026-07-04.md`](agent-findings/apisimp-sweep-fire404-2026-07-04.md) | APISIMP Sweep — 2026-07-04 (fire-404) | 2026-07-04 | 2026-07-04 |
 | [`aidocs/agent-findings/apisimp-sweep-fire407-2026-07-04.md`](agent-findings/apisimp-sweep-fire407-2026-07-04.md) | APISIMP Sweep — fire-407 (2026-07-04) | 2026-07-04 | 2026-07-04 |
-| [`aidocs/agent-findings/bridgewelding-semrepo-triage-2026-07-28.md`](agent-findings/bridgewelding-semrepo-triage-2026-07-28.md) | Bridgewelding giveup + semanticRepositories 500 — triage (2026-07-28) | 2026-07-28 | — |
+| [`aidocs/agent-findings/bridgewelding-semrepo-triage-2026-07-28.md`](agent-findings/bridgewelding-semrepo-triage-2026-07-28.md) | Bridgewelding giveup + semanticRepositories 500 — triage (2026-07-28) | 2026-07-28 | 2026-07-28 |
 | [`aidocs/agent-findings/fe-v2-migration-2026-06-11.md`](agent-findings/fe-v2-migration-2026-06-11.md) | Frontend v2-only migration manifest — 2026-06-11 (FE-V2) | 2026-06-11 | 2026-06-11 |
 | [`aidocs/agent-findings/issue-sweep-2026-06-10.md`](agent-findings/issue-sweep-2026-06-10.md) | GitHub issue-hygiene sweep — 2026-06-10 | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-05-26 |
@@ -241,7 +241,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md`](agent-findings/mffd-ingest-346gb-readiness-2026-05-31.md) | MFFD ingest readiness audit — 346 GB scale (2026-05-31) | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/mffd-ingest-prep-capacity-2026-05-31.md`](agent-findings/mffd-ingest-prep-capacity-2026-05-31.md) | MFFD ingest prep — capacity snapshot (2026-05-31) | 2026-05-31 | 2026-05-31 |
 | [`aidocs/agent-findings/mffd-ingest-prep-summary-2026-05-31.md`](agent-findings/mffd-ingest-prep-summary-2026-05-31.md) | MFFD ingest prep — one-page status (2026-05-31) | 2026-05-31 | 2026-05-31 |
-| [`aidocs/agent-findings/mffd-prune-backfill-runbook-2026-07-28.md`](agent-findings/mffd-prune-backfill-runbook-2026-07-28.md) | MFFD prune + two supernode backfills — operator runbook (2026-07-28) | 2026-07-28 | — |
+| [`aidocs/agent-findings/mffd-prune-backfill-runbook-2026-07-28.md`](agent-findings/mffd-prune-backfill-runbook-2026-07-28.md) | MFFD prune + two supernode backfills — operator runbook (2026-07-28) | 2026-07-28 | 2026-07-28 |
 | [`aidocs/agent-findings/mffd-shared-container-scale-check.md`](agent-findings/mffd-shared-container-scale-check.md) | MFFD shared-container scale check — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
