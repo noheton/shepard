@@ -330,3 +330,63 @@ build confidence before the ~3M-edge agent backfill.
 [merge]: https://neo4j.com/docs/cypher-manual/current/clauses/merge/
 [locking]: https://neo4j.com/developer/kb/diagnose-locking-issues/
 [rfc9562]: https://www.rfc-editor.org/rfc/rfc9562.html
+
+---
+
+## EXECUTION RECORD — 2026-07-28 (appended after the operator approved the two additive backfills)
+
+Operator chose the **two additive backfills only**; the destructive **PRUNE remains
+NOT RUN** (still gated on an offline `neo4j-admin` dump + boundary snapshots on the
+three tombstone-holding collections).
+
+### ✅ CHILD-APPID-BACKFILL — done
+`scripts/ops/BackfillShepardFileAppId.java`, compiled against the backend runtime
+classpath (`mvn dependency:build-classpath`; note the class is in package
+`de.dlr.shepard.ops`, and the neo4j driver needs its full transitive bolt-connection
+set — a bare driver jar fails with `NoClassDefFoundError`).
+
+- **567,658** `:ShepardFile` appIds minted, **< 45 s**, batch 5,000.
+- Pre-verified `NodeByIdSeek` (3 db-hits / 3 rows) — the `MATCH (f:ShepardFile) WHERE
+  id(f)=p.id` form was checked *before* the run precisely because a label-scan-per-row
+  would have been catastrophic.
+- Post-verified: **723,420** ShepardFiles, **all** with appId, **0** null; 200,000-row
+  sample **all distinct** and **all version-7**.
+
+### ✅ ACTIVITY-SUPERNODE-BACKFILL — done, but the runbook query was WRONG
+
+**The plan in this document was not safe as written, and PROFILE caught it.**
+
+This runbook asserted the driving query was "O(1)/row proven" and its inline comment
+said it drives "from the BOUNDED Activity side". Neither was true of the actual Cypher:
+
+```
+MATCH (a:Activity)-[:WAS_ASSOCIATED_WITH]->(u:User)   -- single pattern
+WHERE ... AND NOT (a)<-[:agent_acted_in_month]-(u)
+```
+
+The COST planner chose `NodeByLabelScan(u:User)` → `Expand(All)` over the `:User`
+supernode's ~3.3M `WAS_ASSOCIATED_WITH` edges → `AntiSemiApply` + `Expand(Into)`.
+
+| Form | db-hits @200 rows | @2,000 rows |
+|---|---|---|
+| Runbook (single pattern) | **2,183,547** | 2,197,047 |
+| Corrected (split pattern) | **995** | 9,067 (~4.5/row, linear) |
+
+A ~2.18M **fixed** cost — the same supernode-driven shape that hung backend startup on
+07-19. Corrected in `21c6dc72a` by filtering Activities first, then expanding to the
+user; the guard uses the anonymous `-()` form (verified **0** Activities have >1
+`WAS_ASSOCIATED_WITH` user, so it is semantically identical and cheaper).
+
+Executed with the corrected form:
+- **3,008,314** edges created, **< 60 s**, `CALL {} IN TRANSACTIONS OF 10000`.
+- Post-check remaining backfillable **0**; **0** activities with duplicate edges;
+  `ym` values sane (202606–202607); total edges 3,321,896.
+- Backend healthy throughout (401 in 23 ms after; container up, no restart).
+
+### Lesson
+
+`PROFILE` the *actual statement text you are about to run*, not the shape you intended
+to write. A comment claiming a bounded drive is not a plan — the planner decides, and
+on a supernode it will happily pick the expensive side. This is the second time in ten
+days the same trap appeared (07-19 startup hang, and again here in the very script
+written to avoid it).
