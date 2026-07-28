@@ -325,7 +325,11 @@ public class StructuredDataContainerDAOTest extends BaseTestCase {
         org.mockito.ArgumentMatchers.eq(DataObject.class),
         org.mockito.ArgumentMatchers.anyLong(),
         org.mockito.ArgumentMatchers.anyInt());
-    assertTrue(queryCaptor.getValue().contains("has_reference"));
+    // GETDO-DETAIL-TARGETED: the detail return part now uses a positive edge-type allowlist,
+    // so has_reference is excluded by omission (never traversed), not by a NONE(...) post-filter
+    // — the generated query must NOT mention it at all, and must carry the allowlist marker.
+    org.junit.jupiter.api.Assertions.assertFalse(queryCaptor.getValue().contains("has_reference"));
+    assertTrue(queryCaptor.getValue().contains("has_dataobject"));
     assertTrue(queryCaptor.getValue().contains("id(do) = $id"));
   }
 

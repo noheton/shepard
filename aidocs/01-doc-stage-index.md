@@ -37,10 +37,10 @@ section and the `upgrade-overlay` section.
 | `audited-by-personas` | 78 |
 | `feedback-implemented` | 4 |
 | `tests-implemented` | 9 |
-| `deployed` | 157 |
+| `deployed` | 158 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **592** |
+| **total docs** | **593** |
 | **UNTAGGED** | **0** |
 
 ## fragment (102)
@@ -227,7 +227,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/backend-jandex-hang-investigation-2026-05-28.md`](agent-findings/backend-jandex-hang-investigation-2026-05-28.md) | Backend rebuild — Quarkus/Jandex infinite-loop investigation (2026-05-28) | 2026-05-28 | 2026-05-28 |
 | [`aidocs/agent-findings/btkvs-docket-showcase-2026-05-29.md`](agent-findings/btkvs-docket-showcase-2026-05-29.md) | BT-KVS docket showcase — C/C and C/SiC fabrication tracking | 2026-05-29 | 2026-05-29 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/depth-entity-supernode-sweep-2026-07-20.md`](agent-findings/depth-entity-supernode-sweep-2026-07-20.md) | DEPTH_ENTITY supernode sweep (2026-07-20) | 2026-07-20 | — |
+| [`aidocs/agent-findings/depth-entity-supernode-sweep-2026-07-20.md`](agent-findings/depth-entity-supernode-sweep-2026-07-20.md) | DEPTH_ENTITY supernode sweep (2026-07-20) | 2026-07-20 | 2026-07-20 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/frontend-v2-exclusivity-audit.md`](agent-findings/frontend-v2-exclusivity-audit.md) | Frontend v2 / appId exclusivity audit | 2026-06-10 | 2026-06-10 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -464,7 +464,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/integrations/123-template-inheritance.md`](integrations/123-template-inheritance.md) | 123 — ShepardTemplate inheritance | 2026-06-03 | 2026-06-03 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (157)
+## deployed (158)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -569,6 +569,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/fair8-fuji-alignment-2026-05-27.md`](agent-findings/fair8-fuji-alignment-2026-05-27.md) | FAIR8 — F-UJI Alignment Findings (2026-05-27) | 2026-05-27 | 2026-05-27 |
 | [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/frontend-v2-only-sweep.md`](agent-findings/frontend-v2-only-sweep.md) | Frontend v2-only sweep — findings | 2026-06-03 | 2026-06-03 |
+| [`aidocs/agent-findings/getdo-detail-on2-fix-2026-07-28.md`](agent-findings/getdo-detail-on2-fix-2026-07-28.md) | GETDO-DETAIL-ON2 / GETDO-DETAIL-TARGETED — DataObject detail read on the Tapelaying supernode | 2026-07-28 | — |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](agent-findings/gh-pm-backfill-plan-2026-05-23.md) | GH-PM5 backfill — plan + execution log (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/lic1-shipped-2026-05-24.md`](agent-findings/lic1-shipped-2026-05-24.md) | LIC1 shipped — license + accessRights end-to-end (2026-05-24) | 2026-05-24 | 2026-05-24 |

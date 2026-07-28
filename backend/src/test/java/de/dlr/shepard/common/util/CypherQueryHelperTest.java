@@ -20,14 +20,25 @@ public class CypherQueryHelperTest {
   }
 
   @Test
-  public void getReturnPartForDetail_excludesOnlyHasReference() {
-    // GETDO-DETAIL-ON2: detail load excludes the has_reference fan-out (the O(K²)
-    // spiral) but KEEPS has_dataobject (the collection edge the detail service needs).
+  public void getReturnPartForDetail_positiveEdgeAllowlistExcludesHasReference() {
+    // GETDO-DETAIL-TARGETED: the detail load pushes the wanted edge types INTO the
+    // pattern (positive allowlist) instead of expanding all edges + a NONE(has_reference)
+    // post-filter. This makes a large-fanout DO's detail neighborhood O(1) in reference
+    // degree (PROFILE: 259,406 -> 599 db-hits) — the expand skips the has_reference
+    // supernode group entirely rather than walking it to discard it. The allowlist is
+    // the DataObject class hierarchy's declared @Relationship set MINUS has_reference,
+    // so OGM hydrates a byte-identical entity (OGM only maps declared @Relationship types).
     var actual = CypherQueryHelper.getReturnPartForDetail("o");
     assertEquals(
-      "MATCH path=(o)-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND " +
-      "NONE(rel IN relationships(path) WHERE type(rel) = 'has_reference') RETURN o, nodes(path), relationships(path)",
+      "MATCH path=(o)-[:has_dataobject|has_successor|has_child|points_to|has_labjournalentry|" +
+      "has_annotation|has_version|created_by|updated_by*0..1]-(n) " +
+      "WHERE (n.deleted = FALSE OR n.deleted IS NULL) RETURN o, nodes(path), relationships(path)",
       actual
+    );
+    // The fan-out edge must never appear in the traversal pattern.
+    org.junit.jupiter.api.Assertions.assertFalse(
+      actual.contains(Constants.HAS_REFERENCE),
+      "detail return part must never traverse the has_reference fan-out edge"
     );
   }
 

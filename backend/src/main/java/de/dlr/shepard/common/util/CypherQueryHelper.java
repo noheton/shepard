@@ -165,19 +165,52 @@ public class CypherQueryHelper {
   }
 
   /**
-   * GETDO-DETAIL-ON2 — single-DataObject <em>detail</em> depth-1 neighborhood return
-   * that excludes <strong>only</strong> the {@code has_reference} fan-out edge.
+   * GETDO-DETAIL-ON2 + GETDO-DETAIL-TARGETED — single-DataObject <em>detail</em>
+   * depth-1 neighborhood return that hydrates every structural edge the detail view
+   * needs while <strong>never touching</strong> the {@code has_reference} fan-out edge.
    *
-   * <p>Sibling of {@link #getReturnPartForList(String)} but for the detail path.
-   * Unlike the list, a single DataObject's detail view genuinely needs its bounded
-   * structural edges hydrated — the parent {@code :Collection} ({@code has_dataobject},
-   * which the detail service reads via {@code d.getCollection().getShepardId()} for
-   * the permission check), plus successors / predecessors / children / version. So we
-   * keep {@code has_dataobject} (a single incoming edge here, not the O(N) collection
-   * fan-out the list feared) and drop ONLY {@code has_reference} — the edge that on a
-   * large-fanout DataObject (the MFFD Tapelaying DO holds 177k+ FileReferences) makes
-   * OGM's {@code coerceCollection} ({@code ArrayList.indexOf} dedup) O(K²) and pegs the
-   * backend for minutes, rendering the detail page unopenable.
+   * <p><b>DataObject-specific.</b> Every current caller applies this to a
+   * {@code :DataObject} node — {@code VersionableEntityDAO.findByShepardIdForDetail}
+   * (only wired for DataObject detail) and the three container DAOs'
+   * {@code loadLinkedDataObjectForPanel} (which load a linked DataObject for the
+   * "referenced-by" panel). The positive allowlist below is the DataObject class
+   * hierarchy's declared {@code @Relationship} set; do NOT reuse this for a non-
+   * DataObject entity (its edges would be silently dropped).
+   *
+   * <p><b>Why a positive allowlist, not a negative filter (GETDO-DETAIL-TARGETED).</b>
+   * GETDO-DETAIL-ON2 originally shipped the safe negative form
+   * {@code (o)-[*0..1]-(n) WHERE NONE(rel WHERE type(rel)='has_reference')}. That
+   * form has no relationship-type restriction in the pattern, so Neo4j's
+   * {@code VarLengthExpand} enumerates <em>every</em> incident edge — including all
+   * 258k+ {@code has_reference} edges on the MFFD Tapelaying DO — and only then
+   * discards them in the {@code NONE(...)} post-filter: O(K) db-hits per detail open
+   * (PROFILE: 259,406 db-hits on the neighborhood, 309,839 on the full detail query).
+   * Pushing the wanted types <em>into</em> the pattern
+   * ({@code (o)-[:type1|...|typeN*0..1]-(n)}) lets the expand skip the dense-node
+   * {@code has_reference} relationship group entirely: O(1) in reference degree
+   * (PROFILE: 599 db-hits on the neighborhood — a 99.8% reduction — flat across a
+   * 637-ref DO and the 258k-ref DO).
+   *
+   * <p><b>Equivalence (byte-compat).</b> Neo4j-OGM only maps relationship types that
+   * correspond to a declared {@code @Relationship} field, so returning exactly the
+   * declared types (minus {@code has_reference}) yields an OGM-hydrated entity
+   * <em>identical</em> to the negative form's. Live-verified on the Tapelaying DO: the
+   * negative form additionally returned {@code created_in_month} (NEO-AUDIT-004 index
+   * edge) and {@code has_permissions} — both OGM-<em>unmapped</em> on DataObject, so
+   * dropping them changes nothing in the mapped entity.
+   *
+   * <p>The allowlist = the declared {@code @Relationship} types across the DataObject
+   * class chain, minus the excluded fan-out:
+   * <ul>
+   *   <li>{@code DataObject}: {@code has_dataobject} (collection, for the permission
+   *       check), {@code has_successor} (successors + predecessors),
+   *       {@code has_child} (children + parent), {@code points_to} (incoming
+   *       DataObjectReferences), {@code has_labjournalentry}</li>
+   *   <li>{@code BasicEntity}: {@code has_annotation}</li>
+   *   <li>{@code VersionableEntity}: {@code has_version}</li>
+   *   <li>{@code AbstractEntity}: {@code created_by}, {@code updated_by}</li>
+   *   <li><b>excluded:</b> {@code has_reference} (the supernode fan-out)</li>
+   * </ul>
    *
    * <p>Reference data is re-attached out-of-band: v2 detail sources it from
    * {@code DataObjectDAO.findContainersByDataObjectAppId} (Cypher, bounded) and
@@ -187,15 +220,32 @@ public class CypherQueryHelper {
    *
    * @param entity the Cypher variable bound to the DataObject
    * @return a {@code MATCH path=... RETURN entity, nodes(path), relationships(path)}
-   *         clause that never traverses a {@code has_reference} edge
+   *         clause whose expand only traverses the DataObject's declared, non-fan-out
+   *         edge types (so a {@code has_reference} supernode is never walked)
    */
   public static String getReturnPartForDetail(String entity) {
+    // Positive edge-type allowlist = the DataObject class hierarchy's declared
+    // @Relationship types MINUS has_reference (the supernode fan-out). Built from
+    // Constants so it stays in lockstep with the entity definitions. See javadoc for
+    // the field-by-field mapping and the O(K)→O(1) rationale (GETDO-DETAIL-TARGETED).
+    String allowedTypes = String.join(
+      "|",
+      Constants.HAS_DATAOBJECT,
+      Constants.HAS_SUCCESSOR,
+      Constants.HAS_CHILD,
+      Constants.POINTS_TO,
+      Constants.HAS_LABJOURNAL_ENTRY,
+      Constants.HAS_ANNOTATION,
+      Constants.HAS_VERSION,
+      Constants.CREATED_BY,
+      Constants.UPDATED_BY
+    );
     return (
       "MATCH path=(" +
       entity +
-      ")-[*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) AND NONE(rel IN relationships(path) WHERE type(rel) = '" +
-      Constants.HAS_REFERENCE +
-      "') RETURN " +
+      ")-[:" +
+      allowedTypes +
+      "*0..1]-(n) WHERE (n.deleted = FALSE OR n.deleted IS NULL) RETURN " +
       entity +
       ", nodes(path), relationships(path)"
     );
