@@ -201,12 +201,15 @@ check "GET /v2/containers/1/linked-data-objects (no auth → 401)" \
       "$BACKEND_URL/v2/containers/1/linked-data-objects" \
       "401,403"
 
-# /v2/admin/runtime-toggles — A3b feature-toggle registry.
+# /v2/admin/config/feature-toggles — A3b feature-toggle registry.
 # (Was /v2/admin/features; PR #2387 e4745f9d0 folded toggles into the
-# ConfigRegistry and moved this resource to /v2/admin/runtime-toggles.
-# The old path is retired → 404. Smoke check updated to the successor.)
-check "GET /v2/admin/runtime-toggles (no auth → 401)" \
-      "$BACKEND_URL/v2/admin/runtime-toggles" \
+# ConfigRegistry and moved this resource to /v2/admin/runtime-toggles; then
+# APISIMP-FEATURE-TOGGLE-CONFIG-UNIFY unified it under the generic admin config
+# surface as /v2/admin/config/feature-toggles (AdminConfigRest +
+# FeatureTogglesConfigDescriptor — see FeatureTogglesConfigIO's javadoc).
+# Each predecessor path is retired → 404. Smoke check updated to the successor.)
+check "GET /v2/admin/config/feature-toggles (no auth → 401)" \
+      "$BACKEND_URL/v2/admin/config/feature-toggles" \
       "401,403"
 
 # DI1 — safe delete endpoint exists (DELETE without auth → 401, not 404).
