@@ -51,7 +51,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.37.2</quarkus.platform.version>
+    <quarkus.platform.version>3.38.0</quarkus.platform.version>
     <surefire-plugin.version>3.5.6</surefire-plugin.version>
     <assertj.version>3.27.7</assertj.version>
     <commons.version>2.22.0</commons.version>
@@ -448,7 +448,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.22.2</version>
+      <version>1.23.1</version>
     </dependency>
     <!-- MCP Phase 1 — native Quarkus MCP endpoint at /v2/mcp/sse (aidocs/88). -->
     <!-- Version 1.9.1 is built against Quarkus 3.27.x (matches our BOM). -->
@@ -556,7 +556,7 @@
     <dependency>
       <groupId>com.twelvemonkeys.imageio</groupId>
       <artifactId>imageio-tiff</artifactId>
-      <version>3.13.1</version>
+      <version>3.14.0</version>
     </dependency>
   </dependencies>
   <build>
@@ -814,7 +814,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>3.5.0</version>
+        <version>3.5.1</version>
         <executions>
           <execution>
             <goals>
