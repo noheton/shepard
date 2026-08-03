@@ -163,3 +163,6 @@ pnpm-lock.yaml
 scripts/perf/last-run.json
 # Per-session importer observability-container sidecar (v16.9) — runtime state
 examples/mffd-showcase/scripts/.mffd-obs-containers-*.json
+
+# Python build artifacts from local installs (e.g. e2e/api editable installs)
+*.egg-info/
