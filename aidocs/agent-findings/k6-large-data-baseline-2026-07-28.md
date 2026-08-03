@@ -175,3 +175,77 @@ A 633× reduction in db-hits bought exactly nothing in wall-time. Optimising the
 layer you can measure easily is not the same as optimising the layer that costs.
 Measure the endpoint, not the query, before claiming a user-visible win — and when
 the number does not move, say so.
+
+---
+
+## RESOLVED (2026-08-03) — it was an AllNodesScan in `EntityIdResolver`, and the fix is ~35x
+
+JFR on the live backend (`jcmd 1 JFR.start settings=profile`, 60 driven requests)
+answered the question the two Cypher-layer fixes could not.
+
+### What the profile showed
+
+- **21 `ExecutionSample`s in 116 s** — the JVM was essentially *idle* while serving
+  requests taking 1.5 s. Not CPU-bound.
+- The only blocking socket reads (301) were **background Mongo heartbeats** — a red
+  herring, not the request path.
+- **627 `ThreadPark` events**, request-path parks consistently **~700–810 ms**, ~2 per
+  request. Stack: `DataObjectV2Rest.get` → `resolveOrNull` →
+  **`EntityIdResolver.resolveLong`** → `Neo4jSession.query` → `Futures.blockingGet`.
+
+So the cost was in the **appId → numeric-id resolution that runs BEFORE the entity
+load** — not in the entity load that both prior fixes optimised.
+
+### Root cause
+
+```cypher
+MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1   -- UNLABELLED
+```
+
+Neo4j index lookups are **per-label**, so an unlabelled match cannot use any of the
+dozens of `appId_unique_*` constraints. The planner falls back to `AllNodesScan`.
+The code comment asserted "single indexed lookup … V11 unique constraint" — it never
+was one. **PROFILE on live data: 4,720,051 nodes, 996,622 db-hits, ~750 ms per call.**
+
+Corroboration that the database was never the problem: the detail query itself timed
+**4–19 ms** over the real driver (both `bolt://` and `neo4j://`), and DNS/TCP to Neo4j
+was 3–59 ms.
+
+### Fix (`3e44cd2c3`) and measured effect
+
+Seek the indexed `:VersionableEntity` appId first — that label covers the entire
+v2-addressable surface (DataObject, Collection, every Reference subtype; verified 0
+Collections lack it). **996,622 → 2 db-hits.** The unlabelled scan is *retained as a
+fallback* so appIds outside that hierarchy (Activity, ShepardFile, Permissions, User,
+config singletons) resolve exactly as before — correctness unchanged, only the access
+path for the common case.
+
+| Endpoint (quiescent) | Before | After | Δ |
+|---|---|---|---|
+| DO detail, **<10-ref** | 1.6–1.9 s | **0.046–0.092 s** | **~35×** |
+| DO detail, **258,751-ref** | 3.4–3.8 s | **0.25–0.34 s** | **~12×** |
+| `/v2/collections?size=1` | ~0.65 s | ~0.8–1.2 s | unchanged — different path |
+
+This was the whole-instance UX tax: **every** appId-addressed v2 endpoint paid it
+twice per request, and per the frontend-v2-only/appId rules that is essentially the
+entire product surface.
+
+### Still open
+
+- **`APPID-RESOLVER-SHARED-LABEL`** — the complete fix is a shared `:HasAppId` marker
+  label + one index across all 4.7M appId-bearing nodes, removing the fallback scan
+  for non-`:VersionableEntity` appIds (Activity/ShepardFile/Permissions/User). Needs
+  its own migration.
+- **`COLLECTIONS-LIST-LATENCY`** — `/v2/collections?size=1` is ~0.9 s and did *not*
+  improve; it is a different path (list + permission predicate), now the slowest
+  common endpoint.
+
+### Lesson (the third time this exact trap appeared in ten days)
+
+Every one of these was a query whose **comment asserted an indexed access path that
+the planner never used** — the agent-edge backfill ("drive from the bounded Activity
+side" → drove from the `:User` supernode), the shepardId seed ("no index exists" →
+one existed on the superclass label), and now this ("single indexed lookup" →
+`AllNodesScan`). **PROFILE the statement you actually run.** And when a query-level
+win doesn't move the endpoint, profile the endpoint — the answer was two layers up
+from where all three of us were looking.
