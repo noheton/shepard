@@ -104,21 +104,74 @@ public class EntityIdResolverTest {
     assertThatThrownBy(() -> resolver.resolveAppId(88L)).isInstanceOf(NotFoundException.class);
   }
 
+  /**
+   * DO-DETAIL-LATENCY-PROFILE — the common case must hit the INDEXED
+   * `:VersionableEntity` seek and must NOT fall through to the unlabelled scan.
+   * The unlabelled form cannot use any index (Neo4j indexes are per-label) and
+   * measured 996,622 db-hits / ~750 ms per call on the live instance.
+   */
   @Test
-  public void resolveLong_returnsOgmIdForKnownAppId() {
+  public void resolveLong_usesIndexedVersionableEntitySeek_andSkipsTheScan() {
     Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(Map.of("ogmId", 7L)).iterator();
     when(resolveLongResult.iterator()).thenReturn(iter);
-    when(session.query(eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"), eq(Map.of("appId", "abc-1"))))
-      .thenReturn(resolveLongResult);
+    when(
+      session.query(
+        eq("MATCH (e:VersionableEntity {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+        eq(Map.of("appId", "abc-1"))
+      )
+    ).thenReturn(resolveLongResult);
 
     assertThat(resolver.resolveLong("abc-1")).isEqualTo(7L);
+
+    // The AllNodesScan fallback must not run when the indexed seek resolved it.
+    verify(session, never()).query(
+      eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+      eq(Map.of("appId", "abc-1"))
+    );
+  }
+
+  /**
+   * Correctness guard: appIds on nodes OUTSIDE the `:VersionableEntity` hierarchy
+   * (Activity, ShepardFile, Permissions, User, config singletons, ...) must still
+   * resolve — via the retained unlabelled fallback.
+   */
+  @Test
+  public void resolveLong_fallsBackToScan_forNonVersionableEntity() {
+    when(resolveLongResult.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
+    when(
+      session.query(
+        eq("MATCH (e:VersionableEntity {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+        eq(Map.of("appId", "activity-1"))
+      )
+    ).thenReturn(resolveLongResult);
+    when(resolveAppIdResult.iterator())
+      .thenReturn(List.<Map<String, Object>>of(Map.of("ogmId", 42L)).iterator());
+    when(
+      session.query(
+        eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+        eq(Map.of("appId", "activity-1"))
+      )
+    ).thenReturn(resolveAppIdResult);
+
+    assertThat(resolver.resolveLong("activity-1")).isEqualTo(42L);
   }
 
   @Test
   public void resolveLong_notFound_whenNoNode() {
     when(resolveLongResult.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
-    when(session.query(eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"), eq(Map.of("appId", "missing"))))
-      .thenReturn(resolveLongResult);
+    when(
+      session.query(
+        eq("MATCH (e:VersionableEntity {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+        eq(Map.of("appId", "missing"))
+      )
+    ).thenReturn(resolveLongResult);
+    when(resolveAppIdResult.iterator()).thenReturn(List.<Map<String, Object>>of().iterator());
+    when(
+      session.query(
+        eq("MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1"),
+        eq(Map.of("appId", "missing"))
+      )
+    ).thenReturn(resolveAppIdResult);
 
     assertThatThrownBy(() -> resolver.resolveLong("missing")).isInstanceOf(NotFoundException.class);
   }

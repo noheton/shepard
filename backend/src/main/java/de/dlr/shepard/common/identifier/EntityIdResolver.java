@@ -110,11 +110,34 @@ public class EntityIdResolver {
     if (session == null) {
       throw new NotFoundException("Neo4j session not available; cannot resolve id for appId=" + appId);
     }
-    // Single indexed lookup: V11 unique constraint guarantees at-most-one
-    // node per appId across all in-scope labels. LIMIT 1 is belt-and-braces.
-    String query = "MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1";
-    Result result = session.query(query, Map.of("appId", appId));
+    // DO-DETAIL-LATENCY-PROFILE — an UNLABELLED `MATCH (e {appId: $appId})` cannot
+    // use any index: Neo4j index lookups are per-label, so the per-label
+    // `appId_unique_*` constraints are all unusable here and the planner falls back
+    // to AllNodesScan. (The previous comment claimed this was "a single indexed
+    // lookup" — it never was.) Measured on the live instance: 4,720,051 nodes,
+    // 996,622 db-hits per call, ~750 ms. JFR showed this resolver, called ~2x per
+    // v2 request, was the ENTIRE ~1.5 s constant on every appId-addressed endpoint —
+    // not the entity load it precedes.
+    //
+    // Fast path: seek the `:VersionableEntity` appId index first. That label covers
+    // the whole v2-addressable surface (DataObject, Collection, and every Reference
+    // subtype — verified: 0 Collections lack it), which is what this resolver is
+    // asked for on the hot paths. Measured: 996,622 -> 2 db-hits.
+    //
+    // Fallback: the original unlabelled scan, kept so appIds on nodes OUTSIDE that
+    // hierarchy (Activity, ShepardFile, Permissions, User, config singletons, ...)
+    // still resolve exactly as before. Correctness is unchanged — only the access
+    // path for the common case. The complete fix is a shared `:HasAppId` marker
+    // label + one index across all 4.7M appId-bearing nodes, which needs its own
+    // migration (filed as APPID-RESOLVER-SHARED-LABEL).
+    String indexedQuery = "MATCH (e:VersionableEntity {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1";
+    Result result = session.query(indexedQuery, Map.of("appId", appId));
     var iter = result.iterator();
+    if (!iter.hasNext()) {
+      String fallbackQuery = "MATCH (e {appId: $appId}) RETURN id(e) AS ogmId LIMIT 1";
+      result = session.query(fallbackQuery, Map.of("appId", appId));
+      iter = result.iterator();
+    }
     if (!iter.hasNext()) {
       Log.debugf("EntityIdResolver: no node with appId=%s", appId);
       throw new NotFoundException("No entity with appId " + appId);
