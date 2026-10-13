@@ -448,7 +448,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.22.2</version>
+      <version>1.23.2</version>
     </dependency>
     <!-- MCP Phase 1 — native Quarkus MCP endpoint at /v2/mcp/sse (aidocs/88). -->
     <!-- Version 1.9.1 is built against Quarkus 3.27.x (matches our BOM). -->
